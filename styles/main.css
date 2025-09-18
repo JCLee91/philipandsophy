@@ -1,0 +1,325 @@
+/* 기본 설정 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* SEO를 위한 숨김 텍스트 */
+.seo-content {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #000;
+    overflow-x: hidden;
+}
+
+/* 레이아웃 */
+.container {
+    max-width: 550px;
+    margin: 0 auto;
+}
+
+.main-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 80px;
+}
+
+/* CTA 섹션 */
+.cta-section {
+    position: fixed;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+}
+
+/* CTA 버튼 - 글래스모피즘 */
+.cta-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 352px;
+    height: 64px;
+    padding: 20px 32px;
+    border-radius: 16px;
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+
+    /* Glassmorphism 효과 */
+    background: linear-gradient(135deg,
+        rgba(98, 187, 255, 0.25) 0%,
+        rgba(69, 161, 253, 0.15) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    /* 그림자와 테두리 */
+    box-shadow:
+        0 16px 40px rgba(98, 187, 255, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    /* 애니메이션 */
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    cursor: pointer;
+}
+
+.cta-text {
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.cta-arrow {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+/* 반짝이는 효과 */
+.cta-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent);
+    transition: left 0.8s ease;
+    z-index: 1;
+}
+
+/* 호버 효과 */
+.cta-button:hover {
+    transform: translateY(-3px) scale(1.02);
+    background: linear-gradient(135deg,
+        rgba(98, 187, 255, 0.35) 0%,
+        rgba(69, 161, 253, 0.25) 100%);
+    box-shadow:
+        0 24px 60px rgba(98, 187, 255, 0.4),
+        0 16px 40px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.cta-button:hover::before {
+    left: 100%;
+}
+
+.cta-button:hover .cta-arrow {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+}
+
+/* 클릭 효과 */
+.cta-button:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s ease;
+}
+
+/* 푸터 영역 */
+.footer {
+    background: #000;
+    color: #fff;
+    padding: 60px 0 180px;
+    margin-top: 120px;
+    position: relative;
+}
+
+.footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+}
+
+.footer-content {
+    max-width: 550px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.footer-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 32px;
+}
+
+.footer-left {
+    flex: 1;
+}
+
+.footer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.footer-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 0;
+    color: #fff;
+    opacity: 0.9;
+    text-align: left;
+}
+
+.footer-info {
+    text-align: left;
+}
+
+.footer-info p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+/* SNS 버튼 */
+.footer-sns {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.sns-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    
+    /* 글래스모피즘 효과 */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.kakao-button {
+    color: #fff;
+}
+
+.kakao-button:hover {
+    background: rgba(254, 229, 0, 0.15);
+    border-color: rgba(254, 229, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(254, 229, 0, 0.2);
+}
+
+.sns-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.sns-button span {
+    position: relative;
+    z-index: 2;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .footer {
+        padding: 40px 0 160px;
+        margin-top: 80px;
+    }
+    
+    .footer-content {
+        padding: 0 16px;
+        gap: 24px;
+    }
+    
+    .footer-main {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .footer-left {
+        width: 100%;
+    }
+    
+    .footer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 16px;
+    }
+    
+    .footer-title {
+        font-size: 20px;
+        margin-bottom: 0;
+    }
+    
+    .footer-info p {
+        font-size: 13px;
+    }
+    
+    .footer-sns {
+        align-self: auto;
+    }
+    
+    .sns-button {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .sns-icon {
+        width: 18px;
+        height: 18px;
+    }
+}
+
