@@ -17,9 +17,144 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
     background: #000;
     overflow-x: hidden;
+}
+
+/* 디자인 토큰: 글래스모피즘 시스템 */
+:root {
+    /* 색상 */
+    --color-bg: #000000;
+    --color-text: rgba(255, 255, 255, 0.95);
+    --color-text-dim: rgba(255, 255, 255, 0.7);
+    --color-text-muted: rgba(255, 255, 255, 0.5);
+
+    /* 포인트 컬러 (아이스 블루) */
+    --brand-ice-1: rgba(98, 187, 255, 0.35);
+    --brand-ice-2: rgba(69, 161, 253, 0.25);
+    --brand-ice-soft-2: rgba(98, 187, 255, 0.08);
+
+    /* 글래스 레이어 */
+    --glass-bg-strong: linear-gradient(135deg, rgba(98, 187, 255, 0.25) 0%, rgba(69, 161, 253, 0.15) 100%);
+    --glass-bg-hover: linear-gradient(135deg, var(--brand-ice-1) 0%, var(--brand-ice-2) 100%);
+    --glass-surface: rgba(255, 255, 255, 0.08);
+    --glass-surface-soft: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-border-soft: rgba(255, 255, 255, 0.05);
+    --glass-highlight: rgba(255, 255, 255, 0.3);
+    --glass-shadow-strong: 0 16px 40px rgba(98, 187, 255, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4);
+    --glass-shadow-hover: 0 24px 60px rgba(98, 187, 255, 0.4), 0 16px 40px rgba(0, 0, 0, 0.5);
+    --glass-shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+    /* 블러 */
+    --blur-xl: blur(20px);
+    --blur-lg: blur(10px);
+
+    /* 라운딩 */
+    --radius-xl: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+
+    /* 타이포 */
+    --font-size-sm: 14px;
+    --font-size-xs: 13px;
+    --font-size-cta: 18px;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+}
+
+/* (pruned) unused u-glass utilities removed */
+
+/* Legal pages (이용약관/개인정보처리방침) 공통 스타일 */
+.legal-page {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+    line-height: 1.7;
+    color: var(--color-text);
+    background: #0b0b0b;
+    padding: 20px;
+}
+
+.legal-page .container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.legal-page h1 {
+    font-size: 28px;
+    margin-bottom: 30px;
+    text-align: center;
+    color: var(--color-text);
+}
+
+.legal-page h2 {
+    font-size: 20px;
+    margin: 30px 0 15px 0;
+    color: var(--color-text);
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 8px;
+}
+
+.legal-page h3 {
+    font-size: 16px;
+    margin: 20px 0 10px 0;
+    color: var(--color-text-dim);
+}
+
+.legal-page p {
+    margin-bottom: 15px;
+    color: var(--color-text-dim);
+}
+
+.legal-page ul,
+.legal-page ol {
+    margin: 15px 0;
+    padding-left: 20px;
+}
+
+.legal-page li {
+    margin-bottom: 8px;
+}
+
+.legal-page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.legal-page th,
+.legal-page td {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 10px;
+    text-align: left;
+}
+
+.legal-page th {
+    background: rgba(255, 255, 255, 0.06);
+    font-weight: var(--font-weight-semibold);
+}
+
+.legal-page .effective-date {
+    text-align: right;
+    font-style: italic;
+    color: var(--color-text-muted);
+    margin-bottom: 20px;
+}
+
+.legal-page .contact-info {
+    background: var(--glass-surface);
+    padding: 20px;
+    border-radius: var(--radius-md);
+    margin: 20px 0;
+    border: 1px solid var(--glass-border);
+}
+
+@media (max-width: 768px) {
+    .legal-page {
+        padding: 15px;
+    }
+    .legal-page h1 { font-size: 24px; }
+    .legal-page h2 { font-size: 18px; }
 }
 
 /* 레이아웃 */
@@ -56,28 +191,22 @@ body {
     max-width: 352px;
     height: 64px;
     padding: 20px 32px;
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
     text-decoration: none;
-    color: white;
-    font-size: 18px;
-    font-weight: 600;
+    color: var(--color-text);
+    font-size: var(--font-size-cta);
+    font-weight: var(--font-weight-semibold);
     position: relative;
     overflow: hidden;
 
     /* Glassmorphism 효과 */
-    background: linear-gradient(135deg,
-        rgba(98, 187, 255, 0.25) 0%,
-        rgba(69, 161, 253, 0.15) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: var(--glass-bg-strong);
+    backdrop-filter: var(--blur-xl);
+    -webkit-backdrop-filter: var(--blur-xl);
 
     /* 그림자와 테두리 */
-    box-shadow:
-        0 16px 40px rgba(98, 187, 255, 0.3),
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--glass-shadow-strong), inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--glass-border);
 
     /* 애니메이션 */
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
@@ -98,10 +227,10 @@ body {
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
     transition: all 0.3s ease;
 }
 
@@ -124,14 +253,8 @@ body {
 /* 호버 효과 */
 .cta-button:hover {
     transform: translateY(-3px) scale(1.02);
-    background: linear-gradient(135deg,
-        rgba(98, 187, 255, 0.35) 0%,
-        rgba(69, 161, 253, 0.25) 100%);
-    box-shadow:
-        0 24px 60px rgba(98, 187, 255, 0.4),
-        0 16px 40px rgba(0, 0, 0, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    background: var(--glass-bg-hover);
+    box-shadow: var(--glass-shadow-hover), inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
@@ -152,13 +275,14 @@ body {
 
 /* 푸터 영역 */
 .footer {
-    background: #000;
-    color: #fff;
+    background: var(--color-bg);
+    color: var(--color-text);
     padding: 60px 0 180px;
     margin-top: 120px;
     position: relative;
 }
 
+/* 푸터 장식 라인 그라데이션 */
 .footer::before {
     content: '';
     position: absolute;
@@ -168,7 +292,7 @@ body {
     height: 1px;
     background: linear-gradient(90deg, 
         transparent, 
-        rgba(255, 255, 255, 0.2), 
+        var(--glass-border), 
         transparent);
 }
 
@@ -201,9 +325,9 @@ body {
 
 .footer-title {
     font-size: 24px;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     margin-bottom: 0;
-    color: #fff;
+    color: var(--color-text);
     opacity: 0.9;
     text-align: left;
 }
@@ -213,8 +337,8 @@ body {
 }
 
 .footer-info p {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-dim);
     margin-bottom: 8px;
     line-height: 1.6;
 }
@@ -231,20 +355,20 @@ body {
     align-items: center;
     gap: 8px;
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
     position: relative;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     
     /* 글래스모피즘 효과 */
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: var(--glass-surface);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--glass-shadow-soft);
 }
 
 .kakao-button {
@@ -358,21 +482,21 @@ body {
 }
 
 .footer-nav-link {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-dim);
     text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     position: relative;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     
     /* 서브틀한 글래스모피즘 */
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--glass-surface-soft);
+    backdrop-filter: var(--blur-lg);
+    -webkit-backdrop-filter: var(--blur-lg);
+    border: 1px solid var(--glass-border-soft);
 }
 
 .footer-nav-link::before {
@@ -391,8 +515,8 @@ body {
 }
 
 .footer-nav-link:hover {
-    color: rgba(255, 255, 255, 0.95);
-    background: rgba(98, 187, 255, 0.08);
+    color: var(--color-text);
+    background: var(--brand-ice-soft-2);
     border-color: rgba(98, 187, 255, 0.2);
     transform: translateY(-2px);
     box-shadow: 
@@ -411,7 +535,7 @@ body {
 
 .footer-divider {
     color: rgba(255, 255, 255, 0.3);
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     user-select: none;
     opacity: 0.6;
 }
@@ -421,8 +545,8 @@ body {
 }
 
 .footer-copyright p {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
     margin: 0;
     font-weight: 400;
     letter-spacing: 0.3px;
@@ -441,12 +565,12 @@ body {
     }
     
     .footer-nav-link {
-        font-size: 13px;
+        font-size: var(--font-size-xs);
         padding: 6px 12px;
     }
     
     .footer-divider {
-        font-size: 13px;
+        font-size: var(--font-size-xs);
     }
     
     .footer-copyright p {
