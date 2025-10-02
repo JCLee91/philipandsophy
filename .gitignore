@@ -37,3 +37,7 @@ yarn-error.log*
 next-env.d.ts
 .env.local
 firebase-service-account.json
+
+# Vercel environment setup script with sensitive data
+.vercel-env-setup.sh
+*-env-setup.sh
