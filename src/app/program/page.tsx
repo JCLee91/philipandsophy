@@ -3,9 +3,9 @@
 import '../../styles/landing.css';
 
 export default function ProgramPage() {
-  // Program_01.webp ~ Program_18.webp 경로 생성
+  // Program_01.webp ~ Program_18.webp 경로 생성 (v=2.1 for cache busting)
   const images = Array.from({ length: 18 }, (_, i) => ({
-    src: `/image/Program/Program_${String(i + 1).padStart(2, '0')}.webp`,
+    src: `/image/Program/Program_${String(i + 1).padStart(2, '0')}.webp?v=2.1`,
     alt: `필립앤소피 프로그램 소개 ${i + 1}`,
   }));
 
