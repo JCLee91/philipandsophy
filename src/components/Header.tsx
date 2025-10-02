@@ -1,20 +1,25 @@
 'use client';
 
 import { Users, PenSquare, Mail } from 'lucide-react';
+import { useTotalUnreadCount } from '@/hooks/use-messages';
 
 interface HeaderProps {
   onParticipantsClick?: () => void;
   onWriteClick?: () => void;
   onMessageAdminClick?: () => void;
   isAdmin?: boolean;
+  currentUserId?: string;
 }
 
 export default function Header({
   onParticipantsClick,
   onWriteClick,
   onMessageAdminClick,
-  isAdmin
+  isAdmin,
+  currentUserId
 }: HeaderProps) {
+  const { data: unreadCount = 0 } = useTotalUnreadCount(currentUserId || '');
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-center relative px-4">
@@ -33,18 +38,29 @@ export default function Header({
           ) : (
             <button
               onClick={onMessageAdminClick}
-              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
+              className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
               aria-label="운영자에게 메시지"
             >
               <Mail className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
           )}
           <button
             onClick={onParticipantsClick}
-            className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
+            className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
             aria-label="참가자 목록"
           >
             <Users className="h-5 w-5" />
+            {/* 운영자에게만 참가자 목록 아이콘에 미확인 DM 배지 표시 */}
+            {isAdmin && unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
