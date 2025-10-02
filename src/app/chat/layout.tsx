@@ -10,9 +10,6 @@ export const metadata: Metadata = {
     noarchive: true,
     noimageindex: true,
   },
-  // 모든 SNS 미리보기 완전 차단
-  openGraph: undefined,
-  twitter: undefined,
 };
 
 export default function ChatLayout({
