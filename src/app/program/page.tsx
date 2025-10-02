@@ -3,25 +3,21 @@
 import '../../styles/landing.css';
 
 export default function ProgramPage() {
-  // Program_01.webp ~ Program_18.webp 경로 생성 (v=2.1 for cache busting)
+  // Program_01.webp ~ Program_18.webp 경로 생성
+  const version = '2.0'; // 정적 버전 번호로 효율적인 캐시 관리
   const images = Array.from({ length: 18 }, (_, i) => ({
-    src: `/image/Program/Program_${String(i + 1).padStart(2, '0')}.webp?v=2.1`,
+    src: `/image/Program/Program_${String(i + 1).padStart(2, '0')}.webp?v=${version}`,
     alt: `필립앤소피 프로그램 소개 ${i + 1}`,
   }));
 
   return (
-    <div style={{ width: '100%', padding: '0 12px' }}>
+    <div className="container">
       {images.map((image, idx) => (
         <img
           key={idx}
           src={image.src}
           alt={image.alt}
-          style={{ 
-            width: '100%', 
-            height: 'auto', 
-            display: 'block',
-            marginBottom: idx === images.length - 1 ? 0 : '0'
-          }}
+          className="main-image"
           loading={idx === 0 ? 'eager' : 'lazy'}
           fetchPriority={idx === 0 ? 'high' : 'auto'}
         />
