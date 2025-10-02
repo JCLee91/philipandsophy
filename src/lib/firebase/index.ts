@@ -18,12 +18,10 @@ export {
   createCohort,
   createCohortWithId,
   getCohortById,
-  getCohortByAccessCode,
   getAllCohorts,
   getActiveCohorts,
   updateCohort,
   deleteCohort,
-  validateAccessCode,
 } from './cohorts';
 
 // Participant operations

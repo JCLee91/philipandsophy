@@ -1,6 +1,11 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Providers from './providers';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1.0,
+};
 
 export const metadata: Metadata = {
   title: {
@@ -9,10 +14,6 @@ export const metadata: Metadata = {
   },
   description: '깊이 있는 대화가 설레는 만남으로',
   metadataBase: new URL('https://www.philipandsophy.kr'),
-  viewport: {
-    width: 'device-width',
-    initialScale: 1.0,
-  },
   formatDetection: {
     telephone: false,
   },
