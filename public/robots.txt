@@ -1,6 +1,11 @@
 User-agent: *
 Allow: /
 
+# Block private pages - 비밀 페이지 차단
+Disallow: /program
+Disallow: /member10
+Disallow: /chat
+
 # Sitemap location
 Sitemap: https://www.philipandsophy.kr/sitemap.xml
 

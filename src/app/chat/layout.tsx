@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   twitter: undefined,
 };
 
-export default function Member10Layout({
+export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode;
