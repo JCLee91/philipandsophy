@@ -1,0 +1,321 @@
+[debug] [2025-10-01T11:05:11.918Z] ----------------------------------------------------------------------
+[debug] [2025-10-01T11:05:11.919Z] Command:       /usr/local/bin/node /Users/jclee/.npm-global/bin/firebase deploy --only storage:rules
+[debug] [2025-10-01T11:05:11.919Z] CLI Version:   14.17.0
+[debug] [2025-10-01T11:05:11.919Z] Platform:      darwin
+[debug] [2025-10-01T11:05:11.919Z] Node Version:  v24.1.0
+[debug] [2025-10-01T11:05:11.919Z] Time:          Wed Oct 01 2025 20:05:11 GMT+0900 (Korean Standard Time)
+[debug] [2025-10-01T11:05:11.919Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-10-01T11:05:11.999Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-01T11:05:11.999Z] > authorizing via signed-in user (jclee.underpin@gmail.com)
+[debug] [2025-10-01T11:05:11.999Z] [iam] checking project philipandsophy for permissions ["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2025-10-01T11:05:12.000Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:12.000Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:12.000Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions [none]
+[debug] [2025-10-01T11:05:12.000Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions x-goog-quota-user=projects/philipandsophy
+[debug] [2025-10-01T11:05:12.000Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions {"permissions":["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2025-10-01T11:05:12.243Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions 200
+[debug] [2025-10-01T11:05:12.244Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions {"permissions":["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[info] 
+[info] === Deploying to 'philipandsophy'...
+[info] 
+[info] i  deploying storage 
+[info] i  storage: ensuring required API firebasestorage.googleapis.com is enabled... 
+[debug] [2025-10-01T11:05:12.245Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:12.245Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:12.245Z] >>> [apiv2][query] GET https://firebasestorage.googleapis.com/v1alpha/projects/philipandsophy/defaultBucket [none]
+[debug] [2025-10-01T11:05:13.231Z] <<< [apiv2][status] GET https://firebasestorage.googleapis.com/v1alpha/projects/philipandsophy/defaultBucket 200
+[debug] [2025-10-01T11:05:13.232Z] <<< [apiv2][body] GET https://firebasestorage.googleapis.com/v1alpha/projects/philipandsophy/defaultBucket {"name":"projects/philipandsophy/defaultBucket","location":"ASIA-NORTHEAST3","bucket":{"name":"projects/philipandsophy/buckets/philipandsophy.firebasestorage.app"},"storageClass":"REGIONAL"}
+[error] 
+[error] Error: Could not find rules for the following storage targets: rules
+[debug] [2025-10-01T11:05:28.410Z] ----------------------------------------------------------------------
+[debug] [2025-10-01T11:05:28.411Z] Command:       /usr/local/bin/node /Users/jclee/.npm-global/bin/firebase deploy --only storage
+[debug] [2025-10-01T11:05:28.411Z] CLI Version:   14.17.0
+[debug] [2025-10-01T11:05:28.411Z] Platform:      darwin
+[debug] [2025-10-01T11:05:28.411Z] Node Version:  v24.1.0
+[debug] [2025-10-01T11:05:28.411Z] Time:          Wed Oct 01 2025 20:05:28 GMT+0900 (Korean Standard Time)
+[debug] [2025-10-01T11:05:28.411Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-10-01T11:05:28.487Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-01T11:05:28.487Z] > authorizing via signed-in user (jclee.underpin@gmail.com)
+[debug] [2025-10-01T11:05:28.487Z] [iam] checking project philipandsophy for permissions ["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2025-10-01T11:05:28.488Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:28.488Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:28.488Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions [none]
+[debug] [2025-10-01T11:05:28.488Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions x-goog-quota-user=projects/philipandsophy
+[debug] [2025-10-01T11:05:28.488Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions {"permissions":["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2025-10-01T11:05:28.734Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions 200
+[debug] [2025-10-01T11:05:28.735Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions {"permissions":["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[info] 
+[info] === Deploying to 'philipandsophy'...
+[info] 
+[info] i  deploying storage 
+[info] i  firebase.storage: checking storage.rules for compilation errors... 
+[debug] [2025-10-01T11:05:28.738Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:28.738Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:28.738Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy:test [none]
+[debug] [2025-10-01T11:05:28.738Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy:test [omitted]
+[debug] [2025-10-01T11:05:30.106Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy:test 200
+[debug] [2025-10-01T11:05:30.106Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy:test {"issues":[{"sourcePosition":{"fileName":"storage.rules","line":10,"column":14,"currentOffset":250,"endOffset":259},"description":"Unused function: isSignedIn.","severity":"WARNING"},{"sourcePosition":{"fileName":"storage.rules","line":11,"column":14,"currentOffset":278,"endOffset":284},"description":"Invalid variable name: request.","severity":"WARNING"}]}
+[warn] ⚠  [W] 10:14 - Unused function: isSignedIn. 
+[warn] ⚠  [W] 11:14 - Invalid variable name: request. 
+[info] ✔  firebase.storage: rules file storage.rules compiled successfully 
+[debug] [2025-10-01T11:05:30.107Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:30.107Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:30.107Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/philipandsophy/releases pageSize=10&pageToken=
+[debug] [2025-10-01T11:05:31.161Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/philipandsophy/releases 200
+[debug] [2025-10-01T11:05:31.161Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/philipandsophy/releases {"releases":[{"name":"projects/philipandsophy/releases/cloud.firestore","rulesetName":"projects/philipandsophy/rulesets/4d50284f-ec2b-4ece-9882-8838722d104d","createTime":"2025-10-01T07:47:11.719527Z","updateTime":"2025-10-01T10:55:58.577337Z"},{"name":"projects/philipandsophy/releases/firebase.storage/philipandsophy.firebasestorage.app","rulesetName":"projects/philipandsophy/rulesets/7b4fec3e-d07f-497b-8ee3-8b16c9e72999","createTime":"2025-10-01T11:04:39.394384Z","updateTime":"2025-10-01T11:04:39.394384Z"}]}
+[debug] [2025-10-01T11:05:31.176Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:31.176Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:31.176Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/philipandsophy/rulesets/7b4fec3e-d07f-497b-8ee3-8b16c9e72999 [none]
+[debug] [2025-10-01T11:05:32.236Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/philipandsophy/rulesets/7b4fec3e-d07f-497b-8ee3-8b16c9e72999 200
+[debug] [2025-10-01T11:05:32.236Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/philipandsophy/rulesets/7b4fec3e-d07f-497b-8ee3-8b16c9e72999 [omitted]
+[info] i  storage: uploading rules storage.rules... 
+[debug] [2025-10-01T11:05:32.236Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:32.236Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:32.237Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy/rulesets [none]
+[debug] [2025-10-01T11:05:32.237Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy/rulesets [omitted]
+[debug] [2025-10-01T11:05:33.346Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy/rulesets 200
+[debug] [2025-10-01T11:05:33.346Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy/rulesets {"name":"projects/philipandsophy/rulesets/0b07d9c5-6e67-444a-af4e-b974f53fee3f","source":{"files":[{"content":"rules_version = '2';\n\nservice firebase.storage {\n  match /b/{bucket}/o {\n    // ============================================\n    // 프로덕션 모드 - Storage 보안 규칙\n    // ============================================\n    \n    // Helper Functions\n    function isSignedIn() {\n      return request.auth != null;\n    }\n    \n    function isValidImage() {\n      return request.resource.contentType.matches('image/.*');\n    }\n    \n    function isUnder10MB() {\n      return request.resource.size < 10 * 1024 * 1024;\n    }\n    \n    // ============================================\n    // 독서 인증 이미지 (Reading Submissions)\n    // ============================================\n    match /reading_submissions/{participationCode}/{fileName} {\n      // 읽기: 모두 허용 (공개 이미지)\n      allow read: if true;\n      \n      // 업로드: 이미지 파일만, 10MB 이하\n      allow create: if isValidImage() && isUnder10MB();\n      \n      // 수정/삭제: 금지\n      allow update, delete: if false;\n    }\n    \n    // ============================================\n    // 공지사항 이미지 (Notices)\n    // ============================================\n    match /notices/{cohortId}/{fileName} {\n      // 읽기: 모두 허용 (공개 이미지)\n      allow read: if true;\n      \n      // 업로드: 이미지 파일만, 10MB 이하\n      // TODO: 관리자만 업로드 가능하도록 제한 권장\n      allow create: if isValidImage() && isUnder10MB();\n      \n      // 수정/삭제: 금지\n      allow update, delete: if false;\n    }\n    \n    // ============================================\n    // 다이렉트 메시지 이미지 (Direct Messages)\n    // ============================================\n    match /direct_messages/{userId}/{fileName} {\n      // 읽기: 모두 허용 (대화 참여자만 URL 알고 있음)\n      allow read: if true;\n      \n      // 업로드: 이미지 파일만, 10MB 이하\n      allow create: if isValidImage() && isUnder10MB();\n      \n      // 수정/삭제: 금지\n      allow update, delete: if false;\n    }\n    \n    // ============================================\n    // 프로필 이미지 (Profiles)\n    // ============================================\n    match /profiles/{userId}/{fileName} {\n      // 읽기: 모두 허용 (공개 프로필)\n      allow read: if true;\n      \n      // 업로드: 이미지 파일만, 5MB 이하\n      allow create: if isValidImage() && \n                      request.resource.size < 5 * 1024 * 1024;\n      \n      // 수정: 본인만 (Firebase Auth 필요)\n      // 임시: 허용\n      allow update: if isValidImage() && \n                      request.resource.size < 5 * 1024 * 1024;\n      \n      // 삭제: 금지\n      allow delete: if false;\n    }\n    \n    // ============================================\n    // 기타 경로: 모두 차단\n    // ============================================\n    match /{allPaths=**} {\n      allow read, write: if false;\n    }\n  }\n}\n\n","name":"storage.rules"}]},"createTime":"2025-10-01T11:05:35.223151Z","metadata":{"services":["firebase.storage"]}}
+[debug] [2025-10-01T11:05:33.346Z] [rules] created ruleset projects/philipandsophy/rulesets/0b07d9c5-6e67-444a-af4e-b974f53fee3f
+[debug] [2025-10-01T11:05:33.347Z] [rules] releasing firebase.storage/philipandsophy.firebasestorage.app with ruleset projects/philipandsophy/rulesets/0b07d9c5-6e67-444a-af4e-b974f53fee3f
+[debug] [2025-10-01T11:05:33.348Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:33.348Z] Checked if tokens are valid: true, expires at: 1759318077001
+[debug] [2025-10-01T11:05:33.348Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/philipandsophy/releases/firebase.storage/philipandsophy.firebasestorage.app [none]
+[debug] [2025-10-01T11:05:33.348Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/philipandsophy/releases/firebase.storage/philipandsophy.firebasestorage.app {"release":{"name":"projects/philipandsophy/releases/firebase.storage/philipandsophy.firebasestorage.app","rulesetName":"projects/philipandsophy/rulesets/0b07d9c5-6e67-444a-af4e-b974f53fee3f"}}
+[debug] [2025-10-01T11:05:34.448Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/philipandsophy/releases/firebase.storage/philipandsophy.firebasestorage.app 200
+[debug] [2025-10-01T11:05:34.448Z] <<< [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/philipandsophy/releases/firebase.storage/philipandsophy.firebasestorage.app {"name":"projects/philipandsophy/releases/firebase.storage/philipandsophy.firebasestorage.app","rulesetName":"projects/philipandsophy/rulesets/0b07d9c5-6e67-444a-af4e-b974f53fee3f","createTime":"2025-10-01T11:04:39.394384Z","updateTime":"2025-10-01T11:05:36.330845Z"}
+[debug] [2025-10-01T11:05:34.448Z] [rules] updated release projects/philipandsophy/releases/firebase.storage/philipandsophy.firebasestorage.app
+[info] ✔  storage: released rules storage.rules to firebase.storage 
+[info] 
+[info] ✔  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/philipandsophy/overview
+[debug] [2025-10-02T02:47:05.840Z] ----------------------------------------------------------------------
+[debug] [2025-10-02T02:47:05.842Z] Command:       /usr/local/bin/node /Users/jclee/.npm-global/bin/firebase projects:list
+[debug] [2025-10-02T02:47:05.842Z] CLI Version:   14.17.0
+[debug] [2025-10-02T02:47:05.842Z] Platform:      darwin
+[debug] [2025-10-02T02:47:05.842Z] Node Version:  v24.1.0
+[debug] [2025-10-02T02:47:05.842Z] Time:          Thu Oct 02 2025 11:47:05 GMT+0900 (Korean Standard Time)
+[debug] [2025-10-02T02:47:05.842Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-10-02T02:47:05.926Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-02T02:47:05.926Z] > authorizing via signed-in user (jclee.underpin@gmail.com)
+[debug] [2025-10-02T02:47:05.927Z] Checked if tokens are valid: false, expires at: 1759318077001
+[debug] [2025-10-02T02:47:05.927Z] Checked if tokens are valid: false, expires at: 1759318077001
+[debug] [2025-10-02T02:47:05.927Z] > refreshing access token with scopes: []
+[debug] [2025-10-02T02:47:05.928Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-10-02T02:47:05.928Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-02T02:47:06.170Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-10-02T02:47:06.170Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-02T02:47:06.184Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2025-10-02T02:47:06.861Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2025-10-02T02:47:06.862Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] ┌──────────────────────┬──────────────────────────┬────────────────┬──────────────────────┐
+│ Project Display Name │ Project ID               │ Project Number │ Resource Location ID │
+├──────────────────────┼──────────────────────────┼────────────────┼──────────────────────┤
+│ aiservice            │ aiservice-3693c          │ 932474635621   │ [Not specified]      │
+├──────────────────────┼──────────────────────────┼────────────────┼──────────────────────┤
+│ PhilipandSophy       │ philipandsophy (current) │ 518153642299   │ [Not specified]      │
+├──────────────────────┼──────────────────────────┼────────────────┼──────────────────────┤
+│ soom                 │ soom-3a48c               │ 154513626067   │ [Not specified]      │
+└──────────────────────┴──────────────────────────┴────────────────┴──────────────────────┘
+[info] 
+[info] 3 project(s) total.
+[debug] [2025-10-02T02:49:55.523Z] ----------------------------------------------------------------------
+[debug] [2025-10-02T02:49:55.524Z] Command:       /usr/local/bin/node /Users/jclee/.npm-global/bin/firebase firestore:indexes
+[debug] [2025-10-02T02:49:55.525Z] CLI Version:   14.17.0
+[debug] [2025-10-02T02:49:55.525Z] Platform:      darwin
+[debug] [2025-10-02T02:49:55.525Z] Node Version:  v24.1.0
+[debug] [2025-10-02T02:49:55.525Z] Time:          Thu Oct 02 2025 11:49:55 GMT+0900 (Korean Standard Time)
+[debug] [2025-10-02T02:49:55.525Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-10-02T02:49:55.602Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-02T02:49:55.603Z] > authorizing via signed-in user (jclee.underpin@gmail.com)
+[debug] [2025-10-02T02:49:55.603Z] [iam] checking project philipandsophy for permissions ["datastore.indexes.list","firebase.projects.get"]
+[debug] [2025-10-02T02:49:55.603Z] Checked if tokens are valid: true, expires at: 1759376825171
+[debug] [2025-10-02T02:49:55.603Z] Checked if tokens are valid: true, expires at: 1759376825171
+[debug] [2025-10-02T02:49:55.603Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions [none]
+[debug] [2025-10-02T02:49:55.603Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions x-goog-quota-user=projects/philipandsophy
+[debug] [2025-10-02T02:49:55.603Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions {"permissions":["datastore.indexes.list","firebase.projects.get"]}
+[debug] [2025-10-02T02:49:55.906Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions 200
+[debug] [2025-10-02T02:49:55.906Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions {"permissions":["datastore.indexes.list","firebase.projects.get"]}
+[debug] [2025-10-02T02:49:55.907Z] Checked if tokens are valid: true, expires at: 1759376825171
+[debug] [2025-10-02T02:49:55.908Z] Checked if tokens are valid: true, expires at: 1759376825171
+[debug] [2025-10-02T02:49:55.908Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/indexes [none]
+[debug] [2025-10-02T02:49:56.046Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/indexes 200
+[debug] [2025-10-02T02:49:56.046Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/indexes {"indexes":[{"name":"projects/philipandsophy/databases/(default)/collectionGroups/messages/indexes/CICAgJim14AK","queryScope":"COLLECTION","fields":[{"fieldPath":"conversationId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/philipandsophy/databases/(default)/collectionGroups/notices/indexes/CICAgOjXh4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"cohortId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/philipandsophy/databases/(default)/collectionGroups/messages/indexes/CICAgJjF9oIK","queryScope":"COLLECTION","fields":[{"fieldPath":"conversationId","order":"ASCENDING"},{"fieldPath":"receiverId","order":"ASCENDING"},{"fieldPath":"isRead","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/philipandsophy/databases/(default)/collectionGroups/participants/indexes/CICAgJiUpoMK","queryScope":"COLLECTION","fields":[{"fieldPath":"cohortId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"}]}
+[debug] [2025-10-02T02:49:56.046Z] Checked if tokens are valid: true, expires at: 1759376825171
+[debug] [2025-10-02T02:49:56.046Z] Checked if tokens are valid: true, expires at: 1759376825171
+[debug] [2025-10-02T02:49:56.046Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* [none]
+[debug] [2025-10-02T02:49:56.120Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* 200
+[debug] [2025-10-02T02:49:56.120Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* {"fields":[{"name":"projects/philipandsophy/databases/(default)/collectionGroups/__default__/fields/*","indexConfig":{"indexes":[{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"ASCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"DESCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","arrayConfig":"CONTAINS"}],"state":"READY"}]}}]}
+[info] {
+  "indexes": [
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "conversationId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "conversationId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receiverId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isRead",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "notices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cohortId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "participants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cohortId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    }
+  ],
+  "fieldOverrides": []
+}
+[debug] [2025-10-02T04:22:58.779Z] ----------------------------------------------------------------------
+[debug] [2025-10-02T04:22:58.780Z] Command:       /usr/local/bin/node /Users/jclee/.npm-global/bin/firebase deploy --only firestore:indexes
+[debug] [2025-10-02T04:22:58.780Z] CLI Version:   14.17.0
+[debug] [2025-10-02T04:22:58.780Z] Platform:      darwin
+[debug] [2025-10-02T04:22:58.780Z] Node Version:  v24.1.0
+[debug] [2025-10-02T04:22:58.781Z] Time:          Thu Oct 02 2025 13:22:58 GMT+0900 (Korean Standard Time)
+[debug] [2025-10-02T04:22:58.781Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-10-02T04:22:58.855Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-02T04:22:58.855Z] > authorizing via signed-in user (jclee.underpin@gmail.com)
+[debug] [2025-10-02T04:22:58.855Z] [iam] checking project philipandsophy for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2025-10-02T04:22:58.856Z] Checked if tokens are valid: false, expires at: 1759376825171
+[debug] [2025-10-02T04:22:58.856Z] Checked if tokens are valid: false, expires at: 1759376825171
+[debug] [2025-10-02T04:22:58.856Z] > refreshing access token with scopes: []
+[debug] [2025-10-02T04:22:58.857Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-10-02T04:22:58.857Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-02T04:22:59.112Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-10-02T04:22:59.112Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-02T04:22:59.124Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions [none]
+[debug] [2025-10-02T04:22:59.124Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions x-goog-quota-user=projects/philipandsophy
+[debug] [2025-10-02T04:22:59.124Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2025-10-02T04:22:59.363Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions 200
+[debug] [2025-10-02T04:22:59.364Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/philipandsophy:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'philipandsophy'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: reading indexes from firestore.indexes.json... 
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2025-10-02T04:22:59.368Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:22:59.369Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:22:59.369Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy:test [none]
+[debug] [2025-10-02T04:22:59.369Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy:test [omitted]
+[debug] [2025-10-02T04:23:00.605Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy:test 200
+[debug] [2025-10-02T04:23:00.605Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/philipandsophy:test {"issues":[{"sourcePosition":{"fileName":"firestore.rules","line":14,"column":14,"currentOffset":403,"endOffset":409},"description":"Invalid variable name: request.","severity":"WARNING"},{"sourcePosition":{"fileName":"firestore.rules","line":17,"column":14,"currentOffset":445,"endOffset":451},"description":"Unused function: isAdmin.","severity":"WARNING"},{"sourcePosition":{"fileName":"firestore.rules","line":19,"column":14,"currentOffset":500,"endOffset":505},"description":"Invalid function name: exists.","severity":"WARNING"},{"sourcePosition":{"fileName":"firestore.rules","line":19,"column":69,"currentOffset":555,"endOffset":561},"description":"Invalid variable name: request.","severity":"WARNING"},{"sourcePosition":{"fileName":"firestore.rules","line":20,"column":14,"currentOffset":590,"endOffset":592},"description":"Invalid function name: get.","severity":"WARNING"},{"sourcePosition":{"fileName":"firestore.rules","line":20,"column":66,"currentOffset":642,"endOffset":648},"description":"Invalid variable name: request.","severity":"WARNING"}]}
+[warn] ⚠  [W] 14:14 - Invalid variable name: request. 
+[warn] ⚠  [W] 17:14 - Unused function: isAdmin. 
+[warn] ⚠  [W] 19:14 - Invalid function name: exists. 
+[warn] ⚠  [W] 19:69 - Invalid variable name: request. 
+[warn] ⚠  [W] 20:14 - Invalid function name: get. 
+[warn] ⚠  [W] 20:66 - Invalid variable name: request. 
+[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2025-10-02T04:23:00.607Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.607Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.608Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default) [none]
+[debug] [2025-10-02T04:23:00.773Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default) 200
+[debug] [2025-10-02T04:23:00.774Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default) {"name":"projects/philipandsophy/databases/(default)","uid":"8079cabd-dcc2-46be-8db9-7a0152a782e8","createTime":"2025-10-01T07:47:03.727809Z","updateTime":"2025-10-01T07:47:03.727809Z","locationId":"asia-northeast3","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2025-10-02T03:23:00.855336Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"v","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_ENABLED","etag":"IJa3t7nVhJADMMP+reTCgpAD"}
+[info] i  firestore: deploying indexes... 
+[debug] [2025-10-02T04:23:00.775Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.775Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.775Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/indexes [none]
+[debug] [2025-10-02T04:23:00.850Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/indexes 200
+[debug] [2025-10-02T04:23:00.850Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/indexes {"indexes":[{"name":"projects/philipandsophy/databases/(default)/collectionGroups/messages/indexes/CICAgJim14AK","queryScope":"COLLECTION","fields":[{"fieldPath":"conversationId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/philipandsophy/databases/(default)/collectionGroups/notices/indexes/CICAgOjXh4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"cohortId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/philipandsophy/databases/(default)/collectionGroups/messages/indexes/CICAgJjF9oIK","queryScope":"COLLECTION","fields":[{"fieldPath":"conversationId","order":"ASCENDING"},{"fieldPath":"receiverId","order":"ASCENDING"},{"fieldPath":"isRead","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/philipandsophy/databases/(default)/collectionGroups/participants/indexes/CICAgJiUpoMK","queryScope":"COLLECTION","fields":[{"fieldPath":"cohortId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"}]}
+[debug] [2025-10-02T04:23:00.851Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.851Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.851Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* [none]
+[debug] [2025-10-02T04:23:00.885Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* 200
+[debug] [2025-10-02T04:23:00.885Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* {"fields":[{"name":"projects/philipandsophy/databases/(default)/collectionGroups/__default__/fields/*","indexConfig":{"indexes":[{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"ASCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"DESCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","arrayConfig":"CONTAINS"}],"state":"READY"}]}}]}
+[debug] [2025-10-02T04:23:00.885Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.885Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.886Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default) [none]
+[debug] [2025-10-02T04:23:00.922Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default) 200
+[debug] [2025-10-02T04:23:00.922Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default) {"name":"projects/philipandsophy/databases/(default)","uid":"8079cabd-dcc2-46be-8db9-7a0152a782e8","createTime":"2025-10-01T07:47:03.727809Z","updateTime":"2025-10-01T07:47:03.727809Z","locationId":"asia-northeast3","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2025-10-02T03:23:01.004530Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"v","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_ENABLED","etag":"INbFwLnVhJADMMP+reTCgpAD"}
+[debug] [2025-10-02T04:23:00.923Z] Skipping existing index: {"collectionGroup":"notices","queryScope":"COLLECTION","fields":[{"fieldPath":"cohortId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"}]}
+[debug] [2025-10-02T04:23:00.923Z] Skipping existing index: {"collectionGroup":"participants","queryScope":"COLLECTION","fields":[{"fieldPath":"cohortId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"}]}
+[debug] [2025-10-02T04:23:00.923Z] Skipping existing index: {"collectionGroup":"messages","queryScope":"COLLECTION","fields":[{"fieldPath":"conversationId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"ASCENDING"}]}
+[debug] [2025-10-02T04:23:00.923Z] Skipping existing index: {"collectionGroup":"messages","queryScope":"COLLECTION","fields":[{"fieldPath":"conversationId","order":"ASCENDING"},{"fieldPath":"receiverId","order":"ASCENDING"},{"fieldPath":"isRead","order":"ASCENDING"}]}
+[debug] [2025-10-02T04:23:00.923Z] Creating new index: {"collectionGroup":"reading_submissions","queryScope":"COLLECTION","fields":[{"fieldPath":"submissionDate","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"}]}
+[debug] [2025-10-02T04:23:00.923Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.923Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:00.923Z] >>> [apiv2][query] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes [none]
+[debug] [2025-10-02T04:23:00.924Z] >>> [apiv2][body] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes {"fields":[{"fieldPath":"submissionDate","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"}],"queryScope":"COLLECTION"}
+[debug] [2025-10-02T04:23:01.017Z] <<< [apiv2][status] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes 200
+[debug] [2025-10-02T04:23:01.018Z] <<< [apiv2][body] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes {"name":"projects/philipandsophy/databases/(default)/operations/Sk1vcFVpSmdBQ0lDDCoDIGE5NGQxOWViZjE2Zi03YTk5LTc5OTQtMWU4Mi1kMGY0Mzc2MiQac2VuaWxlcGlwCQpBEg","metadata":{"@type":"type.googleapis.com/google.firestore.admin.v1.IndexOperationMetadata","startTime":"2025-10-02T04:23:01.079657Z","index":"projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes/CICAgJiUpoMJ","state":"INITIALIZING"}}
+[debug] [2025-10-02T04:23:01.018Z] Creating new index: {"collectionGroup":"reading_submissions","queryScope":"COLLECTION","fields":[{"fieldPath":"participantId","order":"ASCENDING"},{"fieldPath":"submittedAt","order":"DESCENDING"}]}
+[debug] [2025-10-02T04:23:01.018Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:01.018Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:01.018Z] >>> [apiv2][query] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes [none]
+[debug] [2025-10-02T04:23:01.018Z] >>> [apiv2][body] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes {"fields":[{"fieldPath":"participantId","order":"ASCENDING"},{"fieldPath":"submittedAt","order":"DESCENDING"}],"queryScope":"COLLECTION"}
+[debug] [2025-10-02T04:23:01.097Z] <<< [apiv2][status] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes 200
+[debug] [2025-10-02T04:23:01.097Z] <<< [apiv2][body] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes {"name":"projects/philipandsophy/databases/(default)/operations/SklvOUZqSmdBQ0lDDCoDIGU2NzkyOThjMzNmOS03ZjM4LTllYTQtYzc1NC0zM2Y0ZDllNyQac2VuaWxlcGlwCQpBEg","metadata":{"@type":"type.googleapis.com/google.firestore.admin.v1.IndexOperationMetadata","startTime":"2025-10-02T04:23:01.168989Z","index":"projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes/CICAgJjF9oIJ","state":"INITIALIZING"}}
+[debug] [2025-10-02T04:23:01.098Z] Creating new index: {"collectionGroup":"reading_submissions","queryScope":"COLLECTION","fields":[{"fieldPath":"participationCode","order":"ASCENDING"},{"fieldPath":"submittedAt","order":"DESCENDING"}]}
+[debug] [2025-10-02T04:23:01.098Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:01.098Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:01.098Z] >>> [apiv2][query] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes [none]
+[debug] [2025-10-02T04:23:01.098Z] >>> [apiv2][body] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes {"fields":[{"fieldPath":"participationCode","order":"ASCENDING"},{"fieldPath":"submittedAt","order":"DESCENDING"}],"queryScope":"COLLECTION"}
+[debug] [2025-10-02T04:23:01.168Z] <<< [apiv2][status] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes 200
+[debug] [2025-10-02T04:23:01.168Z] <<< [apiv2][body] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes {"name":"projects/philipandsophy/databases/(default)/operations/S0U0ejdqSmdBQ0lDDCoDIGYyM2QyMGVjN2U2ZS1hZmZiLTJmYjQtOTRjNi0xMWQxYWQ2MyQac2VuaWxlcGlwCQpBEg","metadata":{"@type":"type.googleapis.com/google.firestore.admin.v1.IndexOperationMetadata","startTime":"2025-10-02T04:23:01.237292Z","index":"projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes/CICAgJj7z4EK","state":"INITIALIZING"}}
+[debug] [2025-10-02T04:23:01.168Z] Creating new index: {"collectionGroup":"reading_submissions","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"submittedAt","order":"DESCENDING"}]}
+[debug] [2025-10-02T04:23:01.168Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:01.169Z] Checked if tokens are valid: true, expires at: 1759382578112
+[debug] [2025-10-02T04:23:01.169Z] >>> [apiv2][query] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes [none]
+[debug] [2025-10-02T04:23:01.169Z] >>> [apiv2][body] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes {"fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"submittedAt","order":"DESCENDING"}],"queryScope":"COLLECTION"}
+[debug] [2025-10-02T04:23:01.246Z] <<< [apiv2][status] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes 200
+[debug] [2025-10-02T04:23:01.247Z] <<< [apiv2][body] POST https://firestore.googleapis.com/v1/projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes {"name":"projects/philipandsophy/databases/(default)/operations/S01vNzRpTmdBQ0lDDCoDIGQ3OGExOTU2M2QyNy1jOTA5LTg3OTQtOGIyNC03YzkzMzcyZSQac2VuaWxlcGlwCQpBEg","metadata":{"@type":"type.googleapis.com/google.firestore.admin.v1.IndexOperationMetadata","startTime":"2025-10-02T04:23:01.318034Z","index":"projects/philipandsophy/databases/(default)/collectionGroups/reading_submissions/indexes/CICAgNi47oMK","state":"INITIALIZING"}}
+[info] ✔  firestore: deployed indexes in firestore.indexes.json successfully for (default) database 
+[info] 
+[info] ✔  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/philipandsophy/overview

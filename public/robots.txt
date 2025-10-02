@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://www.philipandsophy.kr/sitemap.xml
+
+# Block crawling of large image files to save bandwidth
+Disallow: /image/PnS_2.svg
+Disallow: /image/PnS_3.svg
+
+# Allow crawling of optimized images
+Allow: /image/
+Allow: /*.png
+Allow: /*.webp
+Allow: /*.jpg
+Allow: /*.svg
