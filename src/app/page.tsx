@@ -153,7 +153,7 @@ export default function LandingPage() {
                     <span>문의하기</span>
                   </a>
                   <a
-                    href="https://www.instagram.com/philip.and.sophy/"
+                    href="https://www.instagram.com/philip_and_sophy/"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="인스타그램 팔로우하기"
