@@ -21,7 +21,7 @@ import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipant, useParticipantsByCohort } from '@/hooks/use-participants';
 import { format, isToday, isYesterday } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Paperclip, X } from 'lucide-react';
+import { Paperclip, X, BookOpen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState, useMemo } from 'react';
@@ -325,26 +325,40 @@ function ChatPageContent() {
         })}
       </main>
 
-      {/* 하단 고정 CTA 버튼 */}
-      <div className="sticky bottom-0 pb-safe bg-gradient-to-t from-background via-background/95 to-transparent pt-6">
-        <div className="container mx-auto max-w-3xl px-4 pb-12 flex justify-center">
-          <button
-            onClick={() => setSubmissionDialogOpen(true)}
-            className="cta-button"
-          >
-            <span className="cta-text">독서 인증하기</span>
-            <div className="cta-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      {/* 하단 네비게이션 바 */}
+      <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur-sm pb-safe">
+        <div className="container mx-auto max-w-3xl px-4 py-3">
+          <div className="grid grid-cols-2 gap-3">
+            {/* 독서 인증하기 버튼 */}
+            <button
+              onClick={() => setSubmissionDialogOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-95"
+            >
+              <BookOpen className="h-5 w-5" />
+              <span>독서 인증</span>
+            </button>
+
+            {/* 오늘의 서재 버튼 */}
+            <button
+              onClick={() => router.push(`/chat/today-library?cohort=${cohortId}&userId=${currentUserId}`)}
+              className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-background px-4 py-3.5 font-semibold text-primary shadow-sm transition-all hover:bg-primary/5 active:scale-95"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <path
-                  d="M9 18L15 12L9 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                 />
               </svg>
-            </div>
-          </button>
+              <span>오늘의 서재</span>
+            </button>
+          </div>
         </div>
       </div>
 
