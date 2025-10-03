@@ -105,7 +105,7 @@ export default function LandingPage() {
 
         <img src="/image/PnS_3.webp?v=1.3" alt="필립앤소피 서비스 특징" className="main-image" />
 
-        <img src="/image/PnS_4_nofooter.webp?v=2.2" alt="필립앤소피 가입 안내" className="main-image" />
+        <img src="/image/PnS_4_nofooter.webp?v=3.0" alt="필립앤소피 가입 안내" className="main-image" />
 
         <div className="cta-section">
           <a
