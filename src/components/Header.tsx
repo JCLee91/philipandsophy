@@ -31,7 +31,7 @@ export default function Header({
             <button
               type="button"
               onClick={onWriteClick}
-              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
               aria-label="공지 작성"
             >
               <PenSquare className="h-5 w-5" />
@@ -40,7 +40,7 @@ export default function Header({
             <button
               type="button"
               onClick={onMessageAdminClick}
-              className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
+              className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
               aria-label="운영자에게 메시지"
             >
               <Mail className="h-5 w-5" />
@@ -54,7 +54,7 @@ export default function Header({
           <button
             type="button"
             onClick={onParticipantsClick}
-            className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
+            className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
             aria-label="참가자 목록"
           >
             <Users className="h-5 w-5" />

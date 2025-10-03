@@ -5,11 +5,13 @@ import Header from '@/components/Header';
 import ParticipantsList from '@/components/ParticipantsList';
 import DirectMessageDialog from '@/components/DirectMessageDialog';
 import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
+import ProfileImageDialog from '@/components/ProfileImageDialog';
 import NoticeItem from '@/components/NoticeItem';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import NoticeWriteDialog from '@/components/NoticeWriteDialog';
 import NoticeEditDialog from '@/components/NoticeEditDialog';
 import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
+import PageTransition from '@/components/PageTransition';
 import { Notice, Participant } from '@/types/database';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipant, useParticipantsByCohort } from '@/hooks/use-participants';
@@ -38,6 +40,7 @@ function ChatPageContent() {
   const [dmTarget, setDmTarget] = useState<Participant | null>(null);
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   const [collapsedNotices, setCollapsedNotices] = useState<Set<string>>(new Set());
+  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
 
   // Firebase hooks for data fetching
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
@@ -187,8 +190,9 @@ function ChatPageContent() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col max-h-screen overflow-hidden">
-      <Header
+    <PageTransition>
+      <div className="flex min-h-screen flex-col max-h-screen overflow-hidden">
+        <Header
         onParticipantsClick={() => setParticipantsOpen(true)}
         onWriteClick={() => setWriteDialogOpen(true)}
         onMessageAdminClick={handleMessageAdmin}
@@ -202,6 +206,7 @@ function ChatPageContent() {
         onOpenChange={setParticipantsOpen}
         isAdmin={isAdmin}
         onDMClick={handleDMClick}
+        onProfileClick={setSelectedParticipant}
       />
       <DirectMessageDialog
         open={dmDialogOpen}
@@ -215,6 +220,11 @@ function ChatPageContent() {
         participantId={currentUserId || ''}
         participationCode={currentUserId || ''}
       />
+      <ProfileImageDialog
+        participant={selectedParticipant}
+        open={!!selectedParticipant}
+        onClose={() => setSelectedParticipant(null)}
+      />
       <main className="flex-1 overflow-y-auto bg-background pb-20 relative">
         {/* 고정 공지 영역 - sticky로 스크롤 시 상단 고정 */}
         {pinnedNotices.length > 0 && (
@@ -222,7 +232,7 @@ function ChatPageContent() {
             {pinnedNotices.map((notice) => (
               <div
                 key={notice.id}
-                className="group transition-colors bg-primary-light hover:bg-blue-100"
+                className="group transition-colors duration-normal bg-primary-light hover:bg-blue-100"
               >
                 <div className="container mx-auto max-w-3xl px-4 py-3">
                   <NoticeItem
@@ -260,7 +270,7 @@ function ChatPageContent() {
             {dateNotices.map((notice) => (
               <div
                 key={notice.id}
-                className="group transition-colors hover:bg-muted/50"
+                className="group transition-colors duration-normal hover:bg-muted/50"
               >
                 <div className="container mx-auto max-w-3xl px-4 py-3">
                   <NoticeItem
@@ -287,7 +297,7 @@ function ChatPageContent() {
             <button
               type="button"
               onClick={() => setSubmissionDialogOpen(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-95"
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-semibold text-primary-foreground shadow-sm transition-all duration-normal hover:bg-primary/90 active:scale-95"
             >
               <BookOpen className="h-5 w-5" />
               <span>독서 인증</span>
@@ -297,7 +307,7 @@ function ChatPageContent() {
             <button
               type="button"
               onClick={() => router.push(`/chat/today-library?cohort=${cohortId}&userId=${currentUserId}`)}
-              className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-background px-4 py-3.5 font-semibold text-primary shadow-sm transition-all hover:bg-primary/5 active:scale-95"
+              className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-background px-4 py-3.5 font-semibold text-primary shadow-sm transition-all duration-normal hover:bg-primary/5 active:scale-95"
             >
               <svg
                 className="h-5 w-5"
@@ -341,7 +351,8 @@ function ChatPageContent() {
         notice={deleteConfirm}
         onConfirm={handleDeleteNotice}
       />
-    </div>
+      </div>
+    </PageTransition>
   );
 }
 

@@ -14,7 +14,7 @@ export default function BackHeader({ onBack, title }: BackHeaderProps) {
         <button
           type="button"
           onClick={onBack}
-          className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors relative z-10"
+          className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors duration-normal relative z-10"
           aria-label="뒤로가기"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />

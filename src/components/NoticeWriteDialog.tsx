@@ -56,7 +56,7 @@ export default function NoticeWriteDialog({
 
           {/* 이미지 미리보기 */}
           {imagePreview && (
-            <div className="relative w-full max-w-sm h-48">
+            <div className="relative w-full max-w-sm h-48 animate-in fade-in-0 duration-fast">
               <Image
                 src={imagePreview}
                 alt="첨부 이미지"
@@ -65,7 +65,7 @@ export default function NoticeWriteDialog({
               />
               <button
                 onClick={resetImage}
-                className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast"
               >
                 <X className="h-4 w-4 text-white" />
               </button>
@@ -82,7 +82,7 @@ export default function NoticeWriteDialog({
                 onChange={handleImageSelect}
                 className="hidden"
               />
-              <div className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md hover:bg-muted transition-colors">
+              <div className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md hover:bg-muted transition-colors duration-normal">
                 <Paperclip className="h-4 w-4" />
                 <span>이미지 첨부</span>
               </div>

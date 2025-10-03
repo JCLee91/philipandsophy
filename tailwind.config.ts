@@ -54,6 +54,15 @@ const config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      transitionDuration: {
+        'fast': 'var(--duration-fast)',
+        'normal': 'var(--duration-normal)',
+        'slow': 'var(--duration-slow)',
+      },
+      transitionTimingFunction: {
+        'smooth': 'var(--ease-smooth)',
+        'out': 'var(--ease-out)',
+      },
       keyframes: {
         'accordion-down': {
           from: { height: '0' },

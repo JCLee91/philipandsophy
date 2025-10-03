@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import LoadingSpinner from '@/components/LoadingSpinner';
 import LockedScreen from '@/components/LockedScreen';
 import BackHeader from '@/components/BackHeader';
+import PageTransition from '@/components/PageTransition';
 import { useParticipant } from '@/hooks/use-participants';
 import { useApprovedSubmissionsByParticipant } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
@@ -117,8 +118,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   }, {} as Record<string, string>);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <BackHeader onBack={() => router.back()} title="프로필 북" />
+    <PageTransition>
+      <div className="flex min-h-screen flex-col bg-background">
+        <BackHeader onBack={() => router.back()} title="프로필 북" />
 
       <main className="flex-1 pb-12">
         <div className="container mx-auto max-w-2xl px-4">
@@ -161,9 +163,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                       key={index}
                       onClick={() => day.hasSubmission && day.submission && setSelectedSubmission(day.submission)}
                       disabled={!day.hasSubmission}
-                      className={`group relative aspect-square rounded-xl border-2 bg-card transition-all flex flex-col items-center justify-center gap-0.5 ${
+                      className={`group relative aspect-square rounded-xl border-2 bg-card transition-all duration-normal flex flex-col items-center justify-center gap-0.5 ${
                         day.hasSubmission
-                          ? 'border-muted hover:border-primary/50 hover:scale-105 active:scale-95 cursor-pointer'
+                          ? 'border-muted hover:border-primary/50 hover:scale-[1.02] active:scale-95 cursor-pointer'
                           : 'border-muted cursor-not-allowed'
                       }`}
                     >
@@ -215,7 +217,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                           {hasMultipleLines && (
                             <button
                               onClick={() => toggleQuestion(question)}
-                              className="flex items-center justify-center w-full text-primary hover:text-primary/80 transition-colors"
+                              className="flex items-center justify-center w-full text-primary hover:text-primary/80 transition-colors duration-normal"
                             >
                               {isExpanded ? (
                                 <ChevronUp className="h-4 w-4" />
@@ -236,23 +238,26 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
       </main>
 
       {/* 인증 상세 모달 */}
-      <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-        <DialogContent className="sm:max-w-md" hideCloseButton>
-          <DialogHeader>
-            <DialogTitle className="text-base">
-              {selectedSubmission && formatShortDate(selectedSubmission.submittedAt)} 독서 기록
-            </DialogTitle>
-          </DialogHeader>
-          {selectedSubmission && (
+      {selectedSubmission && (
+        <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
+          <DialogContent className="sm:max-w-md" hideCloseButton>
+            <DialogHeader>
+              <DialogTitle className="text-base">
+                {formatShortDate(selectedSubmission.submittedAt)} 독서 기록
+              </DialogTitle>
+            </DialogHeader>
             <div className="space-y-4">
               {/* 책 이미지 */}
               {selectedSubmission.bookImageUrl && (
-                <div className="relative aspect-video overflow-hidden rounded-xl border">
+                <div className="relative aspect-video overflow-hidden rounded-xl border bg-muted">
                   <Image
                     src={selectedSubmission.bookImageUrl}
                     alt="책 사진"
                     fill
+                    sizes="(max-width: 768px) 100vw, 448px"
                     className="object-cover"
+                    priority={false}
+                    unoptimized={false}
                   />
                 </div>
               )}
@@ -266,10 +271,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                 </p>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      </div>
+    </PageTransition>
   );
 }
 

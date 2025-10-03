@@ -36,6 +36,13 @@
     --destructive-foreground: 0 0% 100%;
 
     --radius: 0.5rem;
+
+    /* Animation Tokens */
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
+    --ease-smooth: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -118,6 +125,28 @@
   input[type='submit'],
   input[type='reset'] {
     cursor: pointer !important;
+  }
+
+  /* 표준 애니메이션 duration - 기본값 덮어쓰기 */
+  .duration-fast {
+    transition-duration: var(--duration-fast);
+  }
+
+  .duration-normal {
+    transition-duration: var(--duration-normal);
+  }
+
+  .duration-slow {
+    transition-duration: var(--duration-slow);
+  }
+
+  /* 표준 easing 함수 */
+  .ease-smooth {
+    transition-timing-function: var(--ease-smooth);
+  }
+
+  .ease-out {
+    transition-timing-function: var(--ease-out);
   }
 }
 

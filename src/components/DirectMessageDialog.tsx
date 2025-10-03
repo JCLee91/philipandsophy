@@ -61,20 +61,39 @@ export default function DirectMessageDialog({
     setIsUserScrolling(!isAtBottom);
   }, []);
 
-  // 채팅창이 열릴 때 맨 아래로 스크롤 + 읽음 처리
+  // 채팅창이 열릴 때 즉시 맨 아래로 스크롤 + 읽음 처리
   useEffect(() => {
-    if (open && messages.length > 0) {
-      scrollToBottomSmooth('auto');
-      if (conversationId) {
+    if (open) {
+      // 즉시 스크롤 (렌더링 전에도 실행되도록)
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+      });
+
+      if (conversationId && messages.length > 0) {
         markAsReadMutation.mutate({ conversationId, userId: currentUserId });
       }
+    } else {
+      // 닫힐 때 상태 초기화
+      setIsUserScrolling(false);
+      setShowNewMessageButton(false);
+      prevMessagesLengthRef.current = 0;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, conversationId]);
+  }, [open]);
+
+  // 메시지 로드 완료 시 초기 스크롤 (open 직후 메시지 로딩 대응)
+  useEffect(() => {
+    if (open && messages.length > 0 && prevMessagesLengthRef.current === 0) {
+      // 첫 로딩: 즉시 스크롤
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+      });
+    }
+  }, [open, messages.length]);
 
   // 새 메시지가 도착했을 때 처리
   useEffect(() => {
-    if (messages.length > prevMessagesLengthRef.current) {
+    if (messages.length > prevMessagesLengthRef.current && prevMessagesLengthRef.current > 0) {
       const lastMessage = messages[messages.length - 1];
       const isMyMessage = lastMessage?.senderId === currentUserId;
 
@@ -112,8 +131,10 @@ export default function DirectMessageDialog({
 
       setMessageContent('');
       resetImage();
-      // 메시지 전송 후 즉시 스크롤
-      setTimeout(() => scrollToBottomSmooth('auto'), 100);
+      // 메시지 전송 후 부드럽게 스크롤 (딜레이 최소화)
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      });
     } catch (error) {
       console.error('메시지 전송 실패:', error);
     } finally {
@@ -218,18 +239,18 @@ export default function DirectMessageDialog({
           )}
           <div ref={messagesEndRef} />
 
-          {/* 새 메시지 보기 버튼 */}
+          {/* 새 메시지 보기 버튼 - 애니메이션 개선 */}
           {showNewMessageButton && (
-            <div className="sticky bottom-2 flex justify-center pointer-events-none">
+            <div className="sticky bottom-2 flex justify-center pointer-events-none animate-in fade-in-0 slide-in-from-bottom-4 duration-normal">
               <button
                 onClick={() => {
-                  scrollToBottomSmooth();
+                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                   setShowNewMessageButton(false);
                 }}
-                className="pointer-events-auto flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+                className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-normal active:scale-95"
               >
-                <ArrowDown className="h-4 w-4" />
-                <span className="text-sm font-medium">새 메시지</span>
+                <ArrowDown className="h-4 w-4 animate-bounce" />
+                <span className="text-sm font-semibold">새 메시지</span>
               </button>
             </div>
           )}
@@ -239,7 +260,7 @@ export default function DirectMessageDialog({
         <div className="border-t p-4">
           {/* 이미지 미리보기 */}
           {imagePreview && (
-            <div className="mb-3 relative inline-block w-32 h-32">
+            <div className="mb-3 relative inline-block w-32 h-32 animate-in fade-in-0 duration-fast">
               <Image
                 src={imagePreview}
                 alt="첨부 이미지"
@@ -249,7 +270,7 @@ export default function DirectMessageDialog({
               />
               <button
                 onClick={resetImage}
-                className="absolute -top-2 -right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+                className="absolute -top-2 -right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast"
               >
                 <X className="h-4 w-4 text-white" />
               </button>

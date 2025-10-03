@@ -64,7 +64,7 @@ export default function NoticeItem({
             {showCollapseButton && (
               <button
                 onClick={() => onToggleCollapse!(notice.id)}
-                className="p-0.5 hover:bg-muted rounded transition-colors"
+                className="p-0.5 hover:bg-muted rounded transition-colors duration-normal"
                 title={isCollapsed ? '펼치기' : '접기'}
               >
                 {isCollapsed ? (
@@ -77,7 +77,7 @@ export default function NoticeItem({
             {isAdmin && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-muted rounded">
+                  <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-normal p-0.5 hover:bg-muted rounded">
                     <MoreVertical className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>

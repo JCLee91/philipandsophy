@@ -2,11 +2,6 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -21,8 +16,6 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getInitials } from '@/lib/utils';
 import { User, MessageSquare, Check } from 'lucide-react';
-import Image from 'next/image';
-import { useState } from 'react';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
@@ -36,6 +29,7 @@ interface ParticipantsListProps {
   onOpenChange: (open: boolean) => void;
   isAdmin?: boolean;
   onDMClick?: (participant: Participant) => void;
+  onProfileClick?: (participant: Participant) => void;
 }
 
 function ParticipantItem({
@@ -62,7 +56,7 @@ function ParticipantItem({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors">
+          <button className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
             <div className="relative">
               <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                 <AvatarImage
@@ -113,7 +107,7 @@ function ParticipantItem({
     <button
       type="button"
       onClick={() => onProfileClick(participant)}
-      className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors"
+      className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal"
     >
       <div className="relative">
         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
@@ -148,14 +142,9 @@ export default function ParticipantsList({
   onOpenChange,
   isAdmin = false,
   onDMClick,
+  onProfileClick,
 }: ParticipantsListProps) {
-  const [selectedParticipant, setSelectedParticipant] =
-    useState<Participant | null>(null);
   const { data: verifiedIds } = useVerifiedToday();
-
-  const handleParticipantClick = (participant: Participant) => {
-    setSelectedParticipant(participant);
-  };
 
   // 본인을 맨 위로 정렬
   const sortedParticipants = [...participants].sort((a, b) => {
@@ -165,8 +154,7 @@ export default function ParticipantsList({
   });
 
   return (
-    <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-80 p-0">
           <SheetHeader className="border-b px-6 py-4">
             <SheetTitle>참가자 목록 ({participants.length})</SheetTitle>
@@ -184,8 +172,8 @@ export default function ParticipantsList({
                     <button
                       key={participant.id}
                       type="button"
-                      onClick={() => handleParticipantClick(participant)}
-                      className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors"
+                      onClick={() => onProfileClick?.(participant)}
+                      className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal"
                     >
                       <div className="relative">
                         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
@@ -224,7 +212,7 @@ export default function ParticipantsList({
                     currentUserId={currentUserId}
                     isAdmin={isAdmin}
                     onDMClick={onDMClick}
-                    onProfileClick={handleParticipantClick}
+                    onProfileClick={(p) => onProfileClick?.(p)}
                   />
                 );
               })}
@@ -232,42 +220,5 @@ export default function ParticipantsList({
           </ScrollArea>
         </SheetContent>
       </Sheet>
-
-      {/* 간단 프로필 모달 */}
-      <Dialog
-        open={!!selectedParticipant}
-        onOpenChange={(open) => !open && setSelectedParticipant(null)}
-      >
-        <DialogContent
-          className="sm:max-w-lg p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)]"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          aria-describedby="profile-description"
-        >
-          <DialogTitle className="sr-only">
-            {selectedParticipant?.name} 프로필
-          </DialogTitle>
-          <p id="profile-description" className="sr-only">
-            {selectedParticipant?.name}님의 프로필 이미지
-          </p>
-          {selectedParticipant?.profileImage ? (
-            <div className="relative w-full overflow-hidden bg-muted/20">
-              <Image
-                src={selectedParticipant.profileImage}
-                alt={selectedParticipant.name}
-                width={0}
-                height={0}
-                sizes="100vw"
-                priority
-                className="w-full h-auto max-h-[80vh] object-contain"
-              />
-            </div>
-          ) : (
-            <div className="p-8 text-center">
-              <p className="text-muted-foreground">프로필 이미지가 없습니다</p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
   );
 }
