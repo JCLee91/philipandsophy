@@ -14,6 +14,7 @@ import { useState, useEffect, useRef, KeyboardEvent, useCallback } from 'react';
 import { scrollToBottom } from '@/lib/utils';
 import { uploadDMImage } from '@/lib/firebase/storage';
 import Image from 'next/image';
+import { useImageUpload } from '@/hooks/use-image-upload';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -29,8 +30,7 @@ export default function DirectMessageDialog({
   otherUser,
 }: DirectMessageDialogProps) {
   const [messageContent, setMessageContent] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const { imageFile, imagePreview, handleImageSelect, resetImage } = useImageUpload();
   const [uploading, setUploading] = useState(false);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
@@ -111,8 +111,7 @@ export default function DirectMessageDialog({
       });
 
       setMessageContent('');
-      setImageFile(null);
-      setImagePreview(null);
+      resetImage();
       // 메시지 전송 후 즉시 스크롤
       setTimeout(() => scrollToBottomSmooth('auto'), 100);
     } catch (error) {
@@ -122,22 +121,6 @@ export default function DirectMessageDialog({
     }
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-  };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -265,7 +248,7 @@ export default function DirectMessageDialog({
                 className="object-cover rounded border"
               />
               <button
-                onClick={handleRemoveImage}
+                onClick={resetImage}
                 className="absolute -top-2 -right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
               >
                 <X className="h-4 w-4 text-white" />

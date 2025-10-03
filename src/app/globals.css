@@ -106,6 +106,16 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system,
       BlinkMacSystemFont, system-ui, sans-serif !important;
   }
+
+  /* 모든 버튼과 인터랙티브 요소에 cursor pointer 적용 */
+  button,
+  a,
+  [role='button'],
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'] {
+    cursor: pointer;
+  }
 }
 
 /* 글래스모피즘 CTA 버튼 컴포넌트 */

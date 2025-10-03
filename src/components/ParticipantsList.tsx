@@ -19,6 +19,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getInitials } from '@/lib/utils';
 import { User, MessageSquare, Check } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -54,12 +55,7 @@ function ParticipantItem({
   const conversationId = getConversationId(currentUserId, participant.id);
   const { data: unreadCount = 0 } = useUnreadCount(conversationId, currentUserId);
 
-  const initials = participant.name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = getInitials(participant.name);
 
   // 운영자는 드롭다운 메뉴 사용 (DM 옵션 포함)
   if (isAdmin) {
@@ -182,12 +178,7 @@ export default function ParticipantsList({
                 
                 // 본인 프로필
                 if (isMe) {
-                  const initials = participant.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .toUpperCase()
-                    .slice(0, 2);
+                  const initials = getInitials(participant.name);
 
                   return (
                     <button

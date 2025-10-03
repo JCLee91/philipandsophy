@@ -6,29 +6,19 @@ import ParticipantsList from '@/components/ParticipantsList';
 import DirectMessageDialog from '@/components/DirectMessageDialog';
 import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import NoticeItem from '@/components/NoticeItem';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import NoticeWriteDialog from '@/components/NoticeWriteDialog';
+import NoticeEditDialog from '@/components/NoticeEditDialog';
+import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
 import { Notice, Participant } from '@/types/database';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipant, useParticipantsByCohort } from '@/hooks/use-participants';
-import { format, isToday, isYesterday } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { Paperclip, X, BookOpen } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
-import { scrollToBottom } from '@/lib/utils';
+import { scrollToBottom, formatDate, formatTime } from '@/lib/utils';
 import { APP_CONSTANTS } from '@/constants/app';
-import { Timestamp } from 'firebase/firestore';
 import { uploadNoticeImage } from '@/lib/firebase/storage';
 
 function ChatPageContent() {
@@ -40,8 +30,6 @@ function ChatPageContent() {
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [writeDialogOpen, setWriteDialogOpen] = useState(false);
   const [newNoticeContent, setNewNoticeContent] = useState('');
-  const [noticeImageFile, setNoticeImageFile] = useState<File | null>(null);
-  const [noticeImagePreview, setNoticeImagePreview] = useState<string | null>(null);
   const [uploadingNoticeImage, setUploadingNoticeImage] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
   const [editContent, setEditContent] = useState('');
@@ -79,11 +67,7 @@ function ChatPageContent() {
 
   // Show loading state
   if (cohortLoading || currentUserLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">로딩 중...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!cohortId || !currentUserId || !cohort || !currentUser) {
@@ -91,7 +75,7 @@ function ChatPageContent() {
     return null;
   }
 
-  const handleWriteNotice = async () => {
+  const handleWriteNotice = async (imageFile: File | null) => {
     if (!newNoticeContent.trim() || !cohortId) return;
 
     try {
@@ -99,8 +83,8 @@ function ChatPageContent() {
       let imageUrl: string | undefined;
 
       // 이미지가 있으면 업로드
-      if (noticeImageFile) {
-        imageUrl = await uploadNoticeImage(noticeImageFile, cohortId);
+      if (imageFile) {
+        imageUrl = await uploadNoticeImage(imageFile, cohortId);
       }
 
       await createNoticeMutation.mutateAsync({
@@ -111,8 +95,6 @@ function ChatPageContent() {
       });
 
       setNewNoticeContent('');
-      setNoticeImageFile(null);
-      setNoticeImagePreview(null);
       setWriteDialogOpen(false);
       scrollToBottom();
     } catch (error) {
@@ -122,22 +104,6 @@ function ChatPageContent() {
     }
   };
 
-  const handleNoticeImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setNoticeImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNoticeImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveNoticeImage = () => {
-    setNoticeImageFile(null);
-    setNoticeImagePreview(null);
-  };
 
   const handleEditNotice = (notice: Notice) => {
     setEditingNotice(notice);
@@ -190,18 +156,6 @@ function ChatPageContent() {
     });
   };
 
-
-  const formatDate = (timestamp: Timestamp) => {
-    const date = timestamp.toDate();
-    if (isToday(date)) return '오늘';
-    if (isYesterday(date)) return '어제';
-    return format(date, 'M월 d일', { locale: ko });
-  };
-
-  const formatTime = (timestamp: Timestamp) => {
-    const date = timestamp.toDate();
-    return format(date, 'a h:mm', { locale: ko });
-  };
 
   // 고정 공지와 일반 공지 분리
   const pinnedNotices = noticesData.filter((n) => n.isPinned);
@@ -364,130 +318,36 @@ function ChatPageContent() {
         </div>
       </div>
 
-      {/* 공지 작성 Dialog */}
-      <Dialog open={writeDialogOpen} onOpenChange={setWriteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>공지 작성</DialogTitle>
-            <DialogDescription>
-              참가자들에게 전달할 공지사항을 작성하세요.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Textarea
-              value={newNoticeContent}
-              onChange={(e) => setNewNoticeContent(e.target.value)}
-              className="min-h-[120px]"
-              placeholder="공지 내용을 입력하세요..."
-              autoFocus
-            />
-            
-            {/* 이미지 미리보기 */}
-            {noticeImagePreview && (
-              <div className="relative w-full max-w-sm h-48">
-                <Image
-                  src={noticeImagePreview}
-                  alt="첨부 이미지"
-                  fill
-                  className="object-contain rounded border"
-                />
-                <button
-                  onClick={handleRemoveNoticeImage}
-                  className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
-                >
-                  <X className="h-4 w-4 text-white" />
-                </button>
-              </div>
-            )}
-          </div>
+      <NoticeWriteDialog
+        open={writeDialogOpen}
+        onOpenChange={setWriteDialogOpen}
+        content={newNoticeContent}
+        onContentChange={setNewNoticeContent}
+        onSubmit={handleWriteNotice}
+        uploading={uploadingNoticeImage}
+      />
 
-          <DialogFooter className="gap-3">
-            <div className="flex items-center gap-3 flex-1">
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleNoticeImageSelect}
-                  className="hidden"
-                />
-                <div className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md hover:bg-muted transition-colors">
-                  <Paperclip className="h-4 w-4" />
-                  <span>이미지 첨부</span>
-                </div>
-              </label>
-            </div>
-            <Button variant="outline" onClick={() => {
-              setWriteDialogOpen(false);
-              setNoticeImageFile(null);
-              setNoticeImagePreview(null);
-            }}>
-              취소
-            </Button>
-            <Button 
-              onClick={handleWriteNotice} 
-              disabled={!newNoticeContent.trim() || uploadingNoticeImage}
-            >
-              {uploadingNoticeImage ? '업로드 중...' : '작성'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NoticeEditDialog
+        open={!!editingNotice}
+        onOpenChange={(open) => !open && setEditingNotice(null)}
+        content={editContent}
+        onContentChange={setEditContent}
+        onSave={handleSaveEdit}
+      />
 
-      {/* 수정 Dialog */}
-      <Dialog open={!!editingNotice} onOpenChange={(open) => !open && setEditingNotice(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>공지 수정</DialogTitle>
-            <DialogDescription>
-              공지 내용을 수정하세요.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
-            className="min-h-[120px]"
-            placeholder="공지 내용을 입력하세요..."
-          />
-          <DialogFooter className="gap-3">
-            <Button variant="outline" onClick={() => setEditingNotice(null)}>
-              취소
-            </Button>
-            <Button onClick={handleSaveEdit} disabled={!editContent.trim()}>
-              저장
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 삭제 확인 Dialog */}
-      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>공지 삭제</DialogTitle>
-            <DialogDescription>
-              정말로 이 공지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-3">
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              취소
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteConfirm && handleDeleteNotice(deleteConfirm)}
-            >
-              삭제
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NoticeDeleteDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        notice={deleteConfirm}
+        onConfirm={handleDeleteNotice}
+      />
     </div>
   );
 }
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">로딩 중...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <ChatPageContent />
     </Suspense>
   );

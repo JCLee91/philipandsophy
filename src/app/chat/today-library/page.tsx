@@ -3,11 +3,14 @@
 import { Suspense, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import BackHeader from '@/components/BackHeader';
+import { getInitials } from '@/lib/utils';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipant } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { format } from 'date-fns';
-import { ArrowLeft, Lock, BookOpen } from 'lucide-react';
+import { Lock, BookOpen } from 'lucide-react';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
@@ -50,11 +53,7 @@ function TodayLibraryContent() {
 
   // 로딩 상태
   if (cohortLoading || currentUserLoading || participantsLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">로딩 중...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // 데이터 확인
@@ -81,23 +80,7 @@ function TodayLibraryContent() {
   if (todayFeaturedIds.length === 0) {
     return (
       <div className="flex min-h-screen flex-col">
-        {/* 헤더 */}
-        <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-          <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors relative z-10"
-              aria-label="뒤로가기"
-            >
-              <ArrowLeft className="h-5 w-5 text-foreground" />
-            </button>
-            <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold pointer-events-none">
-              오늘의 서재
-            </h1>
-          </div>
-        </header>
-
+        <BackHeader onBack={() => router.back()} title="오늘의 서재" />
         <main className="flex flex-1 items-center justify-center px-4">
           <div className="text-center space-y-4 max-w-sm">
             <p className="text-muted-foreground">
@@ -111,22 +94,7 @@ function TodayLibraryContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* 헤더 */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-        <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors relative z-10"
-            aria-label="뒤로가기"
-          >
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold pointer-events-none">
-            오늘의 서재
-          </h1>
-        </div>
-      </header>
+      <BackHeader onBack={() => router.back()} title="오늘의 서재" />
 
       <main className="flex-1 py-8">
         <div className="container mx-auto max-w-2xl px-4">
@@ -144,12 +112,7 @@ function TodayLibraryContent() {
           {/* 2x2 그리드 */}
           <div className="grid grid-cols-2 gap-4">
             {featuredParticipants.map((participant) => {
-              const initials = participant.name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .toUpperCase()
-                .slice(0, 2);
+              const initials = getInitials(participant.name);
 
               // 미인증 유저에게는 프로필 가리기
               const isLocked = !isAdmin && !isVerifiedToday;
@@ -159,7 +122,7 @@ function TodayLibraryContent() {
                   key={participant.id}
                   type="button"
                   onClick={() => handleProfileClickWithAuth(participant.id)}
-                  className="group relative flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-6 transition-all hover:border-primary hover:shadow-lg active:scale-95"
+                  className="group relative flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-6 transition-all hover:border-primary hover:shadow-lg active:scale-95 cursor-pointer"
                 >
                   {isLocked ? (
                     // 잠금 상태 - 물음표 표시
@@ -204,7 +167,7 @@ function TodayLibraryContent() {
 
 export default function TodayLibraryPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">로딩 중...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <TodayLibraryContent />
     </Suspense>
   );
