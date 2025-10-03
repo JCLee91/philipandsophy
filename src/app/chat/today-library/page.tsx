@@ -67,51 +67,15 @@ function TodayLibraryContent() {
   const isVerifiedToday = verifiedIds?.has(currentUserId);
   const isAdmin = currentUser?.isAdmin === true;
 
-  // 운영자가 아니고 오늘 인증 안 했으면 잠금 화면
-  if (!isAdmin && !isVerifiedToday) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        {/* 헤더 */}
-        <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-          <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors relative z-10"
-              aria-label="뒤로가기"
-            >
-              <ArrowLeft className="h-5 w-5 text-foreground" />
-            </button>
-            <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold pointer-events-none">
-              오늘의 서재
-            </h1>
-          </div>
-        </header>
-
-        {/* 잠금 화면 */}
-        <main className="flex flex-1 items-center justify-center px-4">
-          <div className="text-center space-y-4 max-w-sm">
-            <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-              <Lock className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h2 className="text-xl font-bold">오늘의 서재가 잠겨있어요</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              다른 참가자의 프로필 북을 보려면<br />
-              오늘의 독서 인증을 완료해야 해요.
-            </p>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <BookOpen className="h-4 w-4" />
-              돌아가기
-            </button>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // 프로필북 클릭 핸들러 (인증 체크 포함)
+  const handleProfileClickWithAuth = (participantId: string) => {
+    if (!isAdmin && !isVerifiedToday) {
+      // 미인증 시 알림
+      alert('오늘의 독서 인증을 완료하면 프로필 북을 볼 수 있어요!');
+      return;
+    }
+    router.push(`/profile/${participantId}?cohort=${cohortId}&userId=${currentUserId}`);
+  };
 
   // 추천 참가자가 없을 때
   if (todayFeaturedIds.length === 0) {
@@ -145,18 +109,14 @@ function TodayLibraryContent() {
     );
   }
 
-  // 프로필북 클릭 핸들러
-  const handleProfileClick = (participantId: string) => {
-    router.push(`/profile/${participantId}?cohort=${cohortId}&userId=${currentUserId}`);
-  };
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* 헤더 */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
           <button
-            onClick={() => router.push(`/chat?cohort=${cohortId}&userId=${currentUserId}`)}
+            type="button"
+            onClick={() => router.back()}
             className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors relative z-10"
             aria-label="뒤로가기"
           >
@@ -170,10 +130,15 @@ function TodayLibraryContent() {
 
       <main className="flex-1 py-8">
         <div className="container mx-auto max-w-2xl px-4">
-          <div className="mb-6 text-center">
+          <div className="mb-6 text-center space-y-2">
             <p className="text-sm text-muted-foreground">
               오늘 함께 읽을 멤버들의 프로필 북이에요
             </p>
+            {!isAdmin && !isVerifiedToday && (
+              <p className="text-xs text-primary font-medium">
+                🔒 독서 인증을 완료하면 프로필을 확인할 수 있어요
+              </p>
+            )}
           </div>
 
           {/* 2x2 그리드 */}
@@ -186,31 +151,46 @@ function TodayLibraryContent() {
                 .toUpperCase()
                 .slice(0, 2);
 
+              // 미인증 유저에게는 프로필 가리기
+              const isLocked = !isAdmin && !isVerifiedToday;
+
               return (
                 <button
                   key={participant.id}
                   type="button"
-                  onClick={() => handleProfileClick(participant.id)}
+                  onClick={() => handleProfileClickWithAuth(participant.id)}
                   className="group relative flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-6 transition-all hover:border-primary hover:shadow-lg active:scale-95"
                 >
-                  <Avatar className="h-20 w-20 border-4 border-background shadow-lg ring-2 ring-border/50 group-hover:ring-primary/50 transition-all">
-                    <AvatarImage src={participant.profileImage} alt={participant.name} />
-                    <AvatarFallback className="bg-primary/10 text-xl font-semibold text-primary">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
+                  {isLocked ? (
+                    // 잠금 상태 - 물음표 표시
+                    <div className="h-20 w-20 border-4 border-background shadow-lg ring-2 ring-border/50 group-hover:ring-primary/50 transition-all rounded-full bg-muted flex items-center justify-center">
+                      <span className="text-4xl text-muted-foreground">?</span>
+                    </div>
+                  ) : (
+                    // 인증 완료 - 실제 프로필 표시
+                    <Avatar className="h-20 w-20 border-4 border-background shadow-lg ring-2 ring-border/50 group-hover:ring-primary/50 transition-all">
+                      <AvatarImage src={participant.profileImage} alt={participant.name} />
+                      <AvatarFallback className="bg-primary/10 text-xl font-semibold text-primary">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                   <div className="text-center space-y-1">
                     <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
-                      {participant.name}
+                      {isLocked ? '???' : participant.name}
                     </h3>
-                    {participant.occupation && (
+                    {!isLocked && participant.occupation && (
                       <p className="text-xs text-muted-foreground">
                         {participant.occupation}
                       </p>
                     )}
                   </div>
                   <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <BookOpen className="h-4 w-4 text-primary" />
+                    {isLocked ? (
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <BookOpen className="h-4 w-4 text-primary" />
+                    )}
                   </div>
                 </button>
               );

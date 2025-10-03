@@ -21,6 +21,3 @@ export const scrollToBottom = (selectorOrRef?: string | RefObject<HTMLElement>, 
     if (element) element.scrollTop = element.scrollHeight;
   }, delay);
 };
-
-export const sortByDate = <T extends { createdAt: string }>(items: T[]) =>
-  [...items].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
