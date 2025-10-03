@@ -122,7 +122,7 @@ function TodayLibraryContent() {
                   key={participant.id}
                   type="button"
                   onClick={() => handleProfileClickWithAuth(participant.id)}
-                  className="group relative flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-6 transition-all hover:border-primary hover:shadow-lg active:scale-95 cursor-pointer"
+                  className="group relative flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-6 transition-all hover:border-primary hover:shadow-lg active:scale-95"
                 >
                   {isLocked ? (
                     // 잠금 상태 - 물음표 표시
