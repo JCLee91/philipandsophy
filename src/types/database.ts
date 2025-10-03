@@ -13,6 +13,7 @@ export interface Cohort {
   startDate: string; // 시작일 (ISO 8601)
   endDate: string; // 종료일 (ISO 8601)
   isActive: boolean; // 활성화 여부
+  dailyFeaturedParticipants?: Record<string, string[]>; // 날짜별 추천 참가자 (예: { "2025-01-15": ["id1", "id2", "id3", "id4"] })
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
@@ -28,6 +29,8 @@ export interface Participant {
   profileImage?: string; // 프로필 이미지 URL
   profileBookUrl?: string; // 프로필북 URL
   isAdmin?: boolean; // 운영자 여부
+  occupation?: string; // 직업/하는 일
+  bio?: string; // 한 줄 소개 (2줄 이내)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }

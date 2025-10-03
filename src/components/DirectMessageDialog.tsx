@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Send, Paperclip, X } from 'lucide-react';
+import { Send, Paperclip, X, ArrowDown } from 'lucide-react';
 import { useState, useEffect, useRef, KeyboardEvent, useCallback } from 'react';
 import { scrollToBottom } from '@/lib/utils';
 import { uploadDMImage } from '@/lib/firebase/storage';
@@ -32,7 +32,11 @@ export default function DirectMessageDialog({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [showNewMessageButton, setShowNewMessageButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef(0);
 
   const conversationId = otherUser
     ? getConversationId(currentUserId, otherUser.id)
@@ -42,16 +46,48 @@ export default function DirectMessageDialog({
   const sendMessageMutation = useSendMessage();
   const markAsReadMutation = useMarkAsRead();
 
-  const markMessagesAsRead = useCallback(() => {
-    if (open && messages.length > 0 && conversationId) {
-      markAsReadMutation.mutate({ conversationId, userId: currentUserId });
-      scrollToBottom(messagesEndRef);
-    }
-  }, [open, messages.length, conversationId, currentUserId, markAsReadMutation]);
+  // 스크롤을 맨 아래로 이동하는 함수
+  const scrollToBottomSmooth = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
 
+  // 사용자가 스크롤 중인지 감지
+  const handleScroll = useCallback(() => {
+    if (!messageContainerRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = messageContainerRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50; // 50px 여유
+
+    setIsUserScrolling(!isAtBottom);
+  }, []);
+
+  // 채팅창이 열릴 때 맨 아래로 스크롤 + 읽음 처리
   useEffect(() => {
-    markMessagesAsRead();
-  }, [markMessagesAsRead]);
+    if (open && messages.length > 0) {
+      scrollToBottomSmooth('auto');
+      if (conversationId) {
+        markAsReadMutation.mutate({ conversationId, userId: currentUserId });
+      }
+    }
+  }, [open]);
+
+  // 새 메시지가 도착했을 때 처리
+  useEffect(() => {
+    if (messages.length > prevMessagesLengthRef.current) {
+      const lastMessage = messages[messages.length - 1];
+      const isMyMessage = lastMessage?.senderId === currentUserId;
+
+      // 내가 보낸 메시지이거나, 사용자가 스크롤 중이 아닐 때만 자동 스크롤
+      if (isMyMessage || !isUserScrolling) {
+        scrollToBottomSmooth();
+        setShowNewMessageButton(false);
+      } else {
+        // 사용자가 위로 스크롤 중이고 새 메시지가 도착하면 버튼 표시
+        setShowNewMessageButton(true);
+      }
+    }
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages, currentUserId, isUserScrolling, scrollToBottomSmooth]);
 
   const handleSend = async () => {
     if ((!messageContent.trim() && !imageFile) || !otherUser) return;
@@ -76,7 +112,8 @@ export default function DirectMessageDialog({
       setMessageContent('');
       setImageFile(null);
       setImagePreview(null);
-      setTimeout(() => scrollToBottom(messagesEndRef), 100);
+      // 메시지 전송 후 즉시 스크롤
+      setTimeout(() => scrollToBottomSmooth('auto'), 100);
     } catch (error) {
       console.error('메시지 전송 실패:', error);
     } finally {
@@ -121,15 +158,19 @@ export default function DirectMessageDialog({
             </Avatar>
             <div>
               <div className="font-semibold">{otherUser.name}</div>
-              <div className="text-xs text-muted-foreground font-normal">
-                1:1 메시지
-              </div>
             </div>
           </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            1:1 메시지
+          </DialogDescription>
         </DialogHeader>
 
         {/* 메시지 영역 */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div
+          ref={messageContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+        >
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
               메시지를 보내보세요
@@ -172,6 +213,7 @@ export default function DirectMessageDialog({
                             src={msg.imageUrl}
                             alt="첨부 이미지"
                             fill
+                            sizes="192px"
                             className="object-cover rounded"
                           />
                         </div>
@@ -191,6 +233,22 @@ export default function DirectMessageDialog({
             })
           )}
           <div ref={messagesEndRef} />
+
+          {/* 새 메시지 보기 버튼 */}
+          {showNewMessageButton && (
+            <div className="sticky bottom-2 flex justify-center pointer-events-none">
+              <button
+                onClick={() => {
+                  scrollToBottomSmooth();
+                  setShowNewMessageButton(false);
+                }}
+                className="pointer-events-auto flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+              >
+                <ArrowDown className="h-4 w-4" />
+                <span className="text-sm font-medium">새 메시지</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 입력 영역 */}
@@ -202,6 +260,7 @@ export default function DirectMessageDialog({
                 src={imagePreview}
                 alt="첨부 이미지"
                 fill
+                sizes="128px"
                 className="object-cover rounded border"
               />
               <button

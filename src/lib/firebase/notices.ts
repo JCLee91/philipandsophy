@@ -30,11 +30,21 @@ export async function createNotice(
   const db = getDb();
   const now = Timestamp.now();
 
-  const docRef = await addDoc(collection(db, COLLECTIONS.NOTICES), {
-    ...data,
+  const noticeData: any = {
+    cohortId: data.cohortId,
+    author: data.author,
+    content: data.content,
+    isPinned: data.isPinned || false,
     createdAt: now,
     updatedAt: now,
-  });
+  };
+
+  // imageUrl이 있을 때만 필드 추가
+  if (data.imageUrl) {
+    noticeData.imageUrl = data.imageUrl;
+  }
+
+  const docRef = await addDoc(collection(db, COLLECTIONS.NOTICES), noticeData);
 
   return docRef.id;
 }

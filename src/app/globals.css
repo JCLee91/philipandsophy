@@ -95,6 +95,16 @@
       'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Pretendard 폰트를 모든 요소에 강제 적용 */
+  *,
+  *::before,
+  *::after {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system,
+      BlinkMacSystemFont, system-ui, sans-serif !important;
   }
 }
 

@@ -37,12 +37,19 @@ export const createMessage = async (data: {
   const db = getDb();
   const messagesRef = collection(db, COLLECTIONS.MESSAGES);
 
-  const newMessage = {
-    ...data,
+  const newMessage: any = {
+    conversationId: data.conversationId,
+    senderId: data.senderId,
+    receiverId: data.receiverId,
     content: data.content.trim(),
     createdAt: Timestamp.now(),
     isRead: false,
   };
+
+  // imageUrl이 있을 때만 필드 추가
+  if (data.imageUrl) {
+    newMessage.imageUrl = data.imageUrl;
+  }
 
   const docRef = await addDoc(messagesRef, newMessage);
   return docRef.id;
@@ -123,6 +130,22 @@ export const getUnreadCount = async (
   const q = query(
     messagesRef,
     where('conversationId', '==', conversationId),
+    where('receiverId', '==', userId),
+    where('isRead', '==', false)
+  );
+
+  const snapshot = await getDocs(q);
+  return snapshot.size;
+};
+
+/**
+ * Get total unread message count for a user (all conversations)
+ */
+export const getTotalUnreadCount = async (userId: string): Promise<number> => {
+  const db = getDb();
+  const messagesRef = collection(db, COLLECTIONS.MESSAGES);
+  const q = query(
+    messagesRef,
     where('receiverId', '==', userId),
     where('isRead', '==', false)
   );

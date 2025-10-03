@@ -49,6 +49,7 @@ export {
   deleteSubmission,
   searchSubmissions,
   subscribeTodayVerified,
+  getApprovedSubmissionsByParticipant,
 } from './submissions';
 
 // Storage operations
@@ -80,6 +81,7 @@ export {
   getMessagesBySender,
   getMessagesByReceiver,
   getUnreadCount,
+  getTotalUnreadCount,
   markConversationAsRead,
   markMessageAsRead,
   deleteMessage,

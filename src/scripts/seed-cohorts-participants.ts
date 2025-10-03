@@ -60,6 +60,8 @@ const participantsData = [
     phoneNumber: '01012345678',
     profileImage: '/profile/Profile_다은.png',
     profileBookUrl: 'https://example.com/profile-book/1',
+    occupation: '마케터',
+    bio: '새로운 경험과 배움을 통해 성장하는 것을 좋아합니다. 책과 함께하는 시간이 일상의 활력소예요.',
   },
   {
     id: '2',
@@ -68,6 +70,8 @@ const participantsData = [
     phoneNumber: '01023456789',
     profileImage: '/profile/Profile_다진.png',
     profileBookUrl: 'https://example.com/profile-book/2',
+    occupation: '디자이너',
+    bio: '일상 속 작은 아름다움을 발견하고 기록하는 것을 즐깁니다.',
   },
   {
     id: '3',
@@ -76,6 +80,8 @@ const participantsData = [
     phoneNumber: '01034567890',
     profileImage: '/profile/Profile_구종.png',
     profileBookUrl: 'https://example.com/profile-book/3',
+    occupation: '중학교 교사',
+    bio: '새로운 도전을 두려워하지 않고 삶의 결을 다채롭게 이어가는 사람',
   },
   {
     id: '4',
@@ -84,6 +90,8 @@ const participantsData = [
     phoneNumber: '01045678901',
     profileImage: '/profile/Profile_현명.png',
     profileBookUrl: 'https://example.com/profile-book/4',
+    occupation: '개발자',
+    bio: '기술과 인문학의 경계에서 새로운 가치를 만들어가고 있습니다.',
   },
   { id: '5', cohortId: '1', name: '정우진', phoneNumber: '01056789012' },
   { id: '6', cohortId: '1', name: '강민아', phoneNumber: '01067890123' },

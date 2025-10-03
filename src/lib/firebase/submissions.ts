@@ -205,6 +205,28 @@ export async function searchSubmissions(
 }
 
 /**
+ * 참가자별 승인된 제출물만 조회 (프로필북용)
+ */
+export async function getApprovedSubmissionsByParticipant(
+  participantId: string
+): Promise<ReadingSubmission[]> {
+  const db = getDb();
+  const q = query(
+    collection(db, COLLECTIONS.READING_SUBMISSIONS),
+    where('participantId', '==', participantId),
+    where('status', '==', 'approved'),
+    orderBy('submittedAt', 'desc')
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  return querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as ReadingSubmission[];
+}
+
+/**
  * 오늘 인증한 참가자 실시간 구독
  */
 export function subscribeTodayVerified(

@@ -10,6 +10,7 @@ import {
   getMessagesByConversation,
   markConversationAsRead,
   getUnreadCount,
+  getTotalUnreadCount,
   subscribeToMessages,
 } from '@/lib/firebase';
 import { useEffect } from 'react';
@@ -109,6 +110,18 @@ export const useUnreadCount = (conversationId: string, userId: string) => {
     queryKey: messageKeys.unread(conversationId, userId),
     queryFn: () => getUnreadCount(conversationId, userId),
     enabled: !!conversationId && !!userId,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+};
+
+/**
+ * Get total unread message count for a user (all conversations)
+ */
+export const useTotalUnreadCount = (userId: string) => {
+  return useQuery({
+    queryKey: ['messages', 'unread', 'total', userId],
+    queryFn: () => getTotalUnreadCount(userId),
+    enabled: !!userId,
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 };

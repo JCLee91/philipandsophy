@@ -11,6 +11,7 @@ import {
   updateSubmission,
   updateSubmissionStatus,
   deleteSubmission,
+  getApprovedSubmissionsByParticipant,
 } from '@/lib/firebase';
 import { ReadingSubmission } from '@/types/database';
 
@@ -61,6 +62,18 @@ export function useSubmissionsByParticipant(participantId: string | undefined) {
     queryKey: SUBMISSION_KEYS.byParticipant(participantId || ''),
     queryFn: () =>
       participantId ? getSubmissionsByParticipant(participantId) : [],
+    enabled: !!participantId,
+  });
+}
+
+/**
+ * 참가자별 승인된 제출물만 조회 (프로필북용)
+ */
+export function useApprovedSubmissionsByParticipant(participantId: string | undefined) {
+  return useQuery({
+    queryKey: [...SUBMISSION_KEYS.byParticipant(participantId || ''), 'approved'] as const,
+    queryFn: () =>
+      participantId ? getApprovedSubmissionsByParticipant(participantId) : [],
     enabled: !!participantId,
   });
 }

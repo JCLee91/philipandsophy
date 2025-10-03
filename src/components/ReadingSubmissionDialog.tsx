@@ -163,6 +163,8 @@ export default function ReadingSubmissionDialog({
                   src={bookImagePreview}
                   alt="책 사진"
                   fill
+                  sizes="(max-width: 768px) 100vw, 600px"
+                  priority
                   className="object-cover"
                 />
                 <Button

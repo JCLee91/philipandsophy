@@ -74,12 +74,8 @@ export default function RootLayout({
           crossOrigin="anonymous"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css"
         />
-        {/* Preload critical images */}
-        <link rel="preload" as="image" href="/image/PnS_1.webp?v=1.1" />
-        <link rel="preload" as="image" href="/image/PnS_2.webp?v=1.5" />
-        <link rel="preload" as="image" href="/image/PnS_4_nofooter.webp?v=2.2" />
       </head>
-      <body>
+      <body className="font-pretendard antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

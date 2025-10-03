@@ -9,7 +9,8 @@
     "lint": "next lint",
     "seed:notices": "tsx src/scripts/seed-notices.ts",
     "seed:cohorts": "tsx src/scripts/seed-cohorts-participants.ts",
-    "seed:all": "npm run seed:cohorts && npm run seed:notices",
+    "seed:submissions": "tsx src/scripts/seed-submissions.ts",
+    "seed:all": "npm run seed:cohorts && npm run seed:notices && npm run seed:submissions",
     "seed:admin": "tsx src/scripts/seed-admin.ts"
   },
   "dependencies": {
@@ -19,7 +20,7 @@
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.1",
-    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-separator": "^1.1.1",
