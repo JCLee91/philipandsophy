@@ -29,6 +29,7 @@ export default function Header({
         <div className="absolute right-4 flex items-center gap-2">
           {isAdmin ? (
             <button
+              type="button"
               onClick={onWriteClick}
               className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
               aria-label="공지 작성"
@@ -37,6 +38,7 @@ export default function Header({
             </button>
           ) : (
             <button
+              type="button"
               onClick={onMessageAdminClick}
               className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
               aria-label="운영자에게 메시지"
@@ -50,6 +52,7 @@ export default function Header({
             </button>
           )}
           <button
+            type="button"
             onClick={onParticipantsClick}
             className="relative flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
             aria-label="참가자 목록"

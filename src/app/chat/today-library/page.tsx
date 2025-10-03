@@ -75,7 +75,8 @@ function TodayLibraryContent() {
         <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
           <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
             <button
-              onClick={() => router.push(`/chat?cohort=${cohortId}&userId=${currentUserId}`)}
+              type="button"
+              onClick={() => router.back()}
               className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors relative z-10"
               aria-label="뒤로가기"
             >
@@ -99,11 +100,12 @@ function TodayLibraryContent() {
               오늘의 독서 인증을 완료해야 해요.
             </p>
             <button
-              onClick={() => router.push(`/chat?cohort=${cohortId}&userId=${currentUserId}`)}
+              type="button"
+              onClick={() => router.back()}
               className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <BookOpen className="h-4 w-4" />
-              독서 인증하러 가기
+              돌아가기
             </button>
           </div>
         </main>
@@ -119,7 +121,8 @@ function TodayLibraryContent() {
         <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
           <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
             <button
-              onClick={() => router.push(`/chat?cohort=${cohortId}&userId=${currentUserId}`)}
+              type="button"
+              onClick={() => router.back()}
               className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors relative z-10"
               aria-label="뒤로가기"
             >
@@ -186,6 +189,7 @@ function TodayLibraryContent() {
               return (
                 <button
                   key={participant.id}
+                  type="button"
                   onClick={() => handleProfileClick(participant.id)}
                   className="group relative flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-6 transition-all hover:border-primary hover:shadow-lg active:scale-95"
                 >

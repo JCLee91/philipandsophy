@@ -115,6 +115,7 @@ function ParticipantItem({
   // 일반 참가자는 클릭하면 바로 프로필 모달 표시
   return (
     <button
+      type="button"
       onClick={() => onProfileClick(participant)}
       className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors"
     >
@@ -191,6 +192,7 @@ export default function ParticipantsList({
                   return (
                     <button
                       key={participant.id}
+                      type="button"
                       onClick={() => handleParticipantClick(participant)}
                       className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors"
                     >

@@ -69,7 +69,8 @@ export default function DirectMessageDialog({
         markAsReadMutation.mutate({ conversationId, userId: currentUserId });
       }
     }
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, conversationId]);
 
   // 새 메시지가 도착했을 때 처리
   useEffect(() => {

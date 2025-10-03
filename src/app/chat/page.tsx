@@ -331,6 +331,7 @@ function ChatPageContent() {
           <div className="grid grid-cols-2 gap-3">
             {/* 독서 인증하기 버튼 */}
             <button
+              type="button"
               onClick={() => setSubmissionDialogOpen(true)}
               className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-95"
             >
@@ -340,6 +341,7 @@ function ChatPageContent() {
 
             {/* 오늘의 서재 버튼 */}
             <button
+              type="button"
               onClick={() => router.push(`/chat/today-library?cohort=${cohortId}&userId=${currentUserId}`)}
               className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-background px-4 py-3.5 font-semibold text-primary shadow-sm transition-all hover:bg-primary/5 active:scale-95"
             >
