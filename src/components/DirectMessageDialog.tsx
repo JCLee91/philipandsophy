@@ -257,7 +257,7 @@ export default function DirectMessageDialog({
           )}
           
           <div className="flex gap-2">
-            <label className="cursor-pointer shrink-0">
+            <label className="shrink-0">
               <input
                 type="file"
                 accept="image/*"

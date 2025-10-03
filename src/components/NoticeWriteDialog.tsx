@@ -75,7 +75,7 @@ export default function NoticeWriteDialog({
 
         <DialogFooter className="gap-3">
           <div className="flex items-center gap-3 flex-1">
-            <label className="cursor-pointer">
+            <label>
               <input
                 type="file"
                 accept="image/*"
