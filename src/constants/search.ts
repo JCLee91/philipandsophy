@@ -1,0 +1,6 @@
+export const SEARCH_CONFIG = {
+  DEBOUNCE_DELAY: 500, // ms
+  MAX_RESULTS: 5,
+  CACHE_MAX_SIZE: 50,
+  MIN_QUERY_LENGTH: 2,
+} as const;

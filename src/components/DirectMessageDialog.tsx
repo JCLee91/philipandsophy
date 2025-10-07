@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -136,7 +137,7 @@ export default function DirectMessageDialog({
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       });
     } catch (error) {
-      console.error('메시지 전송 실패:', error);
+      logger.error('메시지 전송 실패:', error);
     } finally {
       setUploading(false);
     }

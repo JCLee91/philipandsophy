@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { API_CACHE_DURATION } from '@/constants/api';
 
 const NAVER_BOOK_API_URL = 'https://openapi.naver.com/v1/search/book.json';
 
@@ -61,7 +63,7 @@ export async function GET(request: NextRequest) {
     const clientSecret = process.env.NAVER_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      console.error('Naver API credentials are missing');
+      logger.error('Naver API credentials are missing');
       return NextResponse.json(
         { error: 'Server configuration error. Please contact administrator.' },
         { status: 500 }
@@ -120,13 +122,13 @@ export async function GET(request: NextRequest) {
         'X-Naver-Client-Secret': clientSecret,
       },
       next: {
-        revalidate: 300, // 5분 캐싱
+        revalidate: API_CACHE_DURATION.NAVER_BOOK_SEARCH,
       },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Naver API error:', response.status, errorText);
+      logger.error('Naver API error:', { status: response.status, error: errorText });
 
       return NextResponse.json(
         {
@@ -147,11 +149,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(cleanedData, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': `public, s-maxage=${API_CACHE_DURATION.NAVER_BOOK_SEARCH}, stale-while-revalidate=${API_CACHE_DURATION.STALE_WHILE_REVALIDATE}`,
       },
     });
   } catch (error) {
-    console.error('Search books API error:', error);
+    logger.error('Search books API error:', error);
 
     return NextResponse.json(
       { error: 'Internal server error' },

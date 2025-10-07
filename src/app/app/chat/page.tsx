@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { Suspense } from 'react';
 import Header from '@/components/Header';
@@ -101,7 +102,7 @@ function ChatPageContent() {
       setWriteDialogOpen(false);
       scrollToBottom();
     } catch (error) {
-      console.error('공지 작성 실패:', error);
+      logger.error('공지 작성 실패:', error);
     } finally {
       setUploadingNoticeImage(false);
     }

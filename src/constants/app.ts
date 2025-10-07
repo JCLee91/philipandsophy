@@ -3,4 +3,5 @@ export const APP_CONSTANTS = {
   LOCAL_NOTICE_PREFIX: 'local-',
   SCROLL_DELAY: 100,
   STORAGE_KEY_PREFIX: 'notices_',
+  DEFAULT_PROFILE_IMAGE: '/image/default-profile.svg',
 } as const;

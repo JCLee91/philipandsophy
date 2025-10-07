@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { searchNaverBooks, cleanBookData, type NaverBook } from '@/lib/naver-book-api';
 import { Loader2, Book, X } from 'lucide-react';
 import Image from 'next/image';
+import { logger } from '@/lib/logger';
+import { SEARCH_CONFIG } from '@/constants/search';
 
 interface BookSearchAutocompleteProps {
   value: string;
@@ -33,11 +35,11 @@ export default function BookSearchAutocomplete({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 디바운스: 500ms 후 검색 실행
+  // 디바운스
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedValue(value);
-    }, 500);
+    }, SEARCH_CONFIG.DEBOUNCE_DELAY);
 
     return () => clearTimeout(timer);
   }, [value]);
@@ -45,8 +47,7 @@ export default function BookSearchAutocomplete({
   // 검색 실행 (캐싱 적용)
   useEffect(() => {
     const performSearch = async () => {
-      // 2글자 이상일 때만 검색
-      if (debouncedValue.trim().length < 2) {
+      if (debouncedValue.trim().length < SEARCH_CONFIG.MIN_QUERY_LENGTH) {
         setSearchResults([]);
         setShowDropdown(false);
         return;
@@ -64,15 +65,14 @@ export default function BookSearchAutocomplete({
       try {
         const response = await searchNaverBooks({
           query: debouncedValue,
-          display: 5, // 최대 5개만 표시
-          sort: 'sim', // 유사도순
+          display: SEARCH_CONFIG.MAX_RESULTS,
+          sort: 'sim',
         });
 
-        // HTML 태그 제거
         const cleanedBooks = response.items.map(cleanBookData);
 
-        // 캐시 저장 (최대 50개 유지)
-        if (searchCache.current.size >= 50) {
+        // 캐시 저장
+        if (searchCache.current.size >= SEARCH_CONFIG.CACHE_MAX_SIZE) {
           const firstKey = searchCache.current.keys().next().value;
           searchCache.current.delete(firstKey);
         }
@@ -81,7 +81,7 @@ export default function BookSearchAutocomplete({
         setSearchResults(cleanedBooks);
         setShowDropdown(cleanedBooks.length > 0);
       } catch (error) {
-        console.error('책 검색 실패:', error);
+        logger.error('책 검색 실패:', error);
         setSearchResults([]);
         setShowDropdown(false);
       } finally {

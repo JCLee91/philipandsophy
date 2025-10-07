@@ -50,10 +50,10 @@ const cohortsData = [
 
 const participantsData = [
   { id: 'admin', cohortId: '1', name: '운영자', phoneNumber: '01000000001', profileImage: '/pns-logo.webp', isAdmin: true },
-  { id: '1', cohortId: '1', name: '다은', phoneNumber: '01012345678', profileImage: '/profile/Profile_다은.png', profileBookUrl: 'https://example.com/profile-book/1' },
-  { id: '2', cohortId: '1', name: '다진', phoneNumber: '01023456789', profileImage: '/profile/Profile_다진.png', profileBookUrl: 'https://example.com/profile-book/2' },
-  { id: '3', cohortId: '1', name: '구종', phoneNumber: '01034567890', profileImage: '/profile/Profile_구종.png', profileBookUrl: 'https://example.com/profile-book/3' },
-  { id: '4', cohortId: '1', name: '현명', phoneNumber: '01045678901', profileImage: '/profile/Profile_현명.png', profileBookUrl: 'https://example.com/profile-book/4' },
+  { id: '1', cohortId: '1', name: '다은', phoneNumber: '01012345678', profileImage: '/profile/Profile_다은.png' },
+  { id: '2', cohortId: '1', name: '다진', phoneNumber: '01023456789', profileImage: '/profile/Profile_다진.png' },
+  { id: '3', cohortId: '1', name: '구종', phoneNumber: '01034567890', profileImage: '/profile/Profile_구종.png' },
+  { id: '4', cohortId: '1', name: '현명', phoneNumber: '01045678901', profileImage: '/profile/Profile_현명.png' },
   { id: '5', cohortId: '1', name: '정우진', phoneNumber: '01056789012' },
   { id: '6', cohortId: '1', name: '강민아', phoneNumber: '01067890123' },
   { id: '7', cohortId: '1', name: '윤서준', phoneNumber: '01078901234' },
@@ -77,6 +77,7 @@ const noticesData = [
     cohortId: '1',
     author: '필립앤소피',
     content: '안녕하세요! 1주차 독서 인증을 시작합니다. 하단의 "독서 인증하기" 버튼을 눌러 인증 폼을 작성해주세요. 인증 마감은 오늘 자정까지입니다.',
+    // NOTE: Development seed data - placeholder image from picsum.photos
     imageUrl: 'https://picsum.photos/seed/book1/800/600',
     isPinned: false,
   },

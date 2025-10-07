@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import type { Participant } from '@/types/database';
 import { SHADOW_OFFSETS, SPACING } from '@/constants/today-library';
+import { APP_CONSTANTS } from '@/constants/app';
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
@@ -254,7 +255,7 @@ function TodayLibraryContent() {
                     {similarParticipants.map((participant) => (
                       <BookmarkCard
                         key={`similar-${participant.id}`}
-                        profileImage={participant.profileImage || 'https://via.placeholder.com/150/cccccc/666666?text=No+Image'}
+                        profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
                         name={participant.name}
                         theme="blue"
                         isLocked={isLocked}
@@ -273,7 +274,7 @@ function TodayLibraryContent() {
                     {oppositeParticipants.map((participant) => (
                       <BookmarkCard
                         key={`opposite-${participant.id}`}
-                        profileImage={participant.profileImage || 'https://via.placeholder.com/150/cccccc/666666?text=No+Image'}
+                        profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
                         name={participant.name}
                         theme="yellow"
                         isLocked={isLocked}

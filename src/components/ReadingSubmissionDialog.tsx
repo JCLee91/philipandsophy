@@ -21,6 +21,8 @@ import { getDailyQuestion } from '@/constants/daily-questions';
 import Image from 'next/image';
 import BookSearchAutocomplete from '@/components/BookSearchAutocomplete';
 import type { NaverBook } from '@/lib/naver-book-api';
+import { logger } from '@/lib/logger';
+import { SUBMISSION_VALIDATION } from '@/constants/validation';
 
 interface ReadingSubmissionDialogProps {
   open: boolean;
@@ -35,7 +37,6 @@ export default function ReadingSubmissionDialog({
   participantId,
   participationCode,
 }: ReadingSubmissionDialogProps) {
-  const MIN_TEXT_LENGTH = 40;
 
   const [bookImage, setBookImage] = useState<File | null>(null);
   const [bookImagePreview, setBookImagePreview] = useState<string>('');
@@ -67,7 +68,7 @@ export default function ReadingSubmissionDialog({
             setIsAutoFilled(true);
           }
         } catch (error) {
-          console.error('Failed to load current book title:', error);
+          logger.error('Failed to load current book title:', error);
         } finally {
           setIsLoadingBookTitle(false);
         }
@@ -160,7 +161,7 @@ export default function ReadingSubmissionDialog({
       setIsAutoFilled(false);
       onOpenChange(false);
     } catch (error) {
-      console.error('Submission error:', error);
+      logger.error('Submission error:', error);
       toast({
         title: '제출 실패',
         description: '독서 인증 제출 중 오류가 발생했습니다. 다시 시도해주세요.',
@@ -266,8 +267,8 @@ export default function ReadingSubmissionDialog({
               className="min-h-[120px] resize-none"
               disabled={uploading}
             />
-            <div className={`text-xs text-right ${review.length >= MIN_TEXT_LENGTH ? 'text-muted-foreground' : 'text-destructive'}`}>
-              {review.length}/{MIN_TEXT_LENGTH}
+            <div className={`text-xs text-right ${review.length >= SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ? 'text-muted-foreground' : 'text-destructive'}`}>
+              {review.length}/{SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
             </div>
           </div>
 
@@ -287,8 +288,8 @@ export default function ReadingSubmissionDialog({
               className="min-h-[100px] resize-none"
               disabled={uploading}
             />
-            <div className={`text-xs text-right ${dailyAnswer.length >= MIN_TEXT_LENGTH ? 'text-muted-foreground' : 'text-destructive'}`}>
-              {dailyAnswer.length}/{MIN_TEXT_LENGTH}
+            <div className={`text-xs text-right ${dailyAnswer.length >= SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ? 'text-muted-foreground' : 'text-destructive'}`}>
+              {dailyAnswer.length}/{SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
             </div>
           </div>
         </div>
@@ -307,8 +308,8 @@ export default function ReadingSubmissionDialog({
               uploading ||
               !bookImage ||
               !bookTitle.trim() ||
-              review.trim().length < MIN_TEXT_LENGTH ||
-              dailyAnswer.trim().length < MIN_TEXT_LENGTH
+              review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ||
+              dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
             }
           >
             {uploading ? (
