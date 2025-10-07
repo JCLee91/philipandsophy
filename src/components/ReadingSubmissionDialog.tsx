@@ -257,14 +257,14 @@ export default function ReadingSubmissionDialog({
             isAutoFilled={isAutoFilled}
             onClear={handleClearTitle}
             initialBook={
-              isAutoFilled && bookTitle && bookAuthor && bookCoverUrl
+              isAutoFilled && bookTitle
                 ? {
                     title: bookTitle,
-                    author: bookAuthor,
+                    author: bookAuthor || '',
                     publisher: '',
                     isbn: '',
                     pubdate: '',
-                    image: bookCoverUrl,
+                    image: bookCoverUrl || '',
                     link: '',
                     description: '',
                     discount: '',

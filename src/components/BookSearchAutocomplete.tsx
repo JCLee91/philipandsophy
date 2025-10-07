@@ -49,10 +49,10 @@ export default function BookSearchAutocomplete({
 
   // Initial book setup (다음날 자동 채움)
   useEffect(() => {
-    if (initialBook && !selectedBook) {
+    if (initialBook) {
       setSelectedBook(initialBook);
     }
-  }, [initialBook, selectedBook]);
+  }, [initialBook]); // Only re-run when initialBook changes
 
   // Bug #1 Fix: Sync selectedBook when parent clears value
   useEffect(() => {
@@ -176,18 +176,23 @@ export default function BookSearchAutocomplete({
     onChange('');
     setSearchResults([]);
 
-    // Bug #4 Fix: Notify parent to clear book metadata
-    onBookSelect({
-      title: '',
-      author: '',
-      publisher: '',
-      isbn: '',
-      pubdate: '',
-      image: '',
-      link: '',
-      description: '',
-      discount: '',
-    });
+    // Notify parent to clear book metadata (use onClear if available)
+    if (onClear) {
+      onClear();
+    } else {
+      // Fallback: Send empty book object
+      onBookSelect({
+        title: '',
+        author: '',
+        publisher: '',
+        isbn: '',
+        pubdate: '',
+        image: '',
+        link: '',
+        description: '',
+        discount: '',
+      });
+    }
   };
 
   const handleInputFocus = () => {
