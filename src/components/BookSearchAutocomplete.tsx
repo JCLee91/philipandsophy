@@ -145,6 +145,7 @@ export default function BookSearchAutocomplete({
             placeholder="예: 어린 왕자"
             disabled={disabled}
             className="pr-10"
+            autoComplete="off"
           />
           {isSearching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
