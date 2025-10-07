@@ -31,6 +31,7 @@ export default function BookSearchAutocomplete({
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [debouncedValue, setDebouncedValue] = useState('');
+  const [selectedBook, setSelectedBook] = useState<NaverBook | null>(null);
   const searchCache = useRef<Map<string, NaverBook[]>>(new Map());
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,20 +45,39 @@ export default function BookSearchAutocomplete({
     return () => clearTimeout(timer);
   }, [value]);
 
+  // Bug #1 Fix: Sync selectedBook when parent clears value
+  useEffect(() => {
+    if (value === '' && selectedBook !== null) {
+      setSelectedBook(null);
+      setSearchResults([]);
+    }
+  }, [value, selectedBook]);
+
   // 검색 실행 (캐싱 적용)
   useEffect(() => {
+    // Bug #2 Fix: Don't search if book already selected
+    if (selectedBook) {
+      return;
+    }
+
+    let aborted = false; // Bug #7 Fix: Abort flag for race condition
+
     const performSearch = async () => {
       if (debouncedValue.trim().length < SEARCH_CONFIG.MIN_QUERY_LENGTH) {
-        setSearchResults([]);
-        setShowDropdown(false);
+        if (!aborted) {
+          setSearchResults([]);
+          setShowDropdown(false);
+        }
         return;
       }
 
       // 캐시 확인
       const cached = searchCache.current.get(debouncedValue);
       if (cached) {
-        setSearchResults(cached);
-        setShowDropdown(cached.length > 0);
+        if (!aborted) {
+          setSearchResults(cached);
+          setShowDropdown(cached.length > 0);
+        }
         return;
       }
 
@@ -68,6 +88,8 @@ export default function BookSearchAutocomplete({
           display: SEARCH_CONFIG.MAX_RESULTS,
           sort: 'sim',
         });
+
+        if (aborted) return; // Bug #7 Fix: Don't update if aborted
 
         const cleanedBooks = response.items.map(cleanBookData);
 
@@ -81,16 +103,24 @@ export default function BookSearchAutocomplete({
         setSearchResults(cleanedBooks);
         setShowDropdown(cleanedBooks.length > 0);
       } catch (error) {
-        logger.error('책 검색 실패:', error);
-        setSearchResults([]);
-        setShowDropdown(false);
+        if (!aborted) {
+          logger.error('책 검색 실패:', error);
+          setSearchResults([]);
+          setShowDropdown(false);
+        }
       } finally {
-        setIsSearching(false);
+        if (!aborted) {
+          setIsSearching(false);
+        }
       }
     };
 
     performSearch();
-  }, [debouncedValue]);
+
+    return () => {
+      aborted = true; // Bug #7 Fix: Abort on cleanup
+    };
+  }, [debouncedValue, selectedBook]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -109,14 +139,46 @@ export default function BookSearchAutocomplete({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Bug #3, #6 Fix: Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      searchCache.current.clear(); // Bug #3: Clear cache
+      setDebouncedValue(''); // Bug #6: Clear pending debounce
+      setSearchResults([]);
+      setShowDropdown(false);
+    };
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
   };
 
   const handleBookClick = (book: NaverBook) => {
+    setSelectedBook(book);
     onBookSelect(book);
     setShowDropdown(false);
     setSearchResults([]);
+    setDebouncedValue(''); // Bug #2 Fix: Clear debounce to prevent race
+    setIsSearching(false); // Bug #8 Fix: Clear loading state
+  };
+
+  const handleClearSelection = () => {
+    setSelectedBook(null);
+    onChange('');
+    setSearchResults([]);
+
+    // Bug #4 Fix: Notify parent to clear book metadata
+    onBookSelect({
+      title: '',
+      author: '',
+      publisher: '',
+      isbn: '',
+      pubdate: '',
+      image: '',
+      link: '',
+      description: '',
+      discount: '',
+    });
   };
 
   const handleInputFocus = () => {
@@ -134,7 +196,58 @@ export default function BookSearchAutocomplete({
         읽고 있는 책의 제목을 입력하면 자동으로 책을 찾아드려요.
       </p>
 
-      <div className="relative">
+      {selectedBook ? (
+        /* 선택된 책 정보 카드 */
+        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+          <div className="flex items-start gap-3">
+            {/* 책 표지 */}
+            {selectedBook.image ? (
+              <div className="relative w-12 h-16 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+                <Image
+                  src={selectedBook.image}
+                  alt={selectedBook.title}
+                  fill
+                  sizes="48px"
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-12 h-16 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
+                <Book className="h-6 w-6 text-gray-400" />
+              </div>
+            )}
+
+            {/* 책 정보 */}
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
+                {selectedBook.title}
+              </h4>
+              {selectedBook.author && (
+                <p className="text-xs text-gray-600 mb-0.5">
+                  {selectedBook.author}
+                </p>
+              )}
+              {selectedBook.publisher && (
+                <p className="text-xs text-gray-500">
+                  {selectedBook.publisher}
+                  {selectedBook.pubdate && ` · ${selectedBook.pubdate.slice(0, 4)}년`}
+                </p>
+              )}
+            </div>
+
+            {/* 삭제 버튼 */}
+            <button
+              type="button"
+              onClick={handleClearSelection}
+              className="flex-shrink-0 p-1 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="선택 취소"
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* 검색 Input */
         <div className="relative">
           <Input
             ref={inputRef}
@@ -152,7 +265,6 @@ export default function BookSearchAutocomplete({
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           )}
-        </div>
 
         {/* 자동완성 드롭다운 */}
         {showDropdown && searchResults.length > 0 && (
@@ -196,7 +308,8 @@ export default function BookSearchAutocomplete({
                   )}
                   {book.publisher && (
                     <p className="text-xs text-gray-500 truncate">
-                      {book.publisher} · {book.pubdate.slice(0, 4)}년
+                      {book.publisher}
+                      {book.pubdate && ` · ${book.pubdate.slice(0, 4)}년`}
                     </p>
                   )}
                 </div>
@@ -204,24 +317,25 @@ export default function BookSearchAutocomplete({
             ))}
           </div>
         )}
-      </div>
 
-      {/* 자동 완성 힌트 배지 */}
-      {isAutoFilled && value && (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs">
-            📚 이전 독서 계속
-          </Badge>
-          {onClear && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-            >
-              다른 책으로 변경
-            </button>
-          )}
-        </div>
+        {/* 자동 완성 힌트 배지 */}
+        {isAutoFilled && value && (
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="secondary" className="text-xs">
+              📚 이전 독서 계속
+            </Badge>
+            {onClear && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                다른 책으로 변경
+              </button>
+            )}
+          </div>
+        )}
+      </div>
       )}
     </div>
   );
