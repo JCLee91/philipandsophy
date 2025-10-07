@@ -10,15 +10,22 @@ This is a **Next.js 15** project built with **React 19**, **TypeScript**, and **
 
 This project combines two applications:
 1. **Landing Page** (`/`) - Marketing website for 필립앤소피 (Philip & Sophy) reading social club
-2. **Member Portal** (`/member10`) - Internal chat and notice tool for members
-3. **Chat Interface** (`/chat`) - Member communication interface
+2. **Web App** (`/app`) - Member portal with chat, profile, and program features
 
 **Important Routes:**
 - `/` - Main landing page (converted from static HTML to Next.js)
-- `/member10` - Access code entry for member portal
-- `/chat` - Member chat and notice interface
+- `/app` - Access code entry for member portal (web app entry point)
+- `/app/chat` - Member chat and notice interface
+- `/app/profile/[participantId]` - Member profile pages
+- `/app/program` - Program introduction
 - `/privacy-policy.html` - Static HTML legal page
 - `/terms-of-service.html` - Static HTML legal page
+
+**Legacy Route Redirects (configured in next.config.ts):**
+- `/member10` → `/app` (301 permanent redirect)
+- `/chat` → `/app/chat` (301 permanent redirect)
+- `/profile/*` → `/app/profile/*` (301 permanent redirect)
+- `/program` → `/app/program` (301 permanent redirect)
 
 ## Essential Commands
 
@@ -34,8 +41,9 @@ npm run lint             # Run ESLint
 ```bash
 npm run seed:cohorts     # Seed cohorts and participants
 npm run seed:notices     # Seed notices data
+npm run seed:submissions # Seed reading submissions
 npm run seed:admin       # Seed admin participant data
-npm run seed:all         # Seed all data (cohorts + notices)
+npm run seed:all         # Seed all data (cohorts + notices + submissions)
 ```
 
 ### Testing & Type Checking
@@ -88,10 +96,18 @@ curl -X POST http://localhost:3000/api/seed -H "Content-Type: application/json"
 src/
 ├── app/                          # Next.js App Router
 │   ├── page.tsx                 # Landing page (root)
-│   ├── member10/
-│   │   └── page.tsx             # Member portal access code entry
-│   ├── chat/
-│   │   └── page.tsx             # Member chat interface
+│   ├── app/                     # Web app root (member portal)
+│   │   ├── page.tsx             # Access code entry (web app entry point)
+│   │   ├── layout.tsx           # Web app layout
+│   │   ├── chat/                # Chat and notice interface
+│   │   │   ├── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   └── today-library/   # Today's library feature
+│   │   ├── profile/             # Member profiles
+│   │   │   └── [participantId]/ # Dynamic profile pages
+│   │   └── program/             # Program introduction
+│   │       ├── page.tsx
+│   │       └── layout.tsx
 │   ├── layout.tsx               # Root layout (SEO metadata, Pretendard font)
 │   ├── providers.tsx            # Global providers (React Query, Theme, Firebase)
 │   └── globals.css              # Global Tailwind styles
@@ -295,6 +311,7 @@ Use seed scripts to populate Firestore with initial data:
 ```bash
 npm run seed:cohorts     # Seeds cohorts and participants
 npm run seed:notices     # Seeds notices
+npm run seed:submissions # Seeds reading submissions
 npm run seed:admin       # Seeds admin participant
 npm run seed:all         # Seeds all data at once
 ```
@@ -353,9 +370,10 @@ The landing page (`/`) is converted from static HTML to Next.js React component 
 ### Styling
 - Landing page uses `src/styles/landing.css` (glassmorphism design)
 - Static HTML pages use `public/styles/main.css` (same content as landing.css)
-- **Important**: Do NOT add Tailwind font classes (`font-sans`, `antialiased`) to `<body>` in layout.tsx
-  - This overrides Pretendard Variable font from landing.css
-  - Body should remain clean: `<body><Providers>{children}</Providers></body>`
+- Body uses `className="font-pretendard antialiased"` to apply Pretendard Variable font
+- Custom Tailwind duration/easing utilities are defined in tailwind.config.ts:
+  - `duration-fast`, `duration-normal`, `duration-slow`
+  - `ease-smooth`, `ease-out`
 
 ### SEO Configuration
 - All metadata configured in `src/app/layout.tsx`:
@@ -367,7 +385,7 @@ The landing page (`/`) is converted from static HTML to Next.js React component 
 - JSON-LD structured data for search engines
 
 ### Static vs Dynamic Pages
-- **React Routes**: `/`, `/member10`, `/chat` (interactive features)
+- **React Routes**: `/`, `/app`, `/app/chat`, `/app/profile`, `/app/program` (interactive features)
 - **Static HTML**: `/privacy-policy.html`, `/terms-of-service.html` (legal pages)
   - Served directly from `public/` folder
   - Reference `/styles/main.css` for styling
@@ -387,9 +405,9 @@ The landing page (`/`) is converted from static HTML to Next.js React component 
 5. ❌ Forgetting to initialize Firebase before using Firestore/Storage
 6. ❌ Not handling Firebase async operations with try-catch
 7. ❌ Using incorrect environment variable names (must start with `NEXT_PUBLIC_FIREBASE_`)
-8. ❌ Adding Tailwind font classes to `<body>` in layout.tsx (breaks Pretendard font)
-9. ❌ Using `fetchpriority` instead of `fetchPriority` in JSX (must be camelCase)
-10. ❌ Forgetting to copy CSS to both `src/styles/` and `public/styles/` for static HTML pages
+8. ❌ Using `fetchpriority` instead of `fetchPriority` in JSX (must be camelCase)
+9. ❌ Forgetting to copy CSS to both `src/styles/` and `public/styles/` for static HTML pages
+10. ❌ Using standard Tailwind durations (like `duration-200`) instead of custom ones (`duration-normal`, `duration-fast`, `duration-slow`)
 
 ## Development Workflow
 

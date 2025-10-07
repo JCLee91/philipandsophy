@@ -32,8 +32,9 @@ function TodayLibraryContent() {
   // 오늘 날짜
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  // 오늘의 추천 참가자 (similar/opposite 구분)
-  const todayFeatured = cohort?.dailyFeaturedParticipants?.[today] || { similar: [], opposite: [] };
+  // 🔧 임시: 오늘의 추천 참가자 (하드코딩 - 디자인 확인용)
+  // TODO: 나중에 cohort.dailyFeaturedParticipants 사용하도록 변경
+  const todayFeatured = cohort?.dailyFeaturedParticipants?.[today] || { similar: ['1', '2'], opposite: ['3', '4'] };
   const allFeaturedIds = [...todayFeatured.similar, ...todayFeatured.opposite];
 
   // 추천 참가자들의 정보 가져오기
@@ -123,7 +124,7 @@ function TodayLibraryContent() {
           <div className="mx-auto w-[328px] flex flex-col gap-[40px]">
             <div className="flex flex-col gap-[16px] w-[312px]">
               <div className="flex flex-col gap-[3px]">
-                <p className="font-bold text-[24px] leading-[1.4] tracking-[-0.24px] text-black">
+                <p className="font-[family-name:var(--font-pretendard)] font-bold text-[24px] leading-[1.4] tracking-[-0.24px] text-black">
                   {isLocked ? (
                     <>
                       지금 독서 인증하고
@@ -139,7 +140,7 @@ function TodayLibraryContent() {
                   )}
                 </p>
               </div>
-              <p className="font-medium text-[16px] leading-[1.6] tracking-[-0.16px] text-[#575e68]">
+              <p className="font-[family-name:var(--font-pretendard)] font-medium text-[16px] leading-[1.6] tracking-[-0.16px] text-[#575e68]">
                 {isLocked ? '밤 12시가 지나면 사라져요' : '밤 12시까지만 읽을 수 있어요'}
               </p>
             </div>
@@ -148,9 +149,15 @@ function TodayLibraryContent() {
             <div className="flex flex-col w-full">
               {/* Top Row (Blue Theme - Similar) */}
               <div className="relative h-[140px] w-full overflow-clip">
-                {/* Shadow Ellipse */}
-                <div className="absolute left-0 top-[128px] h-[24px] w-full opacity-20">
-                  <div className="absolute inset-[-208.33%_-15.24%] bg-gradient-to-b from-transparent to-gray-400 rounded-full blur-xl" />
+                {/* Shadow Ellipse (exact SVG from Figma - node-id: 42159-1595) */}
+                <div className="absolute left-0 top-[128px] h-[24px] w-[328px]">
+                  <div className="absolute inset-[-208.33%_-15.24%]">
+                    <img
+                      alt=""
+                      className="block max-w-none size-full"
+                      src="http://localhost:3845/assets/151f6ec3d4209788a1933221c0205bd130122b23.svg"
+                    />
+                  </div>
                 </div>
 
                 {/* Card 1: Left */}
@@ -181,16 +188,28 @@ function TodayLibraryContent() {
               </div>
 
               {/* White Spacer */}
-              <div className="bg-white h-[20px] w-full" />
+              <div className="bg-white h-[20px] w-[326px]" />
 
-              {/* Blur Divider */}
-              <div className="blur-[6.128px] filter h-[4px] w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
+              {/* Blur Divider (exact image from Figma - node-id: 42159-1617) */}
+              <div className="blur-[6.128px] filter h-[4px] w-[328px] relative">
+                <img
+                  alt=""
+                  className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full"
+                  src="http://localhost:3845/assets/cefbdab62819f8d2d9184fdfe75fb634f1bf5346.png"
+                />
+              </div>
 
               {/* Bottom Row (Yellow Theme - Opposite) */}
               <div className="relative h-[160px] w-full overflow-clip">
-                {/* Shadow Ellipse */}
-                <div className="absolute left-0 top-[148px] h-[24px] w-full opacity-20">
-                  <div className="absolute inset-[-208.33%_-15.24%] bg-gradient-to-b from-transparent to-gray-400 rounded-full blur-xl" />
+                {/* Shadow Ellipse (exact SVG from Figma - node-id: 42159-1619) */}
+                <div className="absolute left-0 top-[148px] h-[24px] w-[328px]">
+                  <div className="absolute inset-[-208.33%_-15.24%]">
+                    <img
+                      alt=""
+                      className="block max-w-none size-full"
+                      src="http://localhost:3845/assets/5031a5764005fb611fb476c14f9f8d4b37acdada.svg"
+                    />
+                  </div>
                 </div>
 
                 {/* Card 3: Left */}
@@ -221,10 +240,16 @@ function TodayLibraryContent() {
               </div>
 
               {/* White Spacer */}
-              <div className="bg-white h-[20px] w-full" />
+              <div className="bg-white h-[20px] w-[326px]" />
 
-              {/* Blur Divider */}
-              <div className="blur-[6.128px] filter h-[4px] w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
+              {/* Blur Divider (exact image from Figma - node-id: 42159-1642) */}
+              <div className="blur-[6.128px] filter h-[4px] w-[328px] relative">
+                <img
+                  alt=""
+                  className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full"
+                  src="http://localhost:3845/assets/cefbdab62819f8d2d9184fdfe75fb634f1bf5346.png"
+                />
+              </div>
             </div>
           </div>
         </main>
@@ -239,7 +264,7 @@ function TodayLibraryContent() {
                 onClick={() => router.push(`/app/profile/${currentUserId}?cohort=${cohortId}&userId=${currentUserId}`)}
                 className="flex-1 bg-white border border-gray-200 rounded-[8px] px-0 py-[16px] overflow-clip transition-colors hover:bg-gray-50"
               >
-                <span className="font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-black">
+                <span className="font-[family-name:var(--font-pretendard)] font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-black">
                   내 프로필 북 보기
                 </span>
               </button>
@@ -248,7 +273,7 @@ function TodayLibraryContent() {
                 onClick={() => router.push(`/app/chat?cohort=${cohortId}&userId=${currentUserId}`)}
                 className="flex-1 bg-black rounded-[8px] px-0 py-[16px] overflow-clip transition-colors hover:bg-gray-800"
               >
-                <span className="font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-white">
+                <span className="font-[family-name:var(--font-pretendard)] font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-white">
                   독서 인증하기
                 </span>
               </button>
@@ -261,7 +286,7 @@ function TodayLibraryContent() {
                 onClick={() => router.push(`/app/profile/${currentUserId}?cohort=${cohortId}&userId=${currentUserId}`)}
                 className="flex-1 bg-black rounded-[8px] px-0 py-[16px] overflow-clip transition-colors hover:bg-gray-800"
               >
-                <span className="font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-white">
+                <span className="font-[family-name:var(--font-pretendard)] font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-white">
                   내 프로필 북 보기
                 </span>
               </button>

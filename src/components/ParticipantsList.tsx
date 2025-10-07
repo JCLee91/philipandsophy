@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getInitials } from '@/lib/utils';
-import { User, MessageSquare, Check } from 'lucide-react';
+import { User, MessageSquare, Check, BookOpen } from 'lucide-react';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
@@ -30,6 +30,7 @@ interface ParticipantsListProps {
   isAdmin?: boolean;
   onDMClick?: (participant: Participant) => void;
   onProfileClick?: (participant: Participant) => void;
+  onProfileBookClick?: (participant: Participant) => void;
 }
 
 function ParticipantItem({
@@ -143,6 +144,7 @@ export default function ParticipantsList({
   isAdmin = false,
   onDMClick,
   onProfileClick,
+  onProfileBookClick,
 }: ParticipantsListProps) {
   const { data: verifiedIds } = useVerifiedToday();
 
@@ -169,38 +171,47 @@ export default function ParticipantsList({
                   const initials = getInitials(participant.name);
 
                   return (
-                    <button
-                      key={participant.id}
-                      type="button"
-                      onClick={() => onProfileClick?.(participant)}
-                      className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal"
-                    >
-                      <div className="relative">
-                        <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-                          <AvatarImage
-                            src={participant.profileImage}
-                            alt={participant.name}
-                          />
-                          <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        {verifiedIds?.has(participant.id) && (
-                          <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md">
-                            <Check
-                              className="h-3 w-3 text-white stroke-[3]"
-                              aria-label="오늘 독서 인증 완료"
-                            />
+                    <DropdownMenu key={participant.id}>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
+                          <div className="relative">
+                            <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                              <AvatarImage
+                                src={participant.profileImage}
+                                alt={participant.name}
+                              />
+                              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            {verifiedIds?.has(participant.id) && (
+                              <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md">
+                                <Check
+                                  className="h-3 w-3 text-white stroke-[3]"
+                                  aria-label="오늘 독서 인증 완료"
+                                />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">
-                          {participant.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground">(나)</span>
-                      </div>
-                    </button>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground">
+                              {participant.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">(나)</span>
+                          </div>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => onProfileClick?.(participant)}>
+                          <User className="mr-2 h-4 w-4" />
+                          간단 프로필 보기
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onProfileBookClick?.(participant)}>
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          프로필북 보기
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   );
                 }
 

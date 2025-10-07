@@ -41,3 +41,9 @@ firebase-service-account.json
 # Vercel environment setup script with sensitive data
 .vercel-env-setup.sh
 *-env-setup.sh
+
+# AI Tools (personal settings, do not commit)
+.vooster/
+.claude/
+.cursor/
+.claude-squad/

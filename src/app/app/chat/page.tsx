@@ -147,6 +147,10 @@ function ChatPageContent() {
     }
   };
 
+  const handleProfileBookClick = (participant: Participant) => {
+    router.push(`/app/profile/${participant.id}?cohort=${cohortId}&userId=${currentUserId}`);
+  };
+
   const toggleNoticeCollapse = (noticeId: string) => {
     setCollapsedNotices((prev) => {
       const newSet = new Set(prev);
@@ -207,6 +211,7 @@ function ChatPageContent() {
         isAdmin={isAdmin}
         onDMClick={handleDMClick}
         onProfileClick={setSelectedParticipant}
+        onProfileBookClick={handleProfileBookClick}
       />
       <DirectMessageDialog
         open={dmDialogOpen}
@@ -306,7 +311,7 @@ function ChatPageContent() {
             {/* 오늘의 서재 버튼 */}
             <button
               type="button"
-              onClick={() => router.push(`/chat/today-library?cohort=${cohortId}&userId=${currentUserId}`)}
+              onClick={() => router.push(`/app/chat/today-library?cohort=${cohortId}&userId=${currentUserId}`)}
               className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-background px-4 py-3.5 font-semibold text-primary shadow-sm transition-all duration-normal hover:bg-primary/5 active:scale-95"
             >
               <svg

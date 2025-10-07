@@ -1,6 +1,5 @@
 'use client';
 
-import { Lock } from 'lucide-react';
 import Image from 'next/image';
 
 interface BookmarkCardProps {
@@ -18,20 +17,26 @@ export default function BookmarkCard({
   isLocked,
   onClick,
 }: BookmarkCardProps) {
-  const themeColors = {
+  const themeConfig = {
     blue: {
       ribbon: 'bg-[#45a1fd]',
       background: 'bg-[#cee7ff]',
-      flag: '#7891009aef37f60e2facf1b42ffa03e11cd9bc9c', // Blue flag SVG
+      // Exact SVG from Figma (node-id: 42159-1614)
+      flagSvg: 'http://localhost:3845/assets/7891009aef37f60e2facf1b42ffa03e11cd9bc9c.svg',
+      // Lock icon SVG from Figma
+      lockSvg: 'http://localhost:3845/assets/bc9718f77d885f227f437f4c9e13800d9f8e893d.svg',
     },
     yellow: {
       ribbon: 'bg-[#ffd362]',
       background: 'bg-[#fff2d2]',
-      flag: '#0df77ff303f6a34f14ee7911642215c91f6c0a9f', // Yellow flag SVG
+      // Exact SVG from Figma (node-id: 42159-1628)
+      flagSvg: 'http://localhost:3845/assets/0df77ff303f6a34f14ee7911642215c91f6c0a9f.svg',
+      // Lock icon SVG from Figma
+      lockSvg: 'http://localhost:3845/assets/bc9718f77d885f227f437f4c9e13800d9f8e893d.svg',
     },
   };
 
-  const colors = themeColors[theme];
+  const config = themeConfig[theme];
 
   return (
     <button
@@ -42,46 +47,70 @@ export default function BookmarkCard({
     >
       {/* Bookmark Ribbon (extends 20px above card) */}
       <div
-        className={`absolute left-0 top-0 w-[10px] h-[140px] ${colors.ribbon} transition-all duration-200`}
+        className={`absolute left-0 top-0 w-[10px] h-[140px] ${config.ribbon} transition-all duration-200`}
       />
 
       {/* Card Background */}
       <div
-        className={`absolute left-0 top-[20px] w-full h-full rounded-br-[12px] rounded-tr-[12px] overflow-clip ${colors.background}`}
+        className={`absolute left-0 top-[20px] w-full h-full rounded-br-[12px] rounded-tr-[12px] overflow-clip ${config.background}`}
       >
-        {/* Ribbon Flag (decorative element top-right) */}
-        <div className="absolute right-0 top-0 w-[21px] h-[32px] opacity-80">
-          {/* SVG Flag - Placeholder for now */}
-          <div className={`w-full h-full ${colors.ribbon}`} style={{
-            clipPath: 'polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)'
-          }} />
+        {/* Ribbon Flag (exact SVG from Figma) */}
+        <div className="absolute left-[69px] top-0 w-[21px] h-[32px]">
+          <img
+            alt=""
+            src={config.flagSvg}
+            className="block max-w-none size-full"
+          />
         </div>
 
         {/* Profile Content Container */}
         <div className="absolute left-[25px] top-[16px] w-[60px] flex flex-col items-center gap-[6px]">
-          {/* Profile Image (masked circular) */}
-          <div className={`relative w-[58px] h-[58px] rounded-full overflow-hidden ${isLocked ? 'blur-[5px]' : ''}`}>
-            <Image
-              src={profileImage}
-              alt={isLocked ? '???' : name}
-              fill
-              className="object-cover"
-              sizes="58px"
-            />
-          </div>
+          {isLocked ? (
+            // Locked state: Blurred 50x50px profile centered with specific positioning
+            <div className="relative h-[50px] w-[60px] flex items-center justify-center">
+              <div className="blur-[5px] filter size-[50px]">
+                <div className="relative size-full rounded-full overflow-hidden">
+                  <Image
+                    src={profileImage}
+                    alt="???"
+                    fill
+                    className="object-cover"
+                    sizes="50px"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Unlocked state: Clear 58x58px profile
+            <div className="relative w-[58px] h-[58px] rounded-full overflow-hidden">
+              <Image
+                src={profileImage}
+                alt={name}
+                fill
+                className="object-cover"
+                sizes="58px"
+              />
+            </div>
+          )}
 
-          {/* Name Label */}
+          {/* Name Label (only for unlocked state) */}
           {!isLocked && (
-            <p className="font-semibold text-[16px] leading-[1.4] text-[#31363e] text-center w-full">
-              {name}
-            </p>
+            <div className="flex flex-col items-start w-full">
+              <p className="font-[family-name:var(--font-pretendard)] font-semibold text-[16px] leading-[1.4] text-[#31363e] text-center w-full">
+                {name}
+              </p>
+            </div>
           )}
         </div>
 
-        {/* Lock Icon (only for locked state) */}
+        {/* Lock Icon (only for locked state) - EXACT 48x48px from Figma */}
         {isLocked && (
-          <div className="absolute left-[31px] top-[68px] w-[48px] h-[48px] flex items-center justify-center">
-            <Lock className="w-[32px] h-[32px] text-gray-600" strokeWidth={2} />
+          <div className="absolute left-[31px] top-[68px] size-[48px]">
+            <img
+              alt=""
+              src={config.lockSvg}
+              className="block max-w-none size-full"
+            />
           </div>
         )}
       </div>

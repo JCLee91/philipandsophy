@@ -21,6 +21,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Helper to generate today's featured participants
+function getTodayFeaturedParticipants() {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  return {
+    [today]: {
+      similar: ['1', '2'], // 다은, 다진
+      opposite: ['3', '4'], // 구종, 현명
+    }
+  };
+}
+
 // Cohorts data (from src/data/cohorts.ts)
 const cohortsData = [
   {
@@ -30,6 +41,7 @@ const cohortsData = [
     startDate: '2025-10-01',
     endDate: '2025-10-14',
     isActive: true,
+    dailyFeaturedParticipants: getTodayFeaturedParticipants(),
   },
   {
     id: '2',

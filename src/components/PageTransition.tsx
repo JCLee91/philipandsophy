@@ -40,6 +40,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
         exit="exit"
         variants={pageVariants}
         transition={pageTransition}
+        style={{ pointerEvents: 'auto' }}
       >
         {children}
       </motion.div>

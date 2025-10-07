@@ -1,6 +1,7 @@
 'use client';
 
 import '../../styles/landing.css';
+import Footer from '@/components/Footer';
 
 export default function ProgramPage() {
   // Program_01.webp ~ Program_18.webp 경로 생성
@@ -11,18 +12,21 @@ export default function ProgramPage() {
   }));
 
   return (
-    <div className="container">
-      {images.map((image, idx) => (
-        <img
-          key={idx}
-          src={image.src}
-          alt={image.alt}
-          className="main-image"
-          loading={idx === 0 ? 'eager' : 'lazy'}
-          fetchPriority={idx === 0 ? 'high' : 'auto'}
-        />
-      ))}
-    </div>
+    <>
+      <div className="container">
+        {images.map((image, idx) => (
+          <img
+            key={idx}
+            src={image.src}
+            alt={image.alt}
+            className="main-image"
+            loading={idx === 0 ? 'eager' : 'lazy'}
+            fetchPriority={idx === 0 ? 'high' : 'auto'}
+          />
+        ))}
+      </div>
+      <Footer />
+    </>
   );
 }
 

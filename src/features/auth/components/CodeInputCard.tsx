@@ -85,7 +85,7 @@ export default function CodeInputCard() {
       setSearchPhone('');
       setIsSubmitting(false);
     } else if (searchPhone && !isLoading && participant) {
-      router.push(`/chat?cohort=${participant.cohortId}&userId=${participant.id}`);
+      router.push(`/app/chat?cohort=${participant.cohortId}&userId=${participant.id}`);
     }
   }, [searchPhone, isLoading, participant, router]);
 

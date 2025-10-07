@@ -104,6 +104,7 @@
     padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scrollbar-gutter: stable;
   }
   
   /* Pretendard 폰트를 모든 요소에 강제 적용 */

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateSubmission } from '@/hooks/use-submissions';
 import { uploadReadingImage } from '@/lib/firebase';
@@ -37,6 +38,8 @@ export default function ReadingSubmissionDialog({
 
   const [bookImage, setBookImage] = useState<File | null>(null);
   const [bookImagePreview, setBookImagePreview] = useState<string>('');
+  const [bookTitle, setBookTitle] = useState('');
+  const [bookAuthor, setBookAuthor] = useState('');
   const [review, setReview] = useState('');
   const [dailyAnswer, setDailyAnswer] = useState('');
   const [dailyQuestion, setDailyQuestion] = useState('');
@@ -81,6 +84,8 @@ export default function ReadingSubmissionDialog({
       await createSubmission.mutateAsync({
         participantId,
         participationCode,
+        bookTitle: bookTitle.trim(),
+        bookAuthor: bookAuthor.trim(),
         bookImageUrl,
         review: review.trim(),
         dailyQuestion,
@@ -97,6 +102,8 @@ export default function ReadingSubmissionDialog({
       // 폼 초기화
       setBookImage(null);
       setBookImagePreview('');
+      setBookTitle('');
+      setBookAuthor('');
       setReview('');
       setDailyAnswer('');
       onOpenChange(false);
@@ -181,10 +188,44 @@ export default function ReadingSubmissionDialog({
             )}
           </div>
 
-          {/* 2. 간단 감상평 */}
+          {/* 2. 책 제목 */}
+          <div className="space-y-3">
+            <Label htmlFor="bookTitle" className="text-base font-semibold">
+              2. 책 제목 <span className="text-destructive">*</span>
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              읽고 있는 책의 제목을 입력해주세요.
+            </p>
+            <Input
+              id="bookTitle"
+              value={bookTitle}
+              onChange={(e) => setBookTitle(e.target.value)}
+              placeholder="예: 어린 왕자"
+              disabled={uploading}
+            />
+          </div>
+
+          {/* 3. 책 저자 */}
+          <div className="space-y-3">
+            <Label htmlFor="bookAuthor" className="text-base font-semibold">
+              3. 책 저자 <span className="text-destructive">*</span>
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              책의 저자를 입력해주세요.
+            </p>
+            <Input
+              id="bookAuthor"
+              value={bookAuthor}
+              onChange={(e) => setBookAuthor(e.target.value)}
+              placeholder="예: 생텍쥐페리"
+              disabled={uploading}
+            />
+          </div>
+
+          {/* 4. 간단 감상평 */}
           <div className="space-y-3">
             <Label htmlFor="review" className="text-base font-semibold">
-              2. 간단 감상평 <span className="text-destructive">*</span>
+              4. 간단 감상평 <span className="text-destructive">*</span>
             </Label>
             <p className="text-sm text-muted-foreground">
               오늘 읽은 내용에 대한 생각이나 느낀 점을 자유롭게 적어주세요.
@@ -202,10 +243,10 @@ export default function ReadingSubmissionDialog({
             </div>
           </div>
 
-          {/* 3. 오늘의 질문 */}
+          {/* 5. 오늘의 질문 */}
           <div className="space-y-3">
             <Label htmlFor="dailyAnswer" className="text-base font-semibold">
-              3. 오늘의 질문 <span className="text-destructive">*</span>
+              5. 오늘의 질문 <span className="text-destructive">*</span>
             </Label>
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
               <p className="text-sm font-medium text-primary">{dailyQuestion}</p>
@@ -235,9 +276,11 @@ export default function ReadingSubmissionDialog({
           <Button
             onClick={handleSubmit}
             disabled={
-              uploading || 
-              !bookImage || 
-              review.trim().length < MIN_TEXT_LENGTH || 
+              uploading ||
+              !bookImage ||
+              !bookTitle.trim() ||
+              !bookAuthor.trim() ||
+              review.trim().length < MIN_TEXT_LENGTH ||
               dailyAnswer.trim().length < MIN_TEXT_LENGTH
             }
           >
