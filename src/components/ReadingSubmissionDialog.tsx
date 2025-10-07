@@ -12,14 +12,15 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateSubmission } from '@/hooks/use-submissions';
-import { uploadReadingImage } from '@/lib/firebase';
+import { uploadReadingImage, getParticipantById, updateParticipantBookTitle } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
 import { getDailyQuestion } from '@/constants/daily-questions';
 import Image from 'next/image';
+import BookSearchAutocomplete from '@/components/BookSearchAutocomplete';
+import type { NaverBook } from '@/lib/naver-book-api';
 
 interface ReadingSubmissionDialogProps {
   open: boolean;
@@ -40,20 +41,41 @@ export default function ReadingSubmissionDialog({
   const [bookImagePreview, setBookImagePreview] = useState<string>('');
   const [bookTitle, setBookTitle] = useState('');
   const [bookAuthor, setBookAuthor] = useState('');
+  const [bookCoverUrl, setBookCoverUrl] = useState('');
   const [review, setReview] = useState('');
   const [dailyAnswer, setDailyAnswer] = useState('');
   const [dailyQuestion, setDailyQuestion] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [isAutoFilled, setIsAutoFilled] = useState(false);
+  const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
 
   const { toast } = useToast();
   const createSubmission = useCreateSubmission();
 
-  // 다이얼로그가 열릴 때마다 새로운 질문 생성
+  // 다이얼로그가 열릴 때 참가자의 현재 책 제목 로드 및 새로운 질문 생성
   useEffect(() => {
     if (open) {
       setDailyQuestion(getDailyQuestion());
+
+      // 참가자의 현재 책 제목 로드
+      const loadCurrentBook = async () => {
+        setIsLoadingBookTitle(true);
+        try {
+          const participant = await getParticipantById(participantId);
+          if (participant?.currentBookTitle) {
+            setBookTitle(participant.currentBookTitle);
+            setIsAutoFilled(true);
+          }
+        } catch (error) {
+          console.error('Failed to load current book title:', error);
+        } finally {
+          setIsLoadingBookTitle(false);
+        }
+      };
+
+      loadCurrentBook();
     }
-  }, [open]);
+  }, [open, participantId]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,19 +95,47 @@ export default function ReadingSubmissionDialog({
     setBookImagePreview('');
   };
 
+  const handleBookTitleChange = (value: string) => {
+    setBookTitle(value);
+    setIsAutoFilled(false);
+    // 사용자가 직접 입력하면 저자와 표지 정보 초기화
+    setBookAuthor('');
+    setBookCoverUrl('');
+  };
+
+  const handleBookSelect = (book: NaverBook) => {
+    setBookTitle(book.title);
+    setBookAuthor(book.author);
+    setBookCoverUrl(book.image);
+    setIsAutoFilled(false);
+  };
+
+  const handleClearTitle = () => {
+    setBookTitle('');
+    setBookAuthor('');
+    setBookCoverUrl('');
+    setIsAutoFilled(false);
+  };
+
   const handleSubmit = async () => {
     setUploading(true);
 
     try {
-      // 이미지 업로드
+      const trimmedBookTitle = bookTitle.trim();
+
+      // 1. 책 제목 변경 감지 및 DB 업데이트
+      await updateParticipantBookTitle(participantId, trimmedBookTitle);
+
+      // 2. 이미지 업로드
       const bookImageUrl = await uploadReadingImage(bookImage, participationCode);
 
-      // 제출 생성
+      // 3. 제출 생성 (책 정보 포함)
       await createSubmission.mutateAsync({
         participantId,
         participationCode,
-        bookTitle: bookTitle.trim(),
-        bookAuthor: bookAuthor.trim(),
+        bookTitle: trimmedBookTitle,
+        bookAuthor: bookAuthor.trim() || undefined,
+        bookCoverUrl: bookCoverUrl || undefined,
         bookImageUrl,
         review: review.trim(),
         dailyQuestion,
@@ -99,13 +149,15 @@ export default function ReadingSubmissionDialog({
         description: '독서 인증이 성공적으로 제출되었습니다.',
       });
 
-      // 폼 초기화
+      // 폼 초기화 (책 제목은 DB에 저장되어 다음번에 자동 로드됨)
       setBookImage(null);
       setBookImagePreview('');
       setBookTitle('');
       setBookAuthor('');
+      setBookCoverUrl('');
       setReview('');
       setDailyAnswer('');
+      setIsAutoFilled(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Submission error:', error);
@@ -188,44 +240,20 @@ export default function ReadingSubmissionDialog({
             )}
           </div>
 
-          {/* 2. 책 제목 */}
-          <div className="space-y-3">
-            <Label htmlFor="bookTitle" className="text-base font-semibold">
-              2. 책 제목 <span className="text-destructive">*</span>
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              읽고 있는 책의 제목을 입력해주세요.
-            </p>
-            <Input
-              id="bookTitle"
-              value={bookTitle}
-              onChange={(e) => setBookTitle(e.target.value)}
-              placeholder="예: 어린 왕자"
-              disabled={uploading}
-            />
-          </div>
+          {/* 2. 책 제목 (자동완성 컴포넌트로 교체) */}
+          <BookSearchAutocomplete
+            value={bookTitle}
+            onChange={handleBookTitleChange}
+            onBookSelect={handleBookSelect}
+            disabled={uploading || isLoadingBookTitle}
+            isAutoFilled={isAutoFilled}
+            onClear={handleClearTitle}
+          />
 
-          {/* 3. 책 저자 */}
-          <div className="space-y-3">
-            <Label htmlFor="bookAuthor" className="text-base font-semibold">
-              3. 책 저자 <span className="text-destructive">*</span>
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              책의 저자를 입력해주세요.
-            </p>
-            <Input
-              id="bookAuthor"
-              value={bookAuthor}
-              onChange={(e) => setBookAuthor(e.target.value)}
-              placeholder="예: 생텍쥐페리"
-              disabled={uploading}
-            />
-          </div>
-
-          {/* 4. 간단 감상평 */}
+          {/* 3. 간단 감상평 (번호 변경: 4 → 3) */}
           <div className="space-y-3">
             <Label htmlFor="review" className="text-base font-semibold">
-              4. 간단 감상평 <span className="text-destructive">*</span>
+              3. 간단 감상평 <span className="text-destructive">*</span>
             </Label>
             <p className="text-sm text-muted-foreground">
               오늘 읽은 내용에 대한 생각이나 느낀 점을 자유롭게 적어주세요.
@@ -243,10 +271,10 @@ export default function ReadingSubmissionDialog({
             </div>
           </div>
 
-          {/* 5. 오늘의 질문 */}
+          {/* 4. 오늘의 질문 (번호 변경: 5 → 4) */}
           <div className="space-y-3">
             <Label htmlFor="dailyAnswer" className="text-base font-semibold">
-              5. 오늘의 질문 <span className="text-destructive">*</span>
+              4. 오늘의 질문 <span className="text-destructive">*</span>
             </Label>
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
               <p className="text-sm font-medium text-primary">{dailyQuestion}</p>
@@ -279,7 +307,6 @@ export default function ReadingSubmissionDialog({
               uploading ||
               !bookImage ||
               !bookTitle.trim() ||
-              !bookAuthor.trim() ||
               review.trim().length < MIN_TEXT_LENGTH ||
               dailyAnswer.trim().length < MIN_TEXT_LENGTH
             }

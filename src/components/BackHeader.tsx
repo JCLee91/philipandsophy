@@ -1,10 +1,10 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 
 interface BackHeaderProps {
   onBack: () => void;
-  title: string;
+  title?: string; // 제목을 선택적으로 만듦
 }
 
 export default function BackHeader({ onBack, title }: BackHeaderProps) {
@@ -17,11 +17,18 @@ export default function BackHeader({ onBack, title }: BackHeaderProps) {
           className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors duration-normal relative z-10"
           aria-label="뒤로가기"
         >
-          <ArrowLeft className="h-5 w-5 text-foreground" />
+          <Image
+            src="/icons/arrow-back.svg"
+            alt="뒤로가기"
+            width={20}
+            height={20}
+          />
         </button>
-        <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold pointer-events-none">
-          {title}
-        </h1>
+        {title && (
+          <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold pointer-events-none">
+            {title}
+          </h1>
+        )}
       </div>
     </header>
   );

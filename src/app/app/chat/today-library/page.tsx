@@ -3,18 +3,23 @@
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import BackHeader from '@/components/BackHeader';
 import PageTransition from '@/components/PageTransition';
 import BookmarkCard from '@/components/BookmarkCard';
+import BookmarkCardSkeleton from '@/components/BookmarkCardSkeleton';
+import HeaderNavigation from '@/components/HeaderNavigation';
+import EllipseShadow from '@/components/EllipseShadow';
+import FooterActions from '@/components/FooterActions';
+import BlurDivider from '@/components/BlurDivider';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipant } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
-import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 import type { Participant } from '@/types/database';
+import { SHADOW_OFFSETS, SPACING } from '@/constants/today-library';
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
@@ -23,7 +28,6 @@ function TodayLibraryContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
   const currentUserId = searchParams.get('userId');
-  const { toast } = useToast();
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { data: currentUser, isLoading: currentUserLoading } = useParticipant(currentUserId || undefined);
@@ -32,10 +36,12 @@ function TodayLibraryContent() {
   // 오늘 날짜
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  // 🔧 임시: 오늘의 추천 참가자 (하드코딩 - 디자인 확인용)
-  // TODO: 나중에 cohort.dailyFeaturedParticipants 사용하도록 변경
-  const todayFeatured = cohort?.dailyFeaturedParticipants?.[today] || { similar: ['1', '2'], opposite: ['3', '4'] };
-  const allFeaturedIds = [...todayFeatured.similar, ...todayFeatured.opposite];
+  // 오늘의 추천 참가자 (실제 데이터 우선, 없으면 디자인 확인용 fallback)
+  const todayFeatured = cohort?.dailyFeaturedParticipants?.[today] || {
+    similar: ['1', '2'],
+    opposite: ['3', '4']
+  };
+  const allFeaturedIds = [...(todayFeatured.similar || []), ...(todayFeatured.opposite || [])];
 
   // 추천 참가자들의 정보 가져오기
   const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
@@ -56,15 +62,65 @@ function TodayLibraryContent() {
       // 각 참가자에 theme 정보 추가
       return participants.map((participant) => ({
         ...participant,
-        theme: todayFeatured.similar.includes(participant.id) ? 'similar' : 'opposite'
+        theme: (todayFeatured.similar || []).includes(participant.id) ? 'similar' : 'opposite'
       }));
     },
     enabled: allFeaturedIds.length > 0,
   });
 
-  // 로딩 상태
+  // 로딩 상태 - 스켈레톤 UI 표시
   if (cohortLoading || currentUserLoading || participantsLoading) {
-    return <LoadingSpinner />;
+    return (
+      <PageTransition>
+        <div className="flex h-screen flex-col overflow-hidden">
+          <HeaderNavigation title="오늘의 서재" />
+
+          <main className="flex-1 overflow-y-auto bg-background">
+            <div className="mx-auto max-w-md px-4 w-full">
+              <div className="pt-12 pb-8">
+                <div className="flex flex-col gap-12">
+                  <div className="flex flex-col gap-3">
+                    {/* Title Skeleton */}
+                    <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+                    {/* Subtitle Skeleton */}
+                    <div className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
+                  </div>
+
+                  {/* Bookmark Cards Skeleton */}
+                  <div className="flex flex-col w-full">
+                    {/* Top Row Skeleton */}
+                    <div className="h-[140px] overflow-hidden relative w-full">
+                      <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-skeleton-1" />
+                      <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
+                        <BookmarkCardSkeleton theme="blue" />
+                        <BookmarkCardSkeleton theme="blue" />
+                      </div>
+                    </div>
+
+                    <BlurDivider />
+
+                    {/* Bottom Row Skeleton */}
+                    <div className="h-[160px] overflow-hidden relative w-full">
+                      <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-skeleton-2" />
+                      <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
+                        <BookmarkCardSkeleton theme="yellow" />
+                        <BookmarkCardSkeleton theme="yellow" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <div className="shrink-0 border-t bg-white pb-safe">
+            <div className="mx-auto max-w-md px-6 pt-4 pb-8">
+              <div className="h-12 bg-gray-200 rounded-lg animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </PageTransition>
+    );
   }
 
   // 데이터 확인
@@ -80,12 +136,7 @@ function TodayLibraryContent() {
   // 프로필북 클릭 핸들러 (인증 체크 포함)
   const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
     if (!isAdmin && !isVerifiedToday) {
-      // 미인증 시 Toast 알림
-      toast({
-        title: "독서 인증이 필요해요",
-        description: "오늘의 독서 인증을 완료하면 프로필 북을 볼 수 있어요!",
-        variant: "default",
-      });
+      // 미인증 시 인라인 메시지가 표시되어 있으므로 클릭 방지만 수행
       return;
     }
     router.push(`/app/profile/${participantId}?cohort=${cohortId}&userId=${currentUserId}&theme=${theme}`);
@@ -94,37 +145,87 @@ function TodayLibraryContent() {
   // 추천 참가자가 없을 때
   if (allFeaturedIds.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <BackHeader onBack={() => router.back()} title="오늘의 서재" />
-        <main className="flex flex-1 items-center justify-center px-4">
-          <div className="text-center space-y-4 max-w-sm">
-            <p className="text-muted-foreground">
-              오늘의 추천 프로필이 아직 설정되지 않았어요.
-            </p>
-          </div>
-        </main>
-      </div>
+      <PageTransition>
+        <div className="flex h-screen flex-col overflow-hidden">
+          <HeaderNavigation title="오늘의 서재" />
+
+          <main className="flex flex-1 items-center justify-center bg-background overflow-y-auto">
+            <div className="mx-auto max-w-md px-6">
+              <div className="text-center space-y-6">
+                {/* Empty State Icon */}
+                <div className="flex justify-center">
+                  <div className="size-20 rounded-full bg-gray-100 flex items-center justify-center">
+                    <svg className="size-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Empty State Message */}
+                <div className="space-y-2">
+                  <h3 className="font-bold text-lg text-gray-900">
+                    오늘의 추천 프로필이 아직 준비중이에요
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    곧 흥미로운 프로필 북이 업데이트될 예정입니다.
+                    <br />
+                    먼저 내 프로필 북을 확인해보세요!
+                  </p>
+                </div>
+
+                {/* CTA Button */}
+                <button
+                  type="button"
+                  onClick={() => router.push(`/app/profile/${currentUserId}?cohort=${cohortId}&userId=${currentUserId}`)}
+                  className="bg-black text-white rounded-lg px-6 py-3 font-semibold text-base transition-colors hover:bg-gray-800 active:bg-gray-900"
+                >
+                  내 프로필 북 보기
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </PageTransition>
     );
   }
 
   // 미인증 유저에게는 프로필 가리기
   const isLocked = !isAdmin && !isVerifiedToday;
 
-  // 참가자를 theme별로 분리 (첫 2개 similar, 마지막 2개 opposite)
-  const similarParticipants = featuredParticipants.slice(0, 2);
-  const oppositeParticipants = featuredParticipants.slice(2, 4);
+  // 참가자를 theme별로 분리
+  const similarParticipants = featuredParticipants.filter(p => p.theme === 'similar');
+  const oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
 
   return (
     <PageTransition>
-      <div className="flex min-h-screen flex-col bg-white">
-        <BackHeader onBack={() => router.back()} title="프로필 북" />
+      <div className="flex h-screen flex-col overflow-hidden">
+        <HeaderNavigation title="오늘의 서재" />
 
-        <main className="flex-1 pt-[16px]">
-          {/* Header Section */}
-          <div className="mx-auto w-[328px] flex flex-col gap-[40px]">
-            <div className="flex flex-col gap-[16px] w-[312px]">
-              <div className="flex flex-col gap-[3px]">
-                <p className="font-[family-name:var(--font-pretendard)] font-bold text-[24px] leading-[1.4] tracking-[-0.24px] text-black">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-background">
+          <div className="mx-auto max-w-md px-4 w-full">
+            <div className="pt-12 pb-8">
+              {/* Header Section */}
+              <div className="flex flex-col gap-12">
+              <div className="flex flex-col gap-3">
+                {/* Inline Warning Message for Unauthenticated Users */}
+                {isLocked && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-6 flex items-start gap-3">
+                    <svg className="shrink-0 size-5 text-amber-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm text-amber-900 mb-1">
+                        독서 인증이 필요해요
+                      </p>
+                      <p className="text-sm text-amber-700">
+                        오늘의 독서 인증을 완료하면 프로필 북을 볼 수 있어요!
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <h1 className="font-bold text-heading-xl text-black">
                   {isLocked ? (
                     <>
                       지금 독서 인증하고
@@ -138,137 +239,62 @@ function TodayLibraryContent() {
                       확인해보세요
                     </>
                   )}
+                </h1>
+                <p className="font-medium text-body-base text-text-secondary">
+                  {isLocked ? '밤 12시가 지나면 사라져요' : '밤 12시까지만 읽을 수 있어요'}
                 </p>
               </div>
-              <p className="font-[family-name:var(--font-pretendard)] font-medium text-[16px] leading-[1.6] tracking-[-0.16px] text-[#575e68]">
-                {isLocked ? '밤 12시가 지나면 사라져요' : '밤 12시까지만 읽을 수 있어요'}
-              </p>
-            </div>
 
-            {/* Bookmark Cards Section */}
-            <div className="flex flex-col w-full">
-              {/* Top Row (Blue Theme - Similar) */}
-              <div className="relative h-[140px] w-full overflow-clip">
-                {/* Shadow Ellipse */}
-                <div className="absolute left-0 top-[128px] h-[24px] w-full opacity-20">
-                  <div className="absolute inset-[-208.33%_-15.24%] bg-gradient-to-b from-transparent to-gray-400 rounded-full blur-xl" />
+              {/* Bookmark Cards Section */}
+              <div className="flex flex-col w-full">
+                {/* Top Row (Blue Theme - Similar) */}
+                <div className="h-[140px] overflow-hidden relative w-full">
+                  <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-1" />
+                  <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
+                    {similarParticipants.map((participant) => (
+                      <BookmarkCard
+                        key={`similar-${participant.id}`}
+                        profileImage={participant.profileImage || 'https://via.placeholder.com/150/cccccc/666666?text=No+Image'}
+                        name={participant.name}
+                        theme="blue"
+                        isLocked={isLocked}
+                        onClick={() => handleProfileClickWithAuth(participant.id, 'similar')}
+                      />
+                    ))}
+                  </div>
                 </div>
 
-                {/* Card 1: Left */}
-                {similarParticipants[0] && (
-                  <div className="absolute left-[42px] top-[20px]">
-                    <BookmarkCard
-                      profileImage={similarParticipants[0].profileImage || '/image/favicon.webp'}
-                      name={similarParticipants[0].name}
-                      theme="blue"
-                      isLocked={isLocked}
-                      onClick={() => handleProfileClickWithAuth(similarParticipants[0].id, 'similar')}
-                    />
+                <BlurDivider />
+
+                {/* Bottom Row (Yellow Theme - Opposite) */}
+                <div className="h-[160px] overflow-hidden relative w-full">
+                  <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-2" />
+                  <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
+                    {oppositeParticipants.map((participant) => (
+                      <BookmarkCard
+                        key={`opposite-${participant.id}`}
+                        profileImage={participant.profileImage || 'https://via.placeholder.com/150/cccccc/666666?text=No+Image'}
+                        name={participant.name}
+                        theme="yellow"
+                        isLocked={isLocked}
+                        onClick={() => handleProfileClickWithAuth(participant.id, 'opposite')}
+                      />
+                    ))}
                   </div>
-                )}
-
-                {/* Card 2: Right */}
-                {similarParticipants[1] && (
-                  <div className="absolute left-[186px] top-[20px]">
-                    <BookmarkCard
-                      profileImage={similarParticipants[1].profileImage || '/image/favicon.webp'}
-                      name={similarParticipants[1].name}
-                      theme="blue"
-                      isLocked={isLocked}
-                      onClick={() => handleProfileClickWithAuth(similarParticipants[1].id, 'similar')}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* White Spacer */}
-              <div className="bg-white h-[20px] w-[326px]" />
-
-              {/* Blur Divider */}
-              <div className="blur-[6.128px] filter h-[4px] w-[328px] bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
-
-              {/* Bottom Row (Yellow Theme - Opposite) */}
-              <div className="relative h-[160px] w-full overflow-clip">
-                {/* Shadow Ellipse */}
-                <div className="absolute left-0 top-[148px] h-[24px] w-full opacity-20">
-                  <div className="absolute inset-[-208.33%_-15.24%] bg-gradient-to-b from-transparent to-gray-400 rounded-full blur-xl" />
                 </div>
 
-                {/* Card 3: Left */}
-                {oppositeParticipants[0] && (
-                  <div className="absolute left-[42px] top-[40px]">
-                    <BookmarkCard
-                      profileImage={oppositeParticipants[0].profileImage || '/image/favicon.webp'}
-                      name={oppositeParticipants[0].name}
-                      theme="yellow"
-                      isLocked={isLocked}
-                      onClick={() => handleProfileClickWithAuth(oppositeParticipants[0].id, 'opposite')}
-                    />
-                  </div>
-                )}
-
-                {/* Card 4: Right */}
-                {oppositeParticipants[1] && (
-                  <div className="absolute left-[186px] top-[40px]">
-                    <BookmarkCard
-                      profileImage={oppositeParticipants[1].profileImage || '/image/favicon.webp'}
-                      name={oppositeParticipants[1].name}
-                      theme="yellow"
-                      isLocked={isLocked}
-                      onClick={() => handleProfileClickWithAuth(oppositeParticipants[1].id, 'opposite')}
-                    />
-                  </div>
-                )}
+                <BlurDivider />
               </div>
-
-              {/* White Spacer */}
-              <div className="bg-white h-[20px] w-[326px]" />
-
-              {/* Blur Divider */}
-              <div className="blur-[6.128px] filter h-[4px] w-[328px] bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
+              </div>
             </div>
           </div>
         </main>
 
-        {/* Footer Buttons */}
-        <div className="flex gap-[8px] px-[24px] pt-[16px] pb-[32px]">
-          {isLocked ? (
-            <>
-              {/* Unauthenticated: 2 Buttons */}
-              <button
-                type="button"
-                onClick={() => router.push(`/app/profile/${currentUserId}?cohort=${cohortId}&userId=${currentUserId}`)}
-                className="flex-1 bg-white border border-gray-200 rounded-[8px] px-0 py-[16px] overflow-clip transition-colors hover:bg-gray-50"
-              >
-                <span className="font-[family-name:var(--font-pretendard)] font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-black">
-                  내 프로필 북 보기
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push(`/app/chat?cohort=${cohortId}&userId=${currentUserId}`)}
-                className="flex-1 bg-black rounded-[8px] px-0 py-[16px] overflow-clip transition-colors hover:bg-gray-800"
-              >
-                <span className="font-[family-name:var(--font-pretendard)] font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-white">
-                  독서 인증하기
-                </span>
-              </button>
-            </>
-          ) : (
-            <>
-              {/* Authenticated: 1 Button */}
-              <button
-                type="button"
-                onClick={() => router.push(`/app/profile/${currentUserId}?cohort=${cohortId}&userId=${currentUserId}`)}
-                className="flex-1 bg-black rounded-[8px] px-0 py-[16px] overflow-clip transition-colors hover:bg-gray-800"
-              >
-                <span className="font-[family-name:var(--font-pretendard)] font-bold text-[16px] leading-[1.4] tracking-[-0.16px] text-white">
-                  내 프로필 북 보기
-                </span>
-              </button>
-            </>
-          )}
-        </div>
+        <FooterActions
+          cohortId={cohortId}
+          currentUserId={currentUserId}
+          isLocked={isLocked}
+        />
       </div>
     </PageTransition>
   );

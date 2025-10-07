@@ -15,7 +15,7 @@ import {
   QueryConstraint,
 } from 'firebase/firestore';
 import { getDb } from './client';
-import { Participant, COLLECTIONS } from '@/types/database';
+import { Participant, BookHistoryEntry, COLLECTIONS } from '@/types/database';
 
 /**
  * Participant CRUD Operations
@@ -165,4 +165,74 @@ export async function searchParticipants(
     id: doc.id,
     ...doc.data(),
   })) as Participant[];
+}
+
+/**
+ * 참가자의 책 제목 업데이트 (책 변경 감지 및 이력 관리)
+ *
+ * @param participantId - 참가자 ID
+ * @param newBookTitle - 새로운 책 제목
+ * @returns void
+ *
+ * 동작:
+ * 1. 현재 책 제목과 새 책 제목이 같으면 아무것도 하지 않음
+ * 2. 다르면:
+ *    - 이전 책의 endedAt을 현재 시각으로 설정
+ *    - 새 책을 bookHistory에 추가 (endedAt: null)
+ *    - currentBookTitle 업데이트
+ */
+export async function updateParticipantBookTitle(
+  participantId: string,
+  newBookTitle: string
+): Promise<void> {
+  const db = getDb();
+  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
+
+  // 현재 참가자 정보 조회
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) {
+    throw new Error('Participant not found');
+  }
+
+  const participant = docSnap.data() as Participant;
+  const currentBookTitle = participant.currentBookTitle;
+  const bookHistory = participant.bookHistory || [];
+
+  // 책 제목이 같으면 업데이트 불필요
+  if (currentBookTitle === newBookTitle) {
+    return;
+  }
+
+  const now = Timestamp.now();
+  let updatedHistory = [...bookHistory];
+
+  // 이전 책이 있으면 종료 처리
+  if (currentBookTitle) {
+    // 마지막 책 이력의 endedAt 업데이트
+    updatedHistory = updatedHistory.map((entry, index) => {
+      // 마지막 항목이고 endedAt이 null이면 종료 시각 설정
+      if (index === updatedHistory.length - 1 && entry.endedAt === null) {
+        return {
+          ...entry,
+          endedAt: now,
+        };
+      }
+      return entry;
+    });
+  }
+
+  // 새 책 이력 추가
+  const newEntry: BookHistoryEntry = {
+    title: newBookTitle,
+    startedAt: now,
+    endedAt: null, // 현재 읽는 중
+  };
+  updatedHistory.push(newEntry);
+
+  // Firestore 업데이트
+  await updateDoc(docRef, {
+    currentBookTitle: newBookTitle,
+    bookHistory: updatedHistory,
+    updatedAt: now,
+  });
 }

@@ -19,6 +19,15 @@ export interface Cohort {
 }
 
 /**
+ * 책 읽기 이력
+ */
+export interface BookHistoryEntry {
+  title: string; // 책 제목
+  startedAt: Timestamp; // 읽기 시작 일시
+  endedAt: Timestamp | null; // 읽기 종료 일시 (null: 현재 읽는 중)
+}
+
+/**
  * 참가자 정보
  */
 export interface Participant {
@@ -31,6 +40,8 @@ export interface Participant {
   isAdmin?: boolean; // 운영자 여부
   occupation?: string; // 직업/하는 일
   bio?: string; // 한 줄 소개 (2줄 이내)
+  currentBookTitle?: string; // 현재 읽고 있는 책 제목 (프로필북에 표시)
+  bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
@@ -43,8 +54,9 @@ export interface ReadingSubmission {
   participantId: string; // 참가자 ID (Participant.id)
   participationCode: string; // 참여 코드
   bookTitle: string; // 책 제목 (필수)
-  bookAuthor: string; // 책 저자 (필수)
-  bookImageUrl: string; // 책 사진 (필수)
+  bookAuthor?: string; // 책 저자 (선택)
+  bookCoverUrl?: string; // 책 표지 이미지 URL (네이버 API에서 가져온 표지, 선택)
+  bookImageUrl: string; // 책 사진 (사용자가 찍은 인증 사진, 필수)
   review: string; // 간단 감상평 (필수)
   dailyQuestion: string; // 오늘의 질문 (필수)
   dailyAnswer: string; // 오늘의 질문에 대한 답변 (필수)

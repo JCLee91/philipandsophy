@@ -48,6 +48,18 @@ const config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        'library-blue-light': '#cee7ff',
+        'library-blue': '#45a1fd',
+        'library-yellow-light': '#fff2d2',
+        'library-yellow': '#ffd362',
+        'text-primary': '#31363e',
+        'text-secondary': '#575e68',
+      },
+      fontSize: {
+        'heading-xl': ['24px', { lineHeight: '1.4', letterSpacing: '-0.24px' }],
+        'heading-lg': ['18px', { lineHeight: '1.4', letterSpacing: '-0.18px' }],
+        'body-base': ['16px', { lineHeight: '1.6', letterSpacing: '-0.16px' }],
+        'body-sm': ['14px', { lineHeight: '1.5' }],
       },
       borderRadius: {
         lg: 'var(--radius)',

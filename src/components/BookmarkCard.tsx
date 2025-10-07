@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { BOOKMARK_DIMENSIONS, BOOKMARK_THEMES } from '@/constants/today-library';
 
 interface BookmarkCardProps {
   profileImage: string;
@@ -17,78 +18,68 @@ export default function BookmarkCard({
   isLocked,
   onClick,
 }: BookmarkCardProps) {
-  const themeConfig = {
-    blue: {
-      ribbon: 'bg-[#45a1fd]',
-      background: 'bg-[#cee7ff]',
-      // Exact SVG from Figma (node-id: 42159-1614)
-      flagSvg: '/image/today-library/blue-flag.svg',
-      // Lock icon SVG from Figma
-      lockSvg: '/image/today-library/lock-icon.svg',
-    },
-    yellow: {
-      ribbon: 'bg-[#ffd362]',
-      background: 'bg-[#fff2d2]',
-      // Exact SVG from Figma (node-id: 42159-1628)
-      flagSvg: '/image/today-library/yellow-flag.svg',
-      // Lock icon SVG from Figma
-      lockSvg: '/image/today-library/lock-icon.svg',
-    },
-  };
-
-  const config = themeConfig[theme];
+  const config = BOOKMARK_THEMES[theme];
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative group transition-transform duration-200 hover:scale-105 active:scale-95"
-      style={{ width: '100px', height: '120px' }}
-    >
-      {/* Bookmark Ribbon (extends 20px above card) */}
-      <div
-        className={`absolute left-0 top-0 w-[10px] h-[140px] ${config.ribbon} transition-all duration-200`}
-      />
-
-      {/* Card Background */}
-      <div
-        className={`absolute left-0 top-[20px] w-full h-full rounded-br-[12px] rounded-tr-[12px] overflow-clip ${config.background}`}
+    <div className="relative" style={{ width: `${BOOKMARK_DIMENSIONS.CARD_WIDTH}px`, height: `${BOOKMARK_DIMENSIONS.CARD_HEIGHT}px` }}>
+      {/* Book Card Container - positioned at top-20px to allow spine to extend above */}
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={isLocked ? '프로필 북 보기 (인증 필요)' : `${name}님의 프로필 북 보기`}
+        className={`absolute ${config.background} left-0 overflow-clip rounded-br-[12px] rounded-tr-[12px] top-[20px] transition-transform duration-200 hover:scale-105 active:scale-95`}
+        style={{
+          height: `${BOOKMARK_DIMENSIONS.CARD_BODY_HEIGHT}px`,
+          width: `${BOOKMARK_DIMENSIONS.CARD_WIDTH}px`
+        }}
       >
-        {/* Ribbon Flag (exact SVG from Figma) */}
-        <div className="absolute left-[69px] top-0 w-[21px] h-[32px]">
-          <img
-            alt=""
-            src={config.flagSvg}
-            className="block max-w-none size-full"
-          />
-        </div>
+        {/* Book Spine - 140px tall, starts at card top edge, extends 20px above card into wrapper space */}
+        <div
+          className={`absolute ${config.spine} left-0 top-0 z-0`}
+          style={{
+            height: `${BOOKMARK_DIMENSIONS.CARD_HEIGHT}px`,
+            width: `${BOOKMARK_DIMENSIONS.SPINE_WIDTH}px`
+          }}
+        />
 
         {/* Profile Content Container */}
-        <div className="absolute left-[25px] top-[16px] w-[60px] flex flex-col items-center gap-[6px]">
+        <div className="absolute left-[25px] top-[16px] w-[60px] flex flex-col items-center gap-[6px] z-10">
           {isLocked ? (
-            // Locked state: Blurred 50x50px profile centered with specific positioning
-            <div className="relative h-[50px] w-[60px] flex items-center justify-center">
-              <div className="blur-[5px] filter size-[50px]">
+            // Locked state: Blurred profile
+            <div
+              className="relative flex items-center justify-center"
+              style={{
+                height: `${BOOKMARK_DIMENSIONS.PROFILE_SIZE_LOCKED}px`,
+                width: `${BOOKMARK_DIMENSIONS.PROFILE_SIZE_LOCKED}px`
+              }}
+            >
+              <div className="blur-[5px] filter size-full">
                 <div className="relative size-full rounded-full overflow-hidden">
                   <Image
                     src={profileImage}
-                    alt="???"
+                    alt="잠긴 프로필 이미지"
                     fill
                     className="object-cover"
-                    sizes="50px"
+                    sizes={`${BOOKMARK_DIMENSIONS.PROFILE_SIZE_LOCKED}px`}
                   />
                 </div>
               </div>
             </div>
           ) : (
-            // Unlocked state: Clear 58x58px profile
-            <div className="relative w-[58px] h-[58px] rounded-full overflow-hidden">
+            // Unlocked state: Clear profile
+            <div
+              className="relative rounded-full overflow-hidden"
+              style={{
+                width: `${BOOKMARK_DIMENSIONS.PROFILE_SIZE_UNLOCKED}px`,
+                height: `${BOOKMARK_DIMENSIONS.PROFILE_SIZE_UNLOCKED}px`
+              }}
+            >
               <Image
                 src={profileImage}
                 alt={name}
                 fill
                 className="object-cover"
-                sizes="58px"
+                sizes={`${BOOKMARK_DIMENSIONS.PROFILE_SIZE_UNLOCKED}px`}
               />
             </div>
           )}
@@ -96,24 +87,40 @@ export default function BookmarkCard({
           {/* Name Label (only for unlocked state) */}
           {!isLocked && (
             <div className="flex flex-col items-start w-full">
-              <p className="font-[family-name:var(--font-pretendard)] font-semibold text-[16px] leading-[1.4] text-[#31363e] text-center w-full">
+              <p className="font-[family-name:var(--font-pretendard)] font-semibold text-body-base text-text-primary text-center w-full">
                 {name}
               </p>
             </div>
           )}
         </div>
 
-        {/* Lock Icon (only for locked state) - EXACT 48x48px from Figma */}
+        {/* Bookmark Flag - at right edge, above profile */}
+        <div className="absolute h-[32px] left-[69px] top-0 w-[21px] z-20" aria-hidden="true">
+          <img
+            alt=""
+            src={config.flagSvg}
+            className="block max-w-none size-full"
+          />
+        </div>
+
+        {/* Lock Icon (only for locked state) */}
         {isLocked && (
-          <div className="absolute left-[31px] top-[68px] size-[48px]">
+          <div
+            className="absolute left-[31px] top-[68px] z-10"
+            style={{
+              width: `${BOOKMARK_DIMENSIONS.LOCK_ICON_SIZE}px`,
+              height: `${BOOKMARK_DIMENSIONS.LOCK_ICON_SIZE}px`
+            }}
+            aria-hidden="true"
+          >
             <img
-              alt=""
+              alt="잠금 아이콘"
               src={config.lockSvg}
               className="block max-w-none size-full"
             />
           </div>
         )}
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }

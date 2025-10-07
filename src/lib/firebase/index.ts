@@ -32,6 +32,7 @@ export {
   getParticipantsByCohort,
   getAllParticipants,
   updateParticipant,
+  updateParticipantBookTitle,
   deleteParticipant,
   searchParticipants,
 } from './participants';

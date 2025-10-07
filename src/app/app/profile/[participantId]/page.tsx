@@ -186,7 +186,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           <div className="bg-white rounded-tl-[32px] rounded-tr-[32px] mt-[80px] min-h-[calc(100vh-124px)] max-w-[calc(100%-32px)] md:max-w-[420px] mx-auto">
             <div className="w-full px-4 sm:px-6 md:px-8">
               {/* 프로필 정보 */}
-              <div className="flex flex-col items-center pt-[36px] pb-[32px]">
+              <div className="flex flex-col items-center pt-[48px] pb-[32px]">
                 <div className="flex flex-col items-center gap-2 mb-[32px]">
                   <div className="flex items-center gap-1">
                     <h2 className="text-[20px] font-bold leading-[1.4] text-[#31363e]">
@@ -197,7 +197,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                       alt=""
                       width={20}
                       height={20}
-                      className="rotate-180"
                     />
                   </div>
                   {participant.occupation && (
@@ -218,15 +217,18 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                             <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] truncate tracking-[-0.14px]">
                               {latestSubmission.bookTitle}
                             </p>
-                            <p className="text-[12px] leading-[1.4] text-[#8f98a3] tracking-[-0.12px]">
-                              {latestSubmission.bookAuthor}
-                            </p>
+                            {latestSubmission.bookAuthor && (
+                              <p className="text-[12px] leading-[1.4] text-[#8f98a3] tracking-[-0.12px]">
+                                {latestSubmission.bookAuthor}
+                              </p>
+                            )}
                           </div>
                         </div>
-                        {latestSubmission.bookImageUrl && (
+                        {/* 책 표지 표시: bookCoverUrl 우선, 없으면 bookImageUrl 사용 */}
+                        {(latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl) && (
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-[60px] h-[88px] bg-white rounded-[4px] overflow-hidden shadow-sm">
                             <Image
-                              src={latestSubmission.bookImageUrl}
+                              src={latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl}
                               alt="책 표지"
                               fill
                               className="object-cover"
