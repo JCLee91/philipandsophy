@@ -317,25 +317,7 @@ export default function BookSearchAutocomplete({
             ))}
           </div>
         )}
-
-        {/* 자동 완성 힌트 배지 */}
-        {isAutoFilled && value && (
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant="secondary" className="text-xs">
-              📚 이전 독서 계속
-            </Badge>
-            {onClear && (
-              <button
-                type="button"
-                onClick={onClear}
-                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-              >
-                다른 책으로 변경
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+        </div>
       )}
     </div>
   );
