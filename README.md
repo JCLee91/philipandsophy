@@ -24,6 +24,18 @@ Next.js 15 + React 19 + Firebase 기반의 독서 프로그램 참가자 전용 
 /app/program                       # 프로그램 소개
 /privacy-policy.html               # 개인정보처리방침 (정적 HTML)
 /terms-of-service.html             # 이용약관 (정적 HTML)
+
+src/
+├── constants/                     # 전역 상수 파일
+│   ├── api.ts                     # API 캐시 설정 (네이버 책 검색 등)
+│   ├── validation.ts              # 독서 인증 검증 규칙
+│   ├── search.ts                  # 책 검색 설정 (디바운스, 최대 결과 수)
+│   └── ui.ts                      # UI 상수 (스크롤 임계값 등)
+├── lib/
+│   ├── naver-book-api.ts          # 네이버 책 검색 API 유틸리티
+│   └── logger.ts                  # 로거 유틸리티 (개발/프로덕션 분리)
+└── components/
+    └── BookSearchAutocomplete.tsx # 책 검색 자동완성 컴포넌트
 ```
 
 ### Legacy 리다이렉트
@@ -45,18 +57,28 @@ Next.js 15 + React 19 + Firebase 기반의 독서 프로그램 참가자 전용 
 cp .env.local.example .env.local
 ```
 
-`.env.local` 파일에 Firebase 설정을 입력합니다:
+`.env.local` 파일에 Firebase 설정 및 네이버 API 키를 입력합니다:
 
 ```env
+# Firebase 설정
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# 네이버 책 검색 API (서버 사이드 전용)
+NAVER_CLIENT_ID=your_naver_client_id
+NAVER_CLIENT_SECRET=your_naver_client_secret
 ```
 
 Firebase 설정 방법은 [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)를 참고하세요.
+
+**네이버 책 검색 API 설정**:
+1. [네이버 개발자 센터](https://developers.naver.com/apps/#/register)에서 애플리케이션 등록
+2. 검색 API 서비스 추가 (책 검색)
+3. 발급받은 Client ID와 Client Secret을 `.env.local`에 추가
 
 ### 2. 의존성 설치
 
@@ -105,14 +127,14 @@ npm run seed:admin       # 관리자 참가자
 - **React Hook Form v7** + **Zod v3** - 폼 처리 및 검증
 - **Firebase v12.3.0** - Firestore + Storage 백엔드
 
-### 유틸리티
+### 유틸리티 & API
 - **lucide-react** - 아이콘 라이브러리
 - **date-fns v4** - 날짜 조작
 - **es-toolkit v1** - 유틸리티 함수 (lodash 대체)
 - **react-use v17** - React 훅 모음
 - **ts-pattern v5** - 타입 안전 패턴 매칭
 - **framer-motion v11** - 애니메이션
-- **axios v1.7.9** - HTTP 클라이언트
+- **axios v1.7.9** - HTTP 클라이언트 (네이버 API 호출용)
 
 ## 📝 사용 가능한 명령어
 

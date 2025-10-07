@@ -224,3 +224,60 @@ Dropbox Paper의 디자인 철학을 참조하여 불필요한 요소를 제거�
 **스크롤 애니메이션**:
 - 새 공지 등장: Slide Up 100ms
 - 자동 스크롤: 300ms ease-out
+
+### 8.7 Today's Library UI 컴포넌트
+
+**BlurDivider (블러 구분선)**:
+- 그라데이션 블러 효과로 섹션 구분
+- 배경색: 반투명 그라데이션
+- 높이: 2px
+- 용도: 북마크 카드 그룹 구분
+
+**EllipseShadow (타원형 그림자)**:
+- 카드 하단 타원형 그림자 효과
+- 색상: #000000, 투명도 15-20%
+- 오프셋: 수직 20-30px
+- 블러: 20-30px
+- 용도: 북마크 카드에 깊이감 부여
+
+**BookmarkCard (북마크 카드)**:
+- 배경색: #FFFFFF
+- Border Radius: 12px
+- Padding: 16px
+- Shadow: 0 2px 8px rgba(0, 0, 0, 0.08)
+- 프로필 이미지: 40px × 40px, 원형
+- 책 표지 이미지: 16:9 비율, Border Radius 8px
+- 한줄 리뷰: 2줄 말줄임 (ellipsis)
+
+**BookmarkCardSkeleton (스켈레톤 로딩)**:
+- 배경색: #F5F7FA
+- 애니메이션: 부드러운 펄스 효과 (1.5s infinite)
+- 구조: BookmarkCard와 동일한 레이아웃
+
+**HeaderNavigation (헤더 네비게이션)**:
+- 높이: 56px
+- 배경색: #FFFFFF
+- Border Bottom: 1px solid #E1E5E9
+- 뒤로가기 아이콘: 24px, #1E2A44
+- 타이틀: 16px, Font Weight 600
+
+**FooterActions (하단 액션 버튼)**:
+- 위치: 고정 하단
+- 배경색: #FFFFFF
+- Border Top: 1px solid #E1E5E9
+- Padding: 16px
+- 버튼: Primary 스타일, 전체 너비
+
+### 8.8 책 검색 자동완성 UI
+
+**BookSearchAutocomplete (자동완성 컴포넌트)**:
+- 입력 필드: 44px 높이, Border Radius 8px
+- 드롭다운: 최대 5개 결과 표시
+- 각 항목:
+  - 책 표지: 40px × 60px 썸네일
+  - 제목: 14px, Font Weight 500, 1줄 말줄임
+  - 저자/출판사: 12px, Font Weight 400, #6B7280
+  - Hover: 배경색 #F5F7FA
+- 로딩 상태: 스피너 애니메이션
+- 빈 상태: "검색 결과가 없습니다" 메시지
+- 디바운스: 500ms (타이핑 중 API 호출 최소화)

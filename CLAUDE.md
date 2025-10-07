@@ -122,6 +122,8 @@ src/
 ├── hooks/                       # Shared hooks (e.g., use-toast)
 ├── lib/                         # Shared utilities
 │   ├── utils.ts                 # Common utility functions
+│   ├── logger.ts                # Logger utility (dev/prod separation)
+│   ├── naver-book-api.ts        # Naver Book Search API utility
 │   └── firebase/                # Firebase integration
 │       ├── index.ts             # Firebase initialization & exports
 │       ├── config.ts            # Firebase configuration
@@ -141,6 +143,14 @@ src/
 │   └── landing.css              # Landing page styles (glassmorphism design)
 ├── types/                       # TypeScript type definitions
 └── constants/                   # Global constants
+    ├── api.ts                   # API cache settings (Naver book search)
+    ├── validation.ts            # Reading submission validation rules
+    ├── search.ts                # Book search configuration (debounce, max results)
+    ├── ui.ts                    # UI constants (scroll threshold)
+    ├── today-library.ts         # Today's Library constants
+    ├── daily-questions.ts       # Daily questions for profiles
+    ├── profile-themes.ts        # Profile theme colors
+    └── app.ts                   # General app constants
 
 public/
 ├── image/                       # Static images
@@ -189,12 +199,18 @@ The project uses Firebase for backend services with the following structure:
 
 **Environment Variables** (`.env.local`):
 ```env
+# Firebase 설정 (클라이언트 사이드)
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# 네이버 책 검색 API (서버 사이드 전용)
+# ⚠️ NEXT_PUBLIC_ 접두사 없음 (서버 전용)
+NAVER_CLIENT_ID=your_naver_client_id
+NAVER_CLIENT_SECRET=your_naver_client_secret
 ```
 
 **Firestore Collections**:
@@ -243,6 +259,8 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 - **Styling**: Tailwind CSS
 - **Backend**: Firebase (Firestore + Storage)
 - **Animations**: Framer Motion
+- **HTTP Client**: axios (for Naver Book Search API)
+- **External APIs**: Naver Book Search API v1.1
 
 ### TypeScript Configuration
 - Strict mode: enabled
@@ -266,6 +284,34 @@ ESLint has relaxed rules:
 6. **Functional & Immutable** - Favor pure functions
 7. **Minimal Changes** - Touch only what's needed
 8. **Composition over Inheritance**
+
+### Constants Usage
+- **Always extract magic values to constants files** (`src/constants/*.ts`)
+- **Group related constants** by domain (api, validation, search, ui)
+- **Use `as const`** for type narrowing and immutability
+- **Examples**:
+  ```typescript
+  // Good: Using constants
+  import { SEARCH_CONFIG } from '@/constants/search';
+  const debounceDelay = SEARCH_CONFIG.DEBOUNCE_DELAY;
+
+  // Bad: Magic numbers
+  const debounceDelay = 500;
+  ```
+
+### Logger Usage
+- **Never use `console.error` directly** in production code
+- **Use `logger` utility** from `@/lib/logger`:
+  ```typescript
+  import { logger } from '@/lib/logger';
+
+  // Development: logs to console
+  // Production: can be sent to Sentry
+  logger.error('Failed to fetch data', error);
+  logger.warn('Deprecated function called');
+  logger.info('User logged in', { userId });
+  logger.debug('Debug info', { data });
+  ```
 
 ### Functional Programming
 - Avoid mutation
@@ -408,6 +454,9 @@ The landing page (`/`) is converted from static HTML to Next.js React component 
 8. ❌ Using `fetchpriority` instead of `fetchPriority` in JSX (must be camelCase)
 9. ❌ Forgetting to copy CSS to both `src/styles/` and `public/styles/` for static HTML pages
 10. ❌ Using standard Tailwind durations (like `duration-200`) instead of custom ones (`duration-normal`, `duration-fast`, `duration-slow`)
+11. ❌ Using `console.error` directly instead of `logger.error` from `@/lib/logger`
+12. ❌ Hardcoding magic numbers instead of using constants from `@/constants/*`
+13. ❌ Missing `NAVER_CLIENT_ID` and `NAVER_CLIENT_SECRET` in `.env.local` when using book search
 
 ## Development Workflow
 
