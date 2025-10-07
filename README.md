@@ -10,6 +10,8 @@ Next.js 15 + React 19 + Firebase 기반의 독서 프로그램 참가자 전용 
 - **운영자 단방향 공지 시스템** - 프로그램 일정, 도서 정보, 안내사항 전달
 - **참가자 프로필북** - 참가자들의 프로필을 모아볼 수 있는 디지털 명함
 - **독서 인증 제출** - 읽은 책에 대한 인증 사진과 리뷰 제출
+- **책 검색 자동완성** - 네이버 책 검색 API 연동으로 책 정보 자동 완성
+- **책 메타데이터 자동 저장** - 선택한 책 정보(제목, 저자, 표지)를 자동으로 저장하고 다음 독서 인증 시 자동 불러오기
 - **Today's Library** - 오늘 독서 인증한 참가자들의 서재
 - **1:1 다이렉트 메시지** - 운영자와의 개별 소통 채널
 
@@ -111,6 +113,34 @@ npm run seed:submissions # 독서 인증
 npm run seed:admin       # 관리자 참가자
 ```
 
+## ✨ 주요 기능
+
+### 책 메타데이터 자동 저장 시스템
+
+참가자가 독서 인증을 제출할 때 선택한 책 정보를 자동으로 저장하고, 다음 날 같은 책으로 계속 읽을 경우 자동으로 불러오는 기능입니다.
+
+**주요 특징**:
+- 책 제목, 저자, 표지 이미지 URL을 Firestore에 자동 저장
+- 다음 날 독서 인증 다이얼로그에서 이전 책 정보 자동 표시
+- 책 정보 카드 UI로 시각적 표현 (표지 이미지 + 제목 + 저자 + 출판사)
+- 다른 책으로 변경 시 X 버튼으로 간편하게 초기화
+- 수동 입력 시 메타데이터 손실 경고 (window.confirm)
+
+**데이터베이스 스키마**:
+```typescript
+type Participant = {
+  // 기존 필드...
+  currentBookTitle?: string;           // 현재 읽고 있는 책 제목
+  currentBookAuthor?: string;          // 현재 읽고 있는 책 저자
+  currentBookCoverUrl?: string;        // 현재 읽고 있는 책 표지 URL
+}
+```
+
+**Firebase 트랜잭션 패턴**:
+- `runTransaction()`을 사용한 원자적 업데이트
+- 동시성 문제 방지 및 데이터 일관성 보장
+- 레이스 컨디션 방지
+
 ## 🛠️ 기술 스택
 
 ### 프레임워크 & UI
@@ -166,6 +196,36 @@ firebase projects:list   # Firebase 프로젝트 목록
 firebase login           # Firebase 인증
 firebase deploy          # Firebase 배포
 ```
+
+## 🐛 최근 버그 수정 (v2.2)
+
+책 메타데이터 자동 저장 기능 추가와 함께 11개의 중요한 버그를 수정했습니다:
+
+### 데이터 무결성 & 동시성
+1. **Firebase Transaction 레이스 컨디션 방지** - `runTransaction()`으로 원자적 업데이트 보장
+2. **수동 입력 시 메타데이터 손실 경고** - `window.confirm()`으로 사용자에게 확인 요청
+3. **null/undefined 일관성** - 전체 코드베이스에서 `undefined` 사용으로 통일
+4. **동시 업데이트 충돌 방지** - Firebase 트랜잭션으로 동시성 보장
+
+### API & 네트워크
+5. **API 요청 취소 메커니즘** - abort flag 패턴으로 불필요한 요청 취소
+6. **로딩 에러 처리** - 모든 API 호출에 toast 알림 추가
+
+### UI/UX 개선
+7. **initialBook 검증 강화** - title 필드 필수 체크 추가
+8. **X 버튼 메타데이터 초기화** - onClear 콜백으로 즉시 초기화
+9. **에러 토스트 알림** - 사용자 친화적인 오류 메시지 표시
+
+### 안정성 & 호환성
+10. **useEffect 의존성 수정** - 무한 루프 방지 및 최적화
+11. **하위 호환성 유지** - 선택적 메타데이터 필드로 기존 데이터 호환
+
+### 변경된 파일
+- `src/types/database.ts` - Participant 타입에 책 메타데이터 필드 추가
+- `src/lib/firebase/participants.ts` - `updateParticipantBookInfo()` 함수 추가
+- `src/lib/firebase/index.ts` - 새 함수 export
+- `src/components/BookSearchAutocomplete.tsx` - 책 정보 카드 UI 및 initialBook prop 추가
+- `src/components/ReadingSubmissionDialog.tsx` - 책 메타데이터 자동 저장 로직 구현
 
 ## 📚 프로젝트 문서
 

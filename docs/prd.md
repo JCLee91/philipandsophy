@@ -128,6 +128,10 @@
 #### 6.2.6 독서 인증 시스템
 - **인증 폼 (다이얼로그)**:
   - **책 검색 자동완성**: 네이버 책 검색 API 연동으로 책 제목 자동완성
+  - **책 메타데이터 자동 저장**: 선택한 책 정보(제목, 저자, 표지)를 자동으로 저장
+  - **이전 독서 자동 불러오기**: 다음 날 같은 책으로 계속 읽을 경우 자동으로 책 정보 표시
+  - **책 정보 카드 UI**: 표지 이미지 + 제목 + 저자 + 출판사 표시
+  - **X 버튼으로 초기화**: 다른 책으로 변경 시 간편하게 메타데이터 초기화
   - 독서 인증 이미지 업로드 (Firebase Storage)
   - 한줄 리뷰 작성 (최소 40자, 최대 1000자)
   - 제출 시 Firestore에 저장
@@ -142,6 +146,7 @@
   - **최대 결과 수**: 5개 책 표시
   - **HTML 태그 제거**: 네이버 API 응답의 `<b>` 태그 자동 제거
   - **캐싱**: 5분간 API 응답 캐싱 (성능 최적화)
+  - **수동 입력 경고**: 자동완성 대신 수동 입력 시 메타데이터 손실 경고
 
 #### 6.2.7 다이렉트 메시지
 - **1:1 소통**: 참가자 ↔ 운영자 개별 메시지
@@ -235,6 +240,9 @@ participants/               # 참가자 정보
   - name, nickname
   - profileImage
   - bio, mbti, interests
+  - currentBookTitle (선택) # 현재 읽고 있는 책 제목
+  - currentBookAuthor (선택) # 현재 읽고 있는 책 저자
+  - currentBookCoverUrl (선택) # 현재 읽고 있는 책 표지 URL
 
 notices/                    # 공지사항
   - noticeId
@@ -255,6 +263,11 @@ messages/                   # 다이렉트 메시지
   - content
   - createdAt
 ```
+
+**책 메타데이터 필드**:
+- 모든 책 메타데이터 필드는 선택 사항 (optional)으로 하위 호환성 유지
+- Firebase Transaction (`runTransaction()`)을 통해 원자적 업데이트 보장
+- `updateParticipantBookInfo()` 함수로 제목, 저자, 표지 URL을 한 번에 저장
 
 ### 보안 및 제약
 - **인증**: 4자리 코드 기반, 기수별 서버 측 검증
@@ -345,6 +358,59 @@ A. Phase 2 (Week 7-8)에 웹푸시 및 모바일 알림을 추가할 예정입�
 - **v1.0** (2025-01-01): 초기 PRD 작성 (멤버 전용 단방향 채팅방)
 - **v2.0** (2025-10-07): 실제 구현 반영 - 랜딩페이지, 프로필북, 독서 인증, Today's Library, 다이렉트 메시지 추가
 - **v2.1** (2025-10-07): 네이버 책 검색 API 통합, 코드 품질 개선 (Logger, Constants), 프로덕션 대비 최적화
+- **v2.2** (2025-10-08): 책 메타데이터 자동 저장 시스템 추가 및 11개 버그 수정
+
+### v2.2 주요 변경사항
+
+#### 신규 기능
+1. **책 메타데이터 자동 저장**
+   - 독서 인증 시 선택한 책 정보(제목, 저자, 표지) 자동 저장
+   - 다음 날 독서 인증 다이얼로그에서 이전 책 정보 자동 표시
+   - 책 정보 카드 UI로 시각적 표현 (표지 + 제목 + 저자 + 출판사)
+   - X 버튼으로 다른 책으로 변경 시 간편하게 초기화
+
+2. **Firebase 스키마 확장**
+   - `participants` 컬렉션에 책 메타데이터 필드 추가:
+     - `currentBookTitle?: string`
+     - `currentBookAuthor?: string`
+     - `currentBookCoverUrl?: string`
+   - 하위 호환성 유지 (선택적 필드)
+
+3. **새로운 API 함수**
+   - `updateParticipantBookInfo()`: 책 메타데이터 원자적 업데이트
+   - Firebase Transaction 패턴 적용
+
+#### 버그 수정 (11개)
+1. **Firebase Transaction 레이스 컨디션 방지** - `runTransaction()` 사용
+2. **수동 입력 메타데이터 손실 경고** - `window.confirm()` 추가
+3. **API 요청 취소 메커니즘** - abort flag 패턴
+4. **null/undefined 표준화** - 전체 코드베이스에서 `undefined` 일관성
+5. **initialBook 검증 강화** - title 필드 필수 체크
+6. **로딩 에러 처리** - toast 알림 추가
+7. **X 버튼 메타데이터 초기화** - onClear 콜백
+8. **하위 호환성** - 선택적 메타데이터 필드
+9. **useEffect 의존성 수정** - 무한 루프 방지
+10. **에러 토스트 알림** - 사용자 친화적 메시지
+11. **동시 업데이트 보호** - 원자적 트랜잭션
+
+#### UI/UX 개선
+1. **책 정보 카드 UI**
+   - 책 선택 시 카드 형태로 표시 (이전: 텍스트 input)
+   - 표지 이미지, 제목, 저자, 출판사 표시
+   - X 버튼으로 선택 취소
+   - autoComplete="off"로 브라우저 히스토리 비활성화
+
+2. **독서 인증 폼 최적화**
+   - 중복 UI 요소 제거 ("이전 독서 계속" 배지, "다른 책으로 변경" 버튼)
+   - 책 정보 카드로 시각적 일관성 확보
+   - 더 직관적인 인터랙션 패턴
+
+#### 변경된 파일
+- `src/types/database.ts`
+- `src/lib/firebase/participants.ts`
+- `src/lib/firebase/index.ts`
+- `src/components/BookSearchAutocomplete.tsx`
+- `src/components/ReadingSubmissionDialog.tsx`
 
 ---
 

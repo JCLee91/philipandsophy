@@ -271,7 +271,11 @@ Dropbox Paper의 디자인 철학을 참조하여 불필요한 요소를 제거�
 ### 8.8 책 검색 자동완성 UI
 
 **BookSearchAutocomplete (자동완성 컴포넌트)**:
+
+#### 기본 입력 모드
 - 입력 필드: 44px 높이, Border Radius 8px
+- placeholder: "책 제목을 입력하세요"
+- autoComplete: "off" (브라우저 히스토리 비활성화)
 - 드롭다운: 최대 5개 결과 표시
 - 각 항목:
   - 책 표지: 40px × 60px 썸네일
@@ -281,3 +285,76 @@ Dropbox Paper의 디자인 철학을 참조하여 불필요한 요소를 제거�
 - 로딩 상태: 스피너 애니메이션
 - 빈 상태: "검색 결과가 없습니다" 메시지
 - 디바운스: 500ms (타이핑 중 API 호출 최소화)
+
+#### 책 정보 카드 모드 (선택 후 / initialBook prop 있을 때)
+**선택된 책 카드**:
+- 배경색: #FFFFFF
+- Border: 1px solid #E1E5E9
+- Border Radius: 12px
+- Padding: 16px
+- Shadow: 0 2px 8px rgba(0, 0, 0, 0.08)
+- 레이아웃: 가로 방향 flexbox
+  - 왼쪽: 책 표지 이미지 (64px × 96px)
+  - 중앙: 책 정보 텍스트
+    - 제목: 14px, Font Weight 600, 최대 2줄 말줄임
+    - 저자: 12px, Font Weight 400, #6B7280
+    - 출판사: 11px, Font Weight 400, #9CA3AF
+  - 오른쪽: X 버튼 (24px × 24px, #6B7280)
+
+**X 버튼 (선택 취소)**:
+- 크기: 24px × 24px
+- 아이콘: Lucide React X icon
+- 색상: #6B7280
+- Hover: 배경색 #F5F7FA, 색상 #EF4444
+- 동작: 책 선택 취소 및 메타데이터 초기화
+
+**수동 입력 경고**:
+- 조건: 자동완성 선택 없이 직접 텍스트 입력 시
+- 방식: `window.confirm()` 다이얼로그
+- 메시지: "수동으로 입력하시면 책 정보(저자, 표지 등)가 자동으로 저장되지 않습니다. 계속하시겠습니까?"
+- 취소 선택 시: 입력 필드 초기화
+
+#### 상태별 UI
+1. **초기 상태 (빈 입력)**:
+   - 입력 필드만 표시
+   - placeholder 표시
+
+2. **검색 중 (타이핑)**:
+   - 드롭다운 표시
+   - 로딩 스피너 (디바운스 중)
+   - 검색 결과 리스트
+
+3. **책 선택 완료**:
+   - 입력 필드 숨김
+   - 책 정보 카드 표시
+   - X 버튼으로 취소 가능
+
+4. **initialBook prop 존재 (이전 독서)**:
+   - 컴포넌트 마운트 시 즉시 책 정보 카드 표시
+   - 사용자가 X 버튼으로 변경 가능
+
+#### Props 인터페이스
+```typescript
+interface BookSearchAutocompleteProps {
+  value?: string;                    // 입력된 책 제목
+  onBookSelect: (book: Book) => void; // 책 선택 시 콜백
+  onClear?: () => void;              // 선택 취소 시 콜백 (메타데이터 초기화)
+  initialBook?: {                    // 이전 독서 정보 (선택사항)
+    title: string;                   // 필수: 책 제목
+    author?: string;                 // 선택: 저자
+    publisher?: string;              // 선택: 출판사
+    image?: string;                  // 선택: 표지 URL
+  };
+}
+```
+
+#### 반응형 디자인
+- **모바일 (< 768px)**:
+  - 책 정보 카드: 전체 너비
+  - 표지 이미지: 56px × 84px (작게 조정)
+  - 제목: 최대 2줄 말줄임
+
+- **태블릿/데스크톱 (≥ 768px)**:
+  - 책 정보 카드: 최대 600px
+  - 표지 이미지: 64px × 96px
+  - 제목: 최대 2줄 말줄임
