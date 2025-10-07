@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useCreateSubmission } from '@/hooks/use-submissions';
-import { uploadReadingImage, getParticipantById, updateParticipantBookTitle } from '@/lib/firebase';
+import { uploadReadingImage, getParticipantById, updateParticipantBookInfo } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X } from 'lucide-react';
 import { getDailyQuestion } from '@/constants/daily-questions';
@@ -58,17 +58,19 @@ export default function ReadingSubmissionDialog({
     if (open) {
       setDailyQuestion(getDailyQuestion());
 
-      // 참가자의 현재 책 제목 로드
+      // 참가자의 현재 책 정보 로드 (제목 + 저자 + 표지)
       const loadCurrentBook = async () => {
         setIsLoadingBookTitle(true);
         try {
           const participant = await getParticipantById(participantId);
           if (participant?.currentBookTitle) {
             setBookTitle(participant.currentBookTitle);
+            setBookAuthor(participant.currentBookAuthor || '');
+            setBookCoverUrl(participant.currentBookCoverUrl || '');
             setIsAutoFilled(true);
           }
         } catch (error) {
-          logger.error('Failed to load current book title:', error);
+          logger.error('Failed to load current book info:', error);
         } finally {
           setIsLoadingBookTitle(false);
         }
@@ -124,8 +126,13 @@ export default function ReadingSubmissionDialog({
     try {
       const trimmedBookTitle = bookTitle.trim();
 
-      // 1. 책 제목 변경 감지 및 DB 업데이트
-      await updateParticipantBookTitle(participantId, trimmedBookTitle);
+      // 1. 책 정보 변경 감지 및 DB 업데이트 (제목 + 저자 + 표지)
+      await updateParticipantBookInfo(
+        participantId,
+        trimmedBookTitle,
+        bookAuthor.trim() || undefined,
+        bookCoverUrl || undefined
+      );
 
       // 2. 이미지 업로드
       const bookImageUrl = await uploadReadingImage(bookImage, participationCode);
@@ -249,6 +256,21 @@ export default function ReadingSubmissionDialog({
             disabled={uploading || isLoadingBookTitle}
             isAutoFilled={isAutoFilled}
             onClear={handleClearTitle}
+            initialBook={
+              isAutoFilled && bookTitle && bookAuthor && bookCoverUrl
+                ? {
+                    title: bookTitle,
+                    author: bookAuthor,
+                    publisher: '',
+                    isbn: '',
+                    pubdate: '',
+                    image: bookCoverUrl,
+                    link: '',
+                    description: '',
+                    discount: '',
+                  }
+                : null
+            }
           />
 
           {/* 3. 간단 감상평 (번호 변경: 4 → 3) */}

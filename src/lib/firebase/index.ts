@@ -32,7 +32,8 @@ export {
   getParticipantsByCohort,
   getAllParticipants,
   updateParticipant,
-  updateParticipantBookTitle,
+  updateParticipantBookInfo,
+  updateParticipantBookTitle, // Deprecated, use updateParticipantBookInfo
   deleteParticipant,
   searchParticipants,
 } from './participants';

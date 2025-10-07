@@ -168,22 +168,26 @@ export async function searchParticipants(
 }
 
 /**
- * 참가자의 책 제목 업데이트 (책 변경 감지 및 이력 관리)
+ * 참가자의 책 정보 업데이트 (책 변경 감지 및 이력 관리)
  *
  * @param participantId - 참가자 ID
  * @param newBookTitle - 새로운 책 제목
+ * @param newBookAuthor - 새로운 책 저자 (선택)
+ * @param newBookCoverUrl - 새로운 책 표지 URL (선택)
  * @returns void
  *
  * 동작:
- * 1. 현재 책 제목과 새 책 제목이 같으면 아무것도 하지 않음
+ * 1. 현재 책 제목과 새 책 제목이 같으면 메타데이터만 업데이트
  * 2. 다르면:
  *    - 이전 책의 endedAt을 현재 시각으로 설정
  *    - 새 책을 bookHistory에 추가 (endedAt: null)
- *    - currentBookTitle 업데이트
+ *    - currentBookTitle, currentBookAuthor, currentBookCoverUrl 업데이트
  */
-export async function updateParticipantBookTitle(
+export async function updateParticipantBookInfo(
   participantId: string,
-  newBookTitle: string
+  newBookTitle: string,
+  newBookAuthor?: string,
+  newBookCoverUrl?: string
 ): Promise<void> {
   const db = getDb();
   const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
@@ -198,13 +202,18 @@ export async function updateParticipantBookTitle(
   const currentBookTitle = participant.currentBookTitle;
   const bookHistory = participant.bookHistory || [];
 
-  // 책 제목이 같으면 업데이트 불필요
-  if (currentBookTitle === newBookTitle) {
-    return;
-  }
-
   const now = Timestamp.now();
   let updatedHistory = [...bookHistory];
+
+  // 책 제목이 같으면 메타데이터만 업데이트
+  if (currentBookTitle === newBookTitle) {
+    await updateDoc(docRef, {
+      currentBookAuthor: newBookAuthor || null,
+      currentBookCoverUrl: newBookCoverUrl || null,
+      updatedAt: now,
+    });
+    return;
+  }
 
   // 이전 책이 있으면 종료 처리
   if (currentBookTitle) {
@@ -229,10 +238,23 @@ export async function updateParticipantBookTitle(
   };
   updatedHistory.push(newEntry);
 
-  // Firestore 업데이트
+  // Firestore 업데이트 (제목 + 메타데이터)
   await updateDoc(docRef, {
     currentBookTitle: newBookTitle,
+    currentBookAuthor: newBookAuthor || null,
+    currentBookCoverUrl: newBookCoverUrl || null,
     bookHistory: updatedHistory,
     updatedAt: now,
   });
+}
+
+/**
+ * @deprecated Use updateParticipantBookInfo instead
+ * 하위 호환성을 위해 유지
+ */
+export async function updateParticipantBookTitle(
+  participantId: string,
+  newBookTitle: string
+): Promise<void> {
+  return updateParticipantBookInfo(participantId, newBookTitle);
 }

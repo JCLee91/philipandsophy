@@ -41,6 +41,8 @@ export interface Participant {
   occupation?: string; // 직업/하는 일
   bio?: string; // 한 줄 소개 (2줄 이내)
   currentBookTitle?: string; // 현재 읽고 있는 책 제목 (프로필북에 표시)
+  currentBookAuthor?: string; // 현재 읽고 있는 책 저자 (자동 채움용)
+  currentBookCoverUrl?: string; // 현재 읽고 있는 책 표지 URL (자동 채움용)
   bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시

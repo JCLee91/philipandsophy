@@ -17,6 +17,7 @@ interface BookSearchAutocompleteProps {
   disabled?: boolean;
   isAutoFilled?: boolean;
   onClear?: () => void;
+  initialBook?: NaverBook | null; // 초기 선택된 책 정보 (다음날 자동 채움용)
 }
 
 export default function BookSearchAutocomplete({
@@ -26,6 +27,7 @@ export default function BookSearchAutocomplete({
   disabled = false,
   isAutoFilled = false,
   onClear,
+  initialBook = null,
 }: BookSearchAutocompleteProps) {
   const [searchResults, setSearchResults] = useState<NaverBook[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -44,6 +46,13 @@ export default function BookSearchAutocomplete({
 
     return () => clearTimeout(timer);
   }, [value]);
+
+  // Initial book setup (다음날 자동 채움)
+  useEffect(() => {
+    if (initialBook && !selectedBook) {
+      setSelectedBook(initialBook);
+    }
+  }, [initialBook, selectedBook]);
 
   // Bug #1 Fix: Sync selectedBook when parent clears value
   useEffect(() => {
