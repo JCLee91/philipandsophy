@@ -22,17 +22,17 @@ export default function BookmarkCard({
       ribbon: 'bg-[#45a1fd]',
       background: 'bg-[#cee7ff]',
       // Exact SVG from Figma (node-id: 42159-1614)
-      flagSvg: 'http://localhost:3845/assets/7891009aef37f60e2facf1b42ffa03e11cd9bc9c.svg',
+      flagSvg: '/image/today-library/blue-flag.svg',
       // Lock icon SVG from Figma
-      lockSvg: 'http://localhost:3845/assets/bc9718f77d885f227f437f4c9e13800d9f8e893d.svg',
+      lockSvg: '/image/today-library/lock-icon.svg',
     },
     yellow: {
       ribbon: 'bg-[#ffd362]',
       background: 'bg-[#fff2d2]',
       // Exact SVG from Figma (node-id: 42159-1628)
-      flagSvg: 'http://localhost:3845/assets/0df77ff303f6a34f14ee7911642215c91f6c0a9f.svg',
+      flagSvg: '/image/today-library/yellow-flag.svg',
       // Lock icon SVG from Figma
-      lockSvg: 'http://localhost:3845/assets/bc9718f77d885f227f437f4c9e13800d9f8e893d.svg',
+      lockSvg: '/image/today-library/lock-icon.svg',
     },
   };
 

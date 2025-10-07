@@ -149,15 +149,9 @@ function TodayLibraryContent() {
             <div className="flex flex-col w-full">
               {/* Top Row (Blue Theme - Similar) */}
               <div className="relative h-[140px] w-full overflow-clip">
-                {/* Shadow Ellipse (exact SVG from Figma - node-id: 42159-1595) */}
-                <div className="absolute left-0 top-[128px] h-[24px] w-[328px]">
-                  <div className="absolute inset-[-208.33%_-15.24%]">
-                    <img
-                      alt=""
-                      className="block max-w-none size-full"
-                      src="http://localhost:3845/assets/151f6ec3d4209788a1933221c0205bd130122b23.svg"
-                    />
-                  </div>
+                {/* Shadow Ellipse */}
+                <div className="absolute left-0 top-[128px] h-[24px] w-full opacity-20">
+                  <div className="absolute inset-[-208.33%_-15.24%] bg-gradient-to-b from-transparent to-gray-400 rounded-full blur-xl" />
                 </div>
 
                 {/* Card 1: Left */}
@@ -190,26 +184,14 @@ function TodayLibraryContent() {
               {/* White Spacer */}
               <div className="bg-white h-[20px] w-[326px]" />
 
-              {/* Blur Divider (exact image from Figma - node-id: 42159-1617) */}
-              <div className="blur-[6.128px] filter h-[4px] w-[328px] relative">
-                <img
-                  alt=""
-                  className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full"
-                  src="http://localhost:3845/assets/cefbdab62819f8d2d9184fdfe75fb634f1bf5346.png"
-                />
-              </div>
+              {/* Blur Divider */}
+              <div className="blur-[6.128px] filter h-[4px] w-[328px] bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
 
               {/* Bottom Row (Yellow Theme - Opposite) */}
               <div className="relative h-[160px] w-full overflow-clip">
-                {/* Shadow Ellipse (exact SVG from Figma - node-id: 42159-1619) */}
-                <div className="absolute left-0 top-[148px] h-[24px] w-[328px]">
-                  <div className="absolute inset-[-208.33%_-15.24%]">
-                    <img
-                      alt=""
-                      className="block max-w-none size-full"
-                      src="http://localhost:3845/assets/5031a5764005fb611fb476c14f9f8d4b37acdada.svg"
-                    />
-                  </div>
+                {/* Shadow Ellipse */}
+                <div className="absolute left-0 top-[148px] h-[24px] w-full opacity-20">
+                  <div className="absolute inset-[-208.33%_-15.24%] bg-gradient-to-b from-transparent to-gray-400 rounded-full blur-xl" />
                 </div>
 
                 {/* Card 3: Left */}
@@ -242,14 +224,8 @@ function TodayLibraryContent() {
               {/* White Spacer */}
               <div className="bg-white h-[20px] w-[326px]" />
 
-              {/* Blur Divider (exact image from Figma - node-id: 42159-1642) */}
-              <div className="blur-[6.128px] filter h-[4px] w-[328px] relative">
-                <img
-                  alt=""
-                  className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full"
-                  src="http://localhost:3845/assets/cefbdab62819f8d2d9184fdfe75fb634f1bf5346.png"
-                />
-              </div>
+              {/* Blur Divider */}
+              <div className="blur-[6.128px] filter h-[4px] w-[328px] bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
             </div>
           </div>
         </main>
