@@ -50,6 +50,11 @@ export default function BookSearchAutocomplete({
   // Initial book setup (다음날 자동 채움)
   useEffect(() => {
     if (initialBook) {
+      // Validate initialBook has required fields
+      if (!initialBook.title) {
+        logger.error('initialBook missing title field', initialBook);
+        return;
+      }
       setSelectedBook(initialBook);
     }
   }, [initialBook]); // Only re-run when initialBook changes

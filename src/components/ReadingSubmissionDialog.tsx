@@ -71,6 +71,11 @@ export default function ReadingSubmissionDialog({
           }
         } catch (error) {
           logger.error('Failed to load current book info:', error);
+          toast({
+            title: '책 정보 로드 실패',
+            description: '이전 독서 정보를 불러오지 못했습니다. 새로 검색해주세요.',
+            variant: 'destructive',
+          });
         } finally {
           setIsLoadingBookTitle(false);
         }
@@ -99,6 +104,16 @@ export default function ReadingSubmissionDialog({
   };
 
   const handleBookTitleChange = (value: string) => {
+    // 기존 메타데이터가 있으면 경고
+    if (bookAuthor && bookCoverUrl && value !== bookTitle) {
+      const confirmed = window.confirm(
+        '책 정보를 수정하면 저자와 표지가 초기화됩니다.\n계속하시겠습니까?'
+      );
+      if (!confirmed) {
+        return; // 취소하면 변경 안 함
+      }
+    }
+
     setBookTitle(value);
     setIsAutoFilled(false);
     // 사용자가 직접 입력하면 저자와 표지 정보 초기화
@@ -130,7 +145,7 @@ export default function ReadingSubmissionDialog({
       await updateParticipantBookInfo(
         participantId,
         trimmedBookTitle,
-        bookAuthor.trim() || undefined,
+        bookAuthor?.trim() || undefined,
         bookCoverUrl || undefined
       );
 

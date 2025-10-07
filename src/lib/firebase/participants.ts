@@ -13,6 +13,7 @@ import {
   orderBy,
   Timestamp,
   QueryConstraint,
+  runTransaction,
 } from 'firebase/firestore';
 import { getDb } from './client';
 import { Participant, BookHistoryEntry, COLLECTIONS } from '@/types/database';
@@ -192,59 +193,62 @@ export async function updateParticipantBookInfo(
   const db = getDb();
   const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
 
-  // 현재 참가자 정보 조회
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) {
-    throw new Error('Participant not found');
-  }
+  // Use transaction for atomic read-modify-write
+  await runTransaction(db, async (transaction) => {
+    const docSnap = await transaction.get(docRef);
 
-  const participant = docSnap.data() as Participant;
-  const currentBookTitle = participant.currentBookTitle;
-  const bookHistory = participant.bookHistory || [];
+    if (!docSnap.exists()) {
+      throw new Error('Participant not found');
+    }
 
-  const now = Timestamp.now();
-  let updatedHistory = [...bookHistory];
+    const participant = docSnap.data() as Participant;
+    const currentBookTitle = participant.currentBookTitle;
+    const bookHistory = participant.bookHistory || [];
 
-  // 책 제목이 같으면 메타데이터만 업데이트
-  if (currentBookTitle === newBookTitle) {
-    await updateDoc(docRef, {
-      currentBookAuthor: newBookAuthor || null,
-      currentBookCoverUrl: newBookCoverUrl || null,
+    const now = Timestamp.now();
+    let updatedHistory = [...bookHistory];
+
+    // 책 제목이 같으면 메타데이터만 업데이트
+    if (currentBookTitle === newBookTitle) {
+      transaction.update(docRef, {
+        currentBookAuthor: newBookAuthor || undefined,
+        currentBookCoverUrl: newBookCoverUrl || undefined,
+        updatedAt: now,
+      });
+      return;
+    }
+
+    // 이전 책이 있으면 종료 처리
+    if (currentBookTitle) {
+      // 마지막 책 이력의 endedAt 업데이트
+      updatedHistory = updatedHistory.map((entry, index) => {
+        // 마지막 항목이고 endedAt이 null이면 종료 시각 설정
+        if (index === updatedHistory.length - 1 && entry.endedAt === null) {
+          return {
+            ...entry,
+            endedAt: now,
+          };
+        }
+        return entry;
+      });
+    }
+
+    // 새 책 이력 추가
+    const newEntry: BookHistoryEntry = {
+      title: newBookTitle,
+      startedAt: now,
+      endedAt: null, // 현재 읽는 중
+    };
+    updatedHistory.push(newEntry);
+
+    // Firestore 업데이트 (제목 + 메타데이터)
+    transaction.update(docRef, {
+      currentBookTitle: newBookTitle,
+      currentBookAuthor: newBookAuthor || undefined,
+      currentBookCoverUrl: newBookCoverUrl || undefined,
+      bookHistory: updatedHistory,
       updatedAt: now,
     });
-    return;
-  }
-
-  // 이전 책이 있으면 종료 처리
-  if (currentBookTitle) {
-    // 마지막 책 이력의 endedAt 업데이트
-    updatedHistory = updatedHistory.map((entry, index) => {
-      // 마지막 항목이고 endedAt이 null이면 종료 시각 설정
-      if (index === updatedHistory.length - 1 && entry.endedAt === null) {
-        return {
-          ...entry,
-          endedAt: now,
-        };
-      }
-      return entry;
-    });
-  }
-
-  // 새 책 이력 추가
-  const newEntry: BookHistoryEntry = {
-    title: newBookTitle,
-    startedAt: now,
-    endedAt: null, // 현재 읽는 중
-  };
-  updatedHistory.push(newEntry);
-
-  // Firestore 업데이트 (제목 + 메타데이터)
-  await updateDoc(docRef, {
-    currentBookTitle: newBookTitle,
-    currentBookAuthor: newBookAuthor || null,
-    currentBookCoverUrl: newBookCoverUrl || null,
-    bookHistory: updatedHistory,
-    updatedAt: now,
   });
 }
 
