@@ -3,6 +3,7 @@
 import Script from 'next/script';
 import '../styles/landing.css';
 import Footer from '@/components/Footer';
+import Tooltip from '@/components/Tooltip';
 
 export default function LandingPage() {
   return (
@@ -109,6 +110,7 @@ export default function LandingPage() {
         <img src="/image/PnS_4_nofooter.webp?v=3.0" alt="필립앤소피 가입 안내" className="main-image" />
 
         <div className="cta-section">
+          <Tooltip />
           <a
             href="https://smore.im/form/13J1nUevrX"
             target="_blank"
@@ -121,7 +123,7 @@ export default function LandingPage() {
               }
             }}
           >
-            <span className="cta-text">10월의 필립앤소피 참여하기</span>
+            <span className="cta-text">11월의 필립앤소피 참여하기</span>
             <div className="cta-arrow">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
