@@ -385,7 +385,7 @@ export default function ReadingSubmissionDialog({
               3. 간단 감상평 <span className="text-destructive">*</span>
             </Label>
             <p className="text-sm text-muted-foreground">
-              오늘 읽은 내용에 대한 생각이나 느낀 점을 자유롭게 적어주세요.
+              오늘 읽은 내용에 대한 생각이나 느낀 점을 자유롭게 적어주세요. (40자 이상)
             </p>
             <Textarea
               id="review"
@@ -403,7 +403,7 @@ export default function ReadingSubmissionDialog({
           {/* 4. 오늘의 질문 (번호 변경: 5 → 4) */}
           <div className="space-y-3">
             <Label htmlFor="dailyAnswer" className="text-base font-semibold">
-              4. 오늘의 질문 <span className="text-destructive">*</span>
+              4. 오늘의 질문 (40자 이상) <span className="text-destructive">*</span>
             </Label>
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
               <p className="text-sm font-medium text-primary">{dailyQuestion}</p>
