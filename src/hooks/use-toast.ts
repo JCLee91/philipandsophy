@@ -164,6 +164,11 @@ function toast({ ...props }: Toast) {
     },
   })
 
+  // 자동으로 5초 후 제거 시작
+  setTimeout(() => {
+    dismiss()
+  }, TOAST_REMOVE_DELAY)
+
   return {
     id: id,
     dismiss,

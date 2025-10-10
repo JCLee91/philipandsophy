@@ -292,15 +292,15 @@ export default function ReadingSubmissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
+      <DialogContent className="max-w-2xl h-full sm:h-[90vh] p-0 flex flex-col gap-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl">독서 인증하기</DialogTitle>
           <DialogDescription>
             오늘 읽은 내용을 기록하고 인증해보세요. 모든 항목은 필수입니다.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+
+        <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
 
         {/* 오늘 이미 제출한 경우 경고 표시 */}
         {alreadySubmittedToday && (

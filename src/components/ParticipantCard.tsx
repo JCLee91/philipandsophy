@@ -58,7 +58,7 @@ export function ParticipantCard({
     : '';
   const { data: unreadCount = 0 } = useUnreadCount(
     showUnreadBadge ? conversationId : '',
-    showUnreadBadge ? currentUserId : ''
+    showUnreadBadge ? (isAdmin ? 'admin-team' : currentUserId) : ''
   );
 
   // 관리자이면서 자신이 아닌 참가자: 드롭다운 메뉴

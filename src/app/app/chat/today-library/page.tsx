@@ -200,8 +200,17 @@ function TodayLibraryContent() {
 
   // 프로필북 클릭 핸들러 (인증 체크 포함)
   const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
+    console.log('🔍 Toast Debug:', {
+      isAdmin,
+      isVerifiedToday,
+      currentUserId,
+      verifiedIds: verifiedIds ? Array.from(verifiedIds) : [],
+      shouldShowToast: !isAdmin && !isVerifiedToday
+    });
+    
     if (!isAdmin && !isVerifiedToday) {
       // 미인증 시 Toast 알림 표시
+      console.log('🔔 Showing toast...');
       toast({
         title: '프로필 잠김 🔒',
         description: '오늘의 독서를 인증하면 프로필을 확인할 수 있어요',

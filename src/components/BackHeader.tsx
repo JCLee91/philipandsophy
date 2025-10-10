@@ -9,7 +9,7 @@ interface BackHeaderProps {
 
 export default function BackHeader({ onBack, title }: BackHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur safe-area-header">
       <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
         <button
           type="button"
@@ -30,6 +30,18 @@ export default function BackHeader({ onBack, title }: BackHeaderProps) {
           </h1>
         )}
       </div>
+      <style jsx>{`
+        .safe-area-header {
+          padding-top: env(safe-area-inset-top);
+        }
+
+        /* iOS 11.2 이전 버전 호환성 */
+        @supports (padding-top: constant(safe-area-inset-top)) {
+          .safe-area-header {
+            padding-top: constant(safe-area-inset-top);
+          }
+        }
+      `}</style>
     </header>
   );
 }

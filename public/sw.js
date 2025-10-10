@@ -33,17 +33,25 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
+  // Skip caching for non-HTTP(S) requests (chrome-extension, etc.)
+  const url = new URL(event.request.url);
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Clone the response before caching
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME)
-          .then((cache) => cache.put(event.request, responseToCache));
+        // Only cache GET requests (Cache API doesn't support POST/PUT/DELETE)
+        if (event.request.method === 'GET') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, responseToCache));
+        }
         return response;
       })
       .catch(() => {
-        // Network failed, try cache
+        // Network failed, try cache (only works for GET requests)
         return caches.match(event.request);
       })
   );

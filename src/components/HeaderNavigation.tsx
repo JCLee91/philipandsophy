@@ -25,7 +25,7 @@ export default function HeaderNavigation({
   };
 
   return (
-    <div className="shrink-0 z-50 border-b bg-white">
+    <div className="shrink-0 z-50 border-b bg-white safe-area-header">
       <div className="flex gap-3 items-center px-4 py-6">
         {showBackButton ? (
           <button
@@ -52,6 +52,18 @@ export default function HeaderNavigation({
           {/* Placeholder for right action */}
         </div>
       </div>
+      <style jsx>{`
+        .safe-area-header {
+          padding-top: env(safe-area-inset-top);
+        }
+
+        /* iOS 11.2 이전 버전 호환성 */
+        @supports (padding-top: constant(safe-area-inset-top)) {
+          .safe-area-header {
+            padding-top: constant(safe-area-inset-top);
+          }
+        }
+      `}</style>
     </div>
   );
 }

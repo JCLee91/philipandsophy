@@ -9,11 +9,16 @@ import { logger } from '@/lib/logger';
  */
 export default function RegisterServiceWorker() {
   useEffect(() => {
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
           logger.info('Service Worker registered:', registration);
+
+          // 개발 환경에서 Service Worker 자동 업데이트
+          if (process.env.NODE_ENV === 'development') {
+            registration.update();
+          }
         })
         .catch((error) => {
           logger.error('Service Worker registration failed:', error);

@@ -33,6 +33,8 @@ function ParticipantRow({
   verified,
   onDMClick,
   onProfileClick,
+  isOpen,
+  onOpenChange,
 }: {
   participant: Participant;
   currentUserId: string;
@@ -40,16 +42,53 @@ function ParticipantRow({
   verified: boolean;
   onDMClick?: (participant: Participant) => void;
   onProfileClick: (participant: Participant) => void;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const initials = getInitials(participant.name);
   const conversationId = getConversationId(currentUserId, participant.id);
   const { data: unreadCount = 0 } = useUnreadCount(conversationId, currentUserId);
 
+  // 터치 이벤트로 스크롤과 클릭 구분
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+    });
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    const deltaTime = Date.now() - touchStart.time;
+
+    // 스크롤 감지: 세로 이동이 10px 이상이거나, 500ms 이상 누르면 스크롤로 판단
+    const isScroll = deltaY > 10 || deltaTime > 500;
+
+    if (!isScroll) {
+      // 진짜 클릭: 서브메뉴 열기
+      onOpenChange(true);
+    }
+
+    setTouchStart(null);
+  };
+
   if (isAdmin && participant.id !== currentUserId) {
     return (
-      <DropdownMenu>
+      <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuTrigger asChild>
-          <button className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
+          <button
+            className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <div className="relative">
               <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                 <AvatarImage
@@ -130,6 +169,7 @@ function ParticipantsPageContent() {
   const [dmDialogOpen, setDmDialogOpen] = useState(false);
   const [dmTarget, setDmTarget] = useState<Participant | null>(null);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // 참가자 정렬: 현재 사용자 최상단, 나머지는 이름순 (한글)
   const sortedParticipants = useMemo(() => {
@@ -237,6 +277,8 @@ function ParticipantsPageContent() {
                   verified={verified}
                   onDMClick={handleDMClick}
                   onProfileClick={setSelectedParticipant}
+                  isOpen={openDropdownId === participant.id}
+                  onOpenChange={(open) => setOpenDropdownId(open ? participant.id : null)}
                 />
               );
             })}
@@ -245,11 +287,19 @@ function ParticipantsPageContent() {
 
         <div className="border-t bg-white">
           <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-4 py-4">
-            <UnifiedButton variant="outline" onClick={() => router.push(appRoutes.todayLibrary(cohortId))}>
-              <BookOpen className="mr-2 h-4 w-4" /> 오늘의 서재 보기
+            <UnifiedButton
+              variant="outline"
+              onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
+              icon={<BookOpen className="h-5 w-5" />}
+            >
+              오늘의 서재 보기
             </UnifiedButton>
-            <UnifiedButton variant="destructive" onClick={logout}>
-              <LogOut className="mr-2 h-4 w-4" /> 로그아웃
+            <UnifiedButton
+              variant="destructive"
+              onClick={logout}
+              icon={<LogOut className="h-5 w-5" />}
+            >
+              로그아웃
             </UnifiedButton>
           </div>
         </div>
