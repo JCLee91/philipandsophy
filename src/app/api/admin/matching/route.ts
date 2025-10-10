@@ -7,7 +7,11 @@ import { getTodayString } from '@/lib/date-utils';
 // Firebase Admin 초기화 (이미 초기화되어 있으면 재사용)
 if (!admin.apps.length) {
   try {
-    const serviceAccount = require('../../../../../firebase-service-account.json');
+    // 환경 변수로부터 service account 정보 로드
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : require('../../../../../firebase-service-account.json');
+    
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
@@ -114,52 +118,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const dailyFeaturedParticipants = cohortDoc.data()?.dailyFeaturedParticipants || {};
-    const todaysMatching: {
-      similar: string[];
-      opposite: string[];
-      reasons?: {
-        similar?: string;
-        opposite?: string;
-        summary?: string;
-      };
-    } = {
-      similar: matching.similar,
-      opposite: matching.opposite,
-    };
-    if (matching.reasons) {
-      todaysMatching.reasons = matching.reasons;
-    }
-    dailyFeaturedParticipants[today] = todaysMatching;
+    const cohortData = cohortDoc.data();
+    const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
+    dailyFeaturedParticipants[today] = matching;
 
     await cohortRef.update({
       dailyFeaturedParticipants,
       updatedAt: admin.firestore.Timestamp.now(),
     });
 
-    // 6. 매칭 결과와 함께 참가자 이름 정보 반환
-    const similarParticipants = participantAnswers.filter(p => 
-      matching.similar.includes(p.id)
+    // 6. 매칭 결과 요약 생성
+    const participantNameMap = new Map(
+      participantAnswers.map((p) => [p.id, p.name] as const)
     );
-    const oppositeParticipants = participantAnswers.filter(p => 
-      matching.opposite.includes(p.id)
-    );
+    const featuredSimilarIds = matching.featured?.similar ?? [];
+    const featuredOppositeIds = matching.featured?.opposite ?? [];
+
+    const featuredSimilarParticipants = featuredSimilarIds.map((id) => ({
+      id,
+      name: participantNameMap.get(id) ?? '알 수 없음',
+    }));
+    const featuredOppositeParticipants = featuredOppositeIds.map((id) => ({
+      id,
+      name: participantNameMap.get(id) ?? '알 수 없음',
+    }));
 
     return NextResponse.json({
       success: true,
       date: today,
       question: todayQuestion,
       totalParticipants: participantAnswers.length,
-      matching: {
-        similar: matching.similar,
-        opposite: matching.opposite,
-        reasons: matching.reasons ?? null,
+      matching,
+      featuredParticipants: {
+        similar: featuredSimilarParticipants,
+        opposite: featuredOppositeParticipants,
       },
-      participants: {
-        similar: similarParticipants.map(p => ({ id: p.id, name: p.name })),
-        opposite: oppositeParticipants.map(p => ({ id: p.id, name: p.name })),
-      },
-      reasons: matching.reasons ?? null,
     });
 
   } catch (error) {
@@ -202,17 +195,38 @@ export async function GET(request: NextRequest) {
     }
 
     const dailyFeaturedParticipants = cohortDoc.data()?.dailyFeaturedParticipants || {};
-    const matching = dailyFeaturedParticipants[date];
+    const matchingEntry = dailyFeaturedParticipants[date];
 
-    if (!matching) {
+    if (!matchingEntry) {
       return NextResponse.json(
         { error: '해당 날짜의 매칭 결과가 없습니다.' },
         { status: 404 }
       );
     }
 
+    const normalizedMatching =
+      'featured' in matchingEntry || 'assignments' in matchingEntry
+        ? {
+            featured: {
+              similar: matchingEntry.featured?.similar ?? [],
+              opposite: matchingEntry.featured?.opposite ?? [],
+              reasons: matchingEntry.featured?.reasons,
+            },
+            assignments: matchingEntry.assignments ?? {},
+          }
+        : {
+            featured: {
+              similar: matchingEntry.similar ?? [],
+              opposite: matchingEntry.opposite ?? [],
+              reasons: matchingEntry.reasons,
+            },
+            assignments: {},
+          };
+
     // 참가자 이름 정보 가져오기
-    const participantIds = [...matching.similar, ...matching.opposite];
+    const featuredSimilarIds = normalizedMatching.featured?.similar ?? [];
+    const featuredOppositeIds = normalizedMatching.featured?.opposite ?? [];
+    const participantIds = [...featuredSimilarIds, ...featuredOppositeIds];
     const participantsData = await Promise.all(
       participantIds.map(async (id) => {
         const doc = await db.collection('participants').doc(id).get();
@@ -220,27 +234,22 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    const similarParticipants = participantsData.filter(p => 
-      matching.similar.includes(p.id)
+    const similarParticipants = participantsData.filter((p) =>
+      featuredSimilarIds.includes(p.id)
     );
-    const oppositeParticipants = participantsData.filter(p => 
-      matching.opposite.includes(p.id)
+    const oppositeParticipants = participantsData.filter((p) =>
+      featuredOppositeIds.includes(p.id)
     );
 
     return NextResponse.json({
       success: true,
       date,
-      matching: {
-        similar: matching.similar,
-        opposite: matching.opposite,
-        reasons: matching.reasons ?? null,
-      },
-      participants: {
+      question: getDailyQuestionText(date),
+      matching: normalizedMatching,
+      featuredParticipants: {
         similar: similarParticipants,
         opposite: oppositeParticipants,
       },
-      reasons: matching.reasons ?? null,
-      question: getDailyQuestionText(date),
     });
 
   } catch (error) {

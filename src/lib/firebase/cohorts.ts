@@ -19,7 +19,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { getDb } from './client';
-import type { Cohort } from '@/types/database';
+import type { Cohort, DailyMatchingEntry } from '@/types/database';
 import { COLLECTIONS } from '@/types/database';
 
 /**
@@ -144,7 +144,7 @@ export const deleteCohort = async (id: string): Promise<void> => {
 export const updateDailyFeaturedParticipants = async (
   cohortId: string,
   date: string,
-  matching: { similar: string[]; opposite: string[]; reasons?: { similar?: string; opposite?: string; summary?: string } }
+  matching: DailyMatchingEntry
 ): Promise<void> => {
   const db = getDb();
   const cohortRef = doc(db, COLLECTIONS.COHORTS, cohortId);

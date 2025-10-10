@@ -6,7 +6,11 @@ import { getTodayString } from '@/lib/date-utils';
 // Firebase Admin 초기화 (이미 초기화되어 있으면 재사용)
 if (!admin.apps.length) {
   try {
-    const serviceAccount = require('../../../../../../firebase-service-account.json');
+    // 환경 변수로부터 service account 정보 로드
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : require('../../../../../../firebase-service-account.json');
+    
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });

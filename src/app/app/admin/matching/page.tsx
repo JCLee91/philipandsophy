@@ -20,21 +20,29 @@ interface MatchingReasons {
   summary?: string;
 }
 
-interface MatchingResult {
+interface ParticipantAssignment {
+  similar: string[];
+  opposite: string[];
+  reasons?: MatchingReasons | null;
+}
+
+interface MatchingResponse {
   success: boolean;
   date: string;
   question?: string;
   totalParticipants?: number;
   matching: {
-    similar: string[];
-    opposite: string[];
-    reasons?: MatchingReasons | null;
+    featured?: {
+      similar: string[];
+      opposite: string[];
+      reasons?: MatchingReasons | null;
+    };
+    assignments?: Record<string, ParticipantAssignment>;
   };
-  participants: {
+  featuredParticipants?: {
     similar: Array<{ id: string; name: string }>;
     opposite: Array<{ id: string; name: string }>;
   };
-  reasons?: MatchingReasons | null;
 }
 
 interface FeaturedParticipantDetail {
@@ -46,6 +54,15 @@ interface FeaturedParticipantDetail {
   currentBookTitle?: string;
   profileBookUrl?: string;
   profileImage?: string;
+}
+
+interface AssignmentRow {
+  viewerId: string;
+  viewerName: string;
+  viewerOccupation?: string;
+  similarTargets: Array<{ id: string; name: string }>;
+  oppositeTargets: Array<{ id: string; name: string }>;
+  reasons?: MatchingReasons | null;
 }
 
 interface FeaturedParticipantCardProps {
@@ -143,7 +160,7 @@ function MatchingPageContent() {
   const { data: cohortParticipants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
 
   const [isMatching, setIsMatching] = useState(false);
-  const [matchingResult, setMatchingResult] = useState<MatchingResult | null>(null);
+  const [matchingResult, setMatchingResult] = useState<MatchingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submissionCount, setSubmissionCount] = useState<number>(0);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
@@ -161,12 +178,15 @@ function MatchingPageContent() {
 
   const similarFeatured = useMemo<FeaturedParticipantDetail[]>(() => {
     if (!matchingResult) return [];
-    return matchingResult.matching.similar.map((id) => {
+    const featuredIds = matchingResult.matching.featured?.similar ?? [];
+    const fallback = matchingResult.featuredParticipants?.similar ?? [];
+
+    return featuredIds.map((id) => {
       const participant = participantsById.get(id);
-      const fallback = matchingResult.participants.similar.find((p) => p.id === id);
+      const fallbackParticipant = fallback.find((p) => p.id === id);
       return {
         id,
-        name: participant?.name ?? fallback?.name ?? '알 수 없음',
+        name: participant?.name ?? fallbackParticipant?.name ?? '알 수 없음',
         theme: 'similar' as const,
         occupation: participant?.occupation,
         bio: participant?.bio,
@@ -179,12 +199,15 @@ function MatchingPageContent() {
 
   const oppositeFeatured = useMemo<FeaturedParticipantDetail[]>(() => {
     if (!matchingResult) return [];
-    return matchingResult.matching.opposite.map((id) => {
+    const featuredIds = matchingResult.matching.featured?.opposite ?? [];
+    const fallback = matchingResult.featuredParticipants?.opposite ?? [];
+
+    return featuredIds.map((id) => {
       const participant = participantsById.get(id);
-      const fallback = matchingResult.participants.opposite.find((p) => p.id === id);
+      const fallbackParticipant = fallback.find((p) => p.id === id);
       return {
         id,
-        name: participant?.name ?? fallback?.name ?? '알 수 없음',
+        name: participant?.name ?? fallbackParticipant?.name ?? '알 수 없음',
         theme: 'opposite' as const,
         occupation: participant?.occupation,
         bio: participant?.bio,
@@ -197,11 +220,7 @@ function MatchingPageContent() {
 
   const matchingReasons: MatchingReasons | null = useMemo(() => {
     if (!matchingResult) return null;
-    return (
-      matchingResult.reasons ??
-      matchingResult.matching.reasons ??
-      null
-    );
+    return matchingResult.matching.featured?.reasons ?? null;
   }, [matchingResult]);
 
   const similarReasonText =
@@ -209,6 +228,39 @@ function MatchingPageContent() {
   const oppositeReasonText =
     matchingReasons?.opposite ?? 'AI가 별도의 사유를 제공하지 않았습니다.';
   const summaryReasonText = matchingReasons?.summary ?? null;
+
+  const assignmentRows = useMemo<AssignmentRow[]>(() => {
+    if (!matchingResult?.matching.assignments) return [];
+
+    return cohortParticipants
+      .filter((participant) => !participant.isAdmin)
+      .map((participant) => {
+        const assignment = matchingResult.matching.assignments?.[participant.id];
+        const similarTargets = assignment?.similar ?? [];
+        const oppositeTargets = assignment?.opposite ?? [];
+
+        return {
+          viewerId: participant.id,
+          viewerName: participant.name,
+          viewerOccupation: participant.occupation,
+          similarTargets: similarTargets.map((id) => {
+            const target = participantsById.get(id);
+            return {
+              id,
+              name: target?.name ?? `참가자 ${id}`,
+            };
+          }),
+          oppositeTargets: oppositeTargets.map((id) => {
+            const target = participantsById.get(id);
+            return {
+              id,
+              name: target?.name ?? `참가자 ${id}`,
+            };
+          }),
+          reasons: assignment?.reasons ?? null,
+        };
+      });
+  }, [matchingResult, cohortParticipants, participantsById]);
 
   // 권한 체크
   useEffect(() => {
@@ -304,10 +356,9 @@ function MatchingPageContent() {
       
       const matchedCount =
         data.totalParticipants ??
-        (Array.isArray(data.matching?.similar) && Array.isArray(data.matching?.opposite)
-          ? data.matching.similar.length + data.matching.opposite.length
-          : undefined) ??
-        0;
+        (data.matching?.assignments
+          ? Object.keys(data.matching.assignments).length
+          : 0);
 
       toast({
         title: '✨ 매칭 완료!',
@@ -512,6 +563,106 @@ function MatchingPageContent() {
                       </UnifiedButton>
                     </div>
                   </div>
+                </div>
+
+                <div className="bg-white rounded-xl border p-5 shadow-[0_2px_8px_rgba(0,0,0,0.08)]" style={{ borderColor: '#E1E5E9' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold" style={{ color: '#1E2A44' }}>참가자별 추천 프로필북</h3>
+                    <span className="text-xs font-medium" style={{ color: '#6B7280' }}>
+                      총 {assignmentRows.length}명
+                    </span>
+                  </div>
+
+                  {participantsLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="h-6 w-6 animate-spin" style={{ color: '#4FA3FF' }} />
+                    </div>
+                  ) : assignmentRows.length === 0 ? (
+                    <p className="text-sm" style={{ color: '#6B7280' }}>
+                      추천 데이터가 없습니다.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {assignmentRows.map((row) => (
+                      <div
+                        key={row.viewerId}
+                        className="rounded-lg border px-4 py-3 space-y-3"
+                        style={{ borderColor: '#E5E7EB', backgroundColor: '#F9FAFB' }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold" style={{ color: '#111827' }}>{row.viewerName}</p>
+                            {row.viewerOccupation && (
+                              <p className="text-xs" style={{ color: '#6B7280' }}>{row.viewerOccupation}</p>
+                            )}
+                          </div>
+                          <span className="text-xs font-medium" style={{ color: '#6B7280' }}>
+                            추천 {row.similarTargets.length + row.oppositeTargets.length}명
+                          </span>
+                        </div>
+
+                        <div className="grid gap-3">
+                          <div>
+                            <p className="text-xs font-semibold mb-2" style={{ color: '#2563EB' }}>비슷한 가치관</p>
+                            {row.similarTargets.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {row.similarTargets.map((target) => (
+                                  <UnifiedButton
+                                    key={`${row.viewerId}-similar-${target.id}`}
+                                    size="sm"
+                                    variant="secondary"
+                                    className="border-0"
+                                    onClick={() => handleOpenProfile(target.id, 'similar')}
+                                  >
+                                    {target.name}
+                                  </UnifiedButton>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs" style={{ color: '#6B7280' }}>추천된 참가자가 없습니다.</p>
+                            )}
+                          </div>
+
+                          <div>
+                            <p className="text-xs font-semibold mb-2" style={{ color: '#B45309' }}>반대 가치관</p>
+                            {row.oppositeTargets.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {row.oppositeTargets.map((target) => (
+                                  <UnifiedButton
+                                    key={`${row.viewerId}-opposite-${target.id}`}
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenProfile(target.id, 'opposite')}
+                                  >
+                                    {target.name}
+                                  </UnifiedButton>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs" style={{ color: '#6B7280' }}>추천된 참가자가 없습니다.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {row.reasons && (
+                          <div className="rounded-md px-3 py-2" style={{ backgroundColor: '#F3F4F6' }}>
+                            <p className="text-[11px]" style={{ color: '#2563EB' }}>
+                              <strong>유사:</strong> {row.reasons.similar ?? '사유가 제공되지 않았습니다.'}
+                            </p>
+                            <p className="text-[11px]" style={{ color: '#B45309', marginTop: '4px' }}>
+                              <strong>반대:</strong> {row.reasons.opposite ?? '사유가 제공되지 않았습니다.'}
+                            </p>
+                            {row.reasons.summary && (
+                              <p className="text-[11px]" style={{ color: '#374151', marginTop: '4px' }}>
+                                <strong>요약:</strong> {row.reasons.summary}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-white rounded-xl border p-5 shadow-[0_2px_8px_rgba(0,0,0,0.08)]" style={{ borderColor: '#E1E5E9' }}>

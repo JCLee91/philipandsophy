@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
 import BookmarkCard from '@/components/BookmarkCard';
@@ -51,12 +51,58 @@ function TodayLibraryContent() {
   // 오늘 날짜
   const today = getTodayString();
 
-  // 오늘의 추천 참가자 (실제 데이터 우선, 없으면 디자인 확인용 fallback)
-  const todayFeatured = cohort?.dailyFeaturedParticipants?.[today] || {
-    similar: ['1', '2'],
-    opposite: ['3', '4']
-  };
-  const allFeaturedIds = [...(todayFeatured.similar || []), ...(todayFeatured.opposite || [])];
+  // 오늘의 매칭 결과 (실제 데이터 우선, 없으면 디자인 확인용 fallback)
+  const rawMatching = cohort?.dailyFeaturedParticipants?.[today];
+  const todayMatching = useMemo(() => {
+    const fallback = {
+      featured: {
+        similar: ['1', '2'],
+        opposite: ['3', '4'],
+      },
+      assignments: {} as Record<string, { similar: string[]; opposite: string[] }>,
+    };
+
+    if (!rawMatching) {
+      return fallback;
+    }
+
+    if ('featured' in rawMatching || 'assignments' in rawMatching) {
+      const featured = rawMatching.featured ?? { similar: [], opposite: [] };
+      return {
+        featured: {
+          similar: featured.similar ?? [],
+          opposite: featured.opposite ?? [],
+        },
+        assignments: rawMatching.assignments ?? {},
+      };
+    }
+
+    // Legacy 데이터 호환용
+    return {
+      featured: {
+        similar: rawMatching.similar ?? [],
+        opposite: rawMatching.opposite ?? [],
+      },
+      assignments: {},
+    };
+  }, [rawMatching]);
+
+  const userAssignment = currentUserId
+    ? todayMatching.assignments?.[currentUserId] ?? null
+    : null;
+
+  const similarFeaturedIds =
+    (userAssignment?.similar && userAssignment.similar.length > 0
+      ? userAssignment.similar
+      : todayMatching.featured?.similar) ?? [];
+  const oppositeFeaturedIds =
+    (userAssignment?.opposite && userAssignment.opposite.length > 0
+      ? userAssignment.opposite
+      : todayMatching.featured?.opposite) ?? [];
+
+  const allFeaturedIds = Array.from(
+    new Set([...similarFeaturedIds, ...oppositeFeaturedIds])
+  );
 
   // 추천 참가자들의 정보 가져오기
   const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
@@ -100,7 +146,7 @@ function TodayLibraryContent() {
         // Theme 정보 추가
         return participants.map((participant) => ({
           ...participant,
-          theme: (todayFeatured.similar || []).includes(participant.id) ? 'similar' : 'opposite'
+          theme: similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite',
         }));
       }
 
@@ -116,7 +162,7 @@ function TodayLibraryContent() {
       // 각 참가자에 theme 정보 추가
       return participants.map((participant) => ({
         ...participant,
-        theme: (todayFeatured.similar || []).includes(participant.id) ? 'similar' : 'opposite'
+        theme: similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite',
       }));
     },
     enabled: allFeaturedIds.length > 0,

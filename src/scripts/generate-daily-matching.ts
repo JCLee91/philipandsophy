@@ -119,15 +119,13 @@ async function generateDailyMatching() {
     const matching = await matchParticipantsByAI(todayQuestion, participantAnswers);
 
     console.log('✨ 매칭 결과:');
-    console.log(`   비슷한 가치관 (파란색): ${matching.similar.join(', ')}`);
-    console.log(`   반대 가치관 (노란색): ${matching.opposite.join(', ')}\n`);
+    console.log(`   오늘 공개 (비슷한 가치관): ${(matching.featured?.similar ?? []).join(', ')}`);
+    console.log(`   오늘 공개 (반대 가치관): ${(matching.featured?.opposite ?? []).join(', ')}\n`);
+    console.log(`   배포 대상 참가자 수: ${Object.keys(matching.assignments).length}\n`);
 
     // 6. Cohort 문서에 매칭 결과 저장
     const dailyFeaturedParticipants = cohortDoc.data()?.dailyFeaturedParticipants || {};
-    dailyFeaturedParticipants[today] = {
-      similar: matching.similar,
-      opposite: matching.opposite,
-    };
+    dailyFeaturedParticipants[today] = matching;
 
     await cohortDoc.ref.update({
       dailyFeaturedParticipants,

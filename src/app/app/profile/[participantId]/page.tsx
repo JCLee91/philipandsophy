@@ -132,12 +132,46 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 오늘 인증 여부
   const isVerifiedToday = currentUserId ? verifiedIds?.has(currentUserId) : false;
 
-  // 오늘의 추천 참가자 목록
-  const todayFeatured = cohort?.dailyFeaturedParticipants?.[today] || { similar: [], opposite: [] };
-  const allFeaturedIds = [...todayFeatured.similar, ...todayFeatured.opposite];
+  // 오늘의 추천 참가자 목록 (개별 매칭 기반)
+  const rawMatching = cohort?.dailyFeaturedParticipants?.[today];
+  const todayMatching = useMemo(() => {
+    if (!rawMatching) {
+      return {
+        featured: { similar: [], opposite: [] },
+        assignments: {} as Record<string, { similar: string[]; opposite: string[] }>,
+      };
+    }
 
-  // 추천 참가자 여부
-  const isFeatured = allFeaturedIds.includes(participantId);
+    if ('featured' in rawMatching || 'assignments' in rawMatching) {
+      return {
+        featured: {
+          similar: rawMatching.featured?.similar ?? [],
+          opposite: rawMatching.featured?.opposite ?? [],
+        },
+        assignments: rawMatching.assignments ?? {},
+      };
+    }
+
+    // Legacy 데이터 호환
+    return {
+      featured: {
+        similar: rawMatching.similar ?? [],
+        opposite: rawMatching.opposite ?? [],
+      },
+      assignments: {},
+    };
+  }, [rawMatching]);
+
+  const viewerAssignment = currentUserId
+    ? todayMatching.assignments?.[currentUserId] ?? null
+    : null;
+
+  const accessibleProfileIds = new Set([
+    ...(viewerAssignment?.similar ?? todayMatching.featured.similar ?? []),
+    ...(viewerAssignment?.opposite ?? todayMatching.featured.opposite ?? []),
+  ]);
+
+  const isFeatured = accessibleProfileIds.has(participantId);
 
   // 최종 접근 권한: 본인 OR 운영자 OR (오늘 인증 완료 AND 추천 4명 중 하나)
   const hasAccess = isSelf || isAdmin || (isVerifiedToday && isFeatured);

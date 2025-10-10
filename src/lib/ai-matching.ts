@@ -1,10 +1,6 @@
 import OpenAI from 'openai';
 import { logger } from './logger';
-import type {
-  DailyMatchingEntry,
-  DailyMatchingReasons,
-  DailyParticipantAssignment,
-} from '@/types/database';
+import type { DailyMatchingReasons, DailyParticipantAssignment } from '@/types/database';
 
 // OpenAI 클라이언트는 함수 내부에서 생성 (환경 변수 로드 후)
 function getOpenAIClient() {
@@ -227,8 +223,8 @@ ${participantPromptList}
     const featuredReasons = ensureReasons(normalizeReasons(raw.featured.reasons));
 
     const featured = {
-      similar: rawFeaturedSimilar.slice(0, 4),
-      opposite: rawFeaturedOpposite.slice(0, 4),
+      similar: rawFeaturedSimilar.slice(0, 2),
+      opposite: rawFeaturedOpposite.slice(0, 2),
       ...(featuredReasons ? { reasons: featuredReasons } : {}),
     };
 
@@ -241,8 +237,8 @@ ${participantPromptList}
       const reasons = ensureReasons(normalizeReasons(entry?.reasons));
 
       assignments[participant.id] = {
-        similar: fillIfEmpty(similarIds, featured.similar, participant.id),
-        opposite: fillIfEmpty(oppositeIds, featured.opposite, participant.id),
+        similar: fillIfEmpty(similarIds, featured.similar, participant.id).slice(0, 2),
+        opposite: fillIfEmpty(oppositeIds, featured.opposite, participant.id).slice(0, 2),
         ...(reasons ? { reasons } : {}),
       };
     }
@@ -289,13 +285,16 @@ export async function matchMultipleGroups(
     const match = await matchParticipantsByAI(question, candidates.slice(0, 20)); // 최대 20명씩 분석
 
     // 선택된 ID 추적
-    match.similar.forEach((id) => selectedIds.add(id));
-    match.opposite.forEach((id) => selectedIds.add(id));
+    const featuredIds = [
+      ...(match.featured?.similar ?? []),
+      ...(match.featured?.opposite ?? []),
+    ];
+    featuredIds.forEach((id) => selectedIds.add(id));
 
     results.push(match);
 
     // 선택된 참가자 제거
-    const matchedIds = new Set([...match.similar, ...match.opposite]);
+    const matchedIds = new Set(featuredIds);
     availableParticipants.splice(
       0,
       availableParticipants.length,

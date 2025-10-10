@@ -21,14 +21,17 @@ if (!getApps().length) {
 
 const db = getFirestore();
 
-// Helper to generate today's featured participants
-function getTodayFeaturedParticipants() {
+// Helper to generate today's featured participants (legacy fallback)
+function getTodayMatching() {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   return {
     [today]: {
-      similar: ['1', '2'], // 다은, 다진
-      opposite: ['3', '4'], // 구종, 현명
-    }
+      featured: {
+        similar: ['1', '2'], // 다은, 다진
+        opposite: ['3', '4'], // 구종, 현명
+      },
+      assignments: {},
+    },
   };
 }
 
@@ -41,7 +44,7 @@ const cohortsData = [
     startDate: '2025-10-01',
     endDate: '2025-10-14',
     isActive: true,
-    dailyFeaturedParticipants: getTodayFeaturedParticipants(),
+    dailyFeaturedParticipants: getTodayMatching(),
   },
   {
     id: '2',
