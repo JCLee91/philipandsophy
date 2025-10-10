@@ -23,6 +23,7 @@ import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import { appRoutes } from '@/lib/navigation';
 import { getInitials } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import type { Participant } from '@/types/database';
 
 function ParticipantRow({
