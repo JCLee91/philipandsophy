@@ -13,7 +13,8 @@
     "seed:all": "npm run seed:cohorts && npm run seed:notices && npm run seed:submissions",
     "seed:admin": "tsx src/scripts/seed-admin.ts",
     "seed:real-users": "tsx src/scripts/add-real-users.ts",
-    "cleanup:dummy": "tsx src/scripts/cleanup-dummy-data.ts"
+    "cleanup:dummy": "tsx src/scripts/cleanup-dummy-data.ts",
+    "reset:user-submissions": "tsx src/scripts/reset-user-submissions.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4",

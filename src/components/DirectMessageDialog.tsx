@@ -157,8 +157,9 @@ export default function DirectMessageDialog({
   if (!otherUser) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg h-[600px] flex flex-col p-0">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg h-[600px] flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
@@ -318,14 +319,15 @@ export default function DirectMessageDialog({
           </div>
         </div>
       </DialogContent>
+      </Dialog>
 
-      {/* 이미지 뷰어 다이얼로그 */}
+      {/* 이미지 뷰어 다이얼로그 - Sibling으로 렌더링하여 z-index 충돌 방지 */}
       <ImageViewerDialog
         open={!!selectedImage}
         onOpenChange={(open) => !open && setSelectedImage(null)}
         imageUrl={selectedImage || ''}
       />
-    </Dialog>
+    </>
   );
 }
 

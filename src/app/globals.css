@@ -149,16 +149,16 @@
     overflow: hidden;
     /* iOS에서 rubber-band 스크롤 방지 */
     overscroll-behavior: none;
-    /* 터치 스크롤 방지 (iOS Safari) */
-    touch-action: none;
   }
 
-  /* 웹앱 내부의 스크롤 가능한 영역은 터치 허용 */
+  /* 웹앱 내부의 모든 스크롤 가능한 영역은 터치 스크롤 허용 */
+  body[data-app="true"] .overflow-y-auto,
+  body[data-app="true"] .overflow-auto,
   body[data-app="true"] [data-scroll-area],
   body[data-app="true"] .scroll-area,
   body[data-app="true"] [data-radix-scroll-area-viewport] {
-    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
   
   /* Pretendard 폰트를 모든 요소에 강제 적용 */

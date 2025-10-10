@@ -3,7 +3,7 @@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface ImageViewerDialogProps {
   open: boolean;
@@ -21,16 +21,41 @@ export default function ImageViewerDialog({
   imageUrl,
 }: ImageViewerDialogProps) {
   const [imageError, setImageError] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // 빈 URL이면 렌더링하지 않음
+  if (!imageUrl || imageUrl.trim() === '') {
+    return null;
+  }
+
+  // Dialog가 열릴 때마다 에러 상태 리셋 & 포커스 관리
+  useEffect(() => {
+    if (open) {
+      setImageError(false);
+      // 닫기 버튼에 자동 포커스
+      if (closeButtonRef.current) {
+        closeButtonRef.current.focus();
+      }
+    }
+  }, [open, imageUrl]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 bg-black/95 border-0">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] p-0 bg-black/95 border-0 z-[60]"
+        onEscapeKeyDown={(e) => {
+          // ESC 키로 ImageViewer만 닫기 (DM Dialog는 유지)
+          e.stopPropagation();
+          onOpenChange(false);
+        }}
+      >
         {/* 닫기 버튼 */}
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={() => onOpenChange(false)}
           aria-label="이미지 뷰어 닫기"
-          className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast"
+          className="absolute top-4 right-4 z-[100] p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
         >
           <X className="h-6 w-6 text-white" />
         </button>
