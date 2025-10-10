@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import PageTransition from '@/components/PageTransition';
@@ -26,6 +26,9 @@ import { APP_CONSTANTS } from '@/constants/app';
 import { getTodayString } from '@/lib/date-utils';
 import { appRoutes } from '@/lib/navigation';
 
+// Lazy load ReadingSubmissionDialog
+const ReadingSubmissionDialog = lazy(() => import('@/components/ReadingSubmissionDialog'));
+
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
 function TodayLibraryContent() {
@@ -40,6 +43,9 @@ function TodayLibraryContent() {
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { data: verifiedIds } = useVerifiedToday();
   const { toast } = useToast();
+
+  // 독서 인증 다이얼로그 상태
+  const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
 
   // 오늘 날짜
   const today = getTodayString();
@@ -312,7 +318,7 @@ function TodayLibraryContent() {
                 </UnifiedButton>
                 <UnifiedButton
                   variant="primary"
-                  onClick={() => router.push(appRoutes.chat(cohortId))}
+                  onClick={() => setSubmissionDialogOpen(true)}
                   className="flex-1"
                 >
                   독서 인증하기
@@ -332,6 +338,16 @@ function TodayLibraryContent() {
             )}
           </div>
         </FooterActions>
+
+        {/* 독서 인증 다이얼로그 */}
+        <Suspense fallback={<LoadingSpinner />}>
+          <ReadingSubmissionDialog
+            open={submissionDialogOpen}
+            onOpenChange={setSubmissionDialogOpen}
+            participantId={currentUserId || ''}
+            participationCode={currentUserId || ''}
+          />
+        </Suspense>
       </div>
     </PageTransition>
   );

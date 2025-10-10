@@ -27,7 +27,37 @@
 <div className="flex h-[100dvh] flex-col overflow-hidden">
 ```
 
-### 2. 네이티브 앱 경험 부족
+### 2. Pull-to-refresh 및 Overscroll Bounce
+
+**문제**:
+- 상단/하단을 잡고 스크롤하면 페이지 전체가 당겨짐 (bounce effect)
+- iOS Safari의 기본 pull-to-refresh 동작이 발생
+- 네이티브 앱처럼 느껴지지 않음
+
+**해결책**:
+- ✅ **overscroll-behavior: none** 적용
+- ✅ Safe area insets 대응 (`env(safe-area-inset-top)`)
+- ✅ Standalone 모드에서 완벽한 네이티브 경험
+
+```css
+/* globals.css */
+html {
+  width: 100%;
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  overscroll-behavior: none; /* Pull-to-refresh 방지 */
+
+  @media all and (display-mode: standalone) {
+    height: 100vh;
+  }
+}
+
+body {
+  overflow-y: scroll; /* 콘텐츠는 스크롤 가능 */
+}
+```
+
+### 3. 네이티브 앱 경험 부족
 
 **문제**:
 - 매번 브라우저를 열고 URL을 입력해야 함
@@ -200,7 +230,14 @@ Tailwind의 `pb-safe` 유틸리티로 iOS 하단 안전 영역 자동 대응
 | PWA 설치 | ✅ | ✅ | ✅ | ✅ |
 | Service Worker | ✅ | ✅ | ✅ | ✅ |
 | 100dvh | ✅ | ✅ 16.4+ | ✅ 110+ | ✅ |
+| overscroll-behavior | ✅ | ✅ 16.0+ | ✅ | ✅ |
+| env(safe-area-inset) | ✅ | ✅ 11.0+ | ❌ | ✅ |
 | Standalone 모드 | ✅ | ✅ | ✅ | ✅ |
+
+**주요 지원 버전:**
+- iOS Safari 16.0+ (2022년 9월): `overscroll-behavior` 지원
+- iOS Safari 16.4+ (2023년 3월): `100dvh` 지원
+- iOS Safari 11.0+ (2017년 9월): Safe area insets 지원
 
 ## 🚀 성능 최적화
 
