@@ -17,7 +17,9 @@
     "cleanup:dm": "tsx src/scripts/cleanup-dm-messages.ts",
     "reset:user-submissions": "tsx src/scripts/reset-user-submissions.ts",
     "check:user-data": "tsx src/scripts/check-user-data.ts",
-    "convert:webp": "tsx src/scripts/convert-all-to-webp.ts"
+    "convert:webp": "tsx src/scripts/convert-all-to-webp.ts",
+    "generate:matching": "tsx src/scripts/generate-daily-matching.ts",
+    "test:matching": "tsx src/scripts/test-ai-matching.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4",
@@ -43,6 +45,7 @@
     "lucide-react": "^0.469.0",
     "next": "15.1.0",
     "next-themes": "^0.4.3",
+    "openai": "^6.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7",

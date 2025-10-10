@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+**Last Updated**: 2025-10-10
+**Document Version**: v2.2.0
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -39,13 +42,22 @@ npm run lint             # Run ESLint
 
 ### Firebase Data Seeding
 ```bash
-npm run seed:cohorts       # Seed cohorts and participants
-npm run seed:notices       # Seed notices data
-npm run seed:submissions   # Seed reading submissions
-npm run seed:admin         # Seed admin participants (admin, admin2, admin3)
-npm run seed:real-users    # Add real users (user-junyoung, user-hyunji)
-npm run seed:all           # Seed all data (cohorts + notices + submissions)
-npm run cleanup:dummy      # Clean up dummy data (20 dummy participants + 3 test notices)
+npm run seed:cohorts            # Seed cohorts and participants
+npm run seed:notices            # Seed notices data
+npm run seed:submissions        # Seed reading submissions
+npm run seed:admin              # Seed admin participants (admin, admin2, admin3)
+npm run seed:real-users         # Add real users (user-junyoung, user-hyunji)
+npm run seed:all                # Seed all data (cohorts + notices + submissions)
+
+# Data Cleanup
+npm run cleanup:dummy           # Clean up dummy data (20 dummy participants + 3 test notices)
+npm run cleanup:dm              # Clean up DM messages
+npm run reset:user-submissions  # Reset user reading submissions
+npm run check:user-data         # Verify user data integrity
+
+# Utilities
+npm run convert:webp            # Convert images to WebP format
+npm run verify:schema           # Verify Firebase schema consistency
 ```
 
 ### Testing & Type Checking

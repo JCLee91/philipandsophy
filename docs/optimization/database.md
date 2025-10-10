@@ -2306,6 +2306,6 @@ allow create: if request.resource.data.status == 'approved'
 
 ---
 
-**Last Updated:** 2025년 10월 9일
+**Last Updated:** 2025년 10월 10일
 **Document Version:** 1.1.0
 **Location:** `docs/optimization/database.md`

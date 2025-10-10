@@ -137,3 +137,33 @@ export const deleteCohort = async (id: string): Promise<void> => {
   const cohortRef = doc(db, COLLECTIONS.COHORTS, id);
   await deleteDoc(cohortRef);
 };
+
+/**
+ * Update daily featured participants (AI matching results)
+ */
+export const updateDailyFeaturedParticipants = async (
+  cohortId: string,
+  date: string,
+  matching: { similar: string[]; opposite: string[]; reasons?: { similar?: string; opposite?: string; summary?: string } }
+): Promise<void> => {
+  const db = getDb();
+  const cohortRef = doc(db, COLLECTIONS.COHORTS, cohortId);
+
+  // 기존 데이터 가져오기
+  const cohortDoc = await getDoc(cohortRef);
+  if (!cohortDoc.exists()) {
+    throw new Error(`Cohort not found: ${cohortId}`);
+  }
+
+  const existingData = cohortDoc.data();
+  const dailyFeaturedParticipants = existingData.dailyFeaturedParticipants || {};
+
+  // 새로운 매칭 추가
+  dailyFeaturedParticipants[date] = matching;
+
+  // 업데이트
+  await updateDoc(cohortRef, {
+    dailyFeaturedParticipants,
+    updatedAt: Timestamp.now(),
+  });
+};

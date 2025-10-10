@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import UnifiedButton from '@/components/UnifiedButton';
 import { useMessages, useSendMessage, useMarkAsRead } from '@/hooks/use-messages';
-import { getConversationId, getAdminTeamConversationId } from '@/lib/firebase/messages';
+import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 import { Send, Paperclip, X, ArrowDown } from 'lucide-react';
 import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo } from 'react';
@@ -45,17 +45,16 @@ export default function DirectMessageDialog({
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(0);
 
+  // 항상 참가자와 admin 간의 대화 (참가자 ID 기준)
   const conversationId = otherUser
-    ? otherUser.id === 'admin-team'
-      ? getAdminTeamConversationId(currentUserId)  // 일반 유저 → 관리자 팀
-      : currentUser?.isAdmin
-        ? getAdminTeamConversationId(otherUser.id)  // 관리자 → 일반 유저 (팀 채팅방 공유)
-        : getConversationId(currentUserId, otherUser.id)  // 일반 유저 간 1:1
+    ? currentUser?.isAdmin
+      ? getConversationId(otherUser.id)  // 관리자가 볼 때: 참가자 ID 사용
+      : getConversationId(currentUserId)  // 참가자가 볼 때: 자신의 ID 사용
     : '';
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
   const sendMessageMutation = useSendMessage();
-  const markAsReadMutation = useMarkAsRead();
+  const { mutate: markConversationAsRead } = useMarkAsRead();
 
   // 메시지를 날짜별 섹션으로 그룹화
   const dateSections = useMemo(() => groupMessagesByDate(messages), [messages]);
@@ -75,30 +74,36 @@ export default function DirectMessageDialog({
     setIsUserScrolling(!isAtBottom);
   }, []);
 
-  // 채팅창이 열릴 때 즉시 맨 아래로 스크롤 + 읽음 처리
+  // 채팅창이 열릴 때 즉시 맨 아래로 스크롤
   useEffect(() => {
     if (open) {
-      // 즉시 스크롤 (렌더링 전에도 실행되도록)
       requestAnimationFrame(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
       });
-
-      if (conversationId && messages.length > 0) {
-        // 관리자는 'admin-team', 일반 유저는 currentUserId 사용
-        const userId = currentUser?.isAdmin ? 'admin-team' : currentUserId;
-        markAsReadMutation.mutate({
-          conversationId,
-          userId
-        });
-      }
     } else {
       // 닫힐 때 상태 초기화
       setIsUserScrolling(false);
       setShowNewMessageButton(false);
       prevMessagesLengthRef.current = 0;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // 새 메시지가 도착했을 때 읽음 처리 (창이 열린 경우에만)
+  useEffect(() => {
+    if (!open || !conversationId || !currentUser || !currentUserId || messages.length === 0) {
+      return;
+    }
+
+    const userId = currentUser.isAdmin ? 'admin' : currentUserId;
+    const hasUnread = messages.some((message) => !message.isRead && message.receiverId === userId);
+
+    if (hasUnread) {
+      markConversationAsRead({
+        conversationId,
+        userId,
+      });
+    }
+  }, [open, conversationId, currentUser, currentUserId, messages, markConversationAsRead]);
 
   // 메시지 로드 완료 시 초기 스크롤 (open 직후 메시지 로딩 대응)
   useEffect(() => {
@@ -129,7 +134,8 @@ export default function DirectMessageDialog({
   }, [messages, currentUserId, isUserScrolling, scrollToBottomSmooth]);
 
   const handleSend = async () => {
-    if ((!messageContent.trim() && !imageFile) || !otherUser) return;
+    // 필수 데이터 검증
+    if ((!messageContent.trim() && !imageFile) || !otherUser || !currentUser || !currentUserId) return;
 
     try {
       setUploading(true);
@@ -143,9 +149,7 @@ export default function DirectMessageDialog({
       await sendMessageMutation.mutateAsync({
         conversationId,
         senderId: currentUserId,
-        receiverId: otherUser.id === 'admin-team' || currentUser?.isAdmin
-          ? 'admin-team'  // 관리자 팀으로 전송 (일반→관리자 또는 관리자→일반)
-          : otherUser.id,  // 일반 유저 간 1:1
+        receiverId: currentUser.isAdmin ? otherUser.id : 'admin',  // 관리자가 보낼 때: 참가자에게, 참가자가 보낼 때: admin에게
         content: messageContent,
         imageUrl,
       });
@@ -173,11 +177,11 @@ export default function DirectMessageDialog({
 
   if (!otherUser) return null;
 
-  // 관리자일 경우 "필립앤소피"로 표시
-  const displayName = otherUser.isAdmin ? APP_CONSTANTS.ADMIN_NAME : otherUser.name;
-  const profileImageUrl = otherUser.isAdmin 
-    ? '/favicon.webp' 
-    : (otherUser.profileImageCircle || otherUser.profileImage);
+  // 참가자가 볼 때는 항상 "필립앤소피", 관리자가 볼 때는 참가자 이름
+  const displayName = currentUser?.isAdmin ? otherUser.name : APP_CONSTANTS.ADMIN_NAME;
+  const profileImageUrl = currentUser?.isAdmin
+    ? (otherUser.profileImageCircle || otherUser.profileImage)
+    : '/favicon.webp';
 
   return (
     <>
@@ -319,4 +323,3 @@ export default function DirectMessageDialog({
     </>
   );
 }
-

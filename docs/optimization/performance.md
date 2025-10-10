@@ -1988,6 +1988,7 @@ const [prefetched, setPrefetched] = useState(false);
 ---
 
 **문서 작성자**: Claude Code (AI Technical Documentation Specialist)
-**작성일**: 2025년 10월 8일
+**작성일**: 2025년 10월 10일
 **프로젝트**: 필립앤소피 독서모임 회원 포털
-**버전**: v1.0.0
+**버전**: v2.2.0
+**Location**: `docs/optimization/performance.md`

@@ -76,7 +76,6 @@ function ChatPageContent() {
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   const [collapsedNotices, setCollapsedNotices] = useState<Set<string>>(new Set());
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
-  const hasScrolledRef = useRef(false);
   const isIosStandalone = useIsIosStandalone();
 
   // Race Condition 방지: 이미 네비게이션 중인지 추적
@@ -129,13 +128,6 @@ function ChatPageContent() {
     }
   }, [sessionLoading, currentUser, cohortId]);
 
-  // 초기 로드 시 즉시 스크롤 (번쩍임 방지)
-  useEffect(() => {
-    if (noticesData.length > 0 && !hasScrolledRef.current) {
-      scrollToBottom(undefined, { behavior: 'auto', delay: 0 });
-      hasScrolledRef.current = true;
-    }
-  }, [noticesData]);
 
   // Callback hooks (must be before any conditional returns)
   const handleDMClick = useCallback((participant: Participant) => {
@@ -144,27 +136,21 @@ function ChatPageContent() {
   }, []);
 
   const handleMessageAdmin = useCallback(() => {
-    const admins = participants.filter((p) => p.isAdmin);
-    if (admins.length === 0) return;
+    // 항상 admin 계정(필립앤소피)과 대화
+    const adminTarget: Participant = {
+      id: 'admin',
+      cohortId: cohortId || '',
+      name: APP_CONSTANTS.ADMIN_NAME,
+      phoneNumber: '01000000001',
+      profileImage: '/favicon.webp',
+      isAdmin: true,
+      createdAt: new Date() as any,
+      updatedAt: new Date() as any,
+    };
 
-    if (admins.length === 1) {
-      // 관리자가 1명만 있으면 기존 방식 사용
-      setDmTarget(admins[0]);
-      setDmDialogOpen(true);
-    } else {
-      // 관리자가 여러 명이면 관리자 팀과 대화
-      // 모든 관리자가 공유하는 팀 채팅방 사용
-      const adminTeamTarget = {
-        id: 'admin-team',
-        name: APP_CONSTANTS.ADMIN_NAME,
-        isAdmin: true,
-        // 다른 필요한 필드들...
-      } as Participant;
-
-      setDmTarget(adminTeamTarget);
-      setDmDialogOpen(true);
-    }
-  }, [participants]);
+    setDmTarget(adminTarget);
+    setDmDialogOpen(true);
+  }, [cohortId]);
 
   const handleProfileBookClick = useCallback((participant: Participant) => {
     if (!cohortId) return;
@@ -319,12 +305,12 @@ function ChatPageContent() {
     {} as Record<string, { date: Date; notices: Notice[] }>
   );
 
-  // 날짜별로 정렬 (오래된 날짜 → 최신 날짜)
+  // 날짜별로 정렬 (최신 날짜 → 오래된 날짜) - flex-col-reverse로 자동 역순
   const sortedGroupedNotices = Object.entries(groupedNotices).sort(
     ([, a], [, b]) => {
       const groupA = a as { date: Date; notices: Notice[] };
       const groupB = b as { date: Date; notices: Notice[] };
-      return groupA.date.getTime() - groupB.date.getTime();
+      return groupB.date.getTime() - groupA.date.getTime(); // 역순 정렬
     }
   );
 
@@ -368,33 +354,35 @@ function ChatPageContent() {
             // 프로필 리스트는 유지 (닫지 않음)
           }}
         />
-        <main className="relative flex-1 overflow-y-auto bg-background pb-20">
-          {/* 고정 공지 영역 - sticky로 스크롤 시 상단 고정 */}
-          {pinnedNotices.length > 0 && (
-            <div className="sticky top-0 z-40 border-b border-primary/20 shadow-sm">
-              {pinnedNotices.map((notice, index) => (
-                <div
-                  key={notice.id}
-                  className="group transition-colors duration-normal bg-primary-light hover:bg-blue-100"
-                >
-                  <div className="container mx-auto max-w-3xl px-4 py-3">
-                    <NoticeItem
-                      notice={notice}
-                      isAdmin={isAdmin}
-                      isCollapsed={collapsedNotices.has(notice.id)}
-                      onToggleCollapse={toggleNoticeCollapse}
-                      onTogglePin={handleTogglePin}
-                      onEdit={handleEditNotice}
-                      onDelete={setDeleteConfirm}
-                      formatTime={formatTime}
-                      priority={index === 0 && !!notice.imageUrl}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
 
+        {/* 고정 공지 영역 - 항상 최상단 고정 (flex-col-reverse 영향 받지 않음) */}
+        {pinnedNotices.length > 0 && (
+          <div className="sticky top-0 z-40 border-b border-primary/20 shadow-sm bg-background">
+            {pinnedNotices.map((notice, index) => (
+              <div
+                key={notice.id}
+                className="group transition-colors duration-normal bg-primary-light hover:bg-blue-100"
+              >
+                <div className="container mx-auto max-w-3xl px-4 py-3">
+                  <NoticeItem
+                    notice={notice}
+                    isAdmin={isAdmin}
+                    isCollapsed={collapsedNotices.has(notice.id)}
+                    onToggleCollapse={toggleNoticeCollapse}
+                    onTogglePin={handleTogglePin}
+                    onEdit={handleEditNotice}
+                    onDelete={setDeleteConfirm}
+                    formatTime={formatTime}
+                    priority={index === 0 && !!notice.imageUrl}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 일반 공지 영역 - flex-col-reverse로 최신 공지가 위로 */}
+        <main className="relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-20">
           {/* 일반 공지 영역 - 날짜별 그룹 */}
           {sortedGroupedNotices.map(([date, groupData], groupIndex) => {
             const { notices: dateNotices } = groupData as { date: Date; notices: Notice[] };
@@ -440,26 +428,39 @@ function ChatPageContent() {
 
       {/* 하단 네비게이션 바 */}
       <FooterActions>
-        <div className="grid grid-cols-2 gap-2">
-          {/* 독서 인증하기 버튼 */}
+        {isAdmin ? (
+          /* 관리자용 버튼 */
           <UnifiedButton
             variant="primary"
-            onClick={() => setSubmissionDialogOpen(true)}
+            onClick={() => router.push(`/app/admin/matching?cohort=${cohortId}`)}
             icon={<BookOpen className="h-5 w-5" />}
-            disabled={hasSubmittedToday}
+            className="w-full"
           >
-            {hasSubmittedToday ? '인증 완료' : '독서 인증'}
+            매칭 관리
           </UnifiedButton>
+        ) : (
+          /* 일반 사용자용 버튼 */
+          <div className="grid grid-cols-2 gap-2">
+            {/* 독서 인증하기 버튼 */}
+            <UnifiedButton
+              variant="primary"
+              onClick={() => setSubmissionDialogOpen(true)}
+              icon={<BookOpen className="h-5 w-5" />}
+              disabled={hasSubmittedToday}
+            >
+              {hasSubmittedToday ? '인증 완료' : '독서 인증'}
+            </UnifiedButton>
 
-          {/* 오늘의 서재 버튼 */}
-          <UnifiedButton
-            variant="secondary"
-            onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
-            icon={<BookLibraryIcon className="h-5 w-5" />}
-          >
-            오늘의 서재
-          </UnifiedButton>
-        </div>
+            {/* 오늘의 서재 버튼 */}
+            <UnifiedButton
+              variant="secondary"
+              onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
+              icon={<BookLibraryIcon className="h-5 w-5" />}
+            >
+              오늘의 서재
+            </UnifiedButton>
+          </div>
+        )}
       </FooterActions>
 
       <NoticeWriteDialog

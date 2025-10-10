@@ -76,11 +76,13 @@ service cloud.firestore {
       
       // 생성: 제한적 허용
       // 필수: content 필드 존재 확인
-      allow create: if request.resource.data.content is string &&
-                      request.resource.data.content.size() > 0 &&
-                      request.resource.data.senderId is string &&
+      allow create: if request.resource.data.senderId is string &&
                       request.resource.data.receiverId is string &&
-                      request.resource.data.conversationId is string;
+                      request.resource.data.conversationId is string &&
+                      ((request.resource.data.content is string &&
+                        request.resource.data.content.size() > 0) ||
+                       (request.resource.data.imageUrl is string &&
+                        request.resource.data.imageUrl.size() > 0));
       
       // 수정: isRead 상태만 변경 가능
       allow update: if request.resource.data.diff(resource.data).affectedKeys()
@@ -116,4 +118,3 @@ service cloud.firestore {
     }
   }
 }
-

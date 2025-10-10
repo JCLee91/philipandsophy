@@ -266,3 +266,9 @@ const submissions = await getSubmissionsByCode('ABC123');
 - [Firebase 공식 문서](https://firebase.google.com/docs)
 - [Firestore 가이드](https://firebase.google.com/docs/firestore)
 - [Firebase Storage 가이드](https://firebase.google.com/docs/storage)
+
+---
+
+**Last Updated**: 2025-10-10
+**Document Version**: v2.2.0
+**Location**: `docs/setup/firebase.md`

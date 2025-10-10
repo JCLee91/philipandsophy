@@ -671,3 +671,9 @@ Sitemap: https://philipandsophy.com/sitemap.xml
 ---
 
 본 IA는 현재 구현된 라우트 구조와 사용자 흐름을 정확히 반영하여 작성되었습니다.
+
+---
+
+**Last Updated**: 2025-10-10
+**Document Version**: v2.2.0
+**Location**: `docs/architecture/ia.md`

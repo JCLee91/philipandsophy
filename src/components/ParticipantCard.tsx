@@ -7,11 +7,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Check, MessageSquare, User } from 'lucide-react';
+import { Check, MessageSquare, MoreHorizontal, User } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
-import { getConversationId, getAdminTeamConversationId } from '@/lib/firebase/messages';
+import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 
 export interface ParticipantCardProps {
@@ -50,72 +50,82 @@ export function ParticipantCard({
   const verified = verifiedIds?.has(participant.id) ?? false;
 
   // 조건부 unread count 조회 (showUnreadBadge가 true일 때만)
-  // 관리자인 경우 admin-team 채팅방 사용
-  const conversationId = showUnreadBadge
+  // 관리자가 볼 때: 참가자 ID로 대화방 조회, 일반 유저가 볼 때: 자신의 ID로 조회
+  const conversationId = showUnreadBadge && currentUserId
     ? isAdmin
-      ? getAdminTeamConversationId(participant.id)
-      : getConversationId(currentUserId, participant.id)
+      ? getConversationId(participant.id)  // 관리자가 볼 때
+      : getConversationId(currentUserId)   // 참가자가 볼 때
     : '';
   const { data: unreadCount = 0 } = useUnreadCount(
-    showUnreadBadge ? conversationId : '',
-    showUnreadBadge ? (isAdmin ? 'admin-team' : currentUserId) : ''
+    conversationId,
+    showUnreadBadge && currentUserId ? (isAdmin ? 'admin' : currentUserId) : ''
   );
 
-  // 관리자이면서 자신이 아닌 참가자: 드롭다운 메뉴
+  // 관리자이면서 자신이 아닌 참가자: 드롭다운 메뉴(별도 버튼)
   if (isAdmin && participant.id !== currentUserId) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal"
-          >
-            <div className="relative">
-              <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-                <AvatarImage
-                  src={participant.profileImageCircle || participant.profileImage}
-                  alt={participant.name}
-                />
-                <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
+      <div className="flex w-full items-center gap-2 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
+        <button
+          type="button"
+          onClick={() => onProfileClick(participant)}
+          className="flex flex-1 items-center gap-3 text-left"
+        >
+          <div className="relative">
+            <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+              <AvatarImage
+                src={participant.profileImageCircle || participant.profileImage}
+                alt={participant.name}
+              />
+              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
 
-              {/* 독서 인증 완료 배지 */}
-              {verified && (
-                <div
-                  className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md"
-                  aria-label="오늘 독서 인증 완료"
-                >
-                  <Check className="h-3 w-3 text-white stroke-[3]" />
-                </div>
-              )}
+            {/* 독서 인증 완료 배지 */}
+            {verified && (
+              <div
+                className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md"
+                aria-label="오늘 독서 인증 완료"
+              >
+                <Check className="h-3 w-3 text-white stroke-[3]" />
+              </div>
+            )}
 
-              {/* 읽지 않은 메시지 배지 */}
-              {showUnreadBadge && unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full bg-red-500 border-2 border-white">
-                  <span className="text-xs font-bold text-white">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                </div>
-              )}
-            </div>
+            {/* 읽지 않은 메시지 배지 */}
+            {showUnreadBadge && unreadCount > 0 && (
+              <div className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full bg-red-500 border-2 border-white">
+                <span className="text-xs font-bold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              </div>
+            )}
+          </div>
 
-            <span className="text-sm font-medium text-foreground">{participant.name}</span>
-          </button>
-        </DropdownMenuTrigger>
+          <span className="text-sm font-medium text-foreground">{participant.name}</span>
+        </button>
 
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => onDMClick?.(participant)}>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            DM 보내기
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onProfileClick(participant)}>
-            <User className="mr-2 h-4 w-4" />
-            프로필 보기
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:bg-muted"
+              aria-label="참가자 옵션"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => onDMClick?.(participant)}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              DM 보내기
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onProfileClick(participant)}>
+              <User className="mr-2 h-4 w-4" />
+              프로필 보기
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     );
   }
 

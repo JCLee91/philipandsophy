@@ -415,3 +415,9 @@ A. Phase 2 (Week 7-8)에 웹푸시 및 모바일 알림을 추가할 예정입�
 ---
 
 본 PRD는 현재 구현된 기능을 반영하여 작성되었습니다. 향후 피드백과 사용자 행동 데이터를 기반으로 단계적 개선을 진행합니다.
+
+---
+
+**Last Updated**: 2025-10-10
+**Document Version**: v2.2.0
+**Location**: `docs/architecture/prd.md`

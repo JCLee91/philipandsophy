@@ -51,3 +51,9 @@ Service Account 키 다운로드 후:
 1. ✅ `firebase-service-account.json` 파일이 프로젝트 루트에 있는지 확인
 2. ✅ Admin SDK 시딩 스크립트 실행
 3. ✅ 정상 작동 확인
+
+---
+
+**Last Updated**: 2025-10-10
+**Document Version**: v2.2.0
+**Location**: `docs/setup/admin-sdk.md`

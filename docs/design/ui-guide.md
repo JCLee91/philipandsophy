@@ -358,3 +358,199 @@ interface BookSearchAutocompleteProps {
   - 책 정보 카드: 최대 600px
   - 표지 이미지: 64px × 96px
   - 제목: 최대 2줄 말줄임
+
+---
+
+## 🎨 Shimmer Animation System
+
+**Last Updated**: 2025-10-10
+
+통일된 로딩 상태 UI를 위한 Shimmer 애니메이션 시스템입니다.
+
+### 개요
+
+전역 utility class로 제공되는 shimmer 애니메이션은 모든 스켈레톤 로딩 상태에서 일관된 UX를 제공합니다.
+
+### 구현 위치
+
+**파일**: `src/app/globals.css`
+
+```css
+@layer utilities {
+  .shimmer {
+    @apply bg-gradient-to-r from-gray-200 via-white to-gray-200 bg-[length:200%_100%] animate-shimmer;
+    will-change: background-position;
+    border-radius: 8px;
+  }
+
+  /* WCAG 2.1 접근성: 모션 민감도 사용자를 위한 애니메이션 비활성화 */
+  @media (prefers-reduced-motion: reduce) {
+    .shimmer {
+      animation: none;
+      background: theme('colors.gray.200') !important;
+      will-change: auto;
+    }
+  }
+}
+```
+
+### 사용 예시
+
+```tsx
+// 스켈레톤 로딩 - 전체 너비 박스
+<div className="shimmer h-10 w-full rounded-lg" />
+
+// 아바타 스켈레톤 - 원형
+<div className="shimmer h-12 w-12 rounded-full" />
+
+// 텍스트 스켈레톤 - 한 줄
+<div className="shimmer h-4 w-32 rounded" />
+
+// 카드 스켈레톤 - 복합 구조
+<div className="space-y-3">
+  <div className="shimmer h-32 w-full" />
+  <div className="shimmer h-4 w-3/4" />
+  <div className="shimmer h-4 w-1/2" />
+</div>
+```
+
+### 디자인 토큰
+
+| 속성 | 값 | 설명 |
+|------|-----|------|
+| **Duration** | 1.5s | 애니메이션 지속 시간 |
+| **Timing Function** | ease-in-out | 부드러운 가속/감속 |
+| **Gradient Colors** | gray-200 → white → gray-200 | 3-stop 그라데이션 |
+| **Border Radius** | 8px | 기본 둥근 모서리 |
+| **GPU Acceleration** | `will-change: background-position` | 성능 최적화 |
+
+### 접근성 (WCAG 2.1 준수)
+
+#### prefers-reduced-motion 지원
+
+모션 민감도가 있는 사용자를 위해 애니메이션을 자동으로 비활성화합니다:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+    background: theme('colors.gray.200') !important;
+    will-change: auto;
+  }
+}
+```
+
+**사용자 경험**:
+- 일반 사용자: 부드러운 shimmer 애니메이션
+- 모션 민감도 설정 사용자: 정적인 회색 배경
+
+### 성능 최적화
+
+1. **GPU 가속**: `will-change: background-position`으로 레이어 분리
+2. **CSS 애니메이션**: JavaScript 없이 순수 CSS로 구현
+3. **DRY 원칙**: 15개 중복 애니메이션 정의 제거
+4. **Tailwind Integration**: `tailwind.config.ts`에 keyframe 정의
+
+### Tailwind 설정
+
+```typescript
+// tailwind.config.ts
+export default {
+  theme: {
+    extend: {
+      animation: {
+        shimmer: 'shimmer 1.5s ease-in-out infinite'
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' }
+        }
+      }
+    }
+  }
+}
+```
+
+### 사용 가이드라인
+
+#### ✅ 언제 사용하는가
+
+- 데이터 로딩 중 (프로필, 공지사항, 독서 인증 리스트)
+- 이미지 로딩 중 (아바타, 책 표지)
+- 네트워크 요청 대기 중
+- 무한 스크롤 로딩 상태
+
+#### ❌ 사용하지 말아야 할 때
+
+- 즉시 완료되는 작업 (< 300ms)
+- 진행률 표시가 필요한 긴 작업 (진행 바 사용)
+- 사용자 액션 피드백 (버튼 로딩 스피너 사용)
+
+### 적용 컴포넌트 예시
+
+#### ProfileCardSkeleton
+```tsx
+export function ProfileCardSkeleton() {
+  return (
+    <div className="rounded-lg border bg-white p-4">
+      <div className="flex items-start gap-3">
+        {/* 아바타 */}
+        <div className="shimmer h-12 w-12 rounded-full" />
+
+        <div className="flex-1 space-y-2">
+          {/* 이름 */}
+          <div className="shimmer h-5 w-24 rounded" />
+          {/* 직업 */}
+          <div className="shimmer h-4 w-32 rounded" />
+        </div>
+      </div>
+
+      {/* Bio */}
+      <div className="mt-3 space-y-2">
+        <div className="shimmer h-4 w-full rounded" />
+        <div className="shimmer h-4 w-3/4 rounded" />
+      </div>
+    </div>
+  );
+}
+```
+
+#### NoticeSkeleton
+```tsx
+export function NoticeSkeleton() {
+  return (
+    <div className="rounded-lg bg-white p-4">
+      {/* 헤더 */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="shimmer h-8 w-8 rounded-full" />
+        <div className="shimmer h-4 w-20 rounded" />
+      </div>
+
+      {/* 본문 */}
+      <div className="space-y-2">
+        <div className="shimmer h-4 w-full rounded" />
+        <div className="shimmer h-4 w-full rounded" />
+        <div className="shimmer h-4 w-2/3 rounded" />
+      </div>
+
+      {/* 이미지 (선택) */}
+      <div className="shimmer mt-3 h-48 w-full rounded-lg" />
+    </div>
+  );
+}
+```
+
+### 이점
+
+- ✅ **일관성**: 전체 앱에서 동일한 로딩 UX
+- ✅ **접근성**: WCAG 2.1 준수 (prefers-reduced-motion)
+- ✅ **성능**: GPU 가속으로 60fps 유지
+- ✅ **유지보수성**: 단일 utility class로 관리
+- ✅ **DRY 원칙**: 중복 코드 15개 제거
+
+---
+
+**Last Updated**: 2025-10-10
+**Document Version**: v2.2.0
+**Location**: `docs/design/ui-guide.md`

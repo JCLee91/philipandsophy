@@ -15,7 +15,7 @@ import {
 } from '@/lib/firebase';
 import { useEffect } from 'react';
 import type { DirectMessage } from '@/types/database';
-import { CACHE_TIMES } from '@/constants/cache';
+import { logger } from '@/lib/logger';
 
 /**
  * Query key factory for messages
@@ -25,6 +25,7 @@ export const messageKeys = {
   conversation: (conversationId: string) => ['messages', conversationId] as const,
   unread: (conversationId: string, userId: string) =>
     ['messages', 'unread', conversationId, userId] as const,
+  total: (userId: string) => ['messages', 'unread', 'total', userId] as const,
 };
 
 /**
@@ -44,8 +45,12 @@ export const useMessages = (conversationId: string) => {
   useEffect(() => {
     if (!conversationId) return undefined;
 
-    const unsubscribe = subscribeToMessages(conversationId, (messages) => {
-      queryClient.setQueryData(messageKeys.conversation(conversationId), messages);
+    // 클로저로 현재 conversationId 고정 (race condition 방지)
+    const currentConversationId = conversationId;
+
+    const unsubscribe = subscribeToMessages(currentConversationId, (messages) => {
+      // 구독 시점의 conversationId가 현재와 같을 때만 업데이트
+      queryClient.setQueryData(messageKeys.conversation(currentConversationId), messages);
     });
 
     return () => unsubscribe();
@@ -86,24 +91,46 @@ export const useMarkAsRead = () => {
   return useMutation({
     mutationFn: ({ conversationId, userId }: { conversationId: string; userId: string }) =>
       markConversationAsRead(conversationId, userId),
-    onSuccess: (_, variables) => {
-      // Invalidate unread count
-      queryClient.invalidateQueries({
-        queryKey: messageKeys.unread(variables.conversationId, variables.userId),
+    onMutate: async (variables) => {
+      // 낙관적 업데이트 전 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({
+        queryKey: messageKeys.conversation(variables.conversationId),
       });
-      // Optimistically update messages as read
+
+      // 이전 데이터 백업 (롤백용)
+      const previousMessages = queryClient.getQueryData<DirectMessage[]>(
+        messageKeys.conversation(variables.conversationId)
+      );
+
+      // 낙관적 업데이트
       queryClient.setQueryData<DirectMessage[]>(
         messageKeys.conversation(variables.conversationId),
         (old) =>
-          old?.map((msg) => {
-            // Handle 'admin-team' receiverId: when userId is 'admin-team',
-            // we want to mark messages where receiverId is 'admin-team'
-            const shouldMarkRead = variables.userId === 'admin-team'
-              ? msg.receiverId === 'admin-team'
-              : msg.receiverId === variables.userId;
-            return shouldMarkRead ? { ...msg, isRead: true } : msg;
-          })
+          old?.map((msg) =>
+            msg.receiverId === variables.userId ? { ...msg, isRead: true } : msg
+          )
       );
+
+      return { previousMessages };
+    },
+    onError: (error, variables, context) => {
+      // 실패 시 이전 상태로 롤백
+      if (context?.previousMessages) {
+        queryClient.setQueryData(
+          messageKeys.conversation(variables.conversationId),
+          context.previousMessages
+        );
+      }
+      logger.error('메시지 읽음 처리 실패:', error);
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate unread count 캐시
+      queryClient.invalidateQueries({
+        queryKey: messageKeys.unread(variables.conversationId, variables.userId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: messageKeys.total(variables.userId),
+      });
     },
   });
 };
@@ -116,7 +143,7 @@ export const useUnreadCount = (conversationId: string, userId: string) => {
   return useQuery({
     queryKey: messageKeys.unread(conversationId, userId),
     queryFn: () => getUnreadCount(conversationId, userId),
-    enabled: !!conversationId && !!userId,
+    enabled: !!conversationId && !!userId && conversationId !== '-admin', // 빈 ID 쿼리 방지
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 0, // refetchInterval 우선 적용
   });
@@ -128,7 +155,7 @@ export const useUnreadCount = (conversationId: string, userId: string) => {
  */
 export const useTotalUnreadCount = (userId: string) => {
   return useQuery({
-    queryKey: ['messages', 'unread', 'total', userId],
+    queryKey: messageKeys.total(userId),
     queryFn: () => getTotalUnreadCount(userId),
     enabled: !!userId,
     refetchInterval: 30000, // Refetch every 30 seconds

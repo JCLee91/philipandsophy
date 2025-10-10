@@ -116,7 +116,6 @@ export const getMessagesByReceiver = async (
 
 /**
  * Get unread message count for a user in a conversation
- * Supports 'admin-team' as userId for team chat functionality
  */
 export const getUnreadCount = async (
   conversationId: string,
@@ -125,15 +124,10 @@ export const getUnreadCount = async (
   const db = getDb();
   const messagesRef = collection(db, COLLECTIONS.MESSAGES);
 
-  // userId가 'admin-team'이면 팀 채팅용 쿼리 사용
-  const receiverIdCondition = userId === 'admin-team'
-    ? where('receiverId', '==', 'admin-team')
-    : where('receiverId', '==', userId);
-
   const q = query(
     messagesRef,
     where('conversationId', '==', conversationId),
-    receiverIdCondition,
+    where('receiverId', '==', userId),
     where('isRead', '==', false)
   );
 
@@ -159,7 +153,6 @@ export const getTotalUnreadCount = async (userId: string): Promise<number> => {
 
 /**
  * Mark all messages in a conversation as read for a specific user
- * Supports 'admin-team' as userId for team chat functionality
  */
 export const markConversationAsRead = async (
   conversationId: string,
@@ -168,19 +161,18 @@ export const markConversationAsRead = async (
   const db = getDb();
   const messagesRef = collection(db, COLLECTIONS.MESSAGES);
 
-  // userId가 'admin-team'이면 팀 채팅용 쿼리 사용
-  const receiverIdCondition = userId === 'admin-team'
-    ? where('receiverId', '==', 'admin-team')
-    : where('receiverId', '==', userId);
-
   const q = query(
     messagesRef,
     where('conversationId', '==', conversationId),
-    receiverIdCondition,
+    where('receiverId', '==', userId),
     where('isRead', '==', false)
   );
 
   const snapshot = await getDocs(q);
+
+  // 업데이트할 메시지가 없으면 early return (빈 배치 방지)
+  if (snapshot.empty) return;
+
   const batch = writeBatch(db);
 
   snapshot.docs.forEach((document) => {
@@ -216,8 +208,6 @@ export const getAdminConversations = async (): Promise<string[]> => {
   const messagesRef = collection(db, COLLECTIONS.MESSAGES);
   const q = query(
     messagesRef,
-    where('conversationId', '>=', 'admin-'),
-    orderBy('conversationId'),
     orderBy('createdAt', 'desc')
   );
 
@@ -257,18 +247,9 @@ export const subscribeToMessages = (
 };
 
 /**
- * Generate conversation ID for admin team (when multiple admins exist)
- * Creates a shared admin conversation for all admin users
+ * Generate conversation ID between participant and admin
+ * Format: {participantId}-admin
  */
-export const getAdminTeamConversationId = (userId: string): string => {
-  return `admin-team-${userId}`;
-};
-
-/**
- * Generate conversation ID from two user IDs
- * Always returns same ID regardless of order (for consistency)
- */
-export const getConversationId = (userId1: string, userId2: string): string => {
-  const ids = [userId1, userId2].sort();
-  return `${ids[0]}-${ids[1]}`;
+export const getConversationId = (participantId: string): string => {
+  return `${participantId}-admin`;
 };

@@ -5,6 +5,32 @@ import { Timestamp } from 'firebase/firestore';
  */
 
 /**
+ * Daily matching metadata shared across admin & participant views
+ */
+export interface DailyMatchingReasons {
+  similar?: string;
+  opposite?: string;
+  summary?: string;
+}
+
+export interface DailyParticipantAssignment {
+  similar: string[];
+  opposite: string[];
+  reasons?: DailyMatchingReasons;
+}
+
+export interface DailyMatchingSummary {
+  similar: string[];
+  opposite: string[];
+  reasons?: DailyMatchingReasons;
+}
+
+export interface DailyMatchingEntry {
+  featured?: DailyMatchingSummary;
+  assignments?: Record<string, DailyParticipantAssignment>;
+}
+
+/**
  * 기수 정보
  */
 export interface Cohort {
@@ -13,7 +39,7 @@ export interface Cohort {
   startDate: string; // 시작일 (ISO 8601)
   endDate: string; // 종료일 (ISO 8601)
   isActive: boolean; // 활성화 여부
-  dailyFeaturedParticipants?: Record<string, { similar: string[]; opposite: string[] }>; // 날짜별 추천 참가자 (예: { "2025-01-15": { similar: ["id1", "id2"], opposite: ["id3", "id4"] } })
+  dailyFeaturedParticipants?: Record<string, DailyMatchingEntry>; // 날짜별 추천 참가자 및 매칭 결과
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
