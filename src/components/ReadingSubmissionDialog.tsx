@@ -284,8 +284,8 @@ export default function ReadingSubmissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-full sm:h-[90vh] p-0 flex flex-col gap-0">
-        <DialogHeader className="px-6 pb-4 border-b flex-shrink-0 safe-area-header">
+      <DialogContent className="max-w-2xl h-full sm:h-[90vh] p-0 flex flex-col gap-0 safe-area-dialog">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl">독서 인증하기</DialogTitle>
           <DialogDescription>
             오늘 읽은 내용을 기록하고 인증해보세요. 모든 항목은 필수입니다.
@@ -471,14 +471,17 @@ export default function ReadingSubmissionDialog({
 
       {/* Safe Area CSS */}
       <style jsx>{`
-        :global(.safe-area-header) {
-          padding-top: calc(1.5rem + env(safe-area-inset-top));
+        /* Dialog 컨테이너에 상단 safe area 적용 */
+        :global(.safe-area-dialog) {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* iOS 11.2 이전 버전 호환성 */
         @supports (padding-top: constant(safe-area-inset-top)) {
-          :global(.safe-area-header) {
-            padding-top: calc(1.5rem + constant(safe-area-inset-top));
+          :global(.safe-area-dialog) {
+            padding-top: constant(safe-area-inset-top);
+            padding-bottom: constant(safe-area-inset-bottom);
           }
         }
       `}</style>

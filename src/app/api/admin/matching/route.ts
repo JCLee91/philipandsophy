@@ -121,6 +121,15 @@ export async function POST(request: NextRequest) {
 
       const participant = participantDoc.data() as ParticipantData;
 
+      // 관리자는 매칭에서 제외
+      if (participant.isAdmin) {
+        logger.info('관리자 참가자 매칭에서 제외', {
+          participantId: submission.participantId,
+          name: participant.name,
+        });
+        continue;
+      }
+
       participantAnswers.push({
         id: submission.participantId,
         name: participant.name,
