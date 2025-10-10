@@ -17,6 +17,7 @@ import { uploadDMImage } from '@/lib/firebase/storage';
 import Image from 'next/image';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { FOOTER_STYLES } from '@/constants/ui';
+import { APP_CONSTANTS } from '@/constants/app';
 import ImageViewerDialog from '@/components/ImageViewerDialog';
 
 interface DirectMessageDialogProps {
@@ -156,6 +157,9 @@ export default function DirectMessageDialog({
 
   if (!otherUser) return null;
 
+  // 관리자일 경우 "필립앤소피"로 표시
+  const displayName = otherUser.isAdmin ? APP_CONSTANTS.ADMIN_NAME : otherUser.name;
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -163,11 +167,11 @@ export default function DirectMessageDialog({
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={otherUser.profileImage} alt={otherUser.name} />
-              <AvatarFallback>{otherUser.name[0]}</AvatarFallback>
+              <AvatarImage src={otherUser.profileImage} alt={displayName} />
+              <AvatarFallback>{displayName[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <div className="font-semibold">{otherUser.name}</div>
+              <div className="font-semibold">{displayName}</div>
             </div>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -204,7 +208,7 @@ export default function DirectMessageDialog({
                       }
                     />
                     <AvatarFallback>
-                      {isMine ? '나' : otherUser.name[0]}
+                      {isMine ? '나' : displayName[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div

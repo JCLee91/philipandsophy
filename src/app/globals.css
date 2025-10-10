@@ -166,7 +166,28 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
-  
+
+  /* PWA 환경에서 추가 스크롤 최적화 */
+  body[data-app="true"] .overflow-y-auto,
+  body[data-app="true"] .overflow-auto,
+  body[data-app="true"] [data-radix-scroll-area-viewport] {
+    /* iOS PWA에서 스크롤 활성화를 위한 추가 속성 */
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Sheet (프로필 리스트 등) Safe Area 대응 */
+  [role="dialog"][data-state="open"] {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* iOS 11.2 이전 버전 호환성 */
+  @supports (padding-top: constant(safe-area-inset-top)) {
+    [role="dialog"][data-state="open"] {
+      padding-top: constant(safe-area-inset-top);
+    }
+  }
+
   /* Pretendard 폰트를 모든 요소에 강제 적용 */
   *,
   *::before,

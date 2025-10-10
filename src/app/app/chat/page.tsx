@@ -291,6 +291,7 @@ function ChatPageContent() {
         open={dmDialogOpen}
         onOpenChange={setDmDialogOpen}
         currentUserId={currentUserId || ''}
+        currentUser={currentUser}
         otherUser={dmTarget}
       />
       <ReadingSubmissionDialog
