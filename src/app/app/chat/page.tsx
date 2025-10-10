@@ -20,6 +20,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
 import { BookLibraryIcon } from '@/components/icons/BookLibraryIcon';
+import FooterActions from '@/components/FooterActions';
 import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
 
 // Lazy load dialog components (only loaded when needed)
@@ -149,7 +150,7 @@ function ChatPageContent() {
   if (sessionLoading || cohortLoading) {
     return (
       <PageTransition>
-        <div className="flex min-h-screen flex-col max-h-screen overflow-hidden">
+        <div className="flex min-h-[100dvh] flex-col max-h-[100dvh] overflow-hidden">
           <HeaderSkeleton />
           <NoticeListSkeleton />
           <FooterActionsSkeleton />
@@ -272,7 +273,7 @@ function ChatPageContent() {
 
   return (
     <PageTransition>
-      <div className="flex min-h-screen flex-col max-h-screen overflow-hidden">
+      <div className="flex min-h-[100dvh] flex-col max-h-[100dvh] overflow-hidden">
         <Header
         onParticipantsClick={() => setParticipantsOpen(true)}
         onWriteClick={() => setWriteDialogOpen(true)}
@@ -377,29 +378,27 @@ function ChatPageContent() {
       </main>
 
       {/* 하단 네비게이션 바 */}
-      <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur-sm pb-safe">
-        <div className="container mx-auto max-w-3xl px-4 py-3">
-          <div className="grid grid-cols-2 gap-3">
-            {/* 독서 인증하기 버튼 */}
-            <UnifiedButton
-              variant="primary"
-              onClick={() => setSubmissionDialogOpen(true)}
-              icon={<BookOpen className="h-5 w-5" />}
-            >
-              독서 인증
-            </UnifiedButton>
+      <FooterActions>
+        <div className="grid grid-cols-2 gap-2">
+          {/* 독서 인증하기 버튼 */}
+          <UnifiedButton
+            variant="primary"
+            onClick={() => setSubmissionDialogOpen(true)}
+            icon={<BookOpen className="h-5 w-5" />}
+          >
+            독서 인증
+          </UnifiedButton>
 
-            {/* 오늘의 서재 버튼 */}
-            <UnifiedButton
-              variant="secondary"
-              onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
-              icon={<BookLibraryIcon className="h-5 w-5" />}
-            >
-              오늘의 서재
-            </UnifiedButton>
-          </div>
+          {/* 오늘의 서재 버튼 */}
+          <UnifiedButton
+            variant="secondary"
+            onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
+            icon={<BookLibraryIcon className="h-5 w-5" />}
+          >
+            오늘의 서재
+          </UnifiedButton>
         </div>
-      </div>
+      </FooterActions>
 
       <Suspense fallback={<LoadingSpinner />}>
         <NoticeWriteDialog

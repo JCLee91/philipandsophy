@@ -21,11 +21,6 @@ export function useImageUpload() {
     }
   };
 
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-  };
-
   const resetImage = () => {
     setImageFile(null);
     setImagePreview(null);
@@ -35,7 +30,6 @@ export function useImageUpload() {
     imageFile,
     imagePreview,
     handleImageSelect,
-    handleRemoveImage,
     resetImage,
   };
 }

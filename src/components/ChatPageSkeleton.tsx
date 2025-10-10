@@ -67,14 +67,14 @@ export function NoticeListSkeleton() {
 export function FooterActionsSkeleton() {
   return (
     <div
-      className="sticky bottom-0 border-t bg-background/95 backdrop-blur-sm pb-safe"
+      className="shrink-0 border-t bg-white pb-safe"
       role="status"
       aria-label="하단 버튼 로딩 중"
     >
-      <div className="container mx-auto max-w-3xl px-4 py-3">
-        <div className="grid grid-cols-2 gap-3 animate-pulse" aria-hidden="true">
-          <div className="h-14 rounded-xl bg-gray-200" />
-          <div className="h-14 rounded-xl bg-gray-200" />
+      <div className="mx-auto max-w-md px-6 pt-4 pb-8">
+        <div className="grid grid-cols-2 gap-2 animate-pulse" aria-hidden="true">
+          <div className="h-14 rounded-lg bg-gray-200" />
+          <div className="h-14 rounded-lg bg-gray-200" />
         </div>
         <span className="sr-only">액션 버튼을 불러오는 중입니다...</span>
       </div>

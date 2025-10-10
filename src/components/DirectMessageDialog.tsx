@@ -16,6 +16,7 @@ import { scrollToBottom } from '@/lib/utils';
 import { uploadDMImage } from '@/lib/firebase/storage';
 import Image from 'next/image';
 import { useImageUpload } from '@/hooks/use-image-upload';
+import { FOOTER_STYLES } from '@/constants/ui';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -258,10 +259,10 @@ export default function DirectMessageDialog({
         </div>
 
         {/* 입력 영역 */}
-        <div className="border-t p-4">
+        <div className={FOOTER_STYLES.INPUT_CONTAINER}>
           {/* 이미지 미리보기 */}
           {imagePreview && (
-            <div className="mb-3 relative inline-block w-32 h-32 animate-in fade-in-0 duration-fast">
+            <div className={`${FOOTER_STYLES.IMAGE_PREVIEW_MARGIN} relative inline-block w-32 h-32 animate-in fade-in-0 duration-fast`}>
               <Image
                 src={imagePreview}
                 alt="첨부 이미지"
@@ -277,8 +278,8 @@ export default function DirectMessageDialog({
               </button>
             </div>
           )}
-          
-          <div className="flex gap-2">
+
+          <div className={`flex ${FOOTER_STYLES.BUTTON_GAP}`}>
             <input
               type="file"
               accept="image/*"

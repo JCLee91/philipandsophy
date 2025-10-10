@@ -73,7 +73,7 @@ export default function NoticeWriteDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-3">
+        <DialogFooter className="gap-3 border-t pt-4">
           <div className="flex items-center gap-3 flex-1">
             <label>
               <input

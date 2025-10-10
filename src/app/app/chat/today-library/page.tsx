@@ -10,6 +10,7 @@ import HeaderNavigation from '@/components/HeaderNavigation';
 import EllipseShadow from '@/components/EllipseShadow';
 import FooterActions from '@/components/FooterActions';
 import BlurDivider from '@/components/BlurDivider';
+import UnifiedButton from '@/components/UnifiedButton';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useToast } from '@/hooks/use-toast';
@@ -93,7 +94,7 @@ function TodayLibraryContent() {
   if (sessionLoading || cohortLoading || participantsLoading) {
     return (
       <PageTransition>
-        <div className="flex h-screen flex-col overflow-hidden">
+        <div className="flex h-[100dvh] flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="flex-1 overflow-y-auto bg-background">
@@ -134,11 +135,9 @@ function TodayLibraryContent() {
             </div>
           </main>
 
-          <div className="shrink-0 border-t bg-white pb-safe">
-            <div className="mx-auto max-w-md px-6 pt-4 pb-8">
-              <div className="h-12 bg-gray-200 rounded-lg animate-pulse" />
-            </div>
-          </div>
+          <FooterActions>
+            <div className="h-14 bg-gray-200 rounded-lg animate-pulse" />
+          </FooterActions>
         </div>
       </PageTransition>
     );
@@ -170,7 +169,7 @@ function TodayLibraryContent() {
   if (allFeaturedIds.length === 0) {
     return (
       <PageTransition>
-        <div className="flex h-screen flex-col overflow-hidden">
+        <div className="flex h-[100dvh] flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="flex flex-1 items-center justify-center bg-background overflow-y-auto">
@@ -222,7 +221,7 @@ function TodayLibraryContent() {
 
   return (
     <PageTransition>
-      <div className="flex h-screen flex-col overflow-hidden">
+      <div className="flex h-[100dvh] flex-col overflow-hidden">
         <HeaderNavigation title="오늘의 서재" />
 
         {/* Main Content */}
@@ -299,11 +298,40 @@ function TodayLibraryContent() {
           </div>
         </main>
 
-        <FooterActions
-          cohortId={cohortId}
-          currentUserId={currentUserId || ''}
-          isLocked={isLocked}
-        />
+        <FooterActions>
+          <div className={cn("flex gap-2", isLocked && "grid grid-cols-2")}>
+            {isLocked ? (
+              <>
+                {/* Unauthenticated: 2 Buttons */}
+                <UnifiedButton
+                  variant="secondary"
+                  onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
+                  className="flex-1"
+                >
+                  내 프로필 북 보기
+                </UnifiedButton>
+                <UnifiedButton
+                  variant="primary"
+                  onClick={() => router.push(appRoutes.chat(cohortId))}
+                  className="flex-1"
+                >
+                  독서 인증하기
+                </UnifiedButton>
+              </>
+            ) : (
+              <>
+                {/* Authenticated: 1 Button */}
+                <UnifiedButton
+                  variant="primary"
+                  onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
+                  className="flex-1"
+                >
+                  내 프로필 북 보기
+                </UnifiedButton>
+              </>
+            )}
+          </div>
+        </FooterActions>
       </div>
     </PageTransition>
   );

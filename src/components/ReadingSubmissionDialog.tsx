@@ -422,7 +422,7 @@ export default function ReadingSubmissionDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-3">
+        <DialogFooter className="gap-3 border-t pt-4">
           <UnifiedButton
             variant="outline"
             onClick={() => onOpenChange(false)}

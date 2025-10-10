@@ -34,7 +34,7 @@ export default function NoticeEditDialog({
           className="min-h-[120px]"
           placeholder="공지 내용을 입력하세요..."
         />
-        <DialogFooter className="gap-3">
+        <DialogFooter className="gap-3 border-t pt-4">
           <UnifiedButton variant="outline" onClick={() => onOpenChange(false)} size="sm">
             취소
           </UnifiedButton>

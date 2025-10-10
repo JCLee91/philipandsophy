@@ -1,58 +1,24 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import UnifiedButton from '@/components/UnifiedButton';
-import { appRoutes } from '@/lib/navigation';
+import { ReactNode } from 'react';
 
+/**
+ * 통일된 하단 액션 버튼 영역 컴포넌트
+ *
+ * 모든 화면의 하단 버튼 영역에서 일관된 레이아웃을 제공합니다.
+ * - px-6: 좌우 여백 24px
+ * - pt-4 pb-8: 상단 16px, 하단 32px
+ * - max-w-md: 최대 너비 448px
+ */
 interface FooterActionsProps {
-  cohortId: string;
-  currentUserId: string;
-  isLocked: boolean;
+  children: ReactNode;
 }
 
-export default function FooterActions({
-  cohortId,
-  currentUserId,
-  isLocked,
-}: FooterActionsProps) {
-  const router = useRouter();
-
+export default function FooterActions({ children }: FooterActionsProps) {
   return (
     <div className="shrink-0 border-t bg-white pb-safe">
       <div className="mx-auto max-w-md px-6 pt-4 pb-8">
-        <div className={cn("flex gap-2", isLocked && "grid grid-cols-2")}>
-          {isLocked ? (
-            <>
-              {/* Unauthenticated: 2 Buttons */}
-              <UnifiedButton
-                variant="secondary"
-                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId))}
-                className="flex-1"
-              >
-                내 프로필 북 보기
-              </UnifiedButton>
-              <UnifiedButton
-                variant="primary"
-                onClick={() => router.push(appRoutes.chat(cohortId))}
-                className="flex-1"
-              >
-                독서 인증하기
-              </UnifiedButton>
-            </>
-          ) : (
-            <>
-              {/* Authenticated: 1 Button */}
-              <UnifiedButton
-                variant="primary"
-                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId))}
-                className="flex-1"
-              >
-                내 프로필 북 보기
-              </UnifiedButton>
-            </>
-          )}
-        </div>
+        {children}
       </div>
     </div>
   );

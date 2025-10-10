@@ -26,7 +26,7 @@ export default function NoticeDeleteDialog({
             정말로 이 공지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-3">
+        <DialogFooter className="gap-3 border-t pt-4">
           <UnifiedButton variant="outline" onClick={() => onOpenChange(false)} size="sm">
             취소
           </UnifiedButton>

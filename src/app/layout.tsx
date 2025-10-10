@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Providers from './providers';
+import RegisterServiceWorker from './register-sw';
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1.0,
+  maximumScale: 1.0,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export const metadata: Metadata = {
@@ -25,6 +29,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/image/favicon.webp',
+    apple: '/image/favicon.webp',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '필립앤소피',
   },
   openGraph: {
     type: 'website',
@@ -77,6 +88,7 @@ export default function RootLayout({
       </head>
       <body className="font-pretendard antialiased">
         <Providers>{children}</Providers>
+        <RegisterServiceWorker />
       </body>
     </html>
   );
