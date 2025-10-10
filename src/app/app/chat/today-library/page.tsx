@@ -51,19 +51,12 @@ function TodayLibraryContent() {
   // 오늘 날짜
   const today = getTodayString();
 
-  // 오늘의 매칭 결과 (실제 데이터 우선, 없으면 디자인 확인용 fallback)
+  // 오늘의 매칭 결과
   const rawMatching = cohort?.dailyFeaturedParticipants?.[today];
   const todayMatching = useMemo(() => {
-    const fallback = {
-      featured: {
-        similar: ['1', '2'],
-        opposite: ['3', '4'],
-      },
-      assignments: {} as Record<string, { similar: string[]; opposite: string[] }>,
-    };
-
+    // 매칭 데이터가 없으면 null 반환 (fallback 제거)
     if (!rawMatching) {
-      return fallback;
+      return null;
     }
 
     if ('featured' in rawMatching || 'assignments' in rawMatching) {
@@ -87,18 +80,18 @@ function TodayLibraryContent() {
     };
   }, [rawMatching]);
 
-  const userAssignment = currentUserId
+  const userAssignment = currentUserId && todayMatching
     ? todayMatching.assignments?.[currentUserId] ?? null
     : null;
 
   const similarFeaturedIds =
     (userAssignment?.similar && userAssignment.similar.length > 0
       ? userAssignment.similar
-      : todayMatching.featured?.similar) ?? [];
+      : todayMatching?.featured?.similar) ?? [];
   const oppositeFeaturedIds =
     (userAssignment?.opposite && userAssignment.opposite.length > 0
       ? userAssignment.opposite
-      : todayMatching.featured?.opposite) ?? [];
+      : todayMatching?.featured?.opposite) ?? [];
 
   const allFeaturedIds = Array.from(
     new Set([...similarFeaturedIds, ...oppositeFeaturedIds])
@@ -280,21 +273,26 @@ function TodayLibraryContent() {
                 <div className="flex justify-center">
                   <div className="size-20 rounded-full bg-gray-100 flex items-center justify-center">
                     <svg className="size-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
 
                 {/* Empty State Message */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <h3 className="font-bold text-lg text-gray-900">
-                    오늘의 추천 프로필이 아직 준비중이에요
+                    매칭이 진행중이에요 ⏳
                   </h3>
-                  <p className="text-sm text-gray-600">
-                    곧 흥미로운 프로필 북이 업데이트될 예정입니다.
-                    <br />
-                    먼저 내 프로필 북을 확인해보세요!
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      제출하신 답변을 바탕으로
+                      <br />
+                      AI가 프로필 매칭을 진행하고 있어요.
+                    </p>
+                    <p className="text-sm font-semibold text-blue-600">
+                      📅 제출 다음날 오후 4시에 오픈됩니다
+                    </p>
+                  </div>
                 </div>
 
                 {/* CTA Button */}
@@ -351,20 +349,20 @@ function TodayLibraryContent() {
                 <h1 className="font-bold text-heading-xl text-black">
                   {isLocked ? (
                     <>
-                      지금 독서 인증하고
+                      매칭이 진행중이에요
                       <br />
-                      프로필 북을 열어보세요
+                      제출 다음날 오후 4시에 오픈됩니다
                     </>
                   ) : (
                     <>
-                      오늘의 프로필 북을
+                      프로필 북을
                       <br />
                       확인해보세요
                     </>
                   )}
                 </h1>
                 <p className="font-medium text-body-base text-text-secondary">
-                  {isLocked ? '밤 12시가 지나면 사라져요' : '밤 12시까지만 읽을 수 있어요'}
+                  {isLocked ? '제출하신 답변을 바탕으로 AI가 프로필 매칭을 진행하고 있어요' : '밤 12시까지만 읽을 수 있어요'}
                 </p>
               </div>
 
