@@ -12,6 +12,8 @@ import { APP_CONSTANTS } from '@/constants/app';
 import { Pin, PinOff, Pencil, Trash2, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import { Timestamp } from 'firebase/firestore';
+import { useState } from 'react';
+import ImageViewerDialog from '@/components/ImageViewerDialog';
 
 interface NoticeItemProps {
   notice: Notice;
@@ -34,6 +36,7 @@ export default function NoticeItem({
   onDelete,
   formatTime,
 }: NoticeItemProps) {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const contentLines = notice.content.split('\n');
   const isLongContent = contentLines.length >= 2 || notice.imageUrl;
   const showCollapseButton = notice.isPinned && isLongContent && onToggleCollapse;
@@ -137,7 +140,10 @@ export default function NoticeItem({
 
           {!isCollapsed && notice.imageUrl && (
             <div className="max-w-md">
-              <div className="relative aspect-video overflow-hidden rounded border">
+              <div
+                className="relative aspect-video overflow-hidden rounded border cursor-pointer hover:opacity-90 transition-opacity duration-fast"
+                onClick={() => setSelectedImage(notice.imageUrl || null)}
+              >
                 <Image
                   src={notice.imageUrl}
                   alt="공지 이미지"
@@ -149,6 +155,13 @@ export default function NoticeItem({
           )}
         </div>
       </div>
+
+      {/* 이미지 뷰어 */}
+      <ImageViewerDialog
+        open={!!selectedImage}
+        onOpenChange={(open) => !open && setSelectedImage(null)}
+        imageUrl={selectedImage || ''}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
@@ -23,11 +23,6 @@ export default function ImageViewerDialog({
   const [imageError, setImageError] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // 빈 URL이면 렌더링하지 않음
-  if (!imageUrl || imageUrl.trim() === '') {
-    return null;
-  }
-
   // Dialog가 열릴 때마다 에러 상태 리셋 & 포커스 관리
   useEffect(() => {
     if (open) {
@@ -39,6 +34,11 @@ export default function ImageViewerDialog({
     }
   }, [open, imageUrl]);
 
+  // 빈 URL이면 렌더링하지 않음
+  if (!imageUrl || imageUrl.trim() === '') {
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -49,6 +49,9 @@ export default function ImageViewerDialog({
           onOpenChange(false);
         }}
       >
+        {/* 접근성을 위한 숨겨진 제목 */}
+        <DialogTitle className="sr-only">이미지 크게 보기</DialogTitle>
+
         {/* 닫기 버튼 */}
         <button
           ref={closeButtonRef}
