@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import PWASafeAreaWrapper from '@/components/PWASafeAreaWrapper';
 
 export const metadata: Metadata = {
   title: '필립앤소피 | 승인제 독서소셜클럽',
@@ -17,5 +18,5 @@ export default function Member10Layout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <PWASafeAreaWrapper>{children}</PWASafeAreaWrapper>;
 }

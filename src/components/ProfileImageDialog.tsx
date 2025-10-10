@@ -2,7 +2,9 @@
 
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
 import type { Participant } from '@/types/database';
+import { UI_CONFIG } from '@/constants/migration';
 
 interface ProfileImageDialogProps {
   participant: Participant | null;
@@ -15,6 +17,24 @@ export default function ProfileImageDialog({
   open,
   onClose,
 }: ProfileImageDialogProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const isMountedRef = useRef(true);
+
+  // Track component mount state to prevent race conditions
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // 모달이 닫힐 때 로딩 상태 초기화
+  useEffect(() => {
+    if (!open) {
+      setImageLoaded(false);
+    }
+  }, [open]);
+
   if (!participant) return null;
 
   return (
@@ -28,7 +48,14 @@ export default function ProfileImageDialog({
           {participant.name}님의 프로필 이미지
         </DialogDescription>
         {participant.profileImage ? (
-          <div className="relative w-full overflow-hidden">
+          <div className="relative w-full overflow-hidden bg-muted/30">
+            {/* Skeleton loader - 이미지 로딩 중에 표시 */}
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-full w-full animate-pulse bg-muted/50" />
+              </div>
+            )}
+
             <Image
               src={participant.profileImage}
               alt={participant.name}
@@ -36,7 +63,15 @@ export default function ProfileImageDialog({
               height={0}
               sizes="100vw"
               priority
-              className="w-full h-auto max-h-[80vh] object-contain"
+              className={`w-full h-auto max-h-[${UI_CONFIG.MODAL_IMAGE_MAX_HEIGHT}vh] object-contain transition-opacity duration-${UI_CONFIG.IMAGE_FADE_DURATION} ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => {
+                // Only update state if component is still mounted
+                if (isMountedRef.current) {
+                  setImageLoaded(true);
+                }
+              }}
             />
           </div>
         ) : (

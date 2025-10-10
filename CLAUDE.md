@@ -39,11 +39,13 @@ npm run lint             # Run ESLint
 
 ### Firebase Data Seeding
 ```bash
-npm run seed:cohorts     # Seed cohorts and participants
-npm run seed:notices     # Seed notices data
-npm run seed:submissions # Seed reading submissions
-npm run seed:admin       # Seed admin participant data
-npm run seed:all         # Seed all data (cohorts + notices + submissions)
+npm run seed:cohorts       # Seed cohorts and participants
+npm run seed:notices       # Seed notices data
+npm run seed:submissions   # Seed reading submissions
+npm run seed:admin         # Seed admin participants (admin, admin2, admin3)
+npm run seed:real-users    # Add real users (user-junyoung, user-hyunji)
+npm run seed:all           # Seed all data (cohorts + notices + submissions)
+npm run cleanup:dummy      # Clean up dummy data (20 dummy participants + 3 test notices)
 ```
 
 ### Testing & Type Checking
@@ -399,6 +401,130 @@ images: {
   remotePatterns: [{ hostname: '**' }]
 }
 ```
+
+## 🎨 Shimmer Animation System (2025-10-10)
+
+A unified loading state UI system using CSS utility classes.
+
+### Implementation
+
+**Location**: `src/app/globals.css`
+
+```css
+@layer utilities {
+  .shimmer {
+    @apply bg-gradient-to-r from-gray-200 via-white to-gray-200 bg-[length:200%_100%] animate-shimmer;
+    will-change: background-position;
+  }
+
+  /* WCAG 2.1 Accessibility: Disable animation for motion-sensitive users */
+  @media (prefers-reduced-motion: reduce) {
+    .shimmer {
+      animation: none;
+      background: theme('colors.gray.200') !important;
+      will-change: auto;
+    }
+  }
+}
+```
+
+### Usage
+
+```tsx
+// Skeleton loading state
+<div className="shimmer h-10 w-full rounded-lg" />
+
+// Avatar skeleton
+<div className="shimmer h-12 w-12 rounded-full" />
+
+// Text skeleton
+<div className="shimmer h-4 w-32 rounded" />
+```
+
+### Benefits
+
+- **DRY Principle**: Removed 15 duplicate animation definitions
+- **Performance**: GPU-accelerated with `will-change`
+- **Accessibility**: Respects `prefers-reduced-motion` (WCAG 2.1)
+- **Consistent UX**: Unified loading animation across all components
+- **Duration**: 1.5s ease-in-out (tailwind.config.ts)
+
+### Tailwind Config
+
+```ts
+// tailwind.config.ts
+animation: {
+  shimmer: 'shimmer 1.5s ease-in-out infinite'
+},
+keyframes: {
+  shimmer: {
+    '0%': { backgroundPosition: '-200% 0' },
+    '100%': { backgroundPosition: '200% 0' }
+  }
+}
+```
+
+## 👥 User Management System (2025-10-10)
+
+### Administrator System (3 Admins)
+
+**Admin Participants** (`role: 'admin'`):
+1. **admin** (운영자)
+   - Phone: `01000000001`
+   - Name: 운영자
+   - isAdministrator: true
+
+2. **admin2** (문준영)
+   - Phone: `42633467921`
+   - Name: 문준영
+   - isAdministrator: true
+
+3. **admin3** (김현지)
+   - Phone: `42627615193`
+   - Name: 김현지
+   - isAdministrator: true
+
+### Real Users (2 Users)
+
+**Regular Participants** (`role: 'participant'`):
+1. **user-junyoung** (문준영)
+   - Phone: `42633467921` (same as admin2)
+   - Name: 문준영
+   - isAdministrator: false
+
+2. **user-hyunji** (김현지)
+   - Phone: `42627615193` (same as admin3)
+   - Name: 김현지
+   - isAdministrator: false
+
+**Key Difference**: Same phone numbers, different roles and permissions.
+
+### Data Management Scripts
+
+```bash
+# Seed administrators (3 admins)
+npm run seed:admin
+
+# Add real users (2 users)
+npm run seed:real-users
+
+# Clean up dummy data (20 dummy participants + 3 test notices)
+npm run cleanup:dummy
+```
+
+### Permissions
+
+**Administrators can**:
+- Post notices
+- Edit/delete notices
+- View all direct messages
+- Manage participants
+
+**Regular users can**:
+- Submit reading certifications
+- Send direct messages
+- View profiles
+- View today's library
 
 ## 🎨 Button Design System
 

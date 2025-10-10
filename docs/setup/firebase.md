@@ -163,17 +163,42 @@ Firebase Console > Storage > 규칙에서 다음 규칙을 설정하세요:
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /reading_submissions/{participationCode}/{fileName} {
-      // 읽기: 모두 허용
+    // 공지사항 이미지
+    match /notices/{cohortId}/{fileName} {
       allow read: if true;
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
 
-      // 쓰기: 이미지 파일만 허용 (10MB 제한)
+    // 독서 인증 이미지
+    match /reading_submissions/{participationCode}/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // 다이렉트 메시지 이미지
+    match /direct_messages/{userId}/{fileName} {
+      allow read: if true;
       allow write: if request.resource.size < 10 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
     }
   }
 }
 ```
+
+### Storage 경로 구조 (2025-10-10)
+
+| 경로 | 용도 | 예시 |
+|------|------|------|
+| `notices/{cohortId}/{timestamp}_{filename}` | 공지사항 이미지 | `notices/cohort1/1728545123_notice.webp` |
+| `reading_submissions/{participationCode}/{timestamp}_{filename}` | 독서 인증 이미지 | `reading_submissions/ABC123/1728545123_book.jpg` |
+| `direct_messages/{userId}/{timestamp}_{filename}` | DM 이미지 | `direct_messages/user123/1728545123_photo.png` |
+
+**주요 특징**:
+- 모든 이미지 URL은 Firestore에 저장
+- 타임스탬프 기반 파일명으로 중복 방지
+- 이미지 파일만 업로드 허용 (10MB 제한)
 
 ## 📝 사용 예시
 

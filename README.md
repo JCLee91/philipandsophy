@@ -107,13 +107,37 @@ npm run dev
 npm run seed:all
 
 # 개별 시딩
-npm run seed:cohorts     # 코호트 및 참가자
-npm run seed:notices     # 공지사항
-npm run seed:submissions # 독서 인증
-npm run seed:admin       # 관리자 참가자
+npm run seed:cohorts       # 코호트 및 참가자
+npm run seed:notices       # 공지사항
+npm run seed:submissions   # 독서 인증
+npm run seed:admin         # 관리자 참가자 (admin, admin2, admin3)
+npm run seed:real-users    # 실유저 추가 (user-junyoung, user-hyunji)
+
+# 데이터 정리
+npm run cleanup:dummy      # 더미 데이터 삭제 (더미 참가자 20명 + 테스트 공지 3개)
 ```
 
+**사용자 시스템**:
+- **관리자 (3명)**: 운영 권한 보유
+  - `admin` (운영자): 01000000001
+  - `admin2` (문준영): 42633467921
+  - `admin3` (김현지): 42627615193
+- **실유저 (2명)**: 일반 사용자 권한
+  - `user-junyoung` (문준영): 42633467921
+  - `user-hyunji` (김현지): 42627615193
+
 ## ✨ 주요 기능
+
+### UX 개선 (2025-10-10)
+
+- ✨ **Shimmer 애니메이션 시스템**: 통일된 로딩 상태 UI (`.shimmer` utility class)
+  - WCAG 2.1 접근성: `prefers-reduced-motion` 지원
+  - 성능 최적화: `will-change` 속성으로 GPU 가속
+  - DRY 원칙 적용: 15개 중복 코드 제거
+- 🐛 **랜딩페이지 스크롤 버그 수정**: `AppBodyClass` 컴포넌트로 조건부 스크롤 제어
+  - 랜딩/프로그램 페이지: 스크롤 허용
+  - 웹앱 (`/app/*`): 스크롤 비활성화
+- ⚡ **다이얼로그 Lazy Loading 제거**: 즉시 로딩으로 UX 개선
 
 ### 독서 인증 자동 승인 시스템
 
@@ -198,11 +222,15 @@ npm run lint             # ESLint 실행
 
 ### Firebase 데이터 시딩
 ```bash
-npm run seed:cohorts     # 코호트 및 참가자 시딩
-npm run seed:notices     # 공지사항 시딩
-npm run seed:submissions # 독서 인증 시딩
-npm run seed:admin       # 관리자 참가자 시딩
-npm run seed:all         # 모든 데이터 시딩
+npm run seed:cohorts       # 코호트 및 참가자 시딩
+npm run seed:notices       # 공지사항 시딩
+npm run seed:submissions   # 독서 인증 시딩
+npm run seed:admin         # 관리자 참가자 시딩 (admin, admin2, admin3)
+npm run seed:real-users    # 실유저 추가 (user-junyoung, user-hyunji)
+npm run seed:all           # 모든 데이터 시딩
+
+# 데이터 정리
+npm run cleanup:dummy      # 더미 데이터 삭제
 ```
 
 ### 타입 체크
