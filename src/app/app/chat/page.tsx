@@ -61,7 +61,7 @@ function ChatPageContent() {
   const cohortId = searchParams.get('cohort');
 
   // 세션 기반 인증 (URL에서 userId 제거)
-  const { currentUser, isLoading: sessionLoading } = useSession();
+  const { currentUser, isLoading: sessionLoading, sessionToken } = useSession();
   const currentUserId = currentUser?.id;
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
@@ -97,7 +97,7 @@ function ChatPageContent() {
   const createNoticeMutation = useCreateNotice();
   const updateNoticeMutation = useUpdateNotice();
   const togglePinMutation = useToggleNoticePin();
-  const deleteNoticeMutation = useDeleteNotice();
+  const deleteNoticeMutation = useDeleteNotice(sessionToken);
 
   // localStorage에서 접힌 공지 목록 로드 (클라이언트 전용, SSR 호환)
   useEffect(() => {

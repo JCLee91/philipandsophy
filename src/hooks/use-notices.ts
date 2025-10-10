@@ -8,7 +8,6 @@ import {
   getAllNotices,
   updateNotice,
   toggleNoticePin,
-  deleteNotice,
 } from '@/lib/firebase';
 import { Notice } from '@/types/database';
 import { CACHE_TIMES } from '@/constants/cache';
@@ -127,11 +126,28 @@ export function useToggleNoticePin() {
 /**
  * 공지 삭제
  */
-export function useDeleteNotice() {
+export function useDeleteNotice(sessionToken: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteNotice(id),
+    mutationFn: async (id: string) => {
+      if (!sessionToken) {
+        throw new Error('세션이 만료되었습니다. 다시 로그인해 주세요.');
+      }
+
+      const response = await fetch(`/api/notices/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-token': sessionToken,
+        },
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error ?? '공지 삭제에 실패했습니다.');
+      }
+    },
     onSuccess: () => {
       // 모든 공지 관련 쿼리 무효화 (lists와 cohort별 쿼리 모두)
       queryClient.invalidateQueries({ queryKey: NOTICE_KEYS.all });

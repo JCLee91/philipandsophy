@@ -55,7 +55,11 @@ export default function ProfileImageDialog({
   if (!participant) return null;
 
   return (
-    <Dialog open={showDialog}>
+    <Dialog open={showDialog} onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}>
       <DialogContent
         hideCloseButton
         className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-transparent border-0 shadow-none z-[60] place-items-center"

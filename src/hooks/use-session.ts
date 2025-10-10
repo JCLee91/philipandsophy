@@ -18,6 +18,7 @@ const SESSION_STORAGE_KEY = 'pns-session';
 export function useSession() {
   const [currentUser, setCurrentUser] = useState<Participant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionToken, setSessionTokenState] = useState<string | null>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -25,6 +26,7 @@ export function useSession() {
   const setSessionToken = (token: string) => {
     try {
       localStorage.setItem(SESSION_STORAGE_KEY, token);
+      setSessionTokenState(token);
     } catch (error) {
       logger.error('세션 토큰 저장 실패:', error);
     }
@@ -33,7 +35,9 @@ export function useSession() {
   // 세션 토큰 조회
   const getSessionToken = (): string | null => {
     try {
-      return localStorage.getItem(SESSION_STORAGE_KEY);
+      const token = localStorage.getItem(SESSION_STORAGE_KEY);
+      setSessionTokenState(token);
+      return token;
     } catch (error) {
       logger.error('세션 토큰 조회 실패:', error);
       return null;
@@ -44,6 +48,7 @@ export function useSession() {
   const removeSessionToken = () => {
     try {
       localStorage.removeItem(SESSION_STORAGE_KEY);
+      setSessionTokenState(null);
     } catch (error) {
       logger.error('세션 토큰 제거 실패:', error);
     }
@@ -87,6 +92,7 @@ export function useSession() {
 
       if (!token) {
         setCurrentUser(null);
+        setSessionTokenState(null);
         setIsLoading(false);
         return;
       }
@@ -97,6 +103,7 @@ export function useSession() {
 
         if (participant) {
           setCurrentUser(participant);
+          setSessionTokenState(token);
         } else {
           // 유효하지 않은 토큰 제거
           removeSessionToken();
@@ -120,5 +127,6 @@ export function useSession() {
     isAuthenticated: !!currentUser,
     login: setSessionToken,
     logout,
+    sessionToken,
   };
 }

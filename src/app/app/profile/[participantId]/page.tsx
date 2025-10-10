@@ -214,8 +214,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     };
   });
 
-  // 최근 제출물 (가장 최근 1개)
-  const latestSubmission = submissions.length > 0 ? submissions[submissions.length - 1] : null;
+  // 최근 제출물 (가장 최근 1개) - submissions는 desc 정렬이므로 첫 번째 항목이 최신
+  const latestSubmission = submissions.length > 0 ? submissions[0] : null;
 
   return (
     <PageTransition>

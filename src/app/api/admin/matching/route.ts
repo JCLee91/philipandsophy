@@ -3,6 +3,8 @@ import * as admin from 'firebase-admin';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getTodayString } from '@/lib/date-utils';
+import { requireAdmin } from '@/lib/api-auth';
+import { strictRateLimit } from '@/lib/rate-limit';
 
 // Firebase Admin 초기화 (이미 초기화되어 있으면 재사용)
 if (!admin.apps.length) {
@@ -39,6 +41,18 @@ interface ParticipantData {
  * AI 매칭 실행 API
  */
 export async function POST(request: NextRequest) {
+  // 1. 관리자 권한 검증
+  const { user, error: authError } = await requireAdmin(request);
+  if (authError) {
+    return authError;
+  }
+
+  // 2. Rate limiting (1분에 3회)
+  const { error: rateLimitError } = await strictRateLimit(request, user!.id);
+  if (rateLimitError) {
+    return rateLimitError;
+  }
+
   try {
     const { cohortId } = await request.json();
 
@@ -172,6 +186,12 @@ export async function POST(request: NextRequest) {
  * 특정 날짜의 매칭 결과 조회
  */
 export async function GET(request: NextRequest) {
+  // 관리자 권한 검증
+  const { error: authError } = await requireAdmin(request);
+  if (authError) {
+    return authError;
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const cohortId = searchParams.get('cohortId');
