@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { DirectMessage, Participant } from '@/types/database';
 import { formatMessageTime } from '@/lib/message-grouping';
 import { APP_CONSTANTS } from '@/constants/app';
+import { getFirstName } from '@/lib/utils';
 
 interface MessageGroupProps {
   senderId: string;
@@ -40,7 +41,7 @@ export default function MessageGroup({
 }: MessageGroupProps) {
   const isMine = senderId === currentUserId;
   const isFromAdminTeam = otherUser.id === 'admin-team';
-  const displayName = otherUser.isAdmin ? APP_CONSTANTS.ADMIN_NAME : otherUser.name;
+  const displayName = otherUser.isAdmin ? APP_CONSTANTS.ADMIN_NAME : getFirstName(otherUser.name);
 
   // 아바타 이미지 URL
   const avatarSrc = isMine

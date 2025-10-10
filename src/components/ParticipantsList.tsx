@@ -14,7 +14,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { getInitials } from '@/lib/utils';
+import { getInitials, getFirstName } from '@/lib/utils';
 import { User, MessageSquare, Check, BookOpen, LogOut, MoreHorizontal } from 'lucide-react';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
@@ -97,7 +97,7 @@ function ParticipantItem({
             )}
           </div>
           <span className="text-sm font-medium text-foreground">
-            {participant.name}
+            {getFirstName(participant.name)}
           </span>
         </button>
         <DropdownMenu>
@@ -152,7 +152,7 @@ function ParticipantItem({
         )}
       </div>
       <span className="text-sm font-medium text-foreground">
-        {participant.name}
+        {getFirstName(participant.name)}
       </span>
     </button>
   );
@@ -223,7 +223,7 @@ export default function ParticipantsList({
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-foreground">
-                              {participant.name}
+                              {getFirstName(participant.name)}
                             </span>
                             <span className="text-xs text-muted-foreground">(나)</span>
                           </div>

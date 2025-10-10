@@ -82,3 +82,11 @@ export const getInitials = (name: string): string => {
     .toUpperCase()
     .slice(0, 2);
 };
+
+/**
+ * 이름에서 성을 제거하고 이름만 반환
+ * 예: '김철수' -> '철수', '홍길동' -> '길동', '이' -> '이'
+ */
+export const getFirstName = (name: string): string => {
+  return name.length > 2 ? name.slice(1) : name;
+};

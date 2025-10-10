@@ -22,7 +22,7 @@ import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import { appRoutes } from '@/lib/navigation';
-import { getInitials } from '@/lib/utils';
+import { getInitials, getFirstName } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import type { Participant } from '@/types/database';
 
@@ -85,7 +85,7 @@ function ParticipantRow({
               </div>
             )}
           </div>
-          <span className="text-sm font-medium text-foreground">{participant.name}</span>
+          <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
         </button>
         <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
           <DropdownMenuTrigger asChild>
@@ -134,7 +134,7 @@ function ParticipantRow({
           </div>
         )}
       </div>
-      <span className="text-sm font-medium text-foreground">{participant.name}</span>
+      <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
     </button>
   );
 }
@@ -237,7 +237,7 @@ function ParticipantsPageContent() {
                         )}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground">{participant.name}</span>
+                        <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
                         <span className="text-xs text-muted-foreground">(나)</span>
                       </div>
                     </div>
