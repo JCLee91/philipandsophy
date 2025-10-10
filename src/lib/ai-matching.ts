@@ -130,6 +130,65 @@ function fillIfEmpty(
 }
 
 /**
+ * 성별 균형 검증: 2명의 추천이 1남 + 1여로 구성되어 있는지 확인
+ */
+function hasGenderBalance(
+  ids: string[],
+  genderMap: Map<string, 'male' | 'female' | 'other' | undefined>
+): boolean {
+  if (ids.length !== 2) return false;
+
+  const genders = ids
+    .map(id => genderMap.get(id))
+    .filter((g): g is 'male' | 'female' => g === 'male' || g === 'female');
+
+  if (genders.length !== 2) return false;
+
+  const maleCount = genders.filter(g => g === 'male').length;
+  const femaleCount = genders.filter(g => g === 'female').length;
+
+  return maleCount === 1 && femaleCount === 1;
+}
+
+/**
+ * AI 응답의 성별 균형 검증
+ */
+function validateGenderBalance(
+  matching: MatchingResult,
+  participants: ParticipantAnswer[]
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const genderMap = new Map(participants.map(p => [p.id, p.gender]));
+
+  // Featured 검증
+  if (!hasGenderBalance(matching.featured.similar, genderMap)) {
+    errors.push('Featured similar 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.');
+  }
+
+  if (!hasGenderBalance(matching.featured.opposite, genderMap)) {
+    errors.push('Featured opposite 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.');
+  }
+
+  // 모든 참가자의 assignments 검증
+  for (const [participantId, assignment] of Object.entries(matching.assignments)) {
+    if (!hasGenderBalance(assignment.similar, genderMap)) {
+      const participant = participants.find(p => p.id === participantId);
+      errors.push(`${participant?.name || participantId}의 similar 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.`);
+    }
+
+    if (!hasGenderBalance(assignment.opposite, genderMap)) {
+      const participant = participants.find(p => p.id === participantId);
+      errors.push(`${participant?.name || participantId}의 opposite 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.`);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
  * OpenAI를 사용하여 일일 질문에 대한 참가자들의 답변을 분석하고
  * 모든 참가자별 추천 프로필북 목록을 생성합니다.
  */
@@ -252,16 +311,27 @@ ${participantPromptList}
       };
     }
 
-    logger.info('AI 매칭 완료', {
+    // AI 응답 성별 균형 검증
+    const matching = { featured, assignments };
+    const validation = validateGenderBalance(matching, participants);
+
+    if (!validation.valid) {
+      logger.error('AI 매칭 결과 성별 균형 검증 실패', {
+        errors: validation.errors,
+      });
+      throw new Error(
+        `AI 매칭 결과가 성별 균형 요구사항을 충족하지 않습니다:\n${validation.errors.join('\n')}`
+      );
+    }
+
+    logger.info('AI 매칭 완료 (성별 균형 검증 통과)', {
       question,
       featuredSimilar: featured.similar,
       featuredOpposite: featured.opposite,
+      participantCount: participants.length,
     });
 
-    return {
-      featured,
-      assignments,
-    };
+    return matching;
   } catch (error) {
     logger.error('AI 매칭 실패:', error);
     throw error;

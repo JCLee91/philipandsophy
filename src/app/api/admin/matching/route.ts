@@ -5,6 +5,7 @@ import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getTodayString } from '@/lib/date-utils';
 import { requireAdmin } from '@/lib/api-auth';
 import { strictRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 /**
  * Firebase Admin 초기화 (lazy initialization)
@@ -37,6 +38,7 @@ interface ParticipantData {
   id: string;
   name: string;
   gender?: 'male' | 'female' | 'other';
+  isAdmin?: boolean;
 }
 
 /**
@@ -111,7 +113,9 @@ export async function POST(request: NextRequest) {
         .get();
 
       if (!participantDoc.exists) {
-        console.warn(`참가자 정보를 찾을 수 없음: ${submission.participantId}`);
+        logger.warn('참가자 정보를 찾을 수 없음', {
+          participantId: submission.participantId,
+        });
         continue;
       }
 
@@ -125,10 +129,60 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. AI 매칭 수행
+    // 4. 성별 데이터 및 분포 검증
+    const withoutGender = participantAnswers.filter(p => !p.gender);
+    if (withoutGender.length > 0) {
+      logger.error('성별 정보 없는 참가자 발견', {
+        count: withoutGender.length,
+        participants: withoutGender.map(p => ({ id: p.id, name: p.name })),
+      });
+
+      return NextResponse.json(
+        {
+          error: '성별 정보가 없는 참가자가 있습니다.',
+          message: `성별 균형 매칭을 위해서는 모든 참가자의 성별 정보가 필요합니다. (${withoutGender.length}명 누락)`,
+          participantsWithoutGender: withoutGender.map(p => p.name),
+        },
+        { status: 400 }
+      );
+    }
+
+    // 성별 분포 확인
+    const males = participantAnswers.filter(p => p.gender === 'male');
+    const females = participantAnswers.filter(p => p.gender === 'female');
+    const MIN_PER_GENDER = 3; // 각 성별당 최소 3명 필요 (자기 자신 제외)
+
+    if (males.length < MIN_PER_GENDER || females.length < MIN_PER_GENDER) {
+      logger.error('성별 분포 부족', {
+        maleCount: males.length,
+        femaleCount: females.length,
+        required: MIN_PER_GENDER,
+      });
+
+      return NextResponse.json(
+        {
+          error: '성별 균형 매칭을 위한 참가자가 부족합니다.',
+          message: `각 성별당 최소 ${MIN_PER_GENDER}명이 필요합니다. (현재: 남성 ${males.length}명, 여성 ${females.length}명)`,
+          genderDistribution: {
+            male: males.length,
+            female: females.length,
+            required: MIN_PER_GENDER,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    logger.info('성별 분포 검증 통과', {
+      maleCount: males.length,
+      femaleCount: females.length,
+      totalCount: participantAnswers.length,
+    });
+
+    // 5. AI 매칭 수행
     const matching = await matchParticipantsByAI(todayQuestion, participantAnswers);
 
-    // 5. Cohort 문서에 매칭 결과 저장
+    // 6. Cohort 문서에 매칭 결과 저장
     const cohortRef = db.collection('cohorts').doc(cohortId);
     const cohortDoc = await cohortRef.get();
 
@@ -177,7 +231,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('매칭 실행 실패:', error);
+    logger.error('매칭 실행 실패', error);
     return NextResponse.json(
       {
         error: '매칭 실행 중 오류가 발생했습니다.',
@@ -283,7 +337,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('매칭 결과 조회 실패:', error);
+    logger.error('매칭 결과 조회 실패', error);
     return NextResponse.json(
       {
         error: '매칭 결과 조회 중 오류가 발생했습니다.',
