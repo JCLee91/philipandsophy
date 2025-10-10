@@ -12,7 +12,7 @@ const SESSION_STORAGE_KEY = 'pns-session';
 /**
  * 세션 관리 훅
  *
- * sessionStorage를 사용하여 세션 토큰 관리 (탭 닫으면 자동 삭제)
+ * localStorage를 사용하여 세션 토큰 관리 (브라우저 닫아도 유지)
  * Firebase에서 참가자 정보 조회 및 세션 유효성 검증
  */
 export function useSession() {

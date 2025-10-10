@@ -157,12 +157,12 @@
     overscroll-behavior: none;
   }
 
-  /* 웹앱 내부의 모든 스크롤 가능한 영역은 터치 스크롤 허용 */
-  body[data-app="true"] .overflow-y-auto,
-  body[data-app="true"] .overflow-auto,
-  body[data-app="true"] [data-scroll-area],
-  body[data-app="true"] .scroll-area,
-  body[data-app="true"] [data-radix-scroll-area-viewport] {
+  /* 모든 스크롤 가능한 영역에 부드러운 스크롤 적용 (브라우저/PWA 공통) */
+  .overflow-y-auto,
+  .overflow-auto,
+  [data-scroll-area],
+  .scroll-area,
+  [data-radix-scroll-area-viewport] {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
