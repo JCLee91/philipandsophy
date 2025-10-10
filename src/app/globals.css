@@ -97,16 +97,11 @@
   /* PWA 네이티브 앱 경험 최적화 */
   html {
     width: 100%;
-    height: 100dvh;
+    height: 100%;
     /* iOS Safe Area 대응 */
     padding-top: env(safe-area-inset-top);
     /* Pull-to-refresh 방지 및 overscroll bounce 제거 */
     overscroll-behavior: none;
-
-    /* Standalone 모드 (홈 화면에서 실행 시) */
-    @media all and (display-mode: standalone) {
-      height: 100vh;
-    }
   }
 
   html,
@@ -122,10 +117,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* body는 스크롤 가능하도록 설정 */
+  /* body는 고정 높이, 스크롤 없음 (각 페이지가 100dvh 레이아웃 사용) */
   body {
-    min-height: 100vh;
-    overflow-y: scroll;
+    height: 100%;
+    overflow: hidden;
   }
   
   /* Pretendard 폰트를 모든 요소에 강제 적용 */
