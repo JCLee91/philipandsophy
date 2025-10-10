@@ -114,13 +114,18 @@
   /* PWA 네이티브 앱 경험 최적화 */
   html {
     width: 100%;
-    /* 최신 모범 사례: 최소 높이를 100% + safe-area-inset-top으로 설정 */
-    min-height: calc(100% + env(safe-area-inset-top));
-    /* iOS Safe Area 대응 - 모든 방향에 패딩 적용 */
-    padding: env(safe-area-inset-top) env(safe-area-inset-right)
-             env(safe-area-inset-bottom) env(safe-area-inset-left);
+    height: 100%;
+    /* iOS Safe Area 대응 - 좌우와 하단만 패딩 (상단은 sticky 헤더에서 처리) */
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     /* Pull-to-refresh 방지 및 overscroll bounce 제거 */
     overscroll-behavior: none;
+  }
+
+  /* iOS 11.2 이전 버전 호환성 - constant() 함수 폴백 */
+  @supports (padding-top: constant(safe-area-inset-top)) {
+    html {
+      padding: 0 constant(safe-area-inset-right) constant(safe-area-inset-bottom) constant(safe-area-inset-left);
+    }
   }
 
   html,

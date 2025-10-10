@@ -21,7 +21,7 @@ export default function Header({
   const { data: unreadCount = 0 } = useTotalUnreadCount(currentUser?.id || '');
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-area-header">
       <div className="container flex h-14 items-center justify-center relative px-4">
         <h1 className="text-lg font-bold text-foreground">
           필립앤소피
@@ -67,6 +67,18 @@ export default function Header({
           </button>
         </div>
       </div>
+      <style jsx>{`
+        .safe-area-header {
+          padding-top: env(safe-area-inset-top);
+        }
+
+        /* iOS 11.2 이전 버전 호환성 */
+        @supports (padding-top: constant(safe-area-inset-top)) {
+          .safe-area-header {
+            padding-top: constant(safe-area-inset-top);
+          }
+        }
+      `}</style>
     </header>
   );
 }
