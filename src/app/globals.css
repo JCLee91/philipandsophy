@@ -7,6 +7,7 @@
   .shimmer {
     @apply bg-gradient-to-r from-gray-200 via-white to-gray-200 bg-[length:200%_100%] animate-shimmer;
     will-change: background-position;
+    border-radius: 8px;
   }
 
   /* Accessibility: Disable animation for users with motion sensitivity (WCAG 2.1) */
@@ -19,9 +20,25 @@
   }
 }
 
+/* Shimmer 키프레임 정의 */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 @layer base {
   :root {
     /* 필립앤소피 브랜드 컬러 팔레트 */
+    --app-viewport-height: 100vh;
+    --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     --background: 0 0% 100%;
     --foreground: 222 47% 5%;
     --card: 0 0% 100%;
@@ -115,6 +132,7 @@
   html {
     width: 100%;
     height: 100%;
+    box-sizing: border-box;
     /* iOS Safe Area 대응 - 좌우와 하단만 패딩 (상단은 sticky 헤더에서 처리) */
     padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     /* Pull-to-refresh 방지 및 overscroll bounce 제거 */
@@ -147,6 +165,7 @@
    */
   body {
     /* height: 100% 제거 - Safe Area와 충돌 방지 */
+    min-height: 100%;
     overflow-y: auto;
   }
 
@@ -155,6 +174,7 @@
     overflow: hidden;
     /* iOS에서 rubber-band 스크롤 방지 */
     overscroll-behavior: none;
+    height: var(--app-viewport-height, 100vh);
   }
 
   /* 모든 스크롤 가능한 영역에 부드러운 스크롤 적용 (브라우저/PWA 공통) */
@@ -192,9 +212,21 @@
   *,
   *::before,
   *::after {
+    box-sizing: inherit;
     font-family: 'Pretendard Variable', Pretendard, -apple-system,
       BlinkMacSystemFont, system-ui, sans-serif !important;
   }
+}
+
+/* 앱 전용 뷰포트 헬퍼 클래스 */
+.app-shell {
+  min-height: var(--app-viewport-height, 100vh);
+  max-height: var(--app-viewport-height, 100vh);
+}
+
+.app-footer {
+  padding-top: 16px;
+  padding-bottom: calc(16px + var(--app-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
 /* 모든 버튼과 인터랙티브 요소에 cursor pointer 적용 - utilities 레이어로 최상위 우선순위 보장 */

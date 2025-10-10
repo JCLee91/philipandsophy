@@ -247,6 +247,14 @@ export const subscribeToMessages = (
 };
 
 /**
+ * Generate conversation ID for admin team (when multiple admins exist)
+ * Creates a shared admin conversation for all admin users
+ */
+export const getAdminTeamConversationId = (userId: string): string => {
+  return `admin-team-${userId}`;
+};
+
+/**
  * Generate conversation ID from two user IDs
  * Always returns same ID regardless of order (for consistency)
  */

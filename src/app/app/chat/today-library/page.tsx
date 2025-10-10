@@ -97,7 +97,7 @@ function TodayLibraryContent() {
   if (sessionLoading || cohortLoading || participantsLoading) {
     return (
       <PageTransition>
-        <div className="flex h-[100dvh] flex-col overflow-hidden">
+        <div className="app-shell flex flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="flex-1 overflow-y-auto bg-background">
@@ -172,7 +172,7 @@ function TodayLibraryContent() {
   if (allFeaturedIds.length === 0) {
     return (
       <PageTransition>
-        <div className="flex h-[100dvh] flex-col overflow-hidden">
+        <div className="app-shell flex flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="flex flex-1 items-center justify-center bg-background overflow-y-auto">
@@ -240,7 +240,7 @@ function TodayLibraryContent() {
 
   return (
     <PageTransition>
-      <div className="flex h-[100dvh] flex-col overflow-hidden">
+      <div className="app-shell flex flex-col overflow-hidden">
         <HeaderNavigation title="오늘의 서재" />
 
         {/* Main Content */}
@@ -367,7 +367,7 @@ function TodayLibraryContent() {
 function LoadingSkeleton() {
   return (
     <PageTransition>
-      <div className="flex h-[100dvh] flex-col overflow-hidden">
+      <div className="app-shell flex flex-col overflow-hidden">
         <HeaderNavigation title="오늘의 서재" />
         <main className="flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-4 w-full">
@@ -393,4 +393,3 @@ export default function TodayLibraryPage() {
     </Suspense>
   );
 }
-

@@ -13,6 +13,7 @@ import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
 import { useSession } from '@/hooks/use-session';
+import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
 import Header from '@/components/Header';
 import ParticipantsList from '@/components/ParticipantsList';
 import NoticeItem from '@/components/NoticeItem';
@@ -20,7 +21,6 @@ import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
 import { BookLibraryIcon } from '@/components/icons/BookLibraryIcon';
 import FooterActions from '@/components/FooterActions';
-import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
 import DirectMessageDialog from '@/components/DirectMessageDialog';
 import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
@@ -131,9 +131,24 @@ function ChatPageContent() {
   }, []);
 
   const handleMessageAdmin = useCallback(() => {
-    const admin = participants.find((p) => p.isAdmin);
-    if (admin) {
-      setDmTarget(admin);
+    const admins = participants.filter((p) => p.isAdmin);
+    if (admins.length === 0) return;
+
+    if (admins.length === 1) {
+      // 관리자가 1명만 있으면 기존 방식 사용
+      setDmTarget(admins[0]);
+      setDmDialogOpen(true);
+    } else {
+      // 관리자가 여러 명이면 관리자 팀과 대화
+      // 모든 관리자가 공유하는 팀 채팅방 사용
+      const adminTeamTarget = {
+        id: 'admin-team',
+        name: APP_CONSTANTS.ADMIN_NAME,
+        isAdmin: true,
+        // 다른 필요한 필드들...
+      } as Participant;
+
+      setDmTarget(adminTeamTarget);
       setDmDialogOpen(true);
     }
   }, [participants]);
@@ -147,7 +162,7 @@ function ChatPageContent() {
   if (sessionLoading || cohortLoading) {
     return (
       <PageTransition>
-        <div className="flex min-h-[100dvh] flex-col max-h-[100dvh] overflow-hidden">
+        <div className="app-shell flex flex-col overflow-hidden">
           <HeaderSkeleton />
           <NoticeListSkeleton />
           <FooterActionsSkeleton />
@@ -270,104 +285,104 @@ function ChatPageContent() {
 
   return (
     <PageTransition>
-      <div className="flex min-h-[100dvh] flex-col max-h-[100dvh] overflow-hidden">
+      <div className="app-shell flex flex-col overflow-hidden">
         <Header
-        onParticipantsClick={() => setParticipantsOpen(true)}
-        onWriteClick={() => setWriteDialogOpen(true)}
-        onMessageAdminClick={handleMessageAdmin}
-        isAdmin={isAdmin}
-      />
-      <ParticipantsList
-        participants={participants.filter((p) => !p.isAdmin)}
-        currentUserId={currentUserId || ''}
-        open={participantsOpen}
-        onOpenChange={setParticipantsOpen}
-        isAdmin={isAdmin}
-        onDMClick={handleDMClick}
-        onProfileClick={setSelectedParticipant}
-        onProfileBookClick={handleProfileBookClick}
-      />
-      <DirectMessageDialog
-        open={dmDialogOpen}
-        onOpenChange={setDmDialogOpen}
-        currentUserId={currentUserId || ''}
-        currentUser={currentUser}
-        otherUser={dmTarget}
-      />
-      <ReadingSubmissionDialog
-        open={submissionDialogOpen}
-        onOpenChange={setSubmissionDialogOpen}
-        participantId={currentUserId || ''}
-        participationCode={currentUserId || ''}
-      />
-      <ProfileImageDialog
-        participant={selectedParticipant}
-        open={!!selectedParticipant}
-        onClose={() => setSelectedParticipant(null)}
-      />
-      <main className="flex-1 overflow-y-auto bg-background pb-20 relative">
-        {/* 고정 공지 영역 - sticky로 스크롤 시 상단 고정 */}
-        {pinnedNotices.length > 0 && (
-          <div className="sticky top-0 z-40 border-b border-primary/20 shadow-sm">
-            {pinnedNotices.map((notice) => (
-              <div
-                key={notice.id}
-                className="group transition-colors duration-normal bg-primary-light hover:bg-blue-100"
-              >
-                <div className="container mx-auto max-w-3xl px-4 py-3">
-                  <NoticeItem
-                    notice={notice}
-                    isAdmin={isAdmin}
-                    isCollapsed={collapsedNotices.has(notice.id)}
-                    onToggleCollapse={toggleNoticeCollapse}
-                    onTogglePin={handleTogglePin}
-                    onEdit={handleEditNotice}
-                    onDelete={setDeleteConfirm}
-                    formatTime={formatTime}
-                  />
+          onParticipantsClick={() => setParticipantsOpen(true)}
+          onWriteClick={() => setWriteDialogOpen(true)}
+          onMessageAdminClick={handleMessageAdmin}
+          isAdmin={isAdmin}
+        />
+        <ParticipantsList
+          participants={participants.filter((p) => !p.isAdmin)}
+          currentUserId={currentUserId || ''}
+          open={participantsOpen}
+          onOpenChange={setParticipantsOpen}
+          isAdmin={isAdmin}
+          onDMClick={handleDMClick}
+          onProfileClick={setSelectedParticipant}
+          onProfileBookClick={handleProfileBookClick}
+        />
+        <DirectMessageDialog
+          open={dmDialogOpen}
+          onOpenChange={setDmDialogOpen}
+          currentUserId={currentUserId || ''}
+          currentUser={currentUser}
+          otherUser={dmTarget}
+        />
+        <ReadingSubmissionDialog
+          open={submissionDialogOpen}
+          onOpenChange={setSubmissionDialogOpen}
+          participantId={currentUserId || ''}
+          participationCode={currentUserId || ''}
+        />
+        <ProfileImageDialog
+          participant={selectedParticipant}
+          open={!!selectedParticipant}
+          onClose={() => setSelectedParticipant(null)}
+        />
+        <main className="relative flex-1 overflow-y-auto bg-background pb-20">
+          {/* 고정 공지 영역 - sticky로 스크롤 시 상단 고정 */}
+          {pinnedNotices.length > 0 && (
+            <div className="sticky top-0 z-40 border-b border-primary/20 shadow-sm">
+              {pinnedNotices.map((notice) => (
+                <div
+                  key={notice.id}
+                  className="group transition-colors duration-normal bg-primary-light hover:bg-blue-100"
+                >
+                  <div className="container mx-auto max-w-3xl px-4 py-3">
+                    <NoticeItem
+                      notice={notice}
+                      isAdmin={isAdmin}
+                      isCollapsed={collapsedNotices.has(notice.id)}
+                      onToggleCollapse={toggleNoticeCollapse}
+                      onTogglePin={handleTogglePin}
+                      onEdit={handleEditNotice}
+                      onDelete={setDeleteConfirm}
+                      formatTime={formatTime}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 일반 공지 영역 - 날짜별 그룹 */}
-        {sortedGroupedNotices.map(([date, groupData]) => {
-          const { notices: dateNotices } = groupData as { date: Date; notices: Notice[] };
-          return (
-          <div key={date}>
-            {/* 날짜 구분선 */}
-            <div className="container mx-auto max-w-3xl px-4 py-4">
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-                  {date}
-                </span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
+              ))}
             </div>
+          )}
 
-            {dateNotices.map((notice) => (
-              <div
-                key={notice.id}
-                className="group transition-colors duration-normal hover:bg-muted/50"
-              >
-                <div className="container mx-auto max-w-3xl px-4 py-3">
-                  <NoticeItem
-                    notice={notice}
-                    isAdmin={isAdmin}
-                    onTogglePin={handleTogglePin}
-                    onEdit={handleEditNotice}
-                    onDelete={setDeleteConfirm}
-                    formatTime={formatTime}
-                  />
+          {/* 일반 공지 영역 - 날짜별 그룹 */}
+          {sortedGroupedNotices.map(([date, groupData]) => {
+            const { notices: dateNotices } = groupData as { date: Date; notices: Notice[] };
+            return (
+              <div key={date}>
+                {/* 날짜 구분선 */}
+                <div className="container mx-auto max-w-3xl px-4 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+                      {date}
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
                 </div>
+
+                {dateNotices.map((notice) => (
+                  <div
+                    key={notice.id}
+                    className="group transition-colors duration-normal hover:bg-muted/50"
+                  >
+                    <div className="container mx-auto max-w-3xl px-4 py-3">
+                      <NoticeItem
+                        notice={notice}
+                        isAdmin={isAdmin}
+                        onTogglePin={handleTogglePin}
+                        onEdit={handleEditNotice}
+                        onDelete={setDeleteConfirm}
+                        formatTime={formatTime}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          );
-        })}
-      </main>
+            );
+          })}
+        </main>
 
       {/* 하단 네비게이션 바 */}
       <FooterActions>

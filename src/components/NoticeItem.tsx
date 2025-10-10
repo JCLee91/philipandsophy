@@ -139,16 +139,17 @@ export default function NoticeItem({
           </div>
 
           {!isCollapsed && notice.imageUrl && (
-            <div className="max-w-md">
+            <div className="w-full max-w-lg">
               <div
-                className="relative aspect-video overflow-hidden rounded border cursor-pointer hover:opacity-90 transition-opacity duration-fast"
+                className="relative w-full overflow-hidden rounded border cursor-pointer hover:opacity-90 transition-opacity duration-fast"
                 onClick={() => setSelectedImage(notice.imageUrl || null)}
               >
                 <Image
                   src={notice.imageUrl}
                   alt="공지 이미지"
-                  fill
-                  className="object-cover"
+                  width={600}
+                  height={400}
+                  className="object-contain w-full h-auto"
                 />
               </div>
             </div>

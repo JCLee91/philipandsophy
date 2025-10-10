@@ -16,7 +16,7 @@ export default function LockedScreen({
   buttonText = '돌아가기',
 }: LockedScreenProps) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="app-shell flex flex-col">
       {/* 헤더 */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">

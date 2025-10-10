@@ -18,6 +18,7 @@ export default function ProfileImageDialog({
   onClose,
 }: ProfileImageDialogProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const isMountedRef = useRef(true);
 
   // Track component mount state to prevent race conditions
@@ -28,47 +29,54 @@ export default function ProfileImageDialog({
     };
   }, []);
 
-  // 모달이 닫힐 때 로딩 상태 초기화
+  // 이미지 프리로드 및 모달 표시 타이밍 제어
   useEffect(() => {
-    if (!open) {
+    if (open && participant?.profileImage) {
+      setImageLoaded(false);
+      setShowDialog(false);
+
+      const img = new window.Image();
+      img.onload = () => {
+        if (isMountedRef.current) {
+          setImageLoaded(true);
+          // 이미지 로드 완료 후 잠깐 딜레이 후 모달 표시 (부드러운 전환)
+          setTimeout(() => {
+            setShowDialog(true);
+          }, 100);
+        }
+      };
+      img.src = participant.profileImage;
+    } else if (!open) {
+      setShowDialog(false);
       setImageLoaded(false);
     }
-  }, [open]);
+  }, [open, participant?.profileImage]);
 
   if (!participant) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={showDialog} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="w-4/5 sm:max-w-lg p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)] min-h-[48vh] sm:min-h-[70vh]"
+        className="w-4/5 sm:max-w-2xl p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)] max-h-[90vh]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogTitle className="sr-only">{participant.name} 프로필</DialogTitle>
         <DialogDescription className="sr-only">
           {participant.name}님의 프로필 이미지
         </DialogDescription>
-        {participant.profileImage ? (
-          <div className="relative w-full h-full overflow-hidden bg-muted/30">
-            {/* Shimmer loader - 이미지 로딩 중에 표시 */}
-            {!imageLoaded && (
-              <div className="absolute inset-0 shimmer" />
-            )}
-
+        {participant.profileImage && imageLoaded ? (
+          <div className="relative w-full h-full flex items-center justify-center bg-gray-100">
             <Image
               src={participant.profileImage}
               alt={participant.name}
-              width={0}
-              height={0}
-              sizes="100vw"
-              priority
-              className={`w-full h-auto max-h-[64vh] object-contain transition-opacity duration-${UI_CONFIG.IMAGE_FADE_DURATION} ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              onLoad={() => {
-                // Only update state if component is still mounted
-                if (isMountedRef.current) {
-                  setImageLoaded(true);
-                }
+              width={800}
+              height={600}
+              className="w-auto h-auto max-w-full max-h-full object-scale-down"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                height: 'auto',
+                objectFit: 'scale-down'
               }}
             />
           </div>

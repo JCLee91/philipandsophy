@@ -175,7 +175,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   return (
     <PageTransition>
-      <div className="flex min-h-[100dvh] max-h-[100dvh] flex-col overflow-y-auto" style={{ backgroundColor: colors.background }}>
+      <div className="app-shell flex flex-col overflow-y-auto" style={{ backgroundColor: colors.background }}>
         {/* 상단바 */}
         <div className="flex items-center px-6 pt-4 pb-4" style={{ backgroundColor: colors.background }}>
           <button
@@ -197,7 +197,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           <div className="absolute left-1/2 transform -translate-x-1/2 top-[36px] z-10">
             <div className="relative w-[80px] h-[80px]">
               <Avatar className="w-full h-full border-[3px] border-[#31363e]">
-                <AvatarImage src={participant.profileImage} alt={participant.name} />
+                <AvatarImage src={participant.profileImageCircle || participant.profileImage} alt={participant.name} />
                 <AvatarFallback className="bg-gray-200 text-2xl font-bold text-gray-700">
                   {initials}
                 </AvatarFallback>
@@ -206,7 +206,10 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           </div>
 
           {/* 흰색 카드 컨테이너 */}
-          <div className="bg-white rounded-tl-[32px] rounded-tr-[32px] mt-[80px] min-h-[calc(100vh-124px)] max-w-[calc(100%-32px)] md:max-w-[420px] mx-auto">
+          <div
+            className="bg-white rounded-tl-[32px] rounded-tr-[32px] mt-[80px] max-w-[calc(100%-32px)] md:max-w-[420px] mx-auto"
+            style={{ minHeight: 'calc(var(--app-viewport-height, 100vh) - 124px)' }}
+          >
             <div className="w-full px-4 sm:px-6 md:px-8">
               {/* 프로필 정보 */}
               <div className="flex flex-col items-center pt-[48px] pb-[32px]">

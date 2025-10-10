@@ -17,7 +17,7 @@ export default function ErrorState({
   onBack,
 }: ErrorStateProps) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4">
+    <div className="app-shell flex flex-col items-center justify-center px-4">
       <AlertCircle className="h-12 w-12 text-destructive mb-4" />
       <h2 className="text-xl font-bold mb-2 text-center">{title}</h2>
       <p className="text-muted-foreground mb-6 text-center">{message}</p>

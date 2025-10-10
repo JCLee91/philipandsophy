@@ -38,14 +38,14 @@ export default function NoticeWriteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="gap-3 p-4 sm:gap-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>공지 작성</DialogTitle>
           <DialogDescription>
             참가자들에게 전달할 공지사항을 작성하세요.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-2">
           <Textarea
             value={content}
             onChange={(e) => onContentChange(e.target.value)}
@@ -73,8 +73,8 @@ export default function NoticeWriteDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-3 border-t pt-4">
-          <div className="flex items-center gap-3 flex-1">
+        <DialogFooter className="gap-2 border-t pt-3 sm:gap-3 sm:pt-4">
+          <div className="flex items-center gap-2 flex-1">
             <label>
               <input
                 type="file"

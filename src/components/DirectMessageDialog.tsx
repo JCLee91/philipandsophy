@@ -303,9 +303,8 @@ export default function DirectMessageDialog({
               variant="outline"
               onClick={() => document.getElementById('dm-image-upload')?.click()}
               className="h-10 w-10 p-0 shrink-0"
-            >
-              <Paperclip className="h-4 w-4" />
-            </UnifiedButton>
+              icon={<Paperclip className="h-4 w-4" />}
+            />
             <Input
               value={messageContent}
               onChange={(e) => setMessageContent(e.target.value)}

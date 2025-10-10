@@ -3,6 +3,7 @@ import './globals.css';
 import Providers from './providers';
 import RegisterServiceWorker from './register-sw';
 import AppBodyClass from '@/components/AppBodyClass';
+import AppViewportEffect from '@/components/AppViewportEffect';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -88,6 +89,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-pretendard antialiased">
+        <AppViewportEffect />
         <AppBodyClass />
         <Providers>{children}</Providers>
         <RegisterServiceWorker />

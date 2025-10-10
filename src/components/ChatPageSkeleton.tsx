@@ -67,11 +67,11 @@ export function NoticeListSkeleton() {
 export function FooterActionsSkeleton() {
   return (
     <div
-      className="shrink-0 border-t bg-white pb-safe"
+      className="shrink-0 border-t bg-white"
       role="status"
       aria-label="하단 버튼 로딩 중"
     >
-      <div className="mx-auto max-w-md px-6 py-4">
+      <div className="mx-auto max-w-md px-6 app-footer">
         <div className="grid grid-cols-2 gap-2" aria-hidden="true">
           <div className="h-14 rounded-lg shimmer" />
           <div className="h-14 rounded-lg shimmer" />

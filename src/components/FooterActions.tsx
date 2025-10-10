@@ -7,9 +7,8 @@ import { ReactNode } from 'react';
  *
  * 모든 화면의 하단 버튼 영역에서 일관된 레이아웃을 제공합니다.
  * - px-6: 좌우 여백 24px
- * - py-4: 상하 여백 16px (동일)
+ * - py: app-footer 유틸리티가 상단 16px + Safe Area 하단 여백 적용
  * - max-w-md: 최대 너비 448px
- * - Safe Area는 globals.css의 html 요소에서 전역으로 처리됨
  */
 interface FooterActionsProps {
   children: ReactNode;
@@ -18,7 +17,7 @@ interface FooterActionsProps {
 export default function FooterActions({ children }: FooterActionsProps) {
   return (
     <div className="shrink-0 border-t bg-white">
-      <div className="mx-auto max-w-md px-6 py-4">
+      <div className="mx-auto max-w-md px-6 app-footer">
         {children}
       </div>
     </div>

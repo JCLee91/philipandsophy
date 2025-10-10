@@ -156,14 +156,14 @@ const PROFILE_IMAGES = [
   },
   {
     name: '김민준',
-    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/Profile_1기_김민준.png',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/Profile_1기_김민준 (1).png',
     circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/김민준.png',
     storagePath: 'profiles/kim-minjun-profile.png',
     circleStoragePath: 'profiles/kim-minjun-circle.png',
   },
   {
     name: '이윤지',
-    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/Profile_1기_이윤지.png',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/Profile_1기_이윤지 (1).png',
     circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/이윤지.png',
     storagePath: 'profiles/lee-yoonji-profile.png',
     circleStoragePath: 'profiles/lee-yoonji-circle.png',

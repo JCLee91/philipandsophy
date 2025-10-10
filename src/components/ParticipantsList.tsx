@@ -13,7 +13,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { getInitials } from '@/lib/utils';
 import { User, MessageSquare, Check, BookOpen, LogOut } from 'lucide-react';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
@@ -163,11 +162,13 @@ export default function ParticipantsList({
           <SheetHeader className="border-b px-6 py-4">
             <SheetTitle>참가자 목록 ({participants.length})</SheetTitle>
           </SheetHeader>
-          <ScrollArea className="flex-1">
+
+          {/* 네이티브 스크롤 사용 - PWA/모바일 호환성 최적화 */}
+          <div className="flex-1 overflow-y-auto">
             <div className="px-4 py-2">
               {sortedParticipants.map((participant) => {
                 const isMe = participant.id === currentUserId;
-                
+
                 // 본인 프로필
                 if (isMe) {
                   const initials = getInitials(participant.name);
@@ -230,7 +231,7 @@ export default function ParticipantsList({
                 );
               })}
             </div>
-          </ScrollArea>
+          </div>
 
           {/* 로그아웃 버튼 - 하단 고정 */}
           <div className="border-t px-4 py-3">

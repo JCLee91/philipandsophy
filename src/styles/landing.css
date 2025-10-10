@@ -169,8 +169,12 @@
 .landing-page .main-image {
     width: 100%;
     height: auto;
+    max-height: 60vh;
+    object-fit: contain;
     display: block;
     margin-bottom: 80px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
 }
 
 /* 툴팁 - 랜딩 페이지에만 적용 */
