@@ -1,104 +1,76 @@
 /**
- * Reset User Reading Submissions Script
- * Deletes all reading submissions for a specific user
+ * Reset reading submissions for a specific user
+ * Usage: npx tsx src/scripts/reset-user-submissions.ts <participantId>
  */
 
-import * as admin from 'firebase-admin';
-import * as fs from 'fs';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Service Account 키 경로
-const serviceAccountPath = path.join(process.cwd(), 'firebase-service-account.json');
+// Load environment variables
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-// 키 파일 확인
-if (!fs.existsSync(serviceAccountPath)) {
-  console.error('❌ Service Account 키 파일을 찾을 수 없습니다.');
-  process.exit(1);
-}
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
 
-// Admin SDK 초기화
-if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-const db = admin.firestore();
-
-// 초기화할 사용자 ID
-const USER_ID = 'user-hyunji';
-
-async function deleteUserSubmissions() {
-  console.log('🗑️  Deleting reading submissions for user-hyunji...\n');
+async function resetUserSubmissions(participantId: string) {
+  console.log(`🗑️  Resetting submissions for participant: ${participantId}`);
 
   try {
-    // participantId로 모든 독서 인증 찾기
-    const submissionsSnapshot = await db
-      .collection('reading_submissions')
-      .where('participantId', '==', USER_ID)
-      .get();
+    // Get all submissions for this participant
+    const submissionsRef = collection(db, 'reading_submissions');
+    const q = query(submissionsRef, where('participantId', '==', participantId));
+    const snapshot = await getDocs(q);
 
-    if (submissionsSnapshot.empty) {
-      console.log('ℹ️  No submissions found for this user\n');
+    if (snapshot.empty) {
+      console.log('✅ No submissions found for this participant');
       return;
     }
 
-    console.log(`📊 Found ${submissionsSnapshot.size} submission(s) to delete\n`);
+    console.log(`📊 Found ${snapshot.size} submission(s) to delete`);
 
-    const batch = db.batch();
+    // Delete all submissions
     let deleteCount = 0;
-
-    submissionsSnapshot.docs.forEach((doc) => {
+    for (const doc of snapshot.docs) {
       const data = doc.data();
-      batch.delete(doc.ref);
+      console.log(`  - Deleting: ${data.bookTitle} (${data.submissionDate})`);
+      await deleteDoc(doc.ref);
       deleteCount++;
-      console.log(`✅ Will delete: ${doc.id} - ${data.bookTitle || 'Unknown Book'}`);
-    });
+    }
 
-    await batch.commit();
-    console.log(`\n✨ Deleted ${deleteCount} submission(s)\n`);
+    console.log(`✅ Successfully deleted ${deleteCount} submission(s)`);
   } catch (error) {
-    console.error('❌ Error deleting submissions:', error);
+    console.error('❌ Error resetting submissions:', error);
     throw error;
   }
 }
 
-async function verifyDeletion() {
-  console.log('🔍 Verifying deletion...\n');
+// Get participantId from command line args
+const participantId = process.argv[2];
 
-  const remainingSnapshot = await db
-    .collection('reading_submissions')
-    .where('participantId', '==', USER_ID)
-    .get();
-
-  console.log(`📊 Remaining submissions for user-hyunji: ${remainingSnapshot.size}\n`);
-
-  if (remainingSnapshot.size === 0) {
-    console.log('✅ All submissions successfully deleted!\n');
-  } else {
-    console.log('⚠️  Some submissions still remain:\n');
-    remainingSnapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      console.log(`   - ${doc.id}: ${data.bookTitle}`);
-    });
-  }
+if (!participantId) {
+  console.error('❌ Error: Please provide participantId');
+  console.log('Usage: npx tsx src/scripts/reset-user-submissions.ts <participantId>');
+  console.log('Example: npx tsx src/scripts/reset-user-submissions.ts user-hyunji');
+  process.exit(1);
 }
 
-async function main() {
-  try {
-    console.log('🚀 Starting user submissions reset...\n');
-    console.log(`👤 Target User: ${USER_ID}\n`);
-
-    await deleteUserSubmissions();
-    await verifyDeletion();
-
-    console.log('🎉 Reset completed successfully!');
+resetUserSubmissions(participantId)
+  .then(() => {
+    console.log('🎉 Reset completed!');
     process.exit(0);
-  } catch (error) {
-    console.error('❌ Error during reset:', error);
+  })
+  .catch((error) => {
+    console.error('💥 Reset failed:', error);
     process.exit(1);
-  }
-}
-
-main();
+  });

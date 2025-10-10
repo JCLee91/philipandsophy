@@ -14,6 +14,7 @@
     "seed:admin": "tsx src/scripts/seed-admin.ts",
     "seed:real-users": "tsx src/scripts/add-real-users.ts",
     "cleanup:dummy": "tsx src/scripts/cleanup-dummy-data.ts",
+    "cleanup:dm": "tsx src/scripts/cleanup-dm-messages.ts",
     "reset:user-submissions": "tsx src/scripts/reset-user-submissions.ts",
     "check:user-data": "tsx src/scripts/check-user-data.ts",
     "convert:webp": "tsx src/scripts/convert-all-to-webp.ts"

@@ -168,7 +168,7 @@ export default function ParticipantsList({
           </SheetHeader>
 
           {/* 네이티브 스크롤 사용 - PWA/모바일 호환성 최적화 */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div className="px-4 py-2">
               {sortedParticipants.map((participant) => {
                 const isMe = participant.id === currentUserId;

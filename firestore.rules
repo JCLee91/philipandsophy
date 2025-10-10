@@ -110,7 +110,7 @@ service cloud.firestore {
       // 수정: 제한적 허용 (status 변경은 관리자만 권장)
       // TODO: 본인 작성 글만 수정 가능하도록 제한
       allow update: if true;
-      
+
       // 삭제: 금지
       allow delete: if false;
     }
