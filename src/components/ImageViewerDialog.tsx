@@ -43,7 +43,7 @@ export default function ImageViewerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideCloseButton
-        className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-transparent border-0 shadow-none z-[60]"
+        className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-transparent border-0 shadow-none z-[60] place-items-center"
         onEscapeKeyDown={(e) => {
           // ESC 키로 ImageViewer만 닫기 (DM Dialog는 유지)
           e.stopPropagation();
