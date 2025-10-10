@@ -24,7 +24,7 @@ export function useSession() {
   // 세션 토큰 저장
   const setSessionToken = (token: string) => {
     try {
-      sessionStorage.setItem(SESSION_STORAGE_KEY, token);
+      localStorage.setItem(SESSION_STORAGE_KEY, token);
     } catch (error) {
       logger.error('세션 토큰 저장 실패:', error);
     }
@@ -33,7 +33,7 @@ export function useSession() {
   // 세션 토큰 조회
   const getSessionToken = (): string | null => {
     try {
-      return sessionStorage.getItem(SESSION_STORAGE_KEY);
+      return localStorage.getItem(SESSION_STORAGE_KEY);
     } catch (error) {
       logger.error('세션 토큰 조회 실패:', error);
       return null;
@@ -43,7 +43,7 @@ export function useSession() {
   // 세션 토큰 제거
   const removeSessionToken = () => {
     try {
-      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      localStorage.removeItem(SESSION_STORAGE_KEY);
     } catch (error) {
       logger.error('세션 토큰 제거 실패:', error);
     }
