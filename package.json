@@ -16,7 +16,7 @@
     "cleanup:dummy": "tsx src/scripts/cleanup-dummy-data.ts",
     "reset:user-submissions": "tsx src/scripts/reset-user-submissions.ts",
     "check:user-data": "tsx src/scripts/check-user-data.ts",
-    "upload:profiles": "tsx src/scripts/upload-profile-images.ts"
+    "convert:webp": "tsx src/scripts/convert-all-to-webp.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4",
