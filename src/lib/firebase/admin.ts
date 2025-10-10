@@ -34,8 +34,32 @@ function initializeAdminApp() {
   });
 }
 
-const adminApp = initializeAdminApp();
+/**
+ * Lazy initialization으로 빌드 시 에러 방지
+ */
+function getAdminApp() {
+  return initializeAdminApp();
+}
 
-export const adminDb = adminApp.firestore();
-export const adminAuth = adminApp.auth();
+export function getAdminDb() {
+  return getAdminApp().firestore();
+}
+
+export function getAdminAuth() {
+  return getAdminApp().auth();
+}
+
+// 하위 호환성을 위한 export (deprecated)
+export const adminDb = new Proxy({} as ReturnType<typeof getAdminDb>, {
+  get(target, prop) {
+    return getAdminDb()[prop as keyof ReturnType<typeof getAdminDb>];
+  }
+});
+
+export const adminAuth = new Proxy({} as ReturnType<typeof getAdminAuth>, {
+  get(target, prop) {
+    return getAdminAuth()[prop as keyof ReturnType<typeof getAdminAuth>];
+  }
+});
+
 export { admin };

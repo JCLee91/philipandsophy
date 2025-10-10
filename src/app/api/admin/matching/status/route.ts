@@ -2,30 +2,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { getTodayString } from '@/lib/date-utils';
+import { requireAdmin } from '@/lib/api-auth';
 
-// Firebase Admin 초기화 (이미 초기화되어 있으면 재사용)
-if (!admin.apps.length) {
-  try {
-    // 환경 변수로부터 service account 정보 로드
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-      : require('../../../../../../firebase-service-account.json');
-    
+/**
+ * Firebase Admin 초기화 (lazy initialization)
+ */
+function getFirebaseAdmin() {
+  if (!admin.apps.length) {
+    // 환경 변수에서 service account 정보 로드
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT 환경 변수가 설정되지 않았습니다.');
+    }
+
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
-  } catch (error) {
-    console.error('Firebase Admin 초기화 실패:', error);
   }
-}
 
-const db = admin.firestore();
+  return admin.firestore();
+}
 
 /**
  * GET /api/admin/matching/status?cohortId=xxx&date=yyyy-mm-dd
  * 특정 날짜의 제출 현황 조회
  */
 export async function GET(request: NextRequest) {
+  // 관리자 권한 검증
+  const { error: authError } = await requireAdmin(request);
+  if (authError) {
+    return authError;
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const cohortId = searchParams.get('cohortId');
@@ -40,6 +49,9 @@ export async function GET(request: NextRequest) {
 
     // 해당 날짜의 질문 가져오기
     const question = getDailyQuestionText(date);
+
+    // Firebase Admin 초기화 및 DB 가져오기
+    const db = getFirebaseAdmin();
 
     // 오늘 제출한 참가자 수 조회
     const submissionsSnapshot = await db

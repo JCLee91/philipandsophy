@@ -33,7 +33,10 @@ async function resolveSession(sessionToken: string | null) {
   };
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { noticeId: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ noticeId: string }> }
+) {
   try {
     const sessionToken = request.headers.get(SESSION_HEADER) ?? request.cookies.get('pns-session')?.value ?? null;
     const session = await resolveSession(sessionToken);
@@ -46,7 +49,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { notic
       return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
     }
 
-    const noticeId = params.noticeId;
+    const { noticeId } = await params;
     if (!noticeId) {
       return NextResponse.json({ error: 'INVALID_ID' }, { status: 400 });
     }

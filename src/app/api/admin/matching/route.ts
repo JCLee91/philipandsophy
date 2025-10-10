@@ -6,23 +6,25 @@ import { getTodayString } from '@/lib/date-utils';
 import { requireAdmin } from '@/lib/api-auth';
 import { strictRateLimit } from '@/lib/rate-limit';
 
-// Firebase Admin 초기화 (이미 초기화되어 있으면 재사용)
-if (!admin.apps.length) {
-  try {
-    // 환경 변수로부터 service account 정보 로드
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-      : require('../../../../../firebase-service-account.json');
-    
+/**
+ * Firebase Admin 초기화 (lazy initialization)
+ */
+function getFirebaseAdmin() {
+  if (!admin.apps.length) {
+    // 환경 변수에서 service account 정보 로드
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT 환경 변수가 설정되지 않았습니다.');
+    }
+
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
-  } catch (error) {
-    console.error('Firebase Admin 초기화 실패:', error);
   }
-}
 
-const db = admin.firestore();
+  return admin.firestore();
+}
 
 interface SubmissionData {
   participantId: string;
@@ -67,7 +69,10 @@ export async function POST(request: NextRequest) {
     const todayQuestion = getDailyQuestionText();
     const today = getTodayString();
 
-    // 2. 오늘 제출한 참가자들의 답변 가져오기
+    // 2. Firebase Admin 초기화 및 DB 가져오기
+    const db = getFirebaseAdmin();
+
+    // 3. 오늘 제출한 참가자들의 답변 가져오기
     const submissionsSnapshot = await db
       .collection('reading_submissions')
       .where('submissionDate', '==', today)
@@ -203,6 +208,9 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Firebase Admin 초기화 및 DB 가져오기
+    const db = getFirebaseAdmin();
 
     // Cohort 문서에서 매칭 결과 가져오기
     const cohortDoc = await db.collection('cohorts').doc(cohortId).get();

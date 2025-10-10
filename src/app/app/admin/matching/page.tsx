@@ -58,7 +58,7 @@ function MatchingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
-  const { currentUser, isLoading: sessionLoading } = useSession();
+  const { currentUser, isLoading: sessionLoading, sessionToken } = useSession();
   const { toast } = useToast();
   const { data: cohortParticipants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
 
@@ -137,13 +137,18 @@ function MatchingPageContent() {
 
   // 기존 매칭 결과 및 제출 현황 로드
   const fetchMatchingStatus = useCallback(async () => {
-    if (!cohortId) return;
+    if (!cohortId || !sessionToken) return;
     try {
       setIsLoadingStatus(true);
 
       // 기존 매칭 결과 조회
       const matchingResponse = await fetch(
-        `/api/admin/matching?cohortId=${cohortId}&date=${today}`
+        `/api/admin/matching?cohortId=${cohortId}&date=${today}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+        }
       );
 
       if (matchingResponse.ok) {
@@ -153,7 +158,12 @@ function MatchingPageContent() {
 
       // 제출 현황 조회
       const statusResponse = await fetch(
-        `/api/admin/matching/status?cohortId=${cohortId}&date=${today}`
+        `/api/admin/matching/status?cohortId=${cohortId}&date=${today}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+        }
       );
 
       if (statusResponse.ok) {
@@ -165,7 +175,7 @@ function MatchingPageContent() {
     } finally {
       setIsLoadingStatus(false);
     }
-  }, [cohortId, today]);
+  }, [cohortId, today, sessionToken]);
 
   useEffect(() => {
     if (cohortId) {
@@ -179,7 +189,7 @@ function MatchingPageContent() {
   };
 
   const handleStartMatching = async () => {
-    if (!cohortId) return;
+    if (!cohortId || !sessionToken) return;
 
     setIsMatching(true);
     setError(null);
@@ -189,6 +199,7 @@ function MatchingPageContent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`,
         },
         body: JSON.stringify({ cohortId }),
       });
