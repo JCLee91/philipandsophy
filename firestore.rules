@@ -57,13 +57,10 @@ service cloud.firestore {
     match /notices/{noticeId} {
       // 읽기: 모두 허용
       allow read: if true;
-      
-      // 생성/수정: 제한적 허용 (프론트엔드에서 관리자 체크 필요)
+
+      // 생성/수정/삭제: 제한적 허용 (프론트엔드에서 관리자 체크 필요)
       // TODO: isAdmin() 함수로 변경 권장
-      allow create, update: if true;
-      
-      // 삭제: 금지 (관리자 콘솔에서만)
-      allow delete: if false;
+      allow create, update, delete: if true;
     }
 
     // ============================================
