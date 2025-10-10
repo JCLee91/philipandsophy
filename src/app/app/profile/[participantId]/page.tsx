@@ -165,6 +165,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // Initials 생성
   const initials = getInitials(participant.name);
 
+  // 이름에서 성 제거 (예: "김철수" -> "철수")
+  const firstName = participant.name.length > 2 ? participant.name.slice(1) : participant.name;
+
   // 각 날짜에 대한 제출물 찾기
   const dailySubmissions = fourteenDays.map((date) => {
     const submission = submissions.find((sub) =>
@@ -226,7 +229,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                     className="flex items-center gap-1 transition-opacity hover:opacity-70"
                   >
                     <h2 className="text-[20px] font-bold leading-[1.4] text-[#31363e]">
-                      {participant.name}
+                      {firstName}
                     </h2>
                     <img
                       src="/icons/chevron.svg"

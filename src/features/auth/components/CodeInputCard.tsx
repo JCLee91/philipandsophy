@@ -164,7 +164,7 @@ export default function CodeInputCard() {
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-2xl font-bold">
-          필립앤소피 독서모임
+          필립앤소피
         </CardTitle>
         <CardDescription>
           등록된 휴대폰 번호를 입력해주세요.

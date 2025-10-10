@@ -95,9 +95,14 @@ export const useMarkAsRead = () => {
       queryClient.setQueryData<DirectMessage[]>(
         messageKeys.conversation(variables.conversationId),
         (old) =>
-          old?.map((msg) =>
-            msg.receiverId === variables.userId ? { ...msg, isRead: true } : msg
-          )
+          old?.map((msg) => {
+            // Handle 'admin-team' receiverId: when userId is 'admin-team',
+            // we want to mark messages where receiverId is 'admin-team'
+            const shouldMarkRead = variables.userId === 'admin-team'
+              ? msg.receiverId === 'admin-team'
+              : msg.receiverId === variables.userId;
+            return shouldMarkRead ? { ...msg, isRead: true } : msg;
+          })
       );
     },
   });
