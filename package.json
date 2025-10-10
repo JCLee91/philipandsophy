@@ -11,7 +11,9 @@
     "seed:cohorts": "tsx src/scripts/seed-cohorts-participants.ts",
     "seed:submissions": "tsx src/scripts/seed-submissions.ts",
     "seed:all": "npm run seed:cohorts && npm run seed:notices && npm run seed:submissions",
-    "seed:admin": "tsx src/scripts/seed-admin.ts"
+    "seed:admin": "tsx src/scripts/seed-admin.ts",
+    "seed:real-users": "tsx src/scripts/add-real-users.ts",
+    "cleanup:dummy": "tsx src/scripts/cleanup-dummy-data.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4",
@@ -27,6 +29,7 @@
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "csv-parse": "^6.1.0",
     "date-fns": "^4",
     "dotenv": "^17.2.3",
     "es-toolkit": "^1",
@@ -41,6 +44,7 @@
     "react-hook-form": "^7",
     "react-use": "^17",
     "server-only": "0.0.1",
+    "sharp": "^0.34.4",
     "ts-pattern": "^5",
     "use-callback-ref": "^1.3.3",
     "use-sidecar": "^1.1.3",
