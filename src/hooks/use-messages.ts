@@ -39,6 +39,11 @@ export const useMessages = (conversationId: string) => {
     queryKey: messageKeys.conversation(conversationId),
     queryFn: () => getMessagesByConversation(conversationId),
     enabled: !!conversationId,
+    // React Query 캐시 설정 (Firebase에는 영구 저장됨)
+    gcTime: Infinity, // 브라우저 메모리에 캐시 유지 (새로고침 전까지)
+    staleTime: Infinity, // 실시간 구독으로 자동 업데이트
+    refetchOnMount: false, // 캐시 재사용
+    refetchOnWindowFocus: false, // 포커스 시 refetch 안 함
   });
 
   // Subscribe to real-time updates

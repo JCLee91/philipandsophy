@@ -36,6 +36,7 @@ interface SubmissionData {
 interface ParticipantData {
   id: string;
   name: string;
+  gender?: 'male' | 'female' | 'other';
 }
 
 /**
@@ -120,6 +121,7 @@ export async function POST(request: NextRequest) {
         id: submission.participantId,
         name: participant.name,
         answer: submission.dailyAnswer,
+        gender: participant.gender,
       });
     }
 

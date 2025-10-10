@@ -16,6 +16,7 @@ export interface ParticipantAnswer {
   id: string;
   name: string;
   answer: string;
+  gender?: 'male' | 'female' | 'other';
 }
 
 export interface MatchingResult {
@@ -144,7 +145,10 @@ export async function matchParticipantsByAI(
 
   try {
     const participantPromptList = participants
-      .map((p, i) => `${i + 1}. ${p.name} (ID: ${p.id}): "${p.answer}"`)
+      .map((p, i) => {
+        const genderLabel = p.gender === 'male' ? '남성' : p.gender === 'female' ? '여성' : '기타';
+        return `${i + 1}. ${p.name} (ID: ${p.id}, 성별: ${genderLabel}): "${p.answer}"`;
+      })
       .join('\n');
 
     const prompt = `
@@ -158,9 +162,14 @@ ${participantPromptList}
 
 **필수 규칙:**
 1. 모든 참가자에게 각각 "비슷한 가치관" 2명과 "상반된 가치관" 2명을 추천합니다.
-2. 동일한 사람을 중복 추천하지 말고, 본인(ID)을 결과에 포함하지 마세요.
-3. 추천 이유는 핵심만 1~2문장으로 요약합니다.
-4. 전체 그룹에서 오늘의 서재에 공개할 대표 4명(비슷한 2명, 반대 2명)을 선정하세요.
+2. **성별 균형 규칙 (매우 중요):**
+   - 비슷한 가치관 2명: 남성 1명 + 여성 1명
+   - 상반된 가치관 2명: 남성 1명 + 여성 1명
+   - 총 4명의 프로필북: 남성 2명 + 여성 2명
+3. 동일한 사람을 중복 추천하지 말고, 본인(ID)을 결과에 포함하지 마세요.
+4. 추천 이유는 핵심만 1~2문장으로 요약합니다.
+5. 전체 그룹에서 오늘의 서재에 공개할 대표 4명(비슷한 2명, 반대 2명)을 선정하세요.
+6. **모든 참가자의 프로필북이 최소 1명에게는 추천되어야 합니다.**
 
 **응답 형식(JSON만 반환):**
 {
@@ -191,7 +200,7 @@ ${participantPromptList}
 `;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5-nano',
+      model: 'gpt-4-turbo',
       messages: [
         {
           role: 'system',

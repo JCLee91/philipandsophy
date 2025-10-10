@@ -9,7 +9,7 @@ import { useMessages, useSendMessage, useMarkAsRead } from '@/hooks/use-messages
 import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 import { Send, Paperclip, X, ArrowDown } from 'lucide-react';
-import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, KeyboardEvent, ClipboardEvent, useCallback, useMemo } from 'react';
 import { uploadDMImage } from '@/lib/firebase/storage';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { FOOTER_STYLES } from '@/constants/ui';

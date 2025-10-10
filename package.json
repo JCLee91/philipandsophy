@@ -19,7 +19,10 @@
     "check:user-data": "tsx src/scripts/check-user-data.ts",
     "convert:webp": "tsx src/scripts/convert-all-to-webp.ts",
     "generate:matching": "tsx src/scripts/generate-daily-matching.ts",
-    "test:matching": "tsx src/scripts/test-ai-matching.ts"
+    "test:matching": "tsx src/scripts/test-ai-matching.ts",
+    "check:messages": "tsx scripts/check-messages.ts",
+    "list:messages": "tsx scripts/list-all-messages.ts",
+    "import:gender": "tsx src/scripts/import-gender-from-csv.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4",
