@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
 import BackHeader from '@/components/BackHeader';
@@ -114,7 +114,7 @@ function ParticipantRow({
   );
 }
 
-export default function ParticipantsPage() {
+function ParticipantsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
@@ -248,5 +248,13 @@ export default function ParticipantsPage() {
         />
       </div>
     </PageTransition>
+  );
+}
+
+export default function ParticipantsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner message="참가자 목록을 불러오는 중입니다" />}>
+      <ParticipantsPageContent />
+    </Suspense>
   );
 }
