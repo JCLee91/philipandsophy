@@ -69,9 +69,21 @@ export default function ProfileImageDialog({
           e.stopPropagation();
           onClose();
         }}
+        onPointerDownOutside={(e) => {
+          // 외부 클릭 시 이벤트 전파 방지
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }}
+        onInteractOutside={(e) => {
+          // 외부 상호작용 시 이벤트 전파 방지
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         onClick={(e) => {
           // 이미지 자체를 클릭한 경우가 아니라면 닫기
           if (e.target === e.currentTarget) {
+            e.stopPropagation();
             onClose();
           }
         }}
@@ -87,7 +99,10 @@ export default function ProfileImageDialog({
             width={1000}
             height={1000}
             className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
-            onClick={() => onClose()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
           />
         ) : (
           <div className="text-white text-center p-8">
