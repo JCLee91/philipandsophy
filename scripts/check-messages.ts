@@ -39,9 +39,11 @@ async function checkMessages(conversationId: string) {
       return;
     }
 
-    snapshot.forEach((doc, index) => {
+    let index = 0;
+    snapshot.forEach((doc) => {
+      index++;
       const data = doc.data();
-      console.log(`Message #${index + 1}:`);
+      console.log(`Message #${index}:`);
       console.log(`  ID: ${doc.id}`);
       console.log(`  conversationId: ${data.conversationId}`);
       console.log(`  senderId: ${data.senderId}`);
