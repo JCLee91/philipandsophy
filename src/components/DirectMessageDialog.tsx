@@ -17,6 +17,7 @@ import { uploadDMImage } from '@/lib/firebase/storage';
 import Image from 'next/image';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { FOOTER_STYLES } from '@/constants/ui';
+import ImageViewerDialog from '@/components/ImageViewerDialog';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export default function DirectMessageDialog({
   const [uploading, setUploading] = useState(false);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(0);
@@ -215,7 +217,10 @@ export default function DirectMessageDialog({
                       }`}
                     >
                       {msg.imageUrl && (
-                        <div className="mb-2 relative w-48 h-48">
+                        <div
+                          className="mb-2 relative w-48 h-48 cursor-pointer hover:opacity-90 transition-opacity duration-fast"
+                          onClick={() => setSelectedImage(msg.imageUrl)}
+                        >
                           <Image
                             src={msg.imageUrl}
                             alt="첨부 이미지"
@@ -313,6 +318,13 @@ export default function DirectMessageDialog({
           </div>
         </div>
       </DialogContent>
+
+      {/* 이미지 뷰어 다이얼로그 */}
+      <ImageViewerDialog
+        open={!!selectedImage}
+        onOpenChange={(open) => !open && setSelectedImage(null)}
+        imageUrl={selectedImage || ''}
+      />
     </Dialog>
   );
 }

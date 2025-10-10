@@ -136,7 +136,7 @@
 
   /*
    * 랜딩페이지: 기본 스크롤 허용
-   * 웹앱(/app): overflow: hidden으로 각 페이지가 100dvh 레이아웃 사용
+   * 웹앱(/app): position: fixed로 body 스크롤 방지하되, 내부 컨텐츠는 스크롤 가능
    * 웹앱에서는 layout.tsx에서 data-app="true" 속성으로 구분
    */
   body {
@@ -144,9 +144,14 @@
     overflow-y: auto;
   }
 
-  /* 웹앱 페이지에서만 스크롤 제거 */
+  /* 웹앱 페이지에서만 body 스크롤 제거 (내부 스크롤은 허용) */
   body[data-app="true"] {
+    position: fixed;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
+    /* iOS에서 rubber-band 스크롤 방지 */
+    overscroll-behavior: none;
   }
   
   /* Pretendard 폰트를 모든 요소에 강제 적용 */
