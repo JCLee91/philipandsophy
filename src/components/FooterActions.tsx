@@ -27,14 +27,14 @@ export default function FooterActions({
               {/* Unauthenticated: 2 Buttons */}
               <UnifiedButton
                 variant="secondary"
-                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId, currentUserId))}
+                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId))}
                 className="flex-1"
               >
                 내 프로필 북 보기
               </UnifiedButton>
               <UnifiedButton
                 variant="primary"
-                onClick={() => router.push(appRoutes.chat(cohortId, currentUserId))}
+                onClick={() => router.push(appRoutes.chat(cohortId))}
                 className="flex-1"
               >
                 독서 인증하기
@@ -45,7 +45,7 @@ export default function FooterActions({
               {/* Authenticated: 1 Button */}
               <UnifiedButton
                 variant="primary"
-                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId, currentUserId))}
+                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId))}
                 className="flex-1"
               >
                 내 프로필 북 보기

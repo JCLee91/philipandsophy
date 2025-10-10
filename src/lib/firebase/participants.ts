@@ -14,6 +14,7 @@ import {
   Timestamp,
   QueryConstraint,
   runTransaction,
+  deleteField,
 } from 'firebase/firestore';
 import { getDb } from './client';
 import { Participant, BookHistoryEntry, COLLECTIONS } from '@/types/database';
@@ -335,8 +336,8 @@ export async function clearSessionToken(participantId: string): Promise<void> {
   const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
 
   await updateDoc(docRef, {
-    sessionToken: undefined,
-    sessionExpiry: undefined,
+    sessionToken: deleteField(),
+    sessionExpiry: deleteField(),
     updatedAt: Timestamp.now(),
   });
 }
