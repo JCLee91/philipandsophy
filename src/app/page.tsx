@@ -7,7 +7,7 @@ import Tooltip from '@/components/Tooltip';
 
 export default function LandingPage() {
   return (
-    <>
+    <div className="landing-page">
       {/* Meta Pixel Code */}
       <Script id="meta-pixel" strategy="afterInteractive">
         {`
@@ -40,15 +40,55 @@ export default function LandingPage() {
         `}
       </Script>
 
-      {/* JSON-LD Structured Data */}
-      <Script id="json-ld" type="application/ld+json" strategy="afterInteractive">
+      {/* JSON-LD Structured Data - Organization */}
+      <Script id="json-ld-org" type="application/ld+json" strategy="afterInteractive">
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
           "name": "Philip & Sophy",
-          "description": "깊이 있는 대화가 설레는 만남으로",
+          "alternateName": "필립앤소피",
+          "description": "25-40세 직장인 전문직을 위한 승인제 독서소셜클럽",
           "url": "https://www.philipandsophy.kr/",
-          "sameAs": ["https://smore.im/form/13J1nUevrX"]
+          "sameAs": ["https://smore.im/form/13J1nUevrX"],
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "서울",
+            "addressCountry": "KR"
+          }
+        })}
+      </Script>
+
+      {/* JSON-LD Structured Data - Event */}
+      <Script id="json-ld-event" type="application/ld+json" strategy="afterInteractive">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Event",
+          "name": "11월의 필립앤소피 독서소셜클럽",
+          "description": "2주간 온라인 독서 프로그램과 클로징 파티. 승인된 20명의 멤버와 함께하는 깊이 있는 대화와 설레는 만남.",
+          "eventStatus": "https://schema.org/EventScheduled",
+          "eventAttendanceMode": "https://schema.org/MixedEventAttendanceMode",
+          "location": {
+            "@type": "Place",
+            "name": "서울",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "서울",
+              "addressCountry": "KR"
+            }
+          },
+          "organizer": {
+            "@type": "Organization",
+            "name": "Philip & Sophy",
+            "url": "https://www.philipandsophy.kr/"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": "https://smore.im/form/13J1nUevrX",
+            "price": "90000",
+            "priceCurrency": "KRW",
+            "availability": "https://schema.org/InStock",
+            "validFrom": "2025-10-01"
+          }
         })}
       </Script>
 
@@ -107,7 +147,7 @@ export default function LandingPage() {
 
         <img src="/image/PnS_3.webp?v=1.3" alt="필립앤소피 서비스 특징" className="main-image" />
 
-        <img src="/image/PnS_4_nofooter.webp?v=3.0" alt="필립앤소피 가입 안내" className="main-image" />
+        <img src="/image/PnS_4_nofooter.webp?v=4.0" alt="필립앤소피 가입 안내" className="main-image" />
 
         <div className="cta-section">
           <Tooltip />
@@ -139,6 +179,6 @@ export default function LandingPage() {
       {/* Vercel Analytics */}
       <Script defer src="/_vercel/speed-insights/script.js" />
       <Script defer src="/_vercel/insights/script.js" />
-    </>
+    </div>
   );
 }

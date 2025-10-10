@@ -33,9 +33,11 @@ export {
   getAllParticipants,
   updateParticipant,
   updateParticipantBookInfo,
-  updateParticipantBookTitle, // Deprecated, use updateParticipantBookInfo
   deleteParticipant,
   searchParticipants,
+  createSessionToken,
+  getParticipantBySessionToken,
+  clearSessionToken,
 } from './participants';
 
 // Submission operations
@@ -47,11 +49,10 @@ export {
   getAllSubmissions,
   getSubmissionsByStatus,
   updateSubmission,
-  updateSubmissionStatus,
   deleteSubmission,
   searchSubmissions,
   subscribeTodayVerified,
-  getApprovedSubmissionsByParticipant,
+  subscribeParticipantSubmissions,
 } from './submissions';
 
 // Storage operations

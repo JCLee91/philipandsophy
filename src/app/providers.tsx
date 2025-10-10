@@ -10,6 +10,8 @@ import {
 import { ThemeProvider } from 'next-themes';
 import { useEffect } from 'react';
 import { initializeFirebase } from '@/lib/firebase';
+import { CACHE_TIMES } from '@/constants/cache';
+import { Toaster } from '@/components/ui/toaster';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -17,7 +19,9 @@ function makeQueryClient() {
       queries: {
         // With SSR, we usually want to set some default staleTime
         // above 0 to avoid refetching immediately on the client
-        staleTime: 60 * 1000,
+        // 정적 데이터(cohort/participants) 기본 캐시: 5분
+        // 동적 데이터(notices/messages)는 개별 hook에서 override
+        staleTime: CACHE_TIMES.STATIC, // 5분
       },
     },
   });
@@ -58,7 +62,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <Toaster />
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

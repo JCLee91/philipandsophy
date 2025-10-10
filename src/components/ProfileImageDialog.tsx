@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import type { Participant } from '@/types/database';
 
@@ -22,12 +22,11 @@ export default function ProfileImageDialog({
       <DialogContent
         className="sm:max-w-lg p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)]"
         onOpenAutoFocus={(e) => e.preventDefault()}
-        aria-describedby="profile-description"
       >
         <DialogTitle className="sr-only">{participant.name} 프로필</DialogTitle>
-        <p id="profile-description" className="sr-only">
+        <DialogDescription className="sr-only">
           {participant.name}님의 프로필 이미지
-        </p>
+        </DialogDescription>
         {participant.profileImage ? (
           <div className="relative w-full overflow-hidden">
             <Image

@@ -12,7 +12,7 @@ export default function ProgramPage() {
   }));
 
   return (
-    <>
+    <div className="landing-page">
       <div className="container">
         {images.map((image, idx) => (
           <img
@@ -26,7 +26,7 @@ export default function ProgramPage() {
         ))}
       </div>
       <Footer />
-    </>
+    </div>
   );
 }
 

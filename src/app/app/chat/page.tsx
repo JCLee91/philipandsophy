@@ -1,34 +1,67 @@
 'use client';
-import { logger } from '@/lib/logger';
 
-import { Suspense } from 'react';
-import Header from '@/components/Header';
-import ParticipantsList from '@/components/ParticipantsList';
-import DirectMessageDialog from '@/components/DirectMessageDialog';
-import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
-import ProfileImageDialog from '@/components/ProfileImageDialog';
-import NoticeItem from '@/components/NoticeItem';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import NoticeWriteDialog from '@/components/NoticeWriteDialog';
-import NoticeEditDialog from '@/components/NoticeEditDialog';
-import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
-import PageTransition from '@/components/PageTransition';
-import { Notice, Participant } from '@/types/database';
-import { useCohort } from '@/hooks/use-cohorts';
-import { useParticipant, useParticipantsByCohort } from '@/hooks/use-participants';
-import { BookOpen } from 'lucide-react';
+import { Suspense, useRef, useCallback, useEffect, useState, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
+import { BookOpen } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { scrollToBottom, formatDate, formatTime } from '@/lib/utils';
 import { APP_CONSTANTS } from '@/constants/app';
 import { uploadNoticeImage } from '@/lib/firebase/storage';
+import { Notice, Participant } from '@/types/database';
+import { appRoutes } from '@/lib/navigation';
+import { useCohort } from '@/hooks/use-cohorts';
+import { useParticipantsByCohort } from '@/hooks/use-participants';
+import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
+import { useSession } from '@/hooks/use-session';
+import Header from '@/components/Header';
+import ParticipantsList from '@/components/ParticipantsList';
+import NoticeItem from '@/components/NoticeItem';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import PageTransition from '@/components/PageTransition';
+import UnifiedButton from '@/components/UnifiedButton';
+import { BookLibraryIcon } from '@/components/icons/BookLibraryIcon';
+import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
+
+// Lazy load dialog components (only loaded when needed)
+const DirectMessageDialog = lazy(() => import('@/components/DirectMessageDialog'));
+const ReadingSubmissionDialog = lazy(() => import('@/components/ReadingSubmissionDialog'));
+const ProfileImageDialog = lazy(() => import('@/components/ProfileImageDialog'));
+const NoticeWriteDialog = lazy(() => import('@/components/NoticeWriteDialog'));
+const NoticeEditDialog = lazy(() => import('@/components/NoticeEditDialog'));
+const NoticeDeleteDialog = lazy(() => import('@/components/NoticeDeleteDialog'));
+
+/**
+ * Set에서 item을 토글 (추가/삭제)
+ */
+function toggleSetItem<T>(set: Set<T>, item: T): Set<T> {
+  const newSet = new Set(set);
+  if (newSet.has(item)) {
+    newSet.delete(item);
+  } else {
+    newSet.add(item);
+  }
+  return newSet;
+}
+
+/**
+ * localStorage에 데이터 저장 (에러 처리 포함)
+ */
+function saveToLocalStorage(key: string, data: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    logger.warn('localStorage 저장 실패:', error);
+  }
+}
 
 function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
-  const currentUserId = searchParams.get('userId');
+
+  // 세션 기반 인증 (URL에서 userId 제거)
+  const { currentUser, isLoading: sessionLoading } = useSession();
+  const currentUserId = currentUser?.id;
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [writeDialogOpen, setWriteDialogOpen] = useState(false);
@@ -42,11 +75,11 @@ function ChatPageContent() {
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   const [collapsedNotices, setCollapsedNotices] = useState<Set<string>>(new Set());
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const hasScrolledRef = useRef(false);
 
   // Firebase hooks for data fetching
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
-  const { data: currentUser, isLoading: currentUserLoading } = useParticipant(currentUserId || undefined);
   const isAdmin = currentUser?.isAdmin || false;
 
   // Firebase hooks
@@ -56,26 +89,77 @@ function ChatPageContent() {
   const togglePinMutation = useToggleNoticePin();
   const deleteNoticeMutation = useDeleteNotice();
 
+  // localStorage에서 접힌 공지 목록 로드 (클라이언트 전용, SSR 호환)
   useEffect(() => {
-    if (!cohortId || !currentUserId) {
-      router.push('/');
+    try {
+      const saved = localStorage.getItem(APP_CONSTANTS.STORAGE_KEY_COLLAPSED_NOTICES);
+      if (saved) {
+        setCollapsedNotices(new Set(JSON.parse(saved)));
+      }
+    } catch (error) {
+      logger.error('localStorage 로드 실패:', error);
     }
-  }, [cohortId, currentUserId, router]);
+  }, []);
 
-  // 공지 로드 시 스크롤
+  // 세션 및 cohort 검증
   useEffect(() => {
-    if (noticesData.length > 0) {
-      scrollToBottom();
+    if (!sessionLoading) {
+      if (!currentUser) {
+        // 세션 없음 → 로그인 페이지로
+        router.replace('/app');
+        return;
+      }
+
+      if (!cohortId) {
+        // cohortId 없음 → 로그인 페이지로
+        router.replace('/app');
+        return;
+      }
+    }
+  }, [sessionLoading, currentUser, cohortId, router]);
+
+  // 초기 로드 시 즉시 스크롤 (번쩍임 방지)
+  useEffect(() => {
+    if (noticesData.length > 0 && !hasScrolledRef.current) {
+      scrollToBottom(undefined, { behavior: 'auto', delay: 0 });
+      hasScrolledRef.current = true;
     }
   }, [noticesData]);
 
-  // Show loading state
-  if (cohortLoading || currentUserLoading) {
-    return <LoadingSpinner />;
+  // Callback hooks (must be before any conditional returns)
+  const handleDMClick = useCallback((participant: Participant) => {
+    setDmTarget(participant);
+    setDmDialogOpen(true);
+  }, []);
+
+  const handleMessageAdmin = useCallback(() => {
+    const admin = participants.find((p) => p.isAdmin);
+    if (admin) {
+      setDmTarget(admin);
+      setDmDialogOpen(true);
+    }
+  }, [participants]);
+
+  const handleProfileBookClick = useCallback((participant: Participant) => {
+    if (!cohortId) return;
+    router.push(appRoutes.profile(participant.id, cohortId));
+  }, [router, cohortId]);
+
+  // 로딩 중: 스켈레톤 UI 표시
+  if (sessionLoading || cohortLoading) {
+    return (
+      <PageTransition>
+        <div className="flex min-h-screen flex-col max-h-screen overflow-hidden">
+          <HeaderSkeleton />
+          <NoticeListSkeleton />
+          <FooterActionsSkeleton />
+        </div>
+      </PageTransition>
+    );
   }
 
-  if (!cohortId || !currentUserId || !cohort || !currentUser) {
-    router.push('/');
+  // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리됨)
+  if (!currentUser || !cohort || !cohortId) {
     return null;
   }
 
@@ -100,7 +184,8 @@ function ChatPageContent() {
 
       setNewNoticeContent('');
       setWriteDialogOpen(false);
-      scrollToBottom();
+      // 공지 작성 후: 부드럽게 스크롤
+      scrollToBottom(undefined, { behavior: 'smooth', delay: 100 });
     } catch (error) {
       logger.error('공지 작성 실패:', error);
     } finally {
@@ -117,49 +202,40 @@ function ChatPageContent() {
   const handleSaveEdit = async () => {
     if (!editingNotice || !editContent.trim()) return;
 
-    await updateNoticeMutation.mutateAsync({
-      id: editingNotice.id,
-      data: { content: editContent.trim() },
-    });
+    try {
+      await updateNoticeMutation.mutateAsync({
+        id: editingNotice.id,
+        data: { content: editContent.trim() },
+      });
 
-    setEditingNotice(null);
-    setEditContent('');
-  };
-
-  const handleDeleteNotice = async (notice: Notice) => {
-    await deleteNoticeMutation.mutateAsync(notice.id);
-    setDeleteConfirm(null);
-  };
-
-  const handleTogglePin = async (notice: Notice) => {
-    await togglePinMutation.mutateAsync(notice.id);
-  };
-
-  const handleDMClick = (participant: Participant) => {
-    setDmTarget(participant);
-    setDmDialogOpen(true);
-  };
-
-  const handleMessageAdmin = () => {
-    const admin = participants.find((p) => p.isAdmin);
-    if (admin) {
-      setDmTarget(admin);
-      setDmDialogOpen(true);
+      setEditingNotice(null);
+      setEditContent('');
+    } catch (error) {
+      logger.error('공지 수정 실패:', error);
     }
   };
 
-  const handleProfileBookClick = (participant: Participant) => {
-    router.push(`/app/profile/${participant.id}?cohort=${cohortId}&userId=${currentUserId}`);
+  const handleDeleteNotice = async (notice: Notice) => {
+    try {
+      await deleteNoticeMutation.mutateAsync(notice.id);
+      setDeleteConfirm(null);
+    } catch (error) {
+      logger.error('공지 삭제 실패:', error);
+    }
+  };
+
+  const handleTogglePin = async (notice: Notice) => {
+    try {
+      await togglePinMutation.mutateAsync(notice.id);
+    } catch (error) {
+      logger.error('공지 고정 토글 실패:', error);
+    }
   };
 
   const toggleNoticeCollapse = (noticeId: string) => {
     setCollapsedNotices((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(noticeId)) {
-        newSet.delete(noticeId);
-      } else {
-        newSet.add(noticeId);
-      }
+      const newSet = toggleSetItem(prev, noticeId);
+      saveToLocalStorage(APP_CONSTANTS.STORAGE_KEY_COLLAPSED_NOTICES, [...newSet]);
       return newSet;
     });
   };
@@ -188,9 +264,9 @@ function ChatPageContent() {
   // 날짜별로 정렬 (오래된 날짜 → 최신 날짜)
   const sortedGroupedNotices = Object.entries(groupedNotices).sort(
     ([, a], [, b]) => {
-      const dateA = (a as { date: Date; notices: Notice[] }).date;
-      const dateB = (b as { date: Date; notices: Notice[] }).date;
-      return dateA.getTime() - dateB.getTime();
+      const groupA = a as { date: Date; notices: Notice[] };
+      const groupB = b as { date: Date; notices: Notice[] };
+      return groupA.date.getTime() - groupB.date.getTime();
     }
   );
 
@@ -214,23 +290,29 @@ function ChatPageContent() {
         onProfileClick={setSelectedParticipant}
         onProfileBookClick={handleProfileBookClick}
       />
-      <DirectMessageDialog
-        open={dmDialogOpen}
-        onOpenChange={setDmDialogOpen}
-        currentUserId={currentUserId || ''}
-        otherUser={dmTarget}
-      />
-      <ReadingSubmissionDialog
-        open={submissionDialogOpen}
-        onOpenChange={setSubmissionDialogOpen}
-        participantId={currentUserId || ''}
-        participationCode={currentUserId || ''}
-      />
-      <ProfileImageDialog
-        participant={selectedParticipant}
-        open={!!selectedParticipant}
-        onClose={() => setSelectedParticipant(null)}
-      />
+      <Suspense fallback={<LoadingSpinner />}>
+        <DirectMessageDialog
+          open={dmDialogOpen}
+          onOpenChange={setDmDialogOpen}
+          currentUserId={currentUserId || ''}
+          otherUser={dmTarget}
+        />
+      </Suspense>
+      <Suspense fallback={<LoadingSpinner />}>
+        <ReadingSubmissionDialog
+          open={submissionDialogOpen}
+          onOpenChange={setSubmissionDialogOpen}
+          participantId={currentUserId || ''}
+          participationCode={currentUserId || ''}
+        />
+      </Suspense>
+      <Suspense fallback={<LoadingSpinner />}>
+        <ProfileImageDialog
+          participant={selectedParticipant}
+          open={!!selectedParticipant}
+          onClose={() => setSelectedParticipant(null)}
+        />
+      </Suspense>
       <main className="flex-1 overflow-y-auto bg-background pb-20 relative">
         {/* 고정 공지 영역 - sticky로 스크롤 시 상단 고정 */}
         {pinnedNotices.length > 0 && (
@@ -300,63 +382,55 @@ function ChatPageContent() {
         <div className="container mx-auto max-w-3xl px-4 py-3">
           <div className="grid grid-cols-2 gap-3">
             {/* 독서 인증하기 버튼 */}
-            <button
-              type="button"
+            <UnifiedButton
+              variant="primary"
               onClick={() => setSubmissionDialogOpen(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-semibold text-primary-foreground shadow-sm transition-all duration-normal hover:bg-primary/90 active:scale-95"
+              icon={<BookOpen className="h-5 w-5" />}
             >
-              <BookOpen className="h-5 w-5" />
-              <span>독서 인증</span>
-            </button>
+              독서 인증
+            </UnifiedButton>
 
             {/* 오늘의 서재 버튼 */}
-            <button
-              type="button"
-              onClick={() => router.push(`/app/chat/today-library?cohort=${cohortId}&userId=${currentUserId}`)}
-              className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-background px-4 py-3.5 font-semibold text-primary shadow-sm transition-all duration-normal hover:bg-primary/5 active:scale-95"
+            <UnifiedButton
+              variant="secondary"
+              onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
+              icon={<BookLibraryIcon className="h-5 w-5" />}
             >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-              <span>오늘의 서재</span>
-            </button>
+              오늘의 서재
+            </UnifiedButton>
           </div>
         </div>
       </div>
 
-      <NoticeWriteDialog
-        open={writeDialogOpen}
-        onOpenChange={setWriteDialogOpen}
-        content={newNoticeContent}
-        onContentChange={setNewNoticeContent}
-        onSubmit={handleWriteNotice}
-        uploading={uploadingNoticeImage}
-      />
+      <Suspense fallback={<LoadingSpinner />}>
+        <NoticeWriteDialog
+          open={writeDialogOpen}
+          onOpenChange={setWriteDialogOpen}
+          content={newNoticeContent}
+          onContentChange={setNewNoticeContent}
+          onSubmit={handleWriteNotice}
+          uploading={uploadingNoticeImage}
+        />
+      </Suspense>
 
-      <NoticeEditDialog
-        open={!!editingNotice}
-        onOpenChange={(open) => !open && setEditingNotice(null)}
-        content={editContent}
-        onContentChange={setEditContent}
-        onSave={handleSaveEdit}
-      />
+      <Suspense fallback={<LoadingSpinner />}>
+        <NoticeEditDialog
+          open={!!editingNotice}
+          onOpenChange={(open) => !open && setEditingNotice(null)}
+          content={editContent}
+          onContentChange={setEditContent}
+          onSave={handleSaveEdit}
+        />
+      </Suspense>
 
-      <NoticeDeleteDialog
-        open={!!deleteConfirm}
-        onOpenChange={(open) => !open && setDeleteConfirm(null)}
-        notice={deleteConfirm}
-        onConfirm={handleDeleteNotice}
-      />
+      <Suspense fallback={<LoadingSpinner />}>
+        <NoticeDeleteDialog
+          open={!!deleteConfirm}
+          onOpenChange={(open) => !open && setDeleteConfirm(null)}
+          notice={deleteConfirm}
+          onConfirm={handleDeleteNotice}
+        />
+      </Suspense>
       </div>
     </PageTransition>
   );

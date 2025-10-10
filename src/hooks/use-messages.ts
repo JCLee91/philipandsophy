@@ -15,6 +15,7 @@ import {
 } from '@/lib/firebase';
 import { useEffect } from 'react';
 import type { DirectMessage } from '@/types/database';
+import { CACHE_TIMES } from '@/constants/cache';
 
 /**
  * Query key factory for messages
@@ -104,6 +105,7 @@ export const useMarkAsRead = () => {
 
 /**
  * Get unread message count
+ * refetchInterval과 staleTime 충돌 방지를 위해 staleTime: 0
  */
 export const useUnreadCount = (conversationId: string, userId: string) => {
   return useQuery({
@@ -111,11 +113,13 @@ export const useUnreadCount = (conversationId: string, userId: string) => {
     queryFn: () => getUnreadCount(conversationId, userId),
     enabled: !!conversationId && !!userId,
     refetchInterval: 30000, // Refetch every 30 seconds
+    staleTime: 0, // refetchInterval 우선 적용
   });
 };
 
 /**
  * Get total unread message count for a user (all conversations)
+ * refetchInterval과 staleTime 충돌 방지를 위해 staleTime: 0
  */
 export const useTotalUnreadCount = (userId: string) => {
   return useQuery({
@@ -123,5 +127,6 @@ export const useTotalUnreadCount = (userId: string) => {
     queryFn: () => getTotalUnreadCount(userId),
     enabled: !!userId,
     refetchInterval: 30000, // Refetch every 30 seconds
+    staleTime: 0, // refetchInterval 우선 적용
   });
 };

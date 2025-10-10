@@ -44,6 +44,8 @@ export interface Participant {
   currentBookAuthor?: string; // 현재 읽고 있는 책 저자 (자동 채움용)
   currentBookCoverUrl?: string; // 현재 읽고 있는 책 표지 URL (자동 채움용)
   bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
+  sessionToken?: string; // 세션 토큰 (로그인 세션 관리용)
+  sessionExpiry?: number; // 세션 만료 시간 (Unix timestamp, 밀리초)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
@@ -58,14 +60,15 @@ export interface ReadingSubmission {
   bookTitle: string; // 책 제목 (필수)
   bookAuthor?: string; // 책 저자 (선택)
   bookCoverUrl?: string; // 책 표지 이미지 URL (네이버 API에서 가져온 표지, 선택)
+  bookDescription?: string; // 책 소개글 (네이버 API에서 가져온 설명, 선택)
   bookImageUrl: string; // 책 사진 (사용자가 찍은 인증 사진, 필수)
   review: string; // 간단 감상평 (필수)
   dailyQuestion: string; // 오늘의 질문 (필수)
   dailyAnswer: string; // 오늘의 질문에 대한 답변 (필수)
   submittedAt: Timestamp; // 제출 일시
   submissionDate: string; // 제출 날짜 (YYYY-MM-DD 형식, 날짜 비교용)
-  status: 'pending' | 'approved' | 'rejected'; // 승인 상태
-  reviewNote?: string; // 검토 메모
+  status: 'pending' | 'approved' | 'rejected'; // ⚠️ DEPRECATED: 승인 상태 (모든 제출은 자동 승인됨, DB 호환성을 위해 유지)
+  reviewNote?: string; // ⚠️ DEPRECATED: 검토 메모 (승인 프로세스 제거됨, DB 호환성을 위해 유지)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
   metadata?: Record<string, any>; // 추가 메타데이터 (확장 가능)

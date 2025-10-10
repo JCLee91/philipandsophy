@@ -400,6 +400,53 @@ images: {
 }
 ```
 
+## 🎨 Button Design System
+
+All web app buttons (`/app/*` routes) follow a unified design system based on FooterActions:
+
+### Button Variants
+
+**Primary (Black):**
+```tsx
+<button
+  type="button"
+  className="bg-black rounded-lg px-4 py-4 font-bold text-white transition-colors hover:bg-gray-800"
+>
+  독서 인증
+</button>
+```
+
+**Secondary (White):**
+```tsx
+<button
+  type="button"
+  className="bg-white border border-gray-200 rounded-lg px-4 py-4 font-bold text-black transition-colors hover:bg-gray-50"
+>
+  오늘의 서재
+</button>
+```
+
+### Design Principles
+- **Minimalist**: No complex shadows or gradients
+- **Consistent**: Same height (py-4), border radius (rounded-lg), typography (font-bold)
+- **Clean**: Simple hover states, clear visual hierarchy
+
+### States
+- **Disabled**: Add `disabled:opacity-50 disabled:cursor-not-allowed`
+- **Full Width**: Add `w-full`
+- **Loading**: Use ternary for text (e.g., `{isLoading ? '확인 중...' : '입장하기'}`)
+- **With Icons**: Use `flex items-center justify-center gap-2` + lucide-react icons (h-5 w-5)
+
+### Important Notes
+- **Landing page (`/`) buttons are NOT included** - They use glassmorphism design (landing.css)
+- **Only web app routes (`/app/*`) use this unified system**
+- **Shadcn Button component is deprecated in web app** - Use plain `<button>` tags with unified classes
+- Use `type="button"` to prevent form submission
+
+See [docs/design/button-system.md](./docs/design/button-system.md) for full specifications.
+
+---
+
 ## Korean Language Support
 
 - Ensure UTF-8 encoding for all files
@@ -507,9 +554,199 @@ The project provides several React Query-based hooks for data fetching:
 
 All hooks are located in `src/hooks/` and follow React Query patterns.
 
+## Documentation Management Policy
+
+### 📚 Core Principles
+
+1. **Single Source of Truth**: Each topic should have ONE authoritative document
+2. **No Archives**: Never create `archive/` folders or keep outdated documentation
+3. **Update, Don't Duplicate**: Always update existing docs instead of creating new versions
+4. **Latest Only**: Only the most recent, up-to-date documentation should exist
+
+### 📂 Document Structure
+
+All project documentation lives in the `docs/` folder with this structure:
+
+```
+docs/
+├── README.md              # Document index with quick navigation
+├── setup/                 # Initial setup and configuration (1-2 docs)
+├── optimization/          # Performance optimization (1-2 docs)
+├── design/                # Design system and guides (1-2 docs)
+└── architecture/          # Architecture and planning (1-2 docs)
+```
+
+### 📝 Documentation Rules
+
+#### When Creating Documentation
+
+1. **Check for existing docs first**
+   - Search `docs/` folder for related topics
+   - If exists, update instead of create
+
+2. **Choose the right category**
+   - `setup/` - Installation, configuration, environment setup
+   - `optimization/` - Performance, caching, query optimization
+   - `design/` - UI/UX, design system, animations
+   - `architecture/` - PRD, IA, system design
+
+3. **Name files clearly**
+   - Use descriptive, lowercase names with hyphens
+   - Examples: `firebase.md`, `performance.md`, `ui-guide.md`
+
+4. **Include metadata**
+   - Last updated date at the top or bottom
+   - Version number if applicable
+
+#### When Updating Documentation
+
+1. **Always overwrite, never append**
+   - Replace outdated sections completely
+   - Don't add "Update: ..." sections that create version confusion
+
+2. **Update the date**
+   - Change "Last Updated" timestamp
+   - Add to changelog section if document has one
+
+3. **Remove obsolete information**
+   - Delete deprecated features/instructions
+   - Don't keep "old way" and "new way" side by side
+
+#### What NOT to Do
+
+❌ **Never create these**:
+- `archive/` folders
+- `old/` folders
+- Files with version numbers: `schema-v1.md`, `schema-v2.md`
+- Files with dates: `optimization-2025-01.md`, `optimization-2025-10.md`
+- Backup files: `firebase.md.backup`, `firebase.old.md`
+
+❌ **Never keep**:
+- Migration guides (unless migration is ongoing)
+- Compatibility reports (merge into main docs)
+- Historical "how we did it" documents
+- Duplicate information across multiple files
+
+### 📊 Schema and Specification Documents
+
+**Critical Rule**: Schemas, database structures, and technical specifications should exist in **exactly ONE location**.
+
+- ✅ `docs/optimization/database.md` contains ALL Firestore schema documentation
+- ❌ Don't repeat schema definitions in `architecture/`, README, or other files
+- ✅ Link to the authoritative document instead
+
+### 🔄 Documentation Workflow
+
+#### Adding New Features
+
+```
+1. Implement feature
+2. Update relevant docs/[category]/[topic].md
+3. Update docs/README.md if needed (new category/major section)
+4. Update root README.md if user-facing
+```
+
+#### Refactoring/Optimization
+
+```
+1. Complete optimization work
+2. Update EXISTING docs with new patterns/metrics
+3. Remove OLD patterns/approaches completely
+4. Update "Last Updated" date
+```
+
+#### Deprecating Features
+
+```
+1. Remove from code
+2. Remove from ALL documentation
+3. Update docs/README.md navigation
+4. Update root README.md if user-facing
+```
+
+### 📋 Document Templates
+
+#### Standard Document Header
+
+```markdown
+# [Document Title]
+
+**Last Updated**: YYYY-MM-DD
+**Category**: setup | optimization | design | architecture
+
+## Overview
+[Brief description of what this document covers]
+
+## [Main Content Sections]
+...
+
+---
+*This is the authoritative document for [topic]. For related topics, see:*
+- [Related Doc 1](./path.md)
+- [Related Doc 2](./path.md)
+```
+
+### 🎯 Quality Checklist
+
+Before finalizing any documentation:
+
+- [ ] Is this the ONLY document on this topic?
+- [ ] Have I removed all outdated/duplicate info?
+- [ ] Does docs/README.md link to this correctly?
+- [ ] Is the "Last Updated" date current?
+- [ ] Are code examples tested and working?
+- [ ] Are there NO archive/old folders in docs/?
+
+### 🔍 Finding Documentation
+
+Users should be able to find ANY document through:
+
+1. **Root README.md** - Links to major docs with descriptions
+2. **docs/README.md** - Complete navigation index
+3. **Category folders** - Logical grouping
+
+**Maximum 2 clicks to any document from README.md**
+
+### 💡 Examples
+
+#### Good Documentation Practice ✅
+
+```
+docs/
+└── optimization/
+    └── database.md          # Single authoritative source
+                             # Updated: 2025-10-08
+                             # Contains: Schema + Query patterns + Performance
+```
+
+#### Bad Documentation Practice ❌
+
+```
+docs/
+├── optimization/
+│   ├── database.md          # Which one is current?
+│   ├── database-v2.md       # Confusing!
+│   └── schema.md            # Duplicate schema info
+└── archive/
+    ├── old-database.md      # Never create archives!
+    └── migration-2025.md    # Remove after migration complete
+```
+
+### 🚨 When to Break These Rules
+
+**NEVER**. These rules exist to prevent documentation chaos. If you think you need to break them, you probably need to:
+
+1. Better organize existing docs
+2. Create a new category folder
+3. Split a document that's become too large
+
+But you still follow the "one authoritative doc per topic" rule.
+
+---
+
 ## Additional Resources
 
 - **EasyNext CLI commands**: See README.md for scaffolding options
 - **Cursor rules**: See `.cursor/rules/global.mdc` for detailed coding guidelines
-- **Firebase setup**: See FIREBASE_SETUP.md for complete Firebase configuration guide
-- **Project documentation**: Additional setup docs in root directory
+- **Firebase setup**: See [docs/setup/firebase.md](./docs/setup/firebase.md) for complete Firebase configuration guide
+- **Project documentation**: See [docs/README.md](./docs/README.md) for complete documentation index

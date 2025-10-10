@@ -8,6 +8,7 @@ interface BookmarkCardProps {
   name: string;
   theme: 'blue' | 'yellow';
   isLocked: boolean;
+  lockedImage?: string; // 미인증 상태에서 보여줄 이미지 (각 카드마다 다름)
   onClick: () => void;
 }
 
@@ -16,6 +17,7 @@ export default function BookmarkCard({
   name,
   theme,
   isLocked,
+  lockedImage,
   onClick,
 }: BookmarkCardProps) {
   const config = BOOKMARK_THEMES[theme];
@@ -45,25 +47,22 @@ export default function BookmarkCard({
         {/* Profile Content Container */}
         <div className="absolute left-[25px] top-[16px] w-[60px] flex flex-col items-center gap-[6px] z-10">
           {isLocked ? (
-            // Locked state: Blurred profile
+            // Locked state: Blurred profile image (각 카드마다 다른 이미지)
             <div
-              className="relative flex items-center justify-center"
+              className="relative rounded-full overflow-hidden blur-[5px]"
               style={{
                 height: `${BOOKMARK_DIMENSIONS.PROFILE_SIZE_LOCKED}px`,
                 width: `${BOOKMARK_DIMENSIONS.PROFILE_SIZE_LOCKED}px`
               }}
             >
-              <div className="blur-[5px] filter size-full">
-                <div className="relative size-full rounded-full overflow-hidden">
-                  <Image
-                    src={profileImage}
-                    alt="잠긴 프로필 이미지"
-                    fill
-                    className="object-cover"
-                    sizes={`${BOOKMARK_DIMENSIONS.PROFILE_SIZE_LOCKED}px`}
-                  />
-                </div>
-              </div>
+              <Image
+                src={lockedImage || '/image/today-library/locked-profile-1.png'}
+                alt="잠긴 프로필 이미지"
+                fill
+                unoptimized
+                className="object-cover"
+                sizes={`${BOOKMARK_DIMENSIONS.PROFILE_SIZE_LOCKED}px`}
+              />
             </div>
           ) : (
             // Unlocked state: Clear profile
@@ -78,6 +77,7 @@ export default function BookmarkCard({
                 src={profileImage}
                 alt={name}
                 fill
+                unoptimized
                 className="object-cover"
                 sizes={`${BOOKMARK_DIMENSIONS.PROFILE_SIZE_UNLOCKED}px`}
               />

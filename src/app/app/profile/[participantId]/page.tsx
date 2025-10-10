@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, use, useState, useEffect, useMemo } from 'react';
+import { Suspense, use, useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,16 +9,19 @@ import LockedScreen from '@/components/LockedScreen';
 import PageTransition from '@/components/PageTransition';
 import HistoryWeekRow from '@/components/HistoryWeekRow';
 import ErrorState from '@/components/ErrorState';
-import { useParticipant } from '@/hooks/use-participants';
-import { useApprovedSubmissionsByParticipant } from '@/hooks/use-submissions';
+import ProfileImageDialog from '@/components/ProfileImageDialog';
+import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
+import { useSession } from '@/hooks/use-session';
 import { getInitials, formatShortDate } from '@/lib/utils';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
+import { getTodayString } from '@/lib/date-utils';
+import { useParticipant } from '@/hooks/use-participants';
 
 interface ProfileBookContentProps {
   params: Promise<{ participantId: string }>;
@@ -29,8 +32,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const searchParams = useSearchParams();
   const resolvedParams = use(params);
   const participantId = resolvedParams.participantId;
-  const currentUserId = searchParams.get('userId');
   const cohortId = searchParams.get('cohort');
+
+  // 세션 기반 인증 (URL에서 userId 제거)
+  const { currentUser, isLoading: sessionLoading } = useSession();
+  const currentUserId = currentUser?.id;
 
   // 테마 결정 (similar: 비슷한 가치관 파란색, opposite: 반대 가치관 노란색)
   const theme = (searchParams.get('theme') as ProfileTheme) || DEFAULT_THEME;
@@ -38,45 +44,62 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   const [selectedSubmission, setSelectedSubmission] = useState<ReadingSubmission | null>(null);
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
+  const questionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
 
   const toggleQuestion = (question: string) => {
     setExpandedQuestions(prev => {
       const newSet = new Set(prev);
+      const isExpanding = !newSet.has(question);
+
       if (newSet.has(question)) {
         newSet.delete(question);
       } else {
         newSet.add(question);
+
+        // 펼칠 때만 자동 스크롤
+        setTimeout(() => {
+          const element = questionRefs.current.get(question);
+          if (element) {
+            element.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+              inline: 'nearest'
+            });
+          }
+        }, 100); // 애니메이션 시작 후 스크롤
       }
+
       return newSet;
     });
   };
 
   // 데이터 페칭
   const { data: participant, isLoading: participantLoading } = useParticipant(participantId);
-  const { data: currentUser } = useParticipant(currentUserId || undefined);
   const { data: cohort } = useCohort(cohortId || undefined);
-  const { data: submissions = [], isLoading: submissionsLoading } = useApprovedSubmissionsByParticipant(participantId);
+  const { data: submissions = [], isLoading: submissionsLoading } = useParticipantSubmissionsRealtime(participantId);
   const { data: verifiedIds } = useVerifiedToday();
 
-  // ✅ CRITICAL: useMemo를 early return 이전에 배치하여 hooks 순서 일관성 유지
-  // 14일치 날짜 배열 생성 (오늘부터 과거 13일) - 메모이제이션으로 최적화
-  const fourteenDays = useMemo(() => {
-    return Array.from({ length: 14 }, (_, i) => {
-      const date = subDays(new Date(), i);
-      return startOfDay(date);
-    }).reverse(); // 오래된 날짜부터 최신 순으로
-  }, []); // 날짜는 컴포넌트 마운트 시 한 번만 계산
+  // 세션 검증
+  useEffect(() => {
+    if (!sessionLoading && !currentUser) {
+      router.replace('/app');
+    }
+  }, [sessionLoading, currentUser, router]);
 
-  // 모든 질문과 답변 수집 (중복 제거) - 메모이제이션으로 최적화
-  const allQuestionsAnswers = useMemo(() => {
-    return submissions.reduce((acc, sub) => {
-      const key = sub.dailyQuestion;
-      if (!acc[key]) {
-        acc[key] = sub.dailyAnswer;
-      }
-      return acc;
-    }, {} as Record<string, string>);
-  }, [submissions]); // submissions가 변경될 때만 재계산
+  // 14일치 날짜 배열 생성 (오늘부터 과거 13일)
+  const fourteenDays = Array.from({ length: 14 }, (_, i) =>
+    startOfDay(subDays(new Date(), i))
+  ).reverse(); // 오래된 날짜부터 최신 순으로
+
+  // 모든 질문과 답변 수집 (중복 제거)
+  const allQuestionsAnswers = submissions.reduce((acc, sub) => {
+    const key = sub.dailyQuestion;
+    if (!acc[key]) {
+      acc[key] = sub.dailyAnswer;
+    }
+    return acc;
+  }, {} as Record<string, string>);
 
   // ✅ CRITICAL: useEffect를 early return 이전에 배치하여 hooks 순서 일관성 유지
   // 첫 번째 질문을 기본으로 열어두기
@@ -97,7 +120,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const isAdmin = currentUser?.isAdmin === true;
 
   // 오늘 날짜 (YYYY-MM-DD 형식)
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const today = getTodayString();
 
   // 오늘 인증 여부
   const isVerifiedToday = currentUserId ? verifiedIds?.has(currentUserId) : false;
@@ -113,7 +136,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const hasAccess = isSelf || isAdmin || (isVerifiedToday && isFeatured);
 
   // 로딩 상태
-  if (participantLoading || submissionsLoading) {
+  if (sessionLoading || participantLoading || submissionsLoading) {
     return <LoadingSpinner />;
   }
 
@@ -188,17 +211,21 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
               {/* 프로필 정보 */}
               <div className="flex flex-col items-center pt-[48px] pb-[32px]">
                 <div className="flex flex-col items-center gap-2 mb-[32px]">
-                  <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setProfileImageDialogOpen(true)}
+                    className="flex items-center gap-1 transition-opacity hover:opacity-70"
+                  >
                     <h2 className="text-[20px] font-bold leading-[1.4] text-[#31363e]">
                       {participant.name}
                     </h2>
-                    <Image
+                    <img
                       src="/icons/chevron.svg"
-                      alt=""
+                      alt="프로필 이미지 보기"
                       width={20}
                       height={20}
+                      className="flex-shrink-0"
                     />
-                  </div>
+                  </button>
                   {participant.occupation && (
                     <p className="text-[14px] font-medium leading-[1.4] text-[#8f98a3]">
                       {participant.occupation}
@@ -231,15 +258,18 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               src={latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl}
                               alt="책 표지"
                               fill
+                              sizes="60px"
                               className="object-cover"
                             />
                           </div>
                         )}
                       </div>
-                      <p className="text-[14px] font-medium leading-[1.4] text-[#575e68] tracking-[-0.14px]">
-                        {latestSubmission.review.slice(0, 100)}
-                        {latestSubmission.review.length > 100 ? '...' : ''}
-                      </p>
+                      {latestSubmission.bookDescription && (
+                        <p className="text-[14px] font-medium leading-[1.4] text-[#575e68] tracking-[-0.14px]">
+                          {latestSubmission.bookDescription.slice(0, 100)}
+                          {latestSubmission.bookDescription.length > 100 ? '...' : ''}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -277,6 +307,13 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                         return (
                           <div
                             key={index}
+                            ref={(el) => {
+                              if (el) {
+                                questionRefs.current.set(question, el);
+                              } else {
+                                questionRefs.current.delete(question);
+                              }
+                            }}
                             className={`${isLastQuestion ? '' : 'border-b border-[#dddddd]'} py-4 ${index === 0 ? 'pt-0' : ''}`}
                           >
                             <button
@@ -289,7 +326,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               <div className={`flex-shrink-0 transition-transform duration-300 ${
                                 isExpanded ? 'rotate-180' : ''
                               }`}>
-                                <Image
+                                <img
                                   src="/icons/chevron-down.svg"
                                   alt=""
                                   width={20}
@@ -353,6 +390,13 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* 간단 프로필 이미지 다이얼로그 */}
+        <ProfileImageDialog
+          participant={participant}
+          open={profileImageDialogOpen}
+          onClose={() => setProfileImageDialogOpen(false)}
+        />
       </div>
     </PageTransition>
   );

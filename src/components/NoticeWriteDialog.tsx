@@ -1,8 +1,8 @@
 'use client';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import UnifiedButton from '@/components/UnifiedButton';
 import { Paperclip, X } from 'lucide-react';
 import Image from 'next/image';
 import { useImageUpload } from '@/hooks/use-image-upload';
@@ -88,15 +88,18 @@ export default function NoticeWriteDialog({
               </div>
             </label>
           </div>
-          <Button variant="outline" onClick={handleClose}>
+          <UnifiedButton variant="outline" onClick={handleClose} size="sm">
             취소
-          </Button>
-          <Button
+          </UnifiedButton>
+          <UnifiedButton
             onClick={handleSubmit}
-            disabled={!content.trim() || uploading}
+            disabled={!content.trim()}
+            loading={uploading}
+            loadingText="업로드 중..."
+            size="sm"
           >
-            {uploading ? '업로드 중...' : '작성'}
-          </Button>
+            작성
+          </UnifiedButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

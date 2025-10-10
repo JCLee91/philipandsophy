@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import UnifiedButton from '@/components/UnifiedButton';
 import { useMessages, useSendMessage, useMarkAsRead } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
@@ -279,19 +279,21 @@ export default function DirectMessageDialog({
           )}
           
           <div className="flex gap-2">
-            <label className="shrink-0">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-              />
-              <Button type="button" variant="outline" size="icon" asChild>
-                <div>
-                  <Paperclip className="h-4 w-4" />
-                </div>
-              </Button>
-            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+              id="dm-image-upload"
+            />
+            <UnifiedButton
+              type="button"
+              variant="outline"
+              onClick={() => document.getElementById('dm-image-upload')?.click()}
+              className="h-10 w-10 p-0 shrink-0"
+            >
+              <Paperclip className="h-4 w-4" />
+            </UnifiedButton>
             <Input
               value={messageContent}
               onChange={(e) => setMessageContent(e.target.value)}
@@ -300,18 +302,13 @@ export default function DirectMessageDialog({
               className="flex-1"
               disabled={uploading}
             />
-            <Button
+            <UnifiedButton
               onClick={handleSend}
-              disabled={(!messageContent.trim() && !imageFile) || uploading}
-              size="icon"
-              className="shrink-0"
-            >
-              {uploading ? (
-                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
+              disabled={!messageContent.trim() && !imageFile}
+              loading={uploading}
+              className="h-10 w-10 p-0 shrink-0"
+              icon={<Send className="h-4 w-4" />}
+            />
           </div>
         </div>
       </DialogContent>

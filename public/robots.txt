@@ -2,20 +2,14 @@ User-agent: *
 Allow: /
 
 # Block private pages - 비밀 페이지 차단
-Disallow: /program
-Disallow: /member10
-Disallow: /chat
+Disallow: /app/
+Disallow: /program/
 
 # Sitemap location
 Sitemap: https://www.philipandsophy.kr/sitemap.xml
-
-# Block crawling of large image files to save bandwidth
-Disallow: /image/PnS_2.svg
-Disallow: /image/PnS_3.svg
 
 # Allow crawling of optimized images
 Allow: /image/
 Allow: /*.png
 Allow: /*.webp
 Allow: /*.jpg
-Allow: /*.svg

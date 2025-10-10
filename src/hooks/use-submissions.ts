@@ -1,19 +1,16 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import {
   createSubmission,
-  getSubmissionById,
   getSubmissionsByParticipant,
-  getSubmissionsByCode,
-  getAllSubmissions,
-  getSubmissionsByStatus,
   updateSubmission,
-  updateSubmissionStatus,
   deleteSubmission,
-  getApprovedSubmissionsByParticipant,
+  subscribeParticipantSubmissions,
 } from '@/lib/firebase';
 import { ReadingSubmission } from '@/types/database';
+import { CACHE_TIMES } from '@/constants/cache';
 
 /**
  * React Query hooks for Reading Submission operations
@@ -27,32 +24,9 @@ export const SUBMISSION_KEYS = {
   detail: (id: string) => [...SUBMISSION_KEYS.details(), id] as const,
   byParticipant: (participantId: string) =>
     [...SUBMISSION_KEYS.all, 'participant', participantId] as const,
-  byCode: (code: string) => [...SUBMISSION_KEYS.all, 'code', code] as const,
-  byStatus: (status: string) =>
-    [...SUBMISSION_KEYS.all, 'status', status] as const,
   verifiedToday: () => [...SUBMISSION_KEYS.all, 'verified-today'] as const,
 };
 
-/**
- * 모든 제출물 조회
- */
-export function useSubmissions() {
-  return useQuery({
-    queryKey: SUBMISSION_KEYS.list(),
-    queryFn: getAllSubmissions,
-  });
-}
-
-/**
- * 제출물 ID로 조회
- */
-export function useSubmission(id: string | undefined) {
-  return useQuery({
-    queryKey: SUBMISSION_KEYS.detail(id || ''),
-    queryFn: () => (id ? getSubmissionById(id) : null),
-    enabled: !!id,
-  });
-}
 
 /**
  * 참가자별 제출물 조회
@@ -63,43 +37,43 @@ export function useSubmissionsByParticipant(participantId: string | undefined) {
     queryFn: () =>
       participantId ? getSubmissionsByParticipant(participantId) : [],
     enabled: !!participantId,
+    staleTime: CACHE_TIMES.SEMI_DYNAMIC, // 1분
   });
 }
 
 /**
- * 참가자별 승인된 제출물만 조회 (프로필북용)
+ * 참가자별 제출물 실시간 구독 (프로필북용)
+ * Firebase onSnapshot으로 즉시 반영
  */
-export function useApprovedSubmissionsByParticipant(participantId: string | undefined) {
-  return useQuery({
-    queryKey: [...SUBMISSION_KEYS.byParticipant(participantId || ''), 'approved'] as const,
-    queryFn: () =>
-      participantId ? getApprovedSubmissionsByParticipant(participantId) : [],
-    enabled: !!participantId,
-  });
+export function useParticipantSubmissionsRealtime(participantId: string | undefined) {
+  const [submissions, setSubmissions] = useState<ReadingSubmission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!participantId) {
+      setSubmissions([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Firebase 실시간 구독
+    const unsubscribe = subscribeParticipantSubmissions(
+      participantId,
+      (data) => {
+        setSubmissions(data);
+        setIsLoading(false);
+      }
+    );
+
+    // 컴포넌트 언마운트 시 구독 해제
+    return () => unsubscribe();
+  }, [participantId]);
+
+  return { data: submissions, isLoading };
 }
 
-/**
- * 참여코드별 제출물 조회
- */
-export function useSubmissionsByCode(code: string | undefined) {
-  return useQuery({
-    queryKey: SUBMISSION_KEYS.byCode(code || ''),
-    queryFn: () => (code ? getSubmissionsByCode(code) : []),
-    enabled: !!code,
-  });
-}
-
-/**
- * 상태별 제출물 조회
- */
-export function useSubmissionsByStatus(
-  status: 'pending' | 'approved' | 'rejected'
-) {
-  return useQuery({
-    queryKey: SUBMISSION_KEYS.byStatus(status),
-    queryFn: () => getSubmissionsByStatus(status),
-  });
-}
 
 /**
  * 제출물 생성
@@ -111,8 +85,13 @@ export function useCreateSubmission() {
     mutationFn: (
       data: Omit<ReadingSubmission, 'id' | 'createdAt' | 'updatedAt' | 'submissionDate'>
     ) => createSubmission(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SUBMISSION_KEYS.lists() });
+    onSuccess: async () => {
+      // 모든 submission 관련 쿼리 무효화 (프로필북 포함)
+      // await로 invalidation 완료 보장 (race condition 방지)
+      await queryClient.invalidateQueries({
+        queryKey: SUBMISSION_KEYS.all,
+        refetchType: 'all', // active/inactive 상관없이 모든 쿼리 refetch
+      });
     },
   });
 }
@@ -131,36 +110,16 @@ export function useUpdateSubmission() {
       id: string;
       data: Partial<Omit<ReadingSubmission, 'id' | 'createdAt'>>;
     }) => updateSubmission(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: SUBMISSION_KEYS.lists() });
-      queryClient.invalidateQueries({
-        queryKey: SUBMISSION_KEYS.detail(variables.id),
+    onSuccess: async () => {
+      // 모든 submission 관련 쿼리 무효화 (프로필북 포함)
+      await queryClient.invalidateQueries({
+        queryKey: SUBMISSION_KEYS.all,
+        refetchType: 'all',
       });
     },
   });
 }
 
-/**
- * 제출물 상태 업데이트
- */
-export function useUpdateSubmissionStatus() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      status,
-      reviewNote,
-    }: {
-      id: string;
-      status: 'pending' | 'approved' | 'rejected';
-      reviewNote?: string;
-    }) => updateSubmissionStatus(id, status, reviewNote),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SUBMISSION_KEYS.lists() });
-    },
-  });
-}
 
 /**
  * 제출물 삭제
@@ -170,8 +129,12 @@ export function useDeleteSubmission() {
 
   return useMutation({
     mutationFn: (id: string) => deleteSubmission(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SUBMISSION_KEYS.lists() });
+    onSuccess: async () => {
+      // 모든 submission 관련 쿼리 무효화 (프로필북 포함)
+      await queryClient.invalidateQueries({
+        queryKey: SUBMISSION_KEYS.all,
+        refetchType: 'all',
+      });
     },
   });
 }

@@ -11,15 +11,12 @@ interface PageTransitionProps {
 const pageVariants = {
   initial: {
     opacity: 0,
-    y: 8,
   },
   animate: {
     opacity: 1,
-    y: 0,
   },
   exit: {
     opacity: 0,
-    y: -8,
   },
 };
 
@@ -40,7 +37,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
         exit="exit"
         variants={pageVariants}
         transition={pageTransition}
-        style={{ pointerEvents: 'auto' }}
+        style={{ pointerEvents: 'auto' }} // 애니메이션 중에도 클릭 이벤트 허용
       >
         {children}
       </motion.div>

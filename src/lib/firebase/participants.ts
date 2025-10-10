@@ -262,3 +262,81 @@ export async function updateParticipantBookTitle(
 ): Promise<void> {
   return updateParticipantBookInfo(participantId, newBookTitle);
 }
+
+/**
+ * 세션 토큰 생성 및 저장
+ *
+ * @param participantId - 참가자 ID
+ * @returns 생성된 세션 토큰
+ */
+export async function createSessionToken(participantId: string): Promise<string> {
+  const db = getDb();
+  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
+
+  // 세션 토큰 생성 (UUID 형식)
+  const sessionToken = crypto.randomUUID();
+
+  // 세션 만료 시간: 24시간 후
+  const sessionExpiry = Date.now() + 24 * 60 * 60 * 1000;
+
+  await updateDoc(docRef, {
+    sessionToken,
+    sessionExpiry,
+    updatedAt: Timestamp.now(),
+  });
+
+  return sessionToken;
+}
+
+/**
+ * 세션 토큰으로 참가자 조회 및 검증
+ *
+ * @param sessionToken - 세션 토큰
+ * @returns 유효한 참가자 정보 또는 null
+ */
+export async function getParticipantBySessionToken(
+  sessionToken: string
+): Promise<Participant | null> {
+  const db = getDb();
+  const q = query(
+    collection(db, COLLECTIONS.PARTICIPANTS),
+    where('sessionToken', '==', sessionToken)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return null;
+  }
+
+  const doc = querySnapshot.docs[0];
+  const participant = {
+    id: doc.id,
+    ...doc.data(),
+  } as Participant;
+
+  // 세션 만료 확인
+  if (participant.sessionExpiry && participant.sessionExpiry < Date.now()) {
+    // 만료된 세션 토큰 제거
+    await clearSessionToken(participant.id);
+    return null;
+  }
+
+  return participant;
+}
+
+/**
+ * 세션 토큰 제거 (로그아웃)
+ *
+ * @param participantId - 참가자 ID
+ */
+export async function clearSessionToken(participantId: string): Promise<void> {
+  const db = getDb();
+  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
+
+  await updateDoc(docRef, {
+    sessionToken: undefined,
+    sessionExpiry: undefined,
+    updatedAt: Timestamp.now(),
+  });
+}

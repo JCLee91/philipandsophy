@@ -9,8 +9,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const scrollToBottom = (selectorOrRef?: string | RefObject<HTMLElement>, delay = 100) => {
-  setTimeout(() => {
+export const scrollToBottom = (
+  selectorOrRef?: string | RefObject<HTMLElement>,
+  options?: { behavior?: ScrollBehavior; delay?: number }
+) => {
+  const { behavior = 'smooth', delay = 0 } = options || {};
+
+  const doScroll = () => {
     let element: HTMLElement | null = null;
 
     if (!selectorOrRef) {
@@ -21,8 +26,19 @@ export const scrollToBottom = (selectorOrRef?: string | RefObject<HTMLElement>, 
       element = selectorOrRef.current;
     }
 
-    if (element) element.scrollTop = element.scrollHeight;
-  }, delay);
+    if (element) {
+      element.scrollTo({
+        top: element.scrollHeight,
+        behavior,
+      });
+    }
+  };
+
+  if (delay > 0) {
+    setTimeout(doScroll, delay);
+  } else {
+    doScroll();
+  }
 };
 
 /**

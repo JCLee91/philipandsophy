@@ -16,13 +16,10 @@
     white-space: nowrap;
 }
 
-html,
 body {
     font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
     background: #000;
     overflow-x: hidden;
-    margin: 0;
-    padding: 0;
 }
 
 /* 디자인 토큰: 글래스모피즘 시스템 */
@@ -164,6 +161,7 @@ body {
 .container {
     max-width: 550px;
     margin: 0 auto;
+    padding: 0;
 }
 
 .main-image {
@@ -171,6 +169,47 @@ body {
     height: auto;
     display: block;
     margin-bottom: 80px;
+}
+
+/* 툴팁 */
+.tooltip-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    margin-bottom: 0;
+}
+
+.tooltip-box {
+    background: #45A1FD;
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tooltip-text {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+    line-height: 18px;
+    letter-spacing: -0.2px;
+    color: white;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.tooltip-arrow {
+    width: 12px;
+    height: 6px;
+    position: relative;
+}
+
+.tooltip-arrow img {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 /* CTA 섹션 */
@@ -181,6 +220,8 @@ body {
     right: 0;
     z-index: 1000;
     display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
 }
 

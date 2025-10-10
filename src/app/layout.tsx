@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     default: '필립앤소피 | 승인제 독서소셜클럽',
     template: '%s | 필립앤소피',
   },
-  description: '깊이 있는 대화가 설레는 만남으로',
+  description: '25-40세 직장인 전문직을 위한 승인제 독서소셜클럽 필립앤소피. 깊이 있는 대화가 설레는 만남으로. 서울 네트워킹 독서모임에서 품격 있는 인연을 만나보세요.',
   metadataBase: new URL('https://www.philipandsophy.kr'),
   formatDetection: {
     telephone: false,
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     locale: 'ko_KR',
     siteName: 'Philip & Sophy',
     title: '필립앤소피 | 승인제 독서소셜클럽',
-    description: '깊이 있는 대화가 설레는 만남으로',
+    description: '25-40세 직장인 전문직을 위한 승인제 독서소셜클럽 필립앤소피. 깊이 있는 대화가 설레는 만남으로. 서울 네트워킹 독서모임에서 품격 있는 인연을 만나보세요.',
     url: 'https://www.philipandsophy.kr/',
     images: [
       {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: '필립앤소피 | 승인제 독서소셜클럽',
-    description: '깊이 있는 대화가 설레는 만남으로',
+    description: '25-40세 직장인 전문직을 위한 승인제 독서소셜클럽 필립앤소피. 깊이 있는 대화가 설레는 만남으로. 서울 네트워킹 독서모임에서 품격 있는 인연을 만나보세요.',
     images: ['/image/Thumbnail_V1_1080_1080.webp'],
   },
   alternates: {

@@ -93,6 +93,7 @@
   * {
     @apply border-border;
   }
+
   html,
   body {
     @apply bg-background text-foreground;
@@ -104,7 +105,11 @@
     padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    scrollbar-gutter: stable;
+  }
+
+  /* 페이지 전환 시 높이 일관성 유지 */
+  body {
+    min-height: 100vh;
   }
   
   /* Pretendard 폰트를 모든 요소에 강제 적용 */
@@ -148,6 +153,19 @@
 
   .ease-out {
     transition-timing-function: var(--ease-out);
+  }
+
+  /* 스크린 리더 전용 텍스트 (접근성) */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 }
 

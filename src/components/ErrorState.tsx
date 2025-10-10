@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import UnifiedButton from '@/components/UnifiedButton';
 
 interface ErrorStateProps {
   title?: string;
@@ -23,14 +23,14 @@ export default function ErrorState({
       <p className="text-muted-foreground mb-6 text-center">{message}</p>
       <div className="flex gap-3">
         {onRetry && (
-          <Button onClick={onRetry} variant="default">
+          <UnifiedButton onClick={onRetry}>
             다시 시도
-          </Button>
+          </UnifiedButton>
         )}
         {onBack && (
-          <Button onClick={onBack} variant="outline">
+          <UnifiedButton onClick={onBack} variant="outline">
             돌아가기
-          </Button>
+          </UnifiedButton>
         )}
       </div>
     </div>

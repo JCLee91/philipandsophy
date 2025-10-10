@@ -75,7 +75,7 @@ NAVER_CLIENT_ID=your_naver_client_id
 NAVER_CLIENT_SECRET=your_naver_client_secret
 ```
 
-Firebase 설정 방법은 [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)를 참고하세요.
+Firebase 설정 방법은 [Firebase 설정 가이드](./docs/setup/firebase.md)를 참고하세요.
 
 **네이버 책 검색 API 설정**:
 1. [네이버 개발자 센터](https://developers.naver.com/apps/#/register)에서 애플리케이션 등록
@@ -115,12 +115,25 @@ npm run seed:admin       # 관리자 참가자
 
 ## ✨ 주요 기능
 
+### 독서 인증 자동 승인 시스템
+
+**모든 독서 인증이 제출 즉시 자동으로 승인됩니다.**
+
+- ✅ **즉시 프로필북 반영**: Firebase onSnapshot 실시간 구독으로 제출 즉시 프로필북에 표시
+- ✅ **승인 대기 없음**: `status: 'approved'`로 자동 저장 (관리자 승인 불필요)
+- ✅ **실시간 동기화**: React Query 대신 Firebase 실시간 구독으로 즉각 업데이트
+
+**아키텍처 특징**:
+- **Firebase Realtime Subscriptions**: `onSnapshot()`으로 제출물 실시간 감지
+- **React Query 의존성 감소**: 프로필북에서 `@tanstack/react-query` 미사용
+- **즉각적인 UI 업데이트**: 네트워크 왕복 없이 로컬 상태 즉시 변경
+
 ### 책 메타데이터 자동 저장 시스템
 
 참가자가 독서 인증을 제출할 때 선택한 책 정보를 자동으로 저장하고, 다음 날 같은 책으로 계속 읽을 경우 자동으로 불러오는 기능입니다.
 
 **주요 특징**:
-- 책 제목, 저자, 표지 이미지 URL을 Firestore에 자동 저장
+- 책 제목, 저자, 표지 이미지 URL, 소개글을 Firestore에 자동 저장
 - 다음 날 독서 인증 다이얼로그에서 이전 책 정보 자동 표시
 - 책 정보 카드 UI로 시각적 표현 (표지 이미지 + 제목 + 저자 + 출판사)
 - 다른 책으로 변경 시 X 버튼으로 간편하게 초기화
@@ -133,6 +146,12 @@ type Participant = {
   currentBookTitle?: string;           // 현재 읽고 있는 책 제목
   currentBookAuthor?: string;          // 현재 읽고 있는 책 저자
   currentBookCoverUrl?: string;        // 현재 읽고 있는 책 표지 URL
+}
+
+type ReadingSubmission = {
+  // 기존 필드...
+  bookDescription?: string;            // 책 소개글 (네이버 API에서 자동 저장)
+  status: 'approved';                  // 항상 자동 승인 (deprecated 필드, DB 호환성 유지)
 }
 ```
 
@@ -152,7 +171,8 @@ type Participant = {
 - **Pretendard Variable** - 한글 웹폰트
 
 ### 상태 관리 & 데이터
-- **@tanstack/react-query v5** - 서버 상태 관리
+- **@tanstack/react-query v5** - 서버 상태 관리 (채팅, 공지사항 등)
+- **Firebase Realtime Database** - 독서 인증 실시간 구독 (프로필북)
 - **Zustand v4** - 전역 상태 관리
 - **React Hook Form v7** + **Zod v3** - 폼 처리 및 검증
 - **Firebase v12.3.0** - Firestore + Storage 백엔드
@@ -229,12 +249,22 @@ firebase deploy          # Firebase 배포
 
 ## 📚 프로젝트 문서
 
+### 🚀 시작하기
 - **[CLAUDE.md](./CLAUDE.md)** - 프로젝트 개발 가이드 (필독)
-- **[FIREBASE_SETUP.md](./FIREBASE_SETUP.md)** - Firebase 초기 설정 가이드
-- **[ANIMATION_DESIGN_GUIDE.md](./ANIMATION_DESIGN_GUIDE.md)** - 애니메이션 디자인 가이드
-- **[docs/prd.md](./docs/prd.md)** - 제품 요구사항 문서
-- **[docs/design-guide.md](./docs/design-guide.md)** - 디자인 가이드
-- **[docs/ia.md](./docs/ia.md)** - 정보 구조
+- **[Firebase 설정](./docs/setup/firebase.md)** - Firebase 초기 설정 가이드
+- **[Admin SDK 설정](./docs/setup/admin-sdk.md)** - Firebase Admin SDK 설정
+
+### ⚡ 성능 최적화
+- **[성능 최적화 가이드](./docs/optimization/performance.md)** - Level 1-3 최적화 전략 (캐시, Prefetch, Code Splitting)
+- **[데이터베이스 최적화](./docs/optimization/database.md)** - Firebase/Firestore 쿼리 최적화 및 구독 관리
+
+### 🎨 디자인 시스템
+- **[UI 디자인 가이드](./docs/design/ui-guide.md)** - 디자인 시스템 및 컴포넌트 가이드
+- **[애니메이션 가이드](./docs/design/animation.md)** - 애니메이션 및 트랜지션 패턴
+
+### 🏗️ 아키텍처
+- **[제품 요구사항 문서 (PRD)](./docs/architecture/prd.md)** - 프로젝트 기획 및 요구사항
+- **[정보 구조 (IA)](./docs/architecture/ia.md)** - 앱 구조 및 네비게이션
 
 ## 🔒 보안 주의사항
 

@@ -100,11 +100,12 @@ service cloud.firestore {
       // 생성: 필수 필드 검증
       allow create: if request.resource.data.participantId is string &&
                       request.resource.data.participationCode is string &&
+                      request.resource.data.bookTitle is string &&
                       request.resource.data.bookImageUrl is string &&
                       request.resource.data.review is string &&
                       request.resource.data.dailyQuestion is string &&
                       request.resource.data.dailyAnswer is string &&
-                      request.resource.data.status == 'pending';
+                      request.resource.data.status == 'approved';
       
       // 수정: 제한적 허용 (status 변경은 관리자만 권장)
       // TODO: 본인 작성 글만 수정 가능하도록 제한

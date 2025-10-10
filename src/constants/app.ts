@@ -4,4 +4,11 @@ export const APP_CONSTANTS = {
   SCROLL_DELAY: 100,
   STORAGE_KEY_PREFIX: 'notices_',
   DEFAULT_PROFILE_IMAGE: '/image/default-profile.svg',
+
+  // Date & Time
+  DATE_FORMAT: 'yyyy-MM-dd' as const,
+  MIDNIGHT_CHECK_INTERVAL: 60000, // 1분 (밀리초)
+
+  // LocalStorage Keys
+  STORAGE_KEY_COLLAPSED_NOTICES: 'pns-collapsed-notices',
 } as const;

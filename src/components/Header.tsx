@@ -1,7 +1,8 @@
 'use client';
 
-import { Users, PenSquare, Mail } from 'lucide-react';
+import { Users, PenSquare, Mail, LogOut } from 'lucide-react';
 import { useTotalUnreadCount } from '@/hooks/use-messages';
+import { useSession } from '@/hooks/use-session';
 
 interface HeaderProps {
   onParticipantsClick?: () => void;
@@ -19,6 +20,7 @@ export default function Header({
   currentUserId
 }: HeaderProps) {
   const { data: unreadCount = 0 } = useTotalUnreadCount(currentUserId || '');
+  const { logout } = useSession();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -64,6 +66,14 @@ export default function Header({
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
+          </button>
+          <button
+            type="button"
+            onClick={logout}
+            className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+            aria-label="로그아웃"
+          >
+            <LogOut className="h-5 w-5" />
           </button>
         </div>
       </div>

@@ -14,14 +14,26 @@ import {
   Timestamp,
   QueryConstraint,
   onSnapshot,
+  QuerySnapshot,
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { getDb } from './client';
 import { ReadingSubmission, COLLECTIONS } from '@/types/database';
+import { logger } from '@/lib/logger';
 
 /**
  * Reading Submission CRUD Operations
  */
+
+/**
+ * Firestore QuerySnapshot을 ReadingSubmission 배열로 변환
+ */
+function mapToSubmissions(querySnapshot: QuerySnapshot): ReadingSubmission[] {
+  return querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as ReadingSubmission[];
+}
 
 /**
  * 독서 인증 제출
@@ -77,11 +89,7 @@ export async function getSubmissionsByParticipant(
   );
 
   const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as ReadingSubmission[];
+  return mapToSubmissions(querySnapshot);
 }
 
 /**
@@ -98,11 +106,7 @@ export async function getSubmissionsByCode(
   );
 
   const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as ReadingSubmission[];
+  return mapToSubmissions(querySnapshot);
 }
 
 /**
@@ -116,11 +120,7 @@ export async function getAllSubmissions(): Promise<ReadingSubmission[]> {
   );
 
   const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as ReadingSubmission[];
+  return mapToSubmissions(querySnapshot);
 }
 
 /**
@@ -137,11 +137,7 @@ export async function getSubmissionsByStatus(
   );
 
   const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as ReadingSubmission[];
+  return mapToSubmissions(querySnapshot);
 }
 
 /**
@@ -160,23 +156,6 @@ export async function updateSubmission(
   });
 }
 
-/**
- * 제출물 승인 상태 업데이트
- */
-export async function updateSubmissionStatus(
-  id: string,
-  status: 'pending' | 'approved' | 'rejected',
-  reviewNote?: string
-): Promise<void> {
-  const db = getDb();
-  const docRef = doc(db, COLLECTIONS.READING_SUBMISSIONS, id);
-
-  await updateDoc(docRef, {
-    status,
-    reviewNote,
-    updatedAt: Timestamp.now(),
-  });
-}
 
 /**
  * 제출물 삭제
@@ -197,57 +176,76 @@ export async function searchSubmissions(
   const q = query(collection(db, COLLECTIONS.READING_SUBMISSIONS), ...constraints);
 
   const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as ReadingSubmission[];
+  return mapToSubmissions(querySnapshot);
 }
 
 /**
- * 참가자별 승인된 제출물만 조회 (프로필북용)
+ * 참가자별 제출물 실시간 구독 (프로필북용)
+ * @param participantId - 참가자 ID
+ * @param callback - 제출물 배열을 받는 콜백 함수
+ * @returns unsubscribe 함수
  */
-export async function getApprovedSubmissionsByParticipant(
-  participantId: string
-): Promise<ReadingSubmission[]> {
+export function subscribeParticipantSubmissions(
+  participantId: string,
+  callback: (submissions: ReadingSubmission[]) => void
+): () => void {
   const db = getDb();
+
   const q = query(
     collection(db, COLLECTIONS.READING_SUBMISSIONS),
     where('participantId', '==', participantId),
-    where('status', '==', 'approved'),
     orderBy('submittedAt', 'desc')
   );
 
-  const querySnapshot = await getDocs(q);
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const submissions = mapToSubmissions(snapshot);
+      callback(submissions);
+    },
+    (error) => {
+      logger.error('Firebase 실시간 구독 에러:', error);
+      callback([]); // 에러 시 빈 배열
+    }
+  );
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as ReadingSubmission[];
+  return unsubscribe;
 }
 
 /**
  * 오늘 인증한 참가자 실시간 구독
+ * @param callback - 참가자 ID Set을 받는 콜백 함수
+ * @param targetDate - 조회할 날짜 (yyyy-MM-dd 형식), 필수
  */
 export function subscribeTodayVerified(
-  callback: (participantIds: Set<string>) => void
+  callback: (participantIds: Set<string>) => void,
+  targetDate: string
 ): () => void {
   const db = getDb();
-  const today = format(new Date(), 'yyyy-MM-dd');
 
   const q = query(
     collection(db, COLLECTIONS.READING_SUBMISSIONS),
-    where('submissionDate', '==', today),
+    where('submissionDate', '==', targetDate),
     where('status', 'in', ['pending', 'approved'])
   );
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const participantIds = new Set<string>();
-    snapshot.forEach((doc) => {
-      participantIds.add(doc.data().participantId);
-    });
-    callback(participantIds);
-  });
+  // 에러 핸들러 포함한 실시간 구독
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const participantIds = new Set<string>();
+      snapshot.forEach((doc) => {
+        participantIds.add(doc.data().participantId);
+      });
+      callback(participantIds);
+    },
+    (error) => {
+      // Firebase 에러 처리 (네트워크, 권한 등)
+      logger.error('Firebase 실시간 구독 에러:', error);
+      // 에러 발생 시 빈 Set 반환 (fallback)
+      callback(new Set());
+    }
+  );
 
   return unsubscribe;
 }

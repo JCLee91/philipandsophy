@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,12 +9,23 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import UnifiedButton from '@/components/UnifiedButton';
 import { useParticipantByPhone } from '@/hooks/use-participants';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, ChangeEvent, KeyboardEvent, ClipboardEvent } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { getCohortById, getParticipantsByCohort, getNoticesByCohort, createSessionToken } from '@/lib/firebase';
+import { cohortKeys } from '@/hooks/use-cohorts';
+import { PARTICIPANT_KEYS } from '@/hooks/use-participants';
+import { NOTICE_KEYS } from '@/hooks/use-notices';
+import { appRoutes } from '@/lib/navigation';
+import { logger } from '@/lib/logger';
+import { useSession } from '@/hooks/use-session';
 
 export default function CodeInputCard() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { setSessionToken } = useSession();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [searchPhone, setSearchPhone] = useState('');
   const [error, setError] = useState('');
@@ -80,14 +90,51 @@ export default function CodeInputCard() {
 
   // Handle Firebase query result
   useEffect(() => {
-    if (searchPhone && !isLoading && participant === null) {
+    if (searchPhone && !isLoading && !participant) {
       setError('등록되지 않은 번호입니다. 다시 확인해주세요.');
       setSearchPhone('');
       setIsSubmitting(false);
     } else if (searchPhone && !isLoading && participant) {
-      router.push(`/app/chat?cohort=${participant.cohortId}&userId=${participant.id}`);
+      // 로그인 성공: 세션 토큰 생성 및 저장
+      const loginUser = async () => {
+        const cohortId = participant.cohortId;
+
+        try {
+          // 1. Firebase에 세션 토큰 생성 및 저장
+          const sessionToken = await createSessionToken(participant.id);
+
+          // 2. sessionStorage에 토큰 저장
+          setSessionToken(sessionToken);
+
+          // 3. Prefetch strategy: 채팅 페이지 진입 전 필요 데이터 미리 로드
+          // Prefetch는 best-effort - 실패해도 페이지는 정상 로드됨
+          await Promise.all([
+            queryClient.prefetchQuery({
+              queryKey: cohortKeys.detail(cohortId),
+              queryFn: () => getCohortById(cohortId),
+            }),
+            queryClient.prefetchQuery({
+              queryKey: PARTICIPANT_KEYS.byCohort(cohortId),
+              queryFn: () => getParticipantsByCohort(cohortId),
+            }),
+            queryClient.prefetchQuery({
+              queryKey: NOTICE_KEYS.byCohort(cohortId),
+              queryFn: () => getNoticesByCohort(cohortId),
+            }),
+          ]);
+        } catch (error) {
+          // Prefetch 실패는 치명적이지 않음 - React Query가 페이지에서 자동 fetch
+          logger.warn('Prefetch failed, continuing to page', error);
+        } finally {
+          // 4. 페이지 이동 (URL에서 userId 제거)
+          // router.push 대신 router.replace 사용 → 브라우저 히스토리에 남지 않음
+          router.replace(appRoutes.chat(cohortId));
+        }
+      };
+
+      loginUser();
     }
-  }, [searchPhone, isLoading, participant, router]);
+  }, [searchPhone, isLoading, participant, router, queryClient, setSessionToken]);
 
   const isComplete = phoneNumber.replace(/-/g, '').length === 11;
 
@@ -123,14 +170,15 @@ export default function CodeInputCard() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button
+        <UnifiedButton
           onClick={() => handleSubmit()}
-          className="w-full"
-          size="lg"
-          disabled={!isComplete || isSubmitting || isLoading}
+          disabled={!isComplete}
+          loading={isSubmitting || isLoading}
+          loadingText="확인 중..."
+          fullWidth
         >
-          {isSubmitting || isLoading ? '확인 중...' : '입장하기'}
-        </Button>
+          입장하기
+        </UnifiedButton>
       </CardFooter>
     </Card>
   );

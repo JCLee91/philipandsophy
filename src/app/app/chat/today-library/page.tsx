@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import PageTransition from '@/components/PageTransition';
@@ -11,8 +11,9 @@ import EllipseShadow from '@/components/EllipseShadow';
 import FooterActions from '@/components/FooterActions';
 import BlurDivider from '@/components/BlurDivider';
 import { useCohort } from '@/hooks/use-cohorts';
-import { useParticipant } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
+import { useToast } from '@/hooks/use-toast';
+import { useSession } from '@/hooks/use-session';
 import { format } from 'date-fns';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -21,6 +22,8 @@ import { cn } from '@/lib/utils';
 import type { Participant } from '@/types/database';
 import { SHADOW_OFFSETS, SPACING } from '@/constants/today-library';
 import { APP_CONSTANTS } from '@/constants/app';
+import { getTodayString } from '@/lib/date-utils';
+import { appRoutes } from '@/lib/navigation';
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
@@ -28,14 +31,17 @@ function TodayLibraryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
-  const currentUserId = searchParams.get('userId');
+
+  // 세션 기반 인증 (URL에서 userId 제거)
+  const { currentUser, isLoading: sessionLoading } = useSession();
+  const currentUserId = currentUser?.id;
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
-  const { data: currentUser, isLoading: currentUserLoading } = useParticipant(currentUserId || undefined);
   const { data: verifiedIds } = useVerifiedToday();
+  const { toast } = useToast();
 
   // 오늘 날짜
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const today = getTodayString();
 
   // 오늘의 추천 참가자 (실제 데이터 우선, 없으면 디자인 확인용 fallback)
   const todayFeatured = cohort?.dailyFeaturedParticipants?.[today] || {
@@ -69,8 +75,22 @@ function TodayLibraryContent() {
     enabled: allFeaturedIds.length > 0,
   });
 
+  // 세션 및 cohort 검증
+  useEffect(() => {
+    if (!sessionLoading) {
+      if (!currentUser) {
+        router.replace('/app');
+        return;
+      }
+      if (!cohortId) {
+        router.replace('/app');
+        return;
+      }
+    }
+  }, [sessionLoading, currentUser, cohortId, router]);
+
   // 로딩 상태 - 스켈레톤 UI 표시
-  if (cohortLoading || currentUserLoading || participantsLoading) {
+  if (sessionLoading || cohortLoading || participantsLoading) {
     return (
       <PageTransition>
         <div className="flex h-screen flex-col overflow-hidden">
@@ -124,23 +144,26 @@ function TodayLibraryContent() {
     );
   }
 
-  // 데이터 확인
-  if (!cohortId || !currentUserId || !cohort || !currentUser) {
-    router.push('/');
+  // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리됨)
+  if (!currentUser || !cohort || !cohortId) {
     return null;
   }
 
   // 오늘 인증 여부
-  const isVerifiedToday = verifiedIds?.has(currentUserId);
+  const isVerifiedToday = verifiedIds?.has(currentUserId || '');
   const isAdmin = currentUser?.isAdmin === true;
 
   // 프로필북 클릭 핸들러 (인증 체크 포함)
   const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
     if (!isAdmin && !isVerifiedToday) {
-      // 미인증 시 인라인 메시지가 표시되어 있으므로 클릭 방지만 수행
+      // 미인증 시 Toast 알림 표시
+      toast({
+        title: '프로필 잠김 🔒',
+        description: '오늘의 독서를 인증하면 프로필을 확인할 수 있어요',
+      });
       return;
     }
-    router.push(`/app/profile/${participantId}?cohort=${cohortId}&userId=${currentUserId}&theme=${theme}`);
+    router.push(appRoutes.profile(participantId, cohortId, theme));
   };
 
   // 추천 참가자가 없을 때
@@ -177,7 +200,7 @@ function TodayLibraryContent() {
                 {/* CTA Button */}
                 <button
                   type="button"
-                  onClick={() => router.push(`/app/profile/${currentUserId}?cohort=${cohortId}&userId=${currentUserId}`)}
+                  onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
                   className="bg-black text-white rounded-lg px-6 py-3 font-semibold text-base transition-colors hover:bg-gray-800 active:bg-gray-900"
                 >
                   내 프로필 북 보기
@@ -235,13 +258,14 @@ function TodayLibraryContent() {
                 <div className="h-[140px] overflow-hidden relative w-full">
                   <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-1" />
                   <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                    {similarParticipants.map((participant) => (
+                    {similarParticipants.map((participant, index) => (
                       <BookmarkCard
                         key={`similar-${participant.id}`}
                         profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
                         name={participant.name}
                         theme="blue"
                         isLocked={isLocked}
+                        lockedImage={`/image/today-library/locked-profile-${index + 1}.png`}
                         onClick={() => handleProfileClickWithAuth(participant.id, 'similar')}
                       />
                     ))}
@@ -254,13 +278,14 @@ function TodayLibraryContent() {
                 <div className="h-[160px] overflow-hidden relative w-full">
                   <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-2" />
                   <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                    {oppositeParticipants.map((participant) => (
+                    {oppositeParticipants.map((participant, index) => (
                       <BookmarkCard
                         key={`opposite-${participant.id}`}
                         profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
                         name={participant.name}
                         theme="yellow"
                         isLocked={isLocked}
+                        lockedImage={`/image/today-library/locked-profile-${index + 3}.png`}
                         onClick={() => handleProfileClickWithAuth(participant.id, 'opposite')}
                       />
                     ))}
@@ -276,7 +301,7 @@ function TodayLibraryContent() {
 
         <FooterActions
           cohortId={cohortId}
-          currentUserId={currentUserId}
+          currentUserId={currentUserId || ''}
           isLocked={isLocked}
         />
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import UnifiedButton from '@/components/UnifiedButton';
 import type { Notice } from '@/types/database';
 
 interface NoticeDeleteDialogProps {
@@ -27,15 +27,16 @@ export default function NoticeDeleteDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <UnifiedButton variant="outline" onClick={() => onOpenChange(false)} size="sm">
             취소
-          </Button>
-          <Button
+          </UnifiedButton>
+          <UnifiedButton
             variant="destructive"
             onClick={() => notice && onConfirm(notice)}
+            size="sm"
           >
             삭제
-          </Button>
+          </UnifiedButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

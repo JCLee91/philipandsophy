@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Page',
-  description: '',
+  title: '필립앤소피 | 승인제 독서소셜클럽',
+  description: '깊이 있는 대화가 설레는 만남으로',
   robots: {
     index: false,
     follow: false,

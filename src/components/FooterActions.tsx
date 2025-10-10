@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import UnifiedButton from '@/components/UnifiedButton';
+import { appRoutes } from '@/lib/navigation';
 
 interface FooterActionsProps {
   cohortId: string;
@@ -23,37 +25,31 @@ export default function FooterActions({
           {isLocked ? (
             <>
               {/* Unauthenticated: 2 Buttons */}
-              <button
-                type="button"
-                onClick={() => router.push(`/app/profile/${currentUserId}?cohort=${cohortId}&userId=${currentUserId}`)}
-                className="bg-white border border-gray-200 rounded-lg px-0 py-4 transition-colors hover:bg-gray-50 flex-1"
+              <UnifiedButton
+                variant="secondary"
+                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId, currentUserId))}
+                className="flex-1"
               >
-                <span className="font-bold text-body-base text-center text-black whitespace-nowrap">
-                  내 프로필 북 보기
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push(`/app/chat?cohort=${cohortId}&userId=${currentUserId}`)}
-                className="bg-black rounded-lg px-0 py-4 transition-colors hover:bg-gray-800 flex-1"
+                내 프로필 북 보기
+              </UnifiedButton>
+              <UnifiedButton
+                variant="primary"
+                onClick={() => router.push(appRoutes.chat(cohortId, currentUserId))}
+                className="flex-1"
               >
-                <span className="font-bold text-body-base text-center text-white whitespace-nowrap">
-                  독서 인증하기
-                </span>
-              </button>
+                독서 인증하기
+              </UnifiedButton>
             </>
           ) : (
             <>
               {/* Authenticated: 1 Button */}
-              <button
-                type="button"
-                onClick={() => router.push(`/app/profile/${currentUserId}?cohort=${cohortId}&userId=${currentUserId}`)}
-                className="bg-black rounded-lg px-0 py-4 transition-colors hover:bg-gray-800 flex-1"
+              <UnifiedButton
+                variant="primary"
+                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId, currentUserId))}
+                className="flex-1"
               >
-                <span className="font-bold text-body-base text-center text-white whitespace-nowrap">
-                  내 프로필 북 보기
-                </span>
-              </button>
+                내 프로필 북 보기
+              </UnifiedButton>
             </>
           )}
         </div>

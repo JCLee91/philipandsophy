@@ -1,5 +1,7 @@
-/* 기본 설정 */
-* {
+/* 랜딩 페이지 전용 스타일 - 다른 페이지에 영향 없도록 .landing-page로 스코프 제한 */
+
+/* 기본 설정 - 랜딩 페이지에만 적용 */
+.landing-page * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -16,7 +18,7 @@
     white-space: nowrap;
 }
 
-body {
+.landing-page {
     font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
     background: #000;
     overflow-x: hidden;
@@ -157,22 +159,22 @@ body {
     .legal-page h2 { font-size: 18px; }
 }
 
-/* 레이아웃 */
-.container {
+/* 레이아웃 - 랜딩 페이지에만 적용 */
+.landing-page .container {
     max-width: 550px;
     margin: 0 auto;
     padding: 0;
 }
 
-.main-image {
+.landing-page .main-image {
     width: 100%;
     height: auto;
     display: block;
     margin-bottom: 80px;
 }
 
-/* 툴팁 */
-.tooltip-container {
+/* 툴팁 - 랜딩 페이지에만 적용 */
+.landing-page .tooltip-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -180,7 +182,7 @@ body {
     margin-bottom: 2px;
 }
 
-.tooltip-box {
+.landing-page .tooltip-box {
     background: rgba(0, 0, 0, 0.9);
     border-radius: var(--radius-sm);
     padding: 8px 10px;
@@ -190,7 +192,7 @@ body {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
-.tooltip-text {
+.landing-page .tooltip-text {
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
     font-size: 14px;
     font-weight: var(--font-weight-medium);
@@ -201,7 +203,7 @@ body {
     white-space: nowrap;
 }
 
-.tooltip-arrow {
+.landing-page .tooltip-arrow {
     width: 0;
     height: 0;
     border-left: 6px solid transparent;
@@ -210,8 +212,8 @@ body {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* CTA 섹션 */
-.cta-section {
+/* CTA 섹션 - 랜딩 페이지에만 적용 */
+.landing-page .cta-section {
     position: fixed;
     bottom: 40px;
     left: 0;
@@ -223,8 +225,8 @@ body {
     justify-content: center;
 }
 
-/* CTA 버튼 - 글래스모피즘 */
-.cta-button {
+/* CTA 버튼 - 글래스모피즘 (랜딩 페이지 전용) */
+.landing-page .cta-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -255,13 +257,13 @@ body {
     cursor: pointer;
 }
 
-.cta-text {
+.landing-page .cta-text {
     position: relative;
     z-index: 2;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.cta-arrow {
+.landing-page .cta-arrow {
     position: relative;
     z-index: 2;
     display: flex;
@@ -277,7 +279,7 @@ body {
 }
 
 /* 반짝이는 효과 */
-.cta-button::before {
+.landing-page .cta-button::before {
     content: '';
     position: absolute;
     top: 0;
@@ -293,30 +295,30 @@ body {
 }
 
 /* 호버 효과 */
-.cta-button:hover {
+.landing-page .cta-button:hover {
     transform: translateY(-3px) scale(1.02);
     background: var(--glass-bg-hover);
     box-shadow: var(--glass-shadow-hover), inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.cta-button:hover::before {
+.landing-page .cta-button:hover::before {
     left: 100%;
 }
 
-.cta-button:hover .cta-arrow {
+.landing-page .cta-button:hover .cta-arrow {
     background: rgba(255, 255, 255, 0.2);
     transform: translateX(4px);
 }
 
 /* 클릭 효과 */
-.cta-button:active {
+.landing-page .cta-button:active {
     transform: translateY(-1px) scale(0.98);
     transition: all 0.1s ease;
 }
 
-/* 푸터 영역 */
-.footer {
+/* 푸터 영역 - 랜딩 페이지에만 적용 */
+.landing-page .footer {
     background: var(--color-bg);
     color: var(--color-text);
     padding: 60px 0 180px;
@@ -325,7 +327,7 @@ body {
 }
 
 /* 푸터 장식 라인 그라데이션 */
-.footer::before {
+.landing-page .footer::before {
     content: '';
     position: absolute;
     top: 0;
@@ -338,7 +340,7 @@ body {
         transparent);
 }
 
-.footer-content {
+.landing-page .footer-content {
     max-width: 550px;
     margin: 0 auto;
     padding: 0 20px;
@@ -347,25 +349,25 @@ body {
     gap: 32px;
 }
 
-.footer-main {
+.landing-page .footer-main {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 32px;
 }
 
-.footer-left {
+.landing-page .footer-left {
     flex: 1;
 }
 
-.footer-header {
+.landing-page .footer-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 16px;
 }
 
-.footer-title {
+.landing-page .footer-title {
     font-size: 24px;
     font-weight: var(--font-weight-semibold);
     margin: 0;
@@ -376,11 +378,11 @@ body {
     line-height: 1.2;
 }
 
-.footer-info {
+.landing-page .footer-info {
     text-align: left;
 }
 
-.footer-info p {
+.landing-page .footer-info p {
     font-size: var(--font-size-sm);
     color: var(--color-text-dim);
     margin-bottom: 8px;
@@ -388,14 +390,14 @@ body {
 }
 
 /* SNS 버튼 */
-.footer-sns {
+.landing-page .footer-sns {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 12px;
 }
 
-.sns-button {
+.landing-page .sns-button {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -416,62 +418,62 @@ body {
     box-shadow: var(--glass-shadow-soft);
 }
 
-.kakao-button {
+.landing-page .kakao-button {
     color: #fff;
 }
 
-.kakao-button:hover {
+.landing-page .kakao-button:hover {
     background: rgba(254, 229, 0, 0.15);
     border-color: rgba(254, 229, 0, 0.3);
     transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(254, 229, 0, 0.2);
 }
 
-.instagram-button {
+.landing-page .instagram-button {
     color: #fff;
 }
 
-.instagram-button:hover {
+.landing-page .instagram-button:hover {
     background: linear-gradient(135deg, rgba(225, 48, 108, 0.2), rgba(193, 53, 132, 0.15));
     border-color: rgba(225, 48, 108, 0.3);
     transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(225, 48, 108, 0.25);
 }
 
-.sns-icon {
+.landing-page .sns-icon {
     width: 20px;
     height: 20px;
     border-radius: 4px;
 }
 
-.sns-button span {
+.landing-page .sns-button span {
     position: relative;
     z-index: 2;
 }
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
-    .footer {
+    .landing-page .footer {
         padding: 40px 0 160px;
         margin-top: 80px;
     }
-    
-    .footer-content {
+
+    .landing-page .footer-content {
         padding: 0 16px;
         gap: 24px;
     }
-    
-    .footer-main {
+
+    .landing-page .footer-main {
         flex-direction: column;
         gap: 16px;
         align-items: flex-start;
     }
-    
-    .footer-left {
+
+    .landing-page .footer-left {
         width: 100%;
     }
-    
-    .footer-header {
+
+    .landing-page .footer-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
@@ -479,33 +481,33 @@ body {
         margin-bottom: 16px;
     }
 
-    .footer-title {
+    .landing-page .footer-title {
         font-size: 20px;
         margin-bottom: 0;
         padding-top: 10px;
     }
-    
-    .footer-info p {
+
+    .landing-page .footer-info p {
         font-size: 13px;
     }
-    
-    .footer-sns {
+
+    .landing-page .footer-sns {
         align-self: auto;
     }
-    
-    .sns-button {
+
+    .landing-page .sns-button {
         padding: 10px 16px;
         font-size: 13px;
     }
-    
-    .sns-icon {
+
+    .landing-page .sns-icon {
         width: 18px;
         height: 18px;
     }
 }
 
 /* 푸터 하단 네비게이션 - 2025 프리미엄 디자인 */
-.footer-bottom {
+.landing-page .footer-bottom {
     margin-top: 48px;
     padding-top: 32px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -518,7 +520,7 @@ body {
     flex-wrap: wrap;
 }
 
-.footer-bottom::before {
+.landing-page .footer-bottom::before {
     content: '';
     position: absolute;
     top: 0;
@@ -532,7 +534,7 @@ body {
         transparent);
 }
 
-.footer-nav {
+.landing-page .footer-nav {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -540,7 +542,7 @@ body {
     justify-content: center;
 }
 
-.footer-nav-link {
+.landing-page .footer-nav-link {
     color: var(--color-text-dim);
     text-decoration: none;
     font-size: var(--font-size-sm);
@@ -558,7 +560,7 @@ body {
     border: 1px solid var(--glass-border-soft);
 }
 
-.footer-nav-link::before {
+.landing-page .footer-nav-link::before {
     content: '';
     position: absolute;
     top: 0;
@@ -573,7 +575,7 @@ body {
     z-index: 1;
 }
 
-.footer-nav-link:hover {
+.landing-page .footer-nav-link:hover {
     color: var(--color-text);
     background: var(--brand-ice-soft-2);
     border-color: rgba(98, 187, 255, 0.2);
@@ -583,28 +585,28 @@ body {
         0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
-.footer-nav-link:hover::before {
+.landing-page .footer-nav-link:hover::before {
     left: 100%;
 }
 
-.footer-nav-link:active {
+.landing-page .footer-nav-link:active {
     transform: translateY(0);
     transition: all 0.1s ease;
 }
 
-.footer-divider {
+.landing-page .footer-divider {
     color: rgba(255, 255, 255, 0.3);
     font-size: var(--font-size-sm);
     user-select: none;
     opacity: 0.6;
 }
 
-.footer-copyright {
+.landing-page .footer-copyright {
     flex-shrink: 0;
     white-space: nowrap;
 }
 
-.footer-copyright p {
+.landing-page .footer-copyright p {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
     margin: 0;
@@ -614,7 +616,7 @@ body {
 
 /* 반응형 - 모바일 최적화 */
 @media (max-width: 768px) {
-    .footer-bottom {
+    .landing-page .footer-bottom {
         margin-top: 32px;
         padding-top: 24px;
         flex-direction: column;
@@ -622,7 +624,7 @@ body {
         align-items: center;
     }
 
-    .footer-nav {
+    .landing-page .footer-nav {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -634,28 +636,28 @@ body {
         width: 100%;
     }
 
-    .footer-nav::-webkit-scrollbar {
+    .landing-page .footer-nav::-webkit-scrollbar {
         display: none;
     }
 
-    .footer-nav-link {
+    .landing-page .footer-nav-link {
         font-size: var(--font-size-xs);
         padding: 4px 8px;
         white-space: nowrap;
     }
 
-    .footer-divider {
+    .landing-page .footer-divider {
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
 
-    .footer-copyright {
+    .landing-page .footer-copyright {
         width: 100%;
         text-align: center;
         font-size: 10px;
     }
 
-    .footer-copyright p {
+    .landing-page .footer-copyright p {
         font-size: 10px;
     }
 }

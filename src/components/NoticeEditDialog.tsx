@@ -1,8 +1,8 @@
 'use client';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import UnifiedButton from '@/components/UnifiedButton';
 
 interface NoticeEditDialogProps {
   open: boolean;
@@ -35,12 +35,12 @@ export default function NoticeEditDialog({
           placeholder="공지 내용을 입력하세요..."
         />
         <DialogFooter className="gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <UnifiedButton variant="outline" onClick={() => onOpenChange(false)} size="sm">
             취소
-          </Button>
-          <Button onClick={onSave} disabled={!content.trim()}>
+          </UnifiedButton>
+          <UnifiedButton onClick={onSave} disabled={!content.trim()} size="sm">
             저장
-          </Button>
+          </UnifiedButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>
