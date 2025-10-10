@@ -40,7 +40,7 @@ export default function ProfileImageDialog({
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="sm:max-w-lg p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)]"
+        className="sm:max-w-lg p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)] min-h-[60vh] sm:min-h-[70vh]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogTitle className="sr-only">{participant.name} 프로필</DialogTitle>
@@ -48,12 +48,10 @@ export default function ProfileImageDialog({
           {participant.name}님의 프로필 이미지
         </DialogDescription>
         {participant.profileImage ? (
-          <div className="relative w-full overflow-hidden bg-muted/30">
-            {/* Skeleton loader - 이미지 로딩 중에 표시 */}
+          <div className="relative w-full h-full overflow-hidden bg-muted/30">
+            {/* Shimmer loader - 이미지 로딩 중에 표시 */}
             {!imageLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-full w-full animate-pulse bg-muted/50" />
-              </div>
+              <div className="absolute inset-0 shimmer" />
             )}
 
             <Image

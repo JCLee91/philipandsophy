@@ -52,6 +52,7 @@ const participantsData = [
   { id: 'admin', cohortId: '1', name: '운영자', phoneNumber: '01000000001', profileImage: '/pns-logo.webp', isAdmin: true },
   { id: 'admin2', cohortId: '1', name: '문준영', phoneNumber: '42633467921', profileImage: '/pns-logo.webp', isAdmin: true },
   { id: 'admin3', cohortId: '1', name: '김현지', phoneNumber: '42627615193', profileImage: '/pns-logo.webp', isAdmin: true },
+  { id: 'admin4', cohortId: '1', name: '관리자4', phoneNumber: '42624539284', profileImage: '/pns-logo.webp', isAdmin: true },
 ];
 
 const noticesData: any[] = [];
