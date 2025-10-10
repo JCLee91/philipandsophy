@@ -173,6 +173,9 @@ export default function DirectMessageDialog({
 
   // 관리자일 경우 "필립앤소피"로 표시
   const displayName = otherUser.isAdmin ? APP_CONSTANTS.ADMIN_NAME : otherUser.name;
+  const profileImageUrl = otherUser.isAdmin 
+    ? '/favicon.webp' 
+    : (otherUser.profileImageCircle || otherUser.profileImage);
 
   return (
     <>
@@ -181,7 +184,7 @@ export default function DirectMessageDialog({
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={otherUser.profileImageCircle || otherUser.profileImage} alt={displayName} />
+              <AvatarImage src={profileImageUrl} alt={displayName} />
               <AvatarFallback>
                 {otherUser.isAdmin ? 'P&S' : displayName[0]}
               </AvatarFallback>
