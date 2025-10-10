@@ -19,14 +19,14 @@ export default function NoticeDeleteDialog({
 }: NoticeDeleteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>공지 삭제</DialogTitle>
           <DialogDescription>
             정말로 이 공지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-3 border-t pt-4">
+        <DialogFooter className="px-6 py-4 border-t gap-2">
           <UnifiedButton variant="outline" onClick={() => onOpenChange(false)} size="sm">
             취소
           </UnifiedButton>

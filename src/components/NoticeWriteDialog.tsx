@@ -38,14 +38,14 @@ export default function NoticeWriteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-3 p-4 sm:gap-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>공지 작성</DialogTitle>
           <DialogDescription>
             참가자들에게 전달할 공지사항을 작성하세요.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2">
+        <div className="px-6 py-4 space-y-3">
           <Textarea
             value={content}
             onChange={(e) => onContentChange(e.target.value)}
@@ -73,21 +73,19 @@ export default function NoticeWriteDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-2 border-t pt-3 sm:gap-3 sm:pt-4">
-          <div className="flex items-center gap-2 flex-1">
-            <label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-              />
-              <div className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md hover:bg-muted transition-colors duration-normal">
-                <Paperclip className="h-4 w-4" />
-                <span>이미지 첨부</span>
-              </div>
-            </label>
-          </div>
+        <DialogFooter className="px-6 py-4 border-t flex-row items-center gap-2">
+          <label className="flex-1">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            <div className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md hover:bg-muted transition-colors duration-normal cursor-pointer">
+              <Paperclip className="h-4 w-4" />
+              <span>이미지 첨부</span>
+            </div>
+          </label>
           <UnifiedButton variant="outline" onClick={handleClose} size="sm">
             취소
           </UnifiedButton>
