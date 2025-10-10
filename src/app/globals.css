@@ -114,9 +114,11 @@
   /* PWA 네이티브 앱 경험 최적화 */
   html {
     width: 100%;
-    height: 100%;
-    /* iOS Safe Area 대응 */
-    padding-top: env(safe-area-inset-top);
+    /* 최신 모범 사례: 최소 높이를 100% + safe-area-inset-top으로 설정 */
+    min-height: calc(100% + env(safe-area-inset-top));
+    /* iOS Safe Area 대응 - 모든 방향에 패딩 적용 */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
     /* Pull-to-refresh 방지 및 overscroll bounce 제거 */
     overscroll-behavior: none;
   }
@@ -129,7 +131,6 @@
       'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic',
       'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
     margin: 0;
-    padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -140,7 +141,7 @@
    * 웹앱에서는 layout.tsx에서 data-app="true" 속성으로 구분
    */
   body {
-    height: 100%;
+    /* height: 100% 제거 - Safe Area와 충돌 방지 */
     overflow-y: auto;
   }
 

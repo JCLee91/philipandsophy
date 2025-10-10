@@ -26,17 +26,17 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// 초기화할 사용자 참여 코드
-const USER_PARTICIPATION_CODE = '42633467921'; // user-junyoung
+// 초기화할 사용자 ID
+const USER_ID = 'user-junyoung';
 
 async function deleteUserSubmissions() {
   console.log('🗑️  Deleting reading submissions for user-junyoung...\n');
 
   try {
-    // participationCode로 모든 독서 인증 찾기
+    // participantId로 모든 독서 인증 찾기
     const submissionsSnapshot = await db
       .collection('reading_submissions')
-      .where('participationCode', '==', USER_PARTICIPATION_CODE)
+      .where('participantId', '==', USER_ID)
       .get();
 
     if (submissionsSnapshot.empty) {
@@ -69,7 +69,7 @@ async function verifyDeletion() {
 
   const remainingSnapshot = await db
     .collection('reading_submissions')
-    .where('participationCode', '==', USER_PARTICIPATION_CODE)
+    .where('participantId', '==', USER_ID)
     .get();
 
   console.log(`📊 Remaining submissions for user-junyoung: ${remainingSnapshot.size}\n`);
@@ -88,7 +88,7 @@ async function verifyDeletion() {
 async function main() {
   try {
     console.log('🚀 Starting user submissions reset...\n');
-    console.log(`👤 Target User: user-junyoung (${USER_PARTICIPATION_CODE})\n`);
+    console.log(`👤 Target User: ${USER_ID}\n`);
 
     await deleteUserSubmissions();
     await verifyDeletion();

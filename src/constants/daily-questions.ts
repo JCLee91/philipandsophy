@@ -17,9 +17,19 @@ const DAILY_QUESTIONS = [
 ];
 
 /**
- * Get a random daily question
+ * Get a daily question based on current date
+ * 같은 날짜에는 항상 같은 질문을 반환합니다.
  */
 export function getDailyQuestion(): string {
-  const randomIndex = Math.floor(Math.random() * DAILY_QUESTIONS.length);
-  return DAILY_QUESTIONS[randomIndex];
+  // 오늘 날짜를 YYYYMMDD 숫자로 변환 (예: 20251010)
+  const today = new Date();
+  const dateNumber =
+    today.getFullYear() * 10000 +
+    (today.getMonth() + 1) * 100 +
+    today.getDate();
+
+  // 날짜 기반으로 인덱스 결정 (같은 날짜 = 같은 인덱스)
+  const questionIndex = dateNumber % DAILY_QUESTIONS.length;
+
+  return DAILY_QUESTIONS[questionIndex];
 }
