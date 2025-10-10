@@ -182,7 +182,9 @@ export default function DirectMessageDialog({
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={otherUser.profileImageCircle || otherUser.profileImage} alt={displayName} />
-              <AvatarFallback>{displayName[0]}</AvatarFallback>
+              <AvatarFallback>
+                {otherUser.isAdmin ? 'P&S' : displayName[0]}
+              </AvatarFallback>
             </Avatar>
             <div>
               <div className="font-semibold">{displayName}</div>
