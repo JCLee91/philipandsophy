@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Shimmer Animation Utility - Modern Loading State */
+@layer utilities {
+  .shimmer {
+    @apply bg-gradient-to-r from-gray-200 via-white to-gray-200 bg-[length:200%_100%] animate-shimmer;
+    will-change: background-position;
+  }
+
+  /* Accessibility: Disable animation for users with motion sensitivity (WCAG 2.1) */
+  @media (prefers-reduced-motion: reduce) {
+    .shimmer {
+      animation: none;
+      background: theme('colors.gray.200') !important;
+      will-change: auto;
+    }
+  }
+}
+
 @layer base {
   :root {
     /* 필립앤소피 브랜드 컬러 팔레트 */
@@ -117,9 +134,18 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* body는 고정 높이, 스크롤 없음 (각 페이지가 100dvh 레이아웃 사용) */
+  /*
+   * 랜딩페이지: 기본 스크롤 허용
+   * 웹앱(/app): overflow: hidden으로 각 페이지가 100dvh 레이아웃 사용
+   * 웹앱에서는 layout.tsx에서 data-app="true" 속성으로 구분
+   */
   body {
     height: 100%;
+    overflow-y: auto;
+  }
+
+  /* 웹앱 페이지에서만 스크롤 제거 */
+  body[data-app="true"] {
     overflow: hidden;
   }
   

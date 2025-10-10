@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useRef, useCallback, useEffect, useState, lazy } from 'react';
+import { Suspense, useRef, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BookOpen } from 'lucide-react';
 import { logger } from '@/lib/logger';
@@ -16,20 +16,17 @@ import { useSession } from '@/hooks/use-session';
 import Header from '@/components/Header';
 import ParticipantsList from '@/components/ParticipantsList';
 import NoticeItem from '@/components/NoticeItem';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
 import { BookLibraryIcon } from '@/components/icons/BookLibraryIcon';
 import FooterActions from '@/components/FooterActions';
 import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
-
-// Lazy load dialog components (only loaded when needed)
-const DirectMessageDialog = lazy(() => import('@/components/DirectMessageDialog'));
-const ReadingSubmissionDialog = lazy(() => import('@/components/ReadingSubmissionDialog'));
-const ProfileImageDialog = lazy(() => import('@/components/ProfileImageDialog'));
-const NoticeWriteDialog = lazy(() => import('@/components/NoticeWriteDialog'));
-const NoticeEditDialog = lazy(() => import('@/components/NoticeEditDialog'));
-const NoticeDeleteDialog = lazy(() => import('@/components/NoticeDeleteDialog'));
+import DirectMessageDialog from '@/components/DirectMessageDialog';
+import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
+import ProfileImageDialog from '@/components/ProfileImageDialog';
+import NoticeWriteDialog from '@/components/NoticeWriteDialog';
+import NoticeEditDialog from '@/components/NoticeEditDialog';
+import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
 
 /**
  * Set에서 item을 토글 (추가/삭제)
@@ -290,29 +287,23 @@ function ChatPageContent() {
         onProfileClick={setSelectedParticipant}
         onProfileBookClick={handleProfileBookClick}
       />
-      <Suspense fallback={<LoadingSpinner />}>
-        <DirectMessageDialog
-          open={dmDialogOpen}
-          onOpenChange={setDmDialogOpen}
-          currentUserId={currentUserId || ''}
-          otherUser={dmTarget}
-        />
-      </Suspense>
-      <Suspense fallback={<LoadingSpinner />}>
-        <ReadingSubmissionDialog
-          open={submissionDialogOpen}
-          onOpenChange={setSubmissionDialogOpen}
-          participantId={currentUserId || ''}
-          participationCode={currentUserId || ''}
-        />
-      </Suspense>
-      <Suspense fallback={<LoadingSpinner />}>
-        <ProfileImageDialog
-          participant={selectedParticipant}
-          open={!!selectedParticipant}
-          onClose={() => setSelectedParticipant(null)}
-        />
-      </Suspense>
+      <DirectMessageDialog
+        open={dmDialogOpen}
+        onOpenChange={setDmDialogOpen}
+        currentUserId={currentUserId || ''}
+        otherUser={dmTarget}
+      />
+      <ReadingSubmissionDialog
+        open={submissionDialogOpen}
+        onOpenChange={setSubmissionDialogOpen}
+        participantId={currentUserId || ''}
+        participationCode={currentUserId || ''}
+      />
+      <ProfileImageDialog
+        participant={selectedParticipant}
+        open={!!selectedParticipant}
+        onClose={() => setSelectedParticipant(null)}
+      />
       <main className="flex-1 overflow-y-auto bg-background pb-20 relative">
         {/* 고정 공지 영역 - sticky로 스크롤 시 상단 고정 */}
         {pinnedNotices.length > 0 && (
@@ -400,35 +391,29 @@ function ChatPageContent() {
         </div>
       </FooterActions>
 
-      <Suspense fallback={<LoadingSpinner />}>
-        <NoticeWriteDialog
-          open={writeDialogOpen}
-          onOpenChange={setWriteDialogOpen}
-          content={newNoticeContent}
-          onContentChange={setNewNoticeContent}
-          onSubmit={handleWriteNotice}
-          uploading={uploadingNoticeImage}
-        />
-      </Suspense>
+      <NoticeWriteDialog
+        open={writeDialogOpen}
+        onOpenChange={setWriteDialogOpen}
+        content={newNoticeContent}
+        onContentChange={setNewNoticeContent}
+        onSubmit={handleWriteNotice}
+        uploading={uploadingNoticeImage}
+      />
 
-      <Suspense fallback={<LoadingSpinner />}>
-        <NoticeEditDialog
-          open={!!editingNotice}
-          onOpenChange={(open) => !open && setEditingNotice(null)}
-          content={editContent}
-          onContentChange={setEditContent}
-          onSave={handleSaveEdit}
-        />
-      </Suspense>
+      <NoticeEditDialog
+        open={!!editingNotice}
+        onOpenChange={(open) => !open && setEditingNotice(null)}
+        content={editContent}
+        onContentChange={setEditContent}
+        onSave={handleSaveEdit}
+      />
 
-      <Suspense fallback={<LoadingSpinner />}>
-        <NoticeDeleteDialog
-          open={!!deleteConfirm}
-          onOpenChange={(open) => !open && setDeleteConfirm(null)}
-          notice={deleteConfirm}
-          onConfirm={handleDeleteNotice}
-        />
-      </Suspense>
+      <NoticeDeleteDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        notice={deleteConfirm}
+        onConfirm={handleDeleteNotice}
+      />
       </div>
     </PageTransition>
   );
@@ -436,7 +421,7 @@ function ChatPageContent() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<HeaderSkeleton />}>
       <ChatPageContent />
     </Suspense>
   );

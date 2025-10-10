@@ -13,7 +13,7 @@ export default function BookmarkCardSkeleton({ theme }: BookmarkCardSkeletonProp
   };
 
   return (
-    <div className="relative animate-pulse" style={{ width: `${BOOKMARK_DIMENSIONS.CARD_WIDTH}px`, height: `${BOOKMARK_DIMENSIONS.CARD_HEIGHT}px` }}>
+    <div className="relative" style={{ width: `${BOOKMARK_DIMENSIONS.CARD_WIDTH}px`, height: `${BOOKMARK_DIMENSIONS.CARD_HEIGHT}px` }}>
       <div
         className={`absolute ${config.background} left-0 overflow-clip rounded-br-[12px] rounded-tr-[12px] top-[20px]`}
         style={{
@@ -33,17 +33,17 @@ export default function BookmarkCardSkeleton({ theme }: BookmarkCardSkeletonProp
         {/* Profile Skeleton */}
         <div className="absolute left-[25px] top-[16px] w-[60px] flex flex-col items-center gap-2">
           <div
-            className="rounded-full bg-gray-300"
+            className="rounded-full shimmer"
             style={{
               width: `${BOOKMARK_DIMENSIONS.PROFILE_SIZE_UNLOCKED}px`,
               height: `${BOOKMARK_DIMENSIONS.PROFILE_SIZE_UNLOCKED}px`
             }}
           />
-          <div className="h-4 w-full bg-gray-300 rounded" />
+          <div className="h-4 w-full shimmer rounded" />
         </div>
 
         {/* Flag Skeleton */}
-        <div className="absolute h-[32px] left-[69px] top-0 w-[21px] bg-gray-300 rounded" />
+        <div className="absolute h-[32px] left-[69px] top-0 w-[21px] shimmer rounded" />
       </div>
     </div>
   );

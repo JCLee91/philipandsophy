@@ -1,8 +1,7 @@
 'use client';
 
-import { Suspense, useEffect, useState, lazy } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import PageTransition from '@/components/PageTransition';
 import BookmarkCard from '@/components/BookmarkCard';
 import BookmarkCardSkeleton from '@/components/BookmarkCardSkeleton';
@@ -11,6 +10,7 @@ import EllipseShadow from '@/components/EllipseShadow';
 import FooterActions from '@/components/FooterActions';
 import BlurDivider from '@/components/BlurDivider';
 import UnifiedButton from '@/components/UnifiedButton';
+import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useToast } from '@/hooks/use-toast';
@@ -25,9 +25,6 @@ import { SHADOW_OFFSETS, SPACING } from '@/constants/today-library';
 import { APP_CONSTANTS } from '@/constants/app';
 import { getTodayString } from '@/lib/date-utils';
 import { appRoutes } from '@/lib/navigation';
-
-// Lazy load ReadingSubmissionDialog
-const ReadingSubmissionDialog = lazy(() => import('@/components/ReadingSubmissionDialog'));
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
@@ -340,14 +337,34 @@ function TodayLibraryContent() {
         </FooterActions>
 
         {/* 독서 인증 다이얼로그 */}
-        <Suspense fallback={<LoadingSpinner />}>
-          <ReadingSubmissionDialog
-            open={submissionDialogOpen}
-            onOpenChange={setSubmissionDialogOpen}
-            participantId={currentUserId || ''}
-            participationCode={currentUserId || ''}
-          />
-        </Suspense>
+        <ReadingSubmissionDialog
+          open={submissionDialogOpen}
+          onOpenChange={setSubmissionDialogOpen}
+          participantId={currentUserId || ''}
+          participationCode={currentUserId || ''}
+        />
+      </div>
+    </PageTransition>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <PageTransition>
+      <div className="flex h-[100dvh] flex-col overflow-hidden">
+        <HeaderNavigation title="오늘의 서재" />
+        <main className="flex-1 overflow-y-auto bg-background">
+          <div className="mx-auto max-w-md px-4 w-full">
+            <div className="pt-12 pb-8">
+              <div className="flex flex-col gap-12">
+                <div className="flex flex-col gap-3">
+                  <div className="h-8 w-48 shimmer rounded" />
+                  <div className="h-6 w-40 shimmer rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     </PageTransition>
   );
@@ -355,7 +372,7 @@ function TodayLibraryContent() {
 
 export default function TodayLibraryPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<LoadingSkeleton />}>
       <TodayLibraryContent />
     </Suspense>
   );
