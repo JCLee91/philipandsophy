@@ -145,18 +145,22 @@ export default function CodeInputCard() {
             }),
           ]);
         } catch (error) {
-          // Prefetch 실패는 치명적이지 않음 - React Query가 페이지에서 자동 fetch
-          logger.warn('Prefetch failed, continuing to page', error);
-        } finally {
-          // 5. 페이지 이동 (URL에서 userId 제거)
-          // router.push 대신 router.replace 사용 → 브라우저 히스토리에 남지 않음
-          router.replace(appRoutes.chat(cohortId));
+          logger.error('로그인 프로세스 실패:', error);
+          setError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+          setIsSubmitting(false);
+          setSearchPhone('');
+          return; // 에러 발생 시 페이지 이동 중단
         }
+
+        // 5. 페이지 이동 (URL에서 userId 제거)
+        // router.push 대신 router.replace 사용 → 브라우저 히스토리에 남지 않음
+        router.replace(appRoutes.chat(cohortId));
       };
 
       loginUser();
     }
-  }, [searchPhone, isLoading, participant, router, queryClient, login]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchPhone, isLoading, participant]);
 
   const isComplete = phoneNumber.replace(/-/g, '').length === 11;
 
