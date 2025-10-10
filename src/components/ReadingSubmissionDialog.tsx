@@ -284,7 +284,7 @@ export default function ReadingSubmissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-full sm:h-[90vh] p-0 flex flex-col gap-0 safe-area-dialog">
+      <DialogContent className="max-w-2xl h-full sm:h-[90vh] flex flex-col gap-0 reading-dialog-safe-area">
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl">독서 인증하기</DialogTitle>
           <DialogDescription>
@@ -469,19 +469,23 @@ export default function ReadingSubmissionDialog({
         </DialogFooter>
       </DialogContent>
 
-      {/* Safe Area CSS */}
-      <style jsx>{`
-        /* Dialog 컨테이너에 상단 safe area 적용 */
-        :global(.safe-area-dialog) {
-          padding-top: env(safe-area-inset-top);
-          padding-bottom: env(safe-area-inset-bottom);
-        }
+      {/* Safe Area CSS for iOS PWA - fixed 요소에 safe area 적용 */}
+      <style jsx global>{`
+        /* 모바일에서만 safe area 적용 */
+        @media (max-width: 640px) {
+          .reading-dialog-safe-area {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            padding-top: max(env(safe-area-inset-top), 0px) !important;
+            padding-bottom: max(env(safe-area-inset-bottom), 0px) !important;
+          }
 
-        /* iOS 11.2 이전 버전 호환성 */
-        @supports (padding-top: constant(safe-area-inset-top)) {
-          :global(.safe-area-dialog) {
-            padding-top: constant(safe-area-inset-top);
-            padding-bottom: constant(safe-area-inset-bottom);
+          /* iOS 11.2 이전 버전 호환성 */
+          @supports (padding-top: constant(safe-area-inset-top)) {
+            .reading-dialog-safe-area {
+              padding-top: max(constant(safe-area-inset-top), 0px) !important;
+              padding-bottom: max(constant(safe-area-inset-bottom), 0px) !important;
+            }
           }
         }
       `}</style>
