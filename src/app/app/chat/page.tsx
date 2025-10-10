@@ -364,7 +364,7 @@ function ChatPageContent() {
           {/* 고정 공지 영역 - sticky로 스크롤 시 상단 고정 */}
           {pinnedNotices.length > 0 && (
             <div className="sticky top-0 z-40 border-b border-primary/20 shadow-sm">
-              {pinnedNotices.map((notice) => (
+              {pinnedNotices.map((notice, index) => (
                 <div
                   key={notice.id}
                   className="group transition-colors duration-normal bg-primary-light hover:bg-blue-100"
@@ -379,6 +379,7 @@ function ChatPageContent() {
                       onEdit={handleEditNotice}
                       onDelete={setDeleteConfirm}
                       formatTime={formatTime}
+                      priority={index === 0 && !!notice.imageUrl}
                     />
                   </div>
                 </div>
@@ -387,8 +388,12 @@ function ChatPageContent() {
           )}
 
           {/* 일반 공지 영역 - 날짜별 그룹 */}
-          {sortedGroupedNotices.map(([date, groupData]) => {
+          {sortedGroupedNotices.map(([date, groupData], groupIndex) => {
             const { notices: dateNotices } = groupData as { date: Date; notices: Notice[] };
+            // 첫 번째 그룹의 첫 번째 공지에만 priority (고정 공지가 없을 경우)
+            const isFirstGroup = groupIndex === 0;
+            const hasNoPinnedNotices = pinnedNotices.length === 0;
+
             return (
               <div key={date}>
                 {/* 날짜 구분선 */}
@@ -402,7 +407,7 @@ function ChatPageContent() {
                   </div>
                 </div>
 
-                {dateNotices.map((notice) => (
+                {dateNotices.map((notice, noticeIndex) => (
                   <div
                     key={notice.id}
                     className="group transition-colors duration-normal hover:bg-muted/50"
@@ -415,6 +420,7 @@ function ChatPageContent() {
                         onEdit={handleEditNotice}
                         onDelete={setDeleteConfirm}
                         formatTime={formatTime}
+                        priority={hasNoPinnedNotices && isFirstGroup && noticeIndex === 0 && !!notice.imageUrl}
                       />
                     </div>
                   </div>

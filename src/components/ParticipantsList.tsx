@@ -12,6 +12,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet';
 import { getInitials } from '@/lib/utils';
 import { User, MessageSquare, Check, BookOpen, LogOut } from 'lucide-react';
@@ -161,6 +162,9 @@ export default function ParticipantsList({
         <SheetContent side="right" className="w-80 p-0 flex flex-col">
           <SheetHeader className="border-b px-6 py-4">
             <SheetTitle>참가자 목록 ({participants.length})</SheetTitle>
+            <SheetDescription className="sr-only">
+              프로그램에 참여 중인 멤버 목록을 확인하고 소통할 수 있습니다
+            </SheetDescription>
           </SheetHeader>
 
           {/* 네이티브 스크롤 사용 - PWA/모바일 호환성 최적화 */}

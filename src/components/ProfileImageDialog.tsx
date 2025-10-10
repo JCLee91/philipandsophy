@@ -57,25 +57,31 @@ export default function ProfileImageDialog({
   return (
     <Dialog open={showDialog} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-[90vw] max-h-[90vh] w-fit h-fit p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)]"
+        hideCloseButton
+        className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-transparent border-0 shadow-none z-[60] place-items-center"
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onClick={(e) => {
+          // 이미지 자체를 클릭한 경우가 아니라면 닫기
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
       >
-        <DialogTitle className="sr-only">{participant.name} 프로필</DialogTitle>
+        <DialogTitle className="sr-only">{participant.name} 프로필 (클릭하여 닫기)</DialogTitle>
         <DialogDescription className="sr-only">
           {participant.name}님의 프로필 이미지
         </DialogDescription>
         {participant.profileImage && imageLoaded ? (
-          <div className="relative flex items-center justify-center bg-gray-100">
-            <Image
-              src={participant.profileImage}
-              alt={participant.name}
-              width={800}
-              height={1000}
-              className="max-w-[85vw] max-h-[85vh] w-auto h-auto object-contain"
-            />
-          </div>
+          <Image
+            src={participant.profileImage}
+            alt={participant.name}
+            width={1000}
+            height={1000}
+            className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
+            onClick={() => onClose()}
+          />
         ) : (
-          <div className="p-8 text-center">
+          <div className="text-white text-center p-8">
             <p className="text-muted-foreground">프로필 이미지가 없습니다</p>
           </div>
         )}

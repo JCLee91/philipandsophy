@@ -1,9 +1,8 @@
 'use client';
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ImageViewerDialogProps {
   open: boolean;
@@ -14,6 +13,11 @@ interface ImageViewerDialogProps {
 /**
  * 이미지를 크게 볼 수 있는 다이얼로그
  * DM에서 작은 이미지 클릭 시 전체 화면으로 표시
+ *
+ * UX:
+ * - 이미지 밖(오버레이) 클릭 시 닫힘
+ * - ESC 키로 닫힘
+ * - 닫기 버튼 없음 (깔끔한 UI)
  */
 export default function ImageViewerDialog({
   open,
@@ -21,16 +25,11 @@ export default function ImageViewerDialog({
   imageUrl,
 }: ImageViewerDialogProps) {
   const [imageError, setImageError] = useState(false);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Dialog가 열릴 때마다 에러 상태 리셋 & 포커스 관리
+  // Dialog가 열릴 때마다 에러 상태 리셋
   useEffect(() => {
     if (open) {
       setImageError(false);
-      // 닫기 버튼에 자동 포커스
-      if (closeButtonRef.current) {
-        closeButtonRef.current.focus();
-      }
     }
   }, [open, imageUrl]);
 
@@ -49,20 +48,15 @@ export default function ImageViewerDialog({
           e.stopPropagation();
           onOpenChange(false);
         }}
+        onClick={(e) => {
+          // 이미지 자체를 클릭한 경우가 아니라면 닫기
+          if (e.target === e.currentTarget) {
+            onOpenChange(false);
+          }
+        }}
       >
         {/* 접근성을 위한 숨겨진 제목 */}
-        <DialogTitle className="sr-only">이미지 크게 보기</DialogTitle>
-
-        {/* 닫기 버튼 */}
-        <button
-          ref={closeButtonRef}
-          type="button"
-          onClick={() => onOpenChange(false)}
-          aria-label="이미지 뷰어 닫기"
-          className="absolute top-2 right-2 z-[100] p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <X className="h-5 w-5 text-foreground" />
-        </button>
+        <DialogTitle className="sr-only">이미지 크게 보기 (클릭하여 닫기)</DialogTitle>
 
         {/* 이미지 - 중앙 정렬 */}
         {imageError ? (
@@ -76,8 +70,9 @@ export default function ImageViewerDialog({
             alt="크게 보기"
             width={1000}
             height={1000}
-            className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain"
+            className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
             onError={() => setImageError(true)}
+            onClick={() => onOpenChange(false)}
           />
         )}
       </DialogContent>

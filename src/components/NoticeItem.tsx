@@ -24,6 +24,7 @@ interface NoticeItemProps {
   onEdit: (notice: Notice) => void;
   onDelete: (notice: Notice) => void;
   formatTime: (timestamp: Timestamp) => string;
+  priority?: boolean; // LCP 최적화: 첫 번째 공지 이미지에 priority 추가
 }
 
 export default function NoticeItem({
@@ -35,6 +36,7 @@ export default function NoticeItem({
   onEdit,
   onDelete,
   formatTime,
+  priority = false,
 }: NoticeItemProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const contentLines = notice.content.split('\n');
@@ -141,7 +143,7 @@ export default function NoticeItem({
           {!isCollapsed && notice.imageUrl && (
             <div className="w-full max-w-lg">
               <div
-                className="relative w-full overflow-hidden rounded border cursor-pointer hover:opacity-90 transition-opacity duration-fast"
+                className="relative w-full overflow-hidden rounded cursor-pointer hover:opacity-90 transition-opacity duration-fast"
                 onClick={() => setSelectedImage(notice.imageUrl || null)}
               >
                 <Image
@@ -150,6 +152,7 @@ export default function NoticeItem({
                   width={600}
                   height={400}
                   className="object-contain w-full h-auto"
+                  priority={priority}
                 />
               </div>
             </div>
