@@ -53,7 +53,6 @@ interface FeaturedParticipantDetail {
   bio?: string;
   currentBookTitle?: string;
   profileBookUrl?: string;
-  profileImage?: string;
 }
 
 interface AssignmentRow {
@@ -192,7 +191,6 @@ function MatchingPageContent() {
         bio: participant?.bio,
         currentBookTitle: participant?.currentBookTitle,
         profileBookUrl: participant?.profileBookUrl,
-        profileImage: participant?.profileImage,
       };
     });
   }, [matchingResult, participantsById]);
@@ -213,7 +211,6 @@ function MatchingPageContent() {
         bio: participant?.bio,
         currentBookTitle: participant?.currentBookTitle,
         profileBookUrl: participant?.profileBookUrl,
-        profileImage: participant?.profileImage,
       };
     });
   }, [matchingResult, participantsById]);

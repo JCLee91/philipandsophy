@@ -28,6 +28,10 @@ export interface DailyMatchingSummary {
 export interface DailyMatchingEntry {
   featured?: DailyMatchingSummary;
   assignments?: Record<string, DailyParticipantAssignment>;
+  // Legacy 데이터 호환용 (v1.0)
+  similar?: string[];
+  opposite?: string[];
+  reasons?: DailyMatchingReasons;
 }
 
 /**
