@@ -51,23 +51,32 @@ export function useSession() {
 
   // 로그아웃
   const logout = async () => {
+    // Firebase 작업은 별도 try-catch (실패해도 클라이언트는 정리)
     try {
       if (currentUser) {
         // Firebase에서 세션 토큰 제거
         await clearSessionToken(currentUser.id);
       }
+    } catch (error) {
+      logger.error('Firebase 세션 토큰 제거 실패:', error);
+      // Firebase 실패해도 계속 진행 (클라이언트 cleanup은 필수)
+    }
 
+    // 클라이언트 정리는 항상 실행 (Firebase 실패 무관)
+    try {
       // sessionStorage 초기화
       removeSessionToken();
 
       // React Query 캐시 초기화
       queryClient.clear();
 
-      // 로그인 페이지로 리다이렉트
+      // 상태 초기화 및 리다이렉트
       setCurrentUser(null);
       router.replace('/app');
     } catch (error) {
-      logger.error('로그아웃 실패:', error);
+      logger.error('클라이언트 세션 정리 실패:', error);
+      // 최소한 페이지는 이동
+      router.replace('/app');
     }
   };
 
@@ -77,6 +86,7 @@ export function useSession() {
       const token = getSessionToken();
 
       if (!token) {
+        setCurrentUser(null);
         setIsLoading(false);
         return;
       }
@@ -90,10 +100,12 @@ export function useSession() {
         } else {
           // 유효하지 않은 토큰 제거
           removeSessionToken();
+          setCurrentUser(null);
         }
       } catch (error) {
         logger.error('세션 검증 실패:', error);
         removeSessionToken();
+        setCurrentUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -106,26 +118,7 @@ export function useSession() {
     currentUser,
     isLoading,
     isAuthenticated: !!currentUser,
-    setSessionToken,
-    getSessionToken,
+    login: setSessionToken,
     logout,
   };
-}
-
-/**
- * 인증 필요 페이지 보호 훅
- *
- * 세션이 없으면 로그인 페이지로 리다이렉트
- */
-export function useRequireAuth() {
-  const { currentUser, isLoading } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && !currentUser) {
-      router.replace('/app');
-    }
-  }, [currentUser, isLoading, router]);
-
-  return { currentUser, isLoading };
 }

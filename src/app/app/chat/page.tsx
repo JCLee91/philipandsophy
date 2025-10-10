@@ -278,7 +278,6 @@ function ChatPageContent() {
         onWriteClick={() => setWriteDialogOpen(true)}
         onMessageAdminClick={handleMessageAdmin}
         isAdmin={isAdmin}
-        currentUserId={currentUserId || ''}
       />
       <ParticipantsList
         participants={participants.filter((p) => !p.isAdmin)}

@@ -25,7 +25,7 @@ import { useSession } from '@/hooks/use-session';
 export default function CodeInputCard() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { setSessionToken } = useSession();
+  const { login } = useSession();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [searchPhone, setSearchPhone] = useState('');
   const [error, setError] = useState('');
@@ -104,7 +104,7 @@ export default function CodeInputCard() {
           const sessionToken = await createSessionToken(participant.id);
 
           // 2. sessionStorage에 토큰 저장
-          setSessionToken(sessionToken);
+          login(sessionToken);
 
           // 3. Prefetch strategy: 채팅 페이지 진입 전 필요 데이터 미리 로드
           // Prefetch는 best-effort - 실패해도 페이지는 정상 로드됨
@@ -134,7 +134,7 @@ export default function CodeInputCard() {
 
       loginUser();
     }
-  }, [searchPhone, isLoading, participant, router, queryClient, setSessionToken]);
+  }, [searchPhone, isLoading, participant, router, queryClient, login]);
 
   const isComplete = phoneNumber.replace(/-/g, '').length === 11;
 

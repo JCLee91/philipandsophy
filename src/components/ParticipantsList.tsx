@@ -15,10 +15,11 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getInitials } from '@/lib/utils';
-import { User, MessageSquare, Check, BookOpen } from 'lucide-react';
+import { User, MessageSquare, Check, BookOpen, LogOut } from 'lucide-react';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
+import { useSession } from '@/hooks/use-session';
 
 import type { Participant } from '@/types/database';
 
@@ -147,6 +148,7 @@ export default function ParticipantsList({
   onProfileBookClick,
 }: ParticipantsListProps) {
   const { data: verifiedIds } = useVerifiedToday();
+  const { logout } = useSession();
 
   // 본인을 맨 위로 정렬
   const sortedParticipants = [...participants].sort((a, b) => {
@@ -157,11 +159,11 @@ export default function ParticipantsList({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-80 p-0">
+        <SheetContent side="right" className="w-80 p-0 flex flex-col">
           <SheetHeader className="border-b px-6 py-4">
             <SheetTitle>참가자 목록 ({participants.length})</SheetTitle>
           </SheetHeader>
-          <ScrollArea className="h-[calc(100vh-73px)]">
+          <ScrollArea className="flex-1">
             <div className="px-4 py-2">
               {sortedParticipants.map((participant) => {
                 const isMe = participant.id === currentUserId;
@@ -229,6 +231,18 @@ export default function ParticipantsList({
               })}
             </div>
           </ScrollArea>
+
+          {/* 로그아웃 버튼 - 하단 고정 */}
+          <div className="border-t px-4 py-3">
+            <button
+              type="button"
+              onClick={logout}
+              className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-medium text-destructive hover:bg-destructive/10 transition-colors duration-normal"
+            >
+              <LogOut className="h-5 w-5" />
+              로그아웃
+            </button>
+          </div>
         </SheetContent>
       </Sheet>
   );
