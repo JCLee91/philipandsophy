@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { BookOpen } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { scrollToBottom, formatDate, formatTime } from '@/lib/utils';
+import { getTodayString } from '@/lib/date-utils';
 import { APP_CONSTANTS } from '@/constants/app';
 import { uploadNoticeImage } from '@/lib/firebase/storage';
 import { Notice, Participant } from '@/types/database';
@@ -14,6 +15,7 @@ import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
 import { useSession } from '@/hooks/use-session';
 import { useIsIosStandalone } from '@/hooks/use-standalone-ios';
+import { useSubmissionsByParticipant } from '@/hooks/use-submissions';
 import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
 import Header from '@/components/Header';
 import ParticipantsList from '@/components/ParticipantsList';
@@ -84,6 +86,12 @@ function ChatPageContent() {
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
   const isAdmin = currentUser?.isAdmin || false;
+
+  // 오늘 제출 여부 확인
+  const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);
+  const hasSubmittedToday = submissions.some(
+    (sub) => sub.submissionDate === getTodayString()
+  );
 
   // Firebase hooks
   const { data: noticesData = [], isLoading } = useNoticesByCohort(cohortId || undefined);
@@ -438,8 +446,9 @@ function ChatPageContent() {
             variant="primary"
             onClick={() => setSubmissionDialogOpen(true)}
             icon={<BookOpen className="h-5 w-5" />}
+            disabled={hasSubmittedToday}
           >
-            독서 인증
+            {hasSubmittedToday ? '인증 완료' : '독서 인증'}
           </UnifiedButton>
 
           {/* 오늘의 서재 버튼 */}

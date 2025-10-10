@@ -71,14 +71,6 @@ export default function ReadingSubmissionDialog({
       );
       setAlreadySubmittedToday(!!todaySubmission);
 
-      if (todaySubmission) {
-        toast({
-          title: '이미 제출 완료',
-          description: '오늘은 이미 독서 인증을 제출하셨습니다. 하루에 1회만 제출 가능합니다.',
-          variant: 'destructive',
-        });
-      }
-
       // Race condition 방지를 위한 cleanup flag
       let isCancelled = false;
 

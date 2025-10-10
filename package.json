@@ -17,7 +17,8 @@
     "cleanup:dm": "tsx src/scripts/cleanup-dm-messages.ts",
     "reset:user-submissions": "tsx src/scripts/reset-user-submissions.ts",
     "check:user-data": "tsx src/scripts/check-user-data.ts",
-    "convert:webp": "tsx src/scripts/convert-all-to-webp.ts"
+    "convert:webp": "tsx src/scripts/convert-all-to-webp.ts",
+    "verify:schema": "tsx src/scripts/verify-schema.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4",
