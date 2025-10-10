@@ -18,7 +18,7 @@ import { getInitials } from '@/lib/utils';
 import { User, MessageSquare, Check, BookOpen, LogOut } from 'lucide-react';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
-import { getConversationId } from '@/lib/firebase/messages';
+import { getConversationId, getAdminTeamConversationId } from '@/lib/firebase/messages';
 import { useSession } from '@/hooks/use-session';
 
 import type { Participant } from '@/types/database';
@@ -48,7 +48,12 @@ function ParticipantItem({
   onProfileClick: (participant: Participant) => void;
 }) {
   const { data: verifiedIds } = useVerifiedToday();
-  const conversationId = getConversationId(currentUserId, participant.id);
+
+  // 관리자는 Team Inbox conversationId 사용, 일반 유저는 1:1 대화 ID 사용
+  const conversationId = isAdmin
+    ? getAdminTeamConversationId(participant.id)
+    : getConversationId(currentUserId, participant.id);
+
   const { data: unreadCount = 0 } = useUnreadCount(conversationId, currentUserId);
 
   const initials = getInitials(participant.name);
