@@ -80,26 +80,33 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const { data: submissions = [], isLoading: submissionsLoading } = useParticipantSubmissionsRealtime(participantId);
   const { data: verifiedIds } = useVerifiedToday();
 
-  // 세션 검증
+  // 세션 검증 (리다이렉트 플래그로 중복 방지)
+  const hasRedirectedRef = useRef(false);
+
   useEffect(() => {
-    if (!sessionLoading && !currentUser) {
+    if (!sessionLoading && !currentUser && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       router.replace('/app');
     }
   }, [sessionLoading, currentUser, router]);
 
-  // 14일치 날짜 배열 생성 (오늘부터 과거 13일)
+  // 14일치 날짜 배열 생성 (2025년 10월 11일부터 14일간)
+  const startDate = new Date(2025, 9, 11); // 2025년 10월 11일 (월은 0부터 시작)
   const fourteenDays = Array.from({ length: 14 }, (_, i) =>
-    startOfDay(subDays(new Date(), i))
-  ).reverse(); // 오래된 날짜부터 최신 순으로
+    startOfDay(new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000))
+  ); // 10월 11일부터 순차적으로
 
   // 모든 질문과 답변 수집 (중복 제거)
-  const allQuestionsAnswers = submissions.reduce((acc, sub) => {
-    const key = sub.dailyQuestion;
-    if (!acc[key]) {
-      acc[key] = sub.dailyAnswer;
-    }
-    return acc;
-  }, {} as Record<string, string>);
+  // useMemo로 감싸서 참조 안정성 확보 (무한 루프 방지)
+  const allQuestionsAnswers = useMemo(() => {
+    return submissions.reduce((acc, sub) => {
+      const key = sub.dailyQuestion;
+      if (!acc[key]) {
+        acc[key] = sub.dailyAnswer;
+      }
+      return acc;
+    }, {} as Record<string, string>);
+  }, [submissions]);
 
   // ✅ CRITICAL: useEffect를 early return 이전에 배치하여 hooks 순서 일관성 유지
   // 첫 번째 질문을 기본으로 열어두기
@@ -113,7 +120,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         return prev;
       });
     }
-  }, [allQuestionsAnswers]); // allQuestionsAnswers가 변경되면 실행
+  }, [allQuestionsAnswers]); // allQuestionsAnswers는 이제 안정적인 참조
 
   // 접근 권한 체크
   const isSelf = currentUserId === participantId;

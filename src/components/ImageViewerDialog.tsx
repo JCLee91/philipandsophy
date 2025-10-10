@@ -43,7 +43,7 @@ export default function ImageViewerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideCloseButton
-        className="max-w-[90vw] max-h-[90vh] w-full h-full p-0 bg-black/95 border-0 z-[60]"
+        className="max-w-[90vw] max-h-[90vh] w-fit h-fit p-0 bg-black/95 border-0 z-[60]"
         onEscapeKeyDown={(e) => {
           // ESC 키로 ImageViewer만 닫기 (DM Dialog는 유지)
           e.stopPropagation();
@@ -59,13 +59,13 @@ export default function ImageViewerDialog({
           type="button"
           onClick={() => onOpenChange(false)}
           aria-label="이미지 뷰어 닫기"
-          className="absolute top-4 right-4 z-[100] p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+          className="absolute top-4 right-4 z-[100] p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           <X className="h-6 w-6 text-white" />
         </button>
 
         {/* 이미지 컨테이너 */}
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative flex items-center justify-center p-4">
           {imageError ? (
             <div className="text-white/70 text-center">
               <p className="text-lg mb-2">이미지를 불러올 수 없습니다</p>
@@ -75,9 +75,9 @@ export default function ImageViewerDialog({
             <Image
               src={imageUrl}
               alt="크게 보기"
-              fill
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              className="object-contain"
+              width={800}
+              height={600}
+              className="max-w-[85vw] max-h-[82vh] w-auto h-auto object-contain"
               onError={() => setImageError(true)}
             />
           )}

@@ -42,7 +42,7 @@ export const useMessages = (conversationId: string) => {
 
   // Subscribe to real-time updates
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId) return undefined;
 
     const unsubscribe = subscribeToMessages(conversationId, (messages) => {
       queryClient.setQueryData(messageKeys.conversation(conversationId), messages);

@@ -20,11 +20,15 @@ import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import type { Participant } from '@/types/database';
 import { SHADOW_OFFSETS, SPACING } from '@/constants/today-library';
 import { APP_CONSTANTS } from '@/constants/app';
 import { getTodayString } from '@/lib/date-utils';
 import { appRoutes } from '@/lib/navigation';
+
+// Firestore 'in' query limit
+const FIRESTORE_IN_LIMIT = 10;
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
@@ -62,6 +66,45 @@ function TodayLibraryContent() {
 
       const db = getDb();
       const participantsRef = collection(db, 'participants');
+
+      // Firestore 'in' 연산자는 최대 10개 제한
+      // 10개 초과 시 청크로 분할하여 병렬 쿼리
+      if (allFeaturedIds.length > FIRESTORE_IN_LIMIT) {
+        logger.warn(`Featured participants (${allFeaturedIds.length}) exceeds Firestore 'in' limit (${FIRESTORE_IN_LIMIT}). Splitting into chunks.`);
+
+        // 청크로 분할
+        const chunks: string[][] = [];
+        for (let i = 0; i < allFeaturedIds.length; i += FIRESTORE_IN_LIMIT) {
+          chunks.push(allFeaturedIds.slice(i, i + FIRESTORE_IN_LIMIT));
+        }
+
+        // 병렬 쿼리 실행
+        const results = await Promise.all(
+          chunks.map(chunk => {
+            const q = query(participantsRef, where('__name__', 'in', chunk));
+            return getDocs(q);
+          })
+        );
+
+        // 결과 병합
+        const participants: Participant[] = [];
+        results.forEach(snapshot => {
+          snapshot.docs.forEach(doc => {
+            participants.push({
+              id: doc.id,
+              ...doc.data(),
+            } as Participant);
+          });
+        });
+
+        // Theme 정보 추가
+        return participants.map((participant) => ({
+          ...participant,
+          theme: (todayFeatured.similar || []).includes(participant.id) ? 'similar' : 'opposite'
+        }));
+      }
+
+      // 10개 이하: 단일 쿼리
       const q = query(participantsRef, where('__name__', 'in', allFeaturedIds));
       const snapshot = await getDocs(q);
 

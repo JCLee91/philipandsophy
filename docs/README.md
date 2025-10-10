@@ -9,7 +9,8 @@ docs/
 ├── setup/              # 초기 설정 및 환경 구성
 ├── optimization/       # 성능 최적화 문서
 ├── design/             # 디자인 시스템 및 가이드
-└── architecture/       # 아키텍처 및 기획 문서
+├── architecture/       # 아키텍처 및 기획 문서
+└── troubleshooting/    # 플랫폼별 버그 및 문제 해결
 ```
 
 ---
@@ -93,6 +94,21 @@ docs/
 
 ---
 
+## 🐛 문제 해결
+
+플랫폼별 버그 및 이슈 해결 가이드:
+
+### [iOS PWA Scroll Bug Fix](./troubleshooting/ios-pwa-scroll.md)
+**최종 업데이트**: 2025-10-10
+**주요 내용**:
+- 📱 iOS WebKit의 position:fixed 오버레이 스크롤 버그 분석
+- 🔧 플랫폼별 조건부 라우팅 솔루션 (Sheet vs Full-page)
+- 🎯 `useIsIosStandalone` 훅으로 iOS PWA 감지
+- ✅ `/app/chat/participants` 전용 페이지 구현
+- 🧪 테스트 체크리스트 (iOS/Android/Desktop)
+
+---
+
 ## 🔍 빠른 참조
 
 ### 자주 찾는 문서
@@ -101,6 +117,7 @@ docs/
 - **DB 쿼리 패턴**: [optimization/database.md](./optimization/database.md)
 - **버튼 시스템**: [design/button-system.md](./design/button-system.md)
 - **디자인 시스템**: [design/ui-guide.md](./design/ui-guide.md)
+- **iOS PWA 버그**: [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
 
 ### 문제 해결
 - Firebase 연결 문제 → [setup/firebase.md](./setup/firebase.md)
@@ -108,6 +125,7 @@ docs/
 - 쿼리 최적화 → [optimization/database.md](./optimization/database.md)
 - 버튼 스타일링 → [design/button-system.md](./design/button-system.md)
 - UI 일관성 → [design/ui-guide.md](./design/ui-guide.md)
+- iOS PWA 스크롤 문제 → [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
 
 ---
 

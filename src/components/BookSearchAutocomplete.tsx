@@ -16,7 +16,7 @@ interface BookSearchAutocompleteProps {
   onBookSelect: (book: NaverBook) => void;
   disabled?: boolean;
   isAutoFilled?: boolean;
-  onClear?: () => void;
+  onClear?: () => boolean; // true: 삭제 성공, false: 취소됨
   initialBook?: NaverBook | null; // 초기 선택된 책 정보 (다음날 자동 채움용)
 }
 
@@ -177,13 +177,13 @@ export default function BookSearchAutocomplete({
   };
 
   const handleClearSelection = () => {
-    setSelectedBook(null);
-    onChange('');
-    setSearchResults([]);
-
     // Notify parent to clear book metadata (use onClear if available)
+    // onClear에서 confirm을 처리하고, 취소하면 false 반환
     if (onClear) {
-      onClear();
+      const confirmed = onClear(); // true: 삭제 확인, false: 취소
+      if (!confirmed) {
+        return; // 취소하면 아무것도 안 함
+      }
     } else {
       // Fallback: Send empty book object
       onBookSelect({
@@ -194,10 +194,15 @@ export default function BookSearchAutocomplete({
         pubdate: '',
         image: '',
         link: '',
-        description: '',
         discount: '',
+        description: '',
       });
     }
+    
+    // 확인된 경우에만 UI 초기화
+    setSelectedBook(null);
+    onChange('');
+    setSearchResults([]);
   };
 
   const handleInputFocus = () => {

@@ -77,6 +77,9 @@ function ChatPageContent() {
   const hasScrolledRef = useRef(false);
   const isIosStandalone = useIsIosStandalone();
 
+  // Race Condition 방지: 이미 네비게이션 중인지 추적
+  const [isNavigating, setIsNavigating] = useState(false);
+
   // Firebase hooks for data fetching
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
@@ -116,7 +119,7 @@ function ChatPageContent() {
         return;
       }
     }
-  }, [sessionLoading, currentUser, cohortId, router]);
+  }, [sessionLoading, currentUser, cohortId]);
 
   // 초기 로드 시 즉시 스크롤 (번쩍임 방지)
   useEffect(() => {
@@ -159,6 +162,38 @@ function ChatPageContent() {
     if (!cohortId) return;
     router.push(appRoutes.profile(participant.id, cohortId));
   }, [router, cohortId]);
+
+  // 참가자 목록 클릭 핸들러 (Race Condition 방지 + Sheet State 관리)
+  const handleParticipantsClick = useCallback(() => {
+    // cohortId는 항상 필수 (먼저 체크)
+    if (!cohortId) {
+      logger.warn('cohortId가 없어 참가자 목록을 열 수 없습니다');
+      return;
+    }
+
+    // 이미 네비게이션 중이면 무시 (Race Condition 방지)
+    if (isNavigating) {
+      return;
+    }
+
+    if (isIosStandalone) {
+      // iOS PWA: Sheet를 명시적으로 닫고 전용 페이지로 이동
+      setParticipantsOpen(false);
+      setIsNavigating(true);
+
+      // 다음 프레임에 navigation (상태 업데이트 후)
+      requestAnimationFrame(() => {
+        router.push(appRoutes.participants(cohortId));
+
+        // 500ms 후 다시 활성화 (navigation 완료 시간)
+        setTimeout(() => setIsNavigating(false), 500);
+      });
+      return;
+    }
+
+    // 기타 플랫폼: Sheet 오버레이 열기
+    setParticipantsOpen(true);
+  }, [isIosStandalone, cohortId, router, isNavigating]);
 
   // 로딩 중: 스켈레톤 UI 표시
   if (sessionLoading || cohortLoading) {
@@ -289,14 +324,7 @@ function ChatPageContent() {
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden">
         <Header
-        onParticipantsClick={() => {
-          if (isIosStandalone) {
-            if (!cohortId) return;
-            router.push(appRoutes.participants(cohortId));
-            return;
-          }
-          setParticipantsOpen(true);
-        }}
+          onParticipantsClick={handleParticipantsClick}
           onWriteClick={() => setWriteDialogOpen(true)}
           onMessageAdminClick={handleMessageAdmin}
           isAdmin={isAdmin}

@@ -17,7 +17,7 @@ import { useCreateSubmission, useSubmissionsByParticipant } from '@/hooks/use-su
 import { uploadReadingImage, getParticipantById, updateParticipantBookInfo } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X, AlertCircle } from 'lucide-react';
-import { getDailyQuestion } from '@/constants/daily-questions';
+import { getDailyQuestion, type DailyQuestion as DailyQuestionType } from '@/constants/daily-questions';
 import Image from 'next/image';
 import BookSearchAutocomplete from '@/components/BookSearchAutocomplete';
 import type { NaverBook } from '@/lib/naver-book-api';
@@ -48,7 +48,7 @@ export default function ReadingSubmissionDialog({
   const [bookDescription, setBookDescription] = useState('');
   const [review, setReview] = useState('');
   const [dailyAnswer, setDailyAnswer] = useState('');
-  const [dailyQuestion, setDailyQuestion] = useState('');
+  const [dailyQuestion, setDailyQuestion] = useState<DailyQuestionType | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isAutoFilled, setIsAutoFilled] = useState(false);
   const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
@@ -61,7 +61,8 @@ export default function ReadingSubmissionDialog({
   // 다이얼로그가 열릴 때 참가자의 현재 책 제목 로드 및 새로운 질문 생성
   useEffect(() => {
     if (open) {
-      setDailyQuestion(getDailyQuestion());
+      const question = getDailyQuestion();
+      setDailyQuestion(question);
 
       // 오늘 이미 제출했는지 확인
       const today = getTodayString();
@@ -174,7 +175,13 @@ export default function ReadingSubmissionDialog({
   };
 
   const handleBookTitleChange = (value: string) => {
-    // 기존 메타데이터가 있으면 경고
+    // 빈 값으로 변경하는 경우는 X 버튼(handleClearTitle)에서 처리하므로 여기서는 확인 안 함
+    if (value === '') {
+      setBookTitle(value);
+      return;
+    }
+    
+    // 기존 메타데이터가 있으면 경고 (수정하는 경우만)
     if (bookAuthor && bookCoverUrl && value !== bookTitle) {
       const confirmed = window.confirm(
         '책 정보를 수정하면 저자와 표지가 초기화됩니다.\n계속하시겠습니까?'
@@ -200,12 +207,23 @@ export default function ReadingSubmissionDialog({
     setIsAutoFilled(false);
   };
 
-  const handleClearTitle = () => {
+  const handleClearTitle = (): boolean => {
+    // 기존 메타데이터가 있으면 경고
+    if (bookAuthor || bookCoverUrl) {
+      const confirmed = window.confirm(
+        '책 정보를 수정하면 저자와 표지가 초기화됩니다.\n계속하시겠습니까?'
+      );
+      if (!confirmed) {
+        return false; // 취소하면 false 반환
+      }
+    }
+    
     setBookTitle('');
     setBookAuthor('');
     setBookCoverUrl('');
     setBookDescription('');
     setIsAutoFilled(false);
+    return true; // 성공하면 true 반환
   };
 
   const handleSubmit = async () => {
@@ -238,7 +256,7 @@ export default function ReadingSubmissionDialog({
         ...(bookDescription.trim() && { bookDescription: bookDescription.trim() }),
         bookImageUrl,
         review: review.trim(),
-        dailyQuestion,
+        dailyQuestion: dailyQuestion?.question || '',
         dailyAnswer: dailyAnswer.trim(),
         submittedAt: Timestamp.now(),
         status: 'approved', // status 필드는 유지 (DB 스키마 호환성)
@@ -274,13 +292,15 @@ export default function ReadingSubmissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto pt-8 pb-6">
-        <DialogHeader className="mb-6">
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl">독서 인증하기</DialogTitle>
           <DialogDescription>
             오늘 읽은 내용을 기록하고 인증해보세요. 모든 항목은 필수입니다.
           </DialogDescription>
         </DialogHeader>
+        
+        <div className="flex-1 overflow-y-auto px-6 py-4">
 
         {/* 오늘 이미 제출한 경우 경고 표시 */}
         {alreadySubmittedToday && (
@@ -406,7 +426,14 @@ export default function ReadingSubmissionDialog({
               4. 오늘의 질문 (40자 이상) <span className="text-destructive">*</span>
             </Label>
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
-              <p className="text-sm font-medium text-primary">{dailyQuestion}</p>
+              {dailyQuestion && (
+                <div className="space-y-1">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary mb-2">
+                    {dailyQuestion.category}
+                  </span>
+                  <p className="text-sm font-medium text-primary">{dailyQuestion.question}</p>
+                </div>
+              )}
             </div>
             <Textarea
               id="dailyAnswer"
@@ -421,8 +448,9 @@ export default function ReadingSubmissionDialog({
             </div>
           </div>
         </div>
+        </div>
 
-        <DialogFooter className="gap-3 border-t pt-4">
+        <DialogFooter className="gap-3 border-t pt-4 px-6 pb-6 flex-shrink-0">
           <UnifiedButton
             variant="outline"
             onClick={() => onOpenChange(false)}

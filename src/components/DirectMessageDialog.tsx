@@ -8,17 +8,17 @@ import UnifiedButton from '@/components/UnifiedButton';
 import { useMessages, useSendMessage, useMarkAsRead } from '@/hooks/use-messages';
 import { getConversationId, getAdminTeamConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
 import { Send, Paperclip, X, ArrowDown } from 'lucide-react';
-import { useState, useEffect, useRef, KeyboardEvent, useCallback } from 'react';
-import { scrollToBottom } from '@/lib/utils';
+import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo } from 'react';
 import { uploadDMImage } from '@/lib/firebase/storage';
-import Image from 'next/image';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { FOOTER_STYLES } from '@/constants/ui';
 import { APP_CONSTANTS } from '@/constants/app';
 import ImageViewerDialog from '@/components/ImageViewerDialog';
+import DateDivider from '@/components/DateDivider';
+import MessageGroup from '@/components/MessageGroup';
+import { groupMessagesByDate } from '@/lib/message-grouping';
+import Image from 'next/image';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -47,13 +47,18 @@ export default function DirectMessageDialog({
 
   const conversationId = otherUser
     ? otherUser.id === 'admin-team'
-      ? getAdminTeamConversationId(currentUserId)  // 관리자 팀과 대화할 때
-      : getConversationId(currentUserId, otherUser.id)  // 일반 사용자와 대화할 때
+      ? getAdminTeamConversationId(currentUserId)  // 일반 유저 → 관리자 팀
+      : currentUser?.isAdmin
+        ? getAdminTeamConversationId(otherUser.id)  // 관리자 → 일반 유저 (팀 채팅방 공유)
+        : getConversationId(currentUserId, otherUser.id)  // 일반 유저 간 1:1
     : '';
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
   const sendMessageMutation = useSendMessage();
   const markAsReadMutation = useMarkAsRead();
+
+  // 메시지를 날짜별 섹션으로 그룹화
+  const dateSections = useMemo(() => groupMessagesByDate(messages), [messages]);
 
   // 스크롤을 맨 아래로 이동하는 함수
   const scrollToBottomSmooth = useCallback((behavior: ScrollBehavior = 'smooth') => {
@@ -136,7 +141,9 @@ export default function DirectMessageDialog({
       await sendMessageMutation.mutateAsync({
         conversationId,
         senderId: currentUserId,
-        receiverId: otherUser.id === 'admin-team' ? 'admin-team' : otherUser.id,
+        receiverId: otherUser.id === 'admin-team' || currentUser?.isAdmin
+          ? 'admin-team'  // 관리자 팀으로 전송 (일반→관리자 또는 관리자→일반)
+          : otherUser.id,  // 일반 유저 간 1:1
         content: messageContent,
         imageUrl,
       });
@@ -197,73 +204,29 @@ export default function DirectMessageDialog({
               메시지를 보내보세요
             </div>
           ) : (
-            messages.map((msg) => {
-              const isMine = msg.senderId === currentUserId;
-              const isFromAdminTeam = otherUser?.id === 'admin-team';
+            dateSections.map((section, sectionIndex) => (
+              <div key={section.date.getTime()}>
+                {/* 날짜 구분선 */}
+                <DateDivider label={section.dateLabel} />
 
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
-                >
-                  <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarImage
-                      src={
-                        isMine
-                          ? currentUser?.profileImageCircle || currentUser?.profileImage || '/favicon.webp'
-                          : isFromAdminTeam
-                            ? '/favicon.webp'  // 관리자 팀은 기본 아이콘 사용
-                            : otherUser?.profileImageCircle || otherUser?.profileImage
-                      }
-                      alt={isMine ? '나' : isFromAdminTeam ? '필립앤소피' : displayName}
+                {/* 메시지 그룹들 */}
+                <div className="space-y-2">
+                  {section.groups.map((group, groupIndex) => (
+                    <MessageGroup
+                      key={`${group.senderId}-${groupIndex}`}
+                      senderId={group.senderId}
+                      messages={group.messages}
+                      showAvatar={group.showAvatar}
+                      showTimestamp={group.showTimestamp}
+                      currentUserId={currentUserId}
+                      currentUser={currentUser}
+                      otherUser={otherUser}
+                      onImageClick={setSelectedImage}
                     />
-                    <AvatarFallback>
-                      {isMine ? '나' : isFromAdminTeam ? '필' : displayName[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div
-                    className={`flex flex-col max-w-[70%] ${isMine ? 'items-end' : 'items-start'}`}
-                  >
-                    {/* 관리자 팀의 경우 발신자 이름 표시 */}
-                    {isFromAdminTeam && !isMine && (
-                      <span className="text-xs text-muted-foreground mb-1 px-1">
-                        {msg.senderId === currentUserId ? '나' : '필립앤소피'}
-                      </span>
-                    )}
-                    <div
-                      className={`rounded-2xl ${msg.imageUrl ? 'p-2' : 'px-4 py-2'} ${
-                        isMine
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
-                      }`}
-                    >
-                      {msg.imageUrl && (
-                        <div
-                          className="mb-2 relative w-48 h-48 cursor-pointer hover:opacity-90 transition-opacity duration-fast"
-                          onClick={() => setSelectedImage(msg.imageUrl)}
-                        >
-                          <Image
-                            src={msg.imageUrl}
-                            alt="첨부 이미지"
-                            fill
-                            sizes="192px"
-                            className="object-cover rounded"
-                          />
-                        </div>
-                      )}
-                      {msg.content && (
-                        <p className="text-sm whitespace-pre-wrap break-words">
-                          {msg.content}
-                        </p>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground mt-1 px-1">
-                      {format(msg.createdAt.toDate(), 'a h:mm', { locale: ko })}
-                    </span>
-                  </div>
+                  ))}
                 </div>
-              );
-            })
+              </div>
+            ))
           )}
           <div ref={messagesEndRef} />
 

@@ -57,28 +57,21 @@ export default function ProfileImageDialog({
   return (
     <Dialog open={showDialog} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="w-[95vw] sm:max-w-4xl p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)] max-h-[95vh]"
+        className="max-w-[90vw] max-h-[90vh] w-fit h-fit p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)]"
         onOpenAutoFocus={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogTitle className="sr-only">{participant.name} 프로필</DialogTitle>
         <DialogDescription className="sr-only">
           {participant.name}님의 프로필 이미지
         </DialogDescription>
         {participant.profileImage && imageLoaded ? (
-          <div className="relative w-full flex items-center justify-center bg-gray-100">
+          <div className="relative flex items-center justify-center bg-gray-100">
             <Image
               src={participant.profileImage}
               alt={participant.name}
-              width={1200}
-              height={1600}
-              className="w-full h-auto object-contain"
-              style={{
-                maxHeight: '90vh',
-                width: '100%',
-                height: 'auto',
-                objectFit: 'contain'
-              }}
+              width={800}
+              height={1000}
+              className="max-w-[85vw] max-h-[85vh] w-auto h-auto object-contain"
             />
           </div>
         ) : (

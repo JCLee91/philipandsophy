@@ -130,10 +130,14 @@ function ParticipantsPageContent() {
   const [dmTarget, setDmTarget] = useState<Participant | null>(null);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
 
+  // 참가자 정렬: 현재 사용자 최상단, 나머지는 이름순 (한글)
   const sortedParticipants = useMemo(() => {
     return [...participants].sort((a, b) => {
+      // 현재 사용자를 맨 위로
       if (a.id === currentUserId) return -1;
       if (b.id === currentUserId) return 1;
+
+      // 나머지는 이름순 (한글 정렬)
       return a.name.localeCompare(b.name, 'ko');
     });
   }, [participants, currentUserId]);
@@ -148,12 +152,28 @@ function ParticipantsPageContent() {
     setDmDialogOpen(true);
   };
 
+  // 무한 리다이렉트 방지: 리다이렉트 플래그 추적
+  const hasRedirectedRef = useRef(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   useEffect(() => {
     if (sessionLoading) return;
+
+    // 이미 리다이렉트한 경우 중복 방지
+    if (hasRedirectedRef.current) return;
+
     if (!currentUser || !cohortId) {
+      hasRedirectedRef.current = true;
+      setIsRedirecting(true);
+      logger.warn('ParticipantsPage: 세션 또는 cohortId 없음, /app으로 리다이렉트');
       router.replace('/app');
     }
-  }, [sessionLoading, currentUser, cohortId, router]);
+  }, [sessionLoading, currentUser, cohortId]);
+
+  // 리다이렉트 중에는 빈 화면 (깜빡임 방지)
+  if (isRedirecting) {
+    return null;
+  }
 
   if (sessionLoading || participantsLoading || !currentUser || !cohortId) {
     return <LoadingSpinner message="참가자 목록을 불러오는 중입니다" />;

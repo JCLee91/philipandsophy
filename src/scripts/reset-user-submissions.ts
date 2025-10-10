@@ -27,10 +27,10 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 // 초기화할 사용자 ID
-const USER_ID = 'user-junyoung';
+const USER_ID = 'user-hyunji';
 
 async function deleteUserSubmissions() {
-  console.log('🗑️  Deleting reading submissions for user-junyoung...\n');
+  console.log('🗑️  Deleting reading submissions for user-hyunji...\n');
 
   try {
     // participantId로 모든 독서 인증 찾기
@@ -72,7 +72,7 @@ async function verifyDeletion() {
     .where('participantId', '==', USER_ID)
     .get();
 
-  console.log(`📊 Remaining submissions for user-junyoung: ${remainingSnapshot.size}\n`);
+  console.log(`📊 Remaining submissions for user-hyunji: ${remainingSnapshot.size}\n`);
 
   if (remainingSnapshot.size === 0) {
     console.log('✅ All submissions successfully deleted!\n');

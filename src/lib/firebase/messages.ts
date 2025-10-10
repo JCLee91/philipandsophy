@@ -120,6 +120,7 @@ export const getMessagesByReceiver = async (
 
 /**
  * Get unread message count for a user in a conversation
+ * Supports 'admin-team' as userId for team chat functionality
  */
 export const getUnreadCount = async (
   conversationId: string,
@@ -127,10 +128,16 @@ export const getUnreadCount = async (
 ): Promise<number> => {
   const db = getDb();
   const messagesRef = collection(db, COLLECTIONS.MESSAGES);
+
+  // userId가 'admin-team'이면 팀 채팅용 쿼리 사용
+  const receiverIdCondition = userId === 'admin-team'
+    ? where('receiverId', '==', 'admin-team')
+    : where('receiverId', '==', userId);
+
   const q = query(
     messagesRef,
     where('conversationId', '==', conversationId),
-    where('receiverId', '==', userId),
+    receiverIdCondition,
     where('isRead', '==', false)
   );
 
@@ -156,6 +163,7 @@ export const getTotalUnreadCount = async (userId: string): Promise<number> => {
 
 /**
  * Mark all messages in a conversation as read for a specific user
+ * Supports 'admin-team' as userId for team chat functionality
  */
 export const markConversationAsRead = async (
   conversationId: string,
@@ -163,10 +171,16 @@ export const markConversationAsRead = async (
 ): Promise<void> => {
   const db = getDb();
   const messagesRef = collection(db, COLLECTIONS.MESSAGES);
+
+  // userId가 'admin-team'이면 팀 채팅용 쿼리 사용
+  const receiverIdCondition = userId === 'admin-team'
+    ? where('receiverId', '==', 'admin-team')
+    : where('receiverId', '==', userId);
+
   const q = query(
     messagesRef,
     where('conversationId', '==', conversationId),
-    where('receiverId', '==', userId),
+    receiverIdCondition,
     where('isRead', '==', false)
   );
 
