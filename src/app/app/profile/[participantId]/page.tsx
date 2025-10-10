@@ -184,7 +184,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     <PageTransition>
       <div className="app-shell flex flex-col overflow-y-auto" style={{ backgroundColor: colors.background }}>
         {/* 상단바 */}
-        <div className="flex items-center px-6 pt-4 pb-4" style={{ backgroundColor: colors.background }}>
+        <div className="flex items-center px-6 pb-4 safe-area-header" style={{ backgroundColor: colors.background }}>
           <button
             onClick={() => router.back()}
             className="flex items-center justify-center w-6 h-6"
@@ -407,6 +407,20 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           open={profileImageDialogOpen}
           onClose={() => setProfileImageDialogOpen(false)}
         />
+
+        {/* Safe Area CSS */}
+        <style jsx>{`
+          .safe-area-header {
+            padding-top: calc(1rem + env(safe-area-inset-top));
+          }
+
+          /* iOS 11.2 이전 버전 호환성 */
+          @supports (padding-top: constant(safe-area-inset-top)) {
+            .safe-area-header {
+              padding-top: calc(1rem + constant(safe-area-inset-top));
+            }
+          }
+        `}</style>
       </div>
     </PageTransition>
   );

@@ -20,7 +20,7 @@ import { useSession } from '@/hooks/use-session';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/hooks/use-verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
-import { getConversationId } from '@/lib/firebase/messages';
+import { getConversationId, getAdminTeamConversationId } from '@/lib/firebase/messages';
 import { appRoutes } from '@/lib/navigation';
 import { getInitials } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -46,8 +46,15 @@ function ParticipantRow({
   onOpenChange: (open: boolean) => void;
 }) {
   const initials = getInitials(participant.name);
-  const conversationId = getConversationId(currentUserId, participant.id);
-  const { data: unreadCount = 0 } = useUnreadCount(conversationId, currentUserId);
+
+  // 관리자는 admin-team 채팅방 사용, 일반 유저는 1:1 채팅방 사용
+  const conversationId = isAdmin
+    ? getAdminTeamConversationId(participant.id)
+    : getConversationId(currentUserId, participant.id);
+  const { data: unreadCount = 0 } = useUnreadCount(
+    conversationId,
+    isAdmin ? 'admin-team' : currentUserId
+  );
 
   // 터치 이벤트로 스크롤과 클릭 구분
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);

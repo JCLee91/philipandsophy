@@ -84,9 +84,11 @@ export default function DirectMessageDialog({
       });
 
       if (conversationId && messages.length > 0) {
+        // 관리자는 'admin-team', 일반 유저는 currentUserId 사용
+        const userId = currentUser?.isAdmin ? 'admin-team' : currentUserId;
         markAsReadMutation.mutate({
           conversationId,
-          userId: currentUserId
+          userId
         });
       }
     } else {

@@ -37,19 +37,15 @@ export const createMessage = async (data: {
   const db = getDb();
   const messagesRef = collection(db, COLLECTIONS.MESSAGES);
 
-  const newMessage: any = {
+  const newMessage: Omit<DirectMessage, 'id'> = {
     conversationId: data.conversationId,
     senderId: data.senderId,
     receiverId: data.receiverId,
     content: data.content.trim(),
     createdAt: Timestamp.now(),
     isRead: false,
+    ...(data.imageUrl && { imageUrl: data.imageUrl }),
   };
-
-  // imageUrl이 있을 때만 필드 추가
-  if (data.imageUrl) {
-    newMessage.imageUrl = data.imageUrl;
-  }
 
   const docRef = await addDoc(messagesRef, newMessage);
   return docRef.id;
