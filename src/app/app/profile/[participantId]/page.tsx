@@ -175,7 +175,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   return (
     <PageTransition>
-      <div className="flex min-h-screen flex-col" style={{ backgroundColor: colors.background }}>
+      <div className="flex min-h-[100dvh] max-h-[100dvh] flex-col overflow-y-auto" style={{ backgroundColor: colors.background }}>
         {/* 상단바 */}
         <div className="flex items-center px-6 pt-4 pb-4" style={{ backgroundColor: colors.background }}>
           <button

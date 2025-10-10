@@ -40,7 +40,7 @@ export default function ProfileImageDialog({
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="sm:max-w-lg p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)] min-h-[60vh] sm:min-h-[70vh]"
+        className="w-4/5 sm:max-w-lg p-0 gap-0 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.16)] min-h-[48vh] sm:min-h-[70vh]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogTitle className="sr-only">{participant.name} 프로필</DialogTitle>
@@ -61,7 +61,7 @@ export default function ProfileImageDialog({
               height={0}
               sizes="100vw"
               priority
-              className={`w-full h-auto max-h-[${UI_CONFIG.MODAL_IMAGE_MAX_HEIGHT}vh] object-contain transition-opacity duration-${UI_CONFIG.IMAGE_FADE_DURATION} ${
+              className={`w-full h-auto max-h-[64vh] object-contain transition-opacity duration-${UI_CONFIG.IMAGE_FADE_DURATION} ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
               onLoad={() => {

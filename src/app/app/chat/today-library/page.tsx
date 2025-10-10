@@ -222,6 +222,22 @@ function TodayLibraryContent() {
   const similarParticipants = featuredParticipants.filter(p => p.theme === 'similar');
   const oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
 
+  // 미인증 유저를 위한 더미 카드 (자물쇠 표시용)
+  const lockedPlaceholders = {
+    similar: [
+      { id: 'locked-1', name: '', profileImage: '', theme: 'similar' as const },
+      { id: 'locked-2', name: '', profileImage: '', theme: 'similar' as const },
+    ],
+    opposite: [
+      { id: 'locked-3', name: '', profileImage: '', theme: 'opposite' as const },
+      { id: 'locked-4', name: '', profileImage: '', theme: 'opposite' as const },
+    ],
+  };
+
+  // 표시할 카드 결정 (미인증: 더미 카드, 인증: 실제 데이터)
+  const displaySimilar = isLocked ? lockedPlaceholders.similar : similarParticipants;
+  const displayOpposite = isLocked ? lockedPlaceholders.opposite : oppositeParticipants;
+
   return (
     <PageTransition>
       <div className="flex h-[100dvh] flex-col overflow-hidden">
@@ -260,7 +276,7 @@ function TodayLibraryContent() {
                 <div className="h-[140px] overflow-hidden relative w-full">
                   <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-1" />
                   <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                    {similarParticipants.map((participant, index) => (
+                    {displaySimilar.map((participant, index) => (
                       <BookmarkCard
                         key={`similar-${participant.id}`}
                         profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
@@ -280,7 +296,7 @@ function TodayLibraryContent() {
                 <div className="h-[160px] overflow-hidden relative w-full">
                   <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-2" />
                   <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                    {oppositeParticipants.map((participant, index) => (
+                    {displayOpposite.map((participant, index) => (
                       <BookmarkCard
                         key={`opposite-${participant.id}`}
                         profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}

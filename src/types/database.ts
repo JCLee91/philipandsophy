@@ -35,7 +35,8 @@ export interface Participant {
   cohortId: string; // 기수 ID
   name: string; // 참가자 이름
   phoneNumber: string; // 전화번호
-  profileImage?: string; // 프로필 이미지 URL
+  profileImage?: string; // 프로필 이미지 URL (큰 이미지, 프로필 상세용)
+  profileImageCircle?: string; // 원형 프로필 이미지 URL (작은 아바타용)
   profileBookUrl?: string; // 프로필북 URL
   isAdmin?: boolean; // 운영자 여부
   occupation?: string; // 직업/하는 일

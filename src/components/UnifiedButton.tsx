@@ -51,6 +51,7 @@ export default function UnifiedButton({
   const isDisabled = disabled || loading;
   const displayIcon = loading ? <Loader2 className="h-5 w-5 animate-spin" /> : icon;
   const displayText = loading && loadingText ? loadingText : children;
+  const hasTextContent = displayText !== undefined && displayText !== null;
 
   return (
     <button
@@ -70,7 +71,9 @@ export default function UnifiedButton({
         variant === 'outline' && 'border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-300',
         // Layout
         fullWidth && 'w-full',
-        (icon || loading) && 'flex items-center justify-center gap-2',
+        // Icon만 있을 때는 gap 없이 중앙 정렬, 텍스트가 있으면 gap 적용
+        (icon || loading) && 'flex items-center justify-center',
+        (icon || loading) && hasTextContent && 'gap-2',
         // States
         'enabled:active:scale-95',
         'disabled:opacity-50 disabled:cursor-not-allowed',

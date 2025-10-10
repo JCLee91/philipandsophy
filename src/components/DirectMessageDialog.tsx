@@ -24,6 +24,7 @@ interface DirectMessageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserId: string;
+  currentUser: Participant | null;
   otherUser: Participant | null;
 }
 
@@ -31,6 +32,7 @@ export default function DirectMessageDialog({
   open,
   onOpenChange,
   currentUserId,
+  currentUser,
   otherUser,
 }: DirectMessageDialogProps) {
   const [messageContent, setMessageContent] = useState('');
@@ -167,7 +169,7 @@ export default function DirectMessageDialog({
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={otherUser.profileImage} alt={displayName} />
+              <AvatarImage src={otherUser.profileImageCircle || otherUser.profileImage} alt={displayName} />
               <AvatarFallback>{displayName[0]}</AvatarFallback>
             </Avatar>
             <div>
@@ -201,11 +203,10 @@ export default function DirectMessageDialog({
                     <AvatarImage
                       src={
                         isMine
-                          ? otherUser.id === 'admin'
-                            ? otherUser.profileImage
-                            : '/favicon.webp'
-                          : otherUser.profileImage
+                          ? currentUser?.profileImageCircle || currentUser?.profileImage || '/favicon.webp'
+                          : otherUser.profileImageCircle || otherUser.profileImage
                       }
+                      alt={isMine ? '나' : displayName}
                     />
                     <AvatarFallback>
                       {isMine ? '나' : displayName[0]}

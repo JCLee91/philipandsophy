@@ -22,6 +22,8 @@ import { appRoutes } from '@/lib/navigation';
 import { logger } from '@/lib/logger';
 import { useSession } from '@/hooks/use-session';
 
+const LAST_PHONE_KEY = 'pns-last-phone';
+
 export default function CodeInputCard() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -30,6 +32,19 @@ export default function CodeInputCard() {
   const [searchPhone, setSearchPhone] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 마지막 로그인 전화번호 불러오기
+  useEffect(() => {
+    try {
+      const lastPhone = localStorage.getItem(LAST_PHONE_KEY);
+      if (lastPhone) {
+        const formatted = formatPhoneNumber(lastPhone);
+        setPhoneNumber(formatted);
+      }
+    } catch (error) {
+      logger.error('마지막 전화번호 불러오기 실패:', error);
+    }
+  }, []);
 
   // Firebase query - only triggered when searchPhone is set
   const { data: participant, isLoading } = useParticipantByPhone(searchPhone);
@@ -103,10 +118,17 @@ export default function CodeInputCard() {
           // 1. Firebase에 세션 토큰 생성 및 저장
           const sessionToken = await createSessionToken(participant.id);
 
-          // 2. sessionStorage에 토큰 저장
+          // 2. localStorage에 토큰 저장
           login(sessionToken);
 
-          // 3. Prefetch strategy: 채팅 페이지 진입 전 필요 데이터 미리 로드
+          // 3. 마지막 로그인 전화번호 저장
+          try {
+            localStorage.setItem(LAST_PHONE_KEY, searchPhone);
+          } catch (error) {
+            logger.error('전화번호 저장 실패:', error);
+          }
+
+          // 4. Prefetch strategy: 채팅 페이지 진입 전 필요 데이터 미리 로드
           // Prefetch는 best-effort - 실패해도 페이지는 정상 로드됨
           await Promise.all([
             queryClient.prefetchQuery({
@@ -126,7 +148,7 @@ export default function CodeInputCard() {
           // Prefetch 실패는 치명적이지 않음 - React Query가 페이지에서 자동 fetch
           logger.warn('Prefetch failed, continuing to page', error);
         } finally {
-          // 4. 페이지 이동 (URL에서 userId 제거)
+          // 5. 페이지 이동 (URL에서 userId 제거)
           // router.push 대신 router.replace 사용 → 브라우저 히스토리에 남지 않음
           router.replace(appRoutes.chat(cohortId));
         }

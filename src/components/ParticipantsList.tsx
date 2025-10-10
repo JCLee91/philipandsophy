@@ -62,7 +62,7 @@ function ParticipantItem({
             <div className="relative">
               <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                 <AvatarImage
-                  src={participant.profileImage}
+                  src={participant.profileImageCircle || participant.profileImage}
                   alt={participant.name}
                 />
                 <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
@@ -114,7 +114,7 @@ function ParticipantItem({
       <div className="relative">
         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
           <AvatarImage
-            src={participant.profileImage}
+            src={participant.profileImageCircle || participant.profileImage}
             alt={participant.name}
           />
           <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
@@ -179,7 +179,7 @@ export default function ParticipantsList({
                           <div className="relative">
                             <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                               <AvatarImage
-                                src={participant.profileImage}
+                                src={participant.profileImageCircle || participant.profileImage}
                                 alt={participant.name}
                               />
                               <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">

@@ -1,6 +1,6 @@
 /**
  * Upload Profile Images to Firebase Storage
- * 김민준, 이윤지 프로필 이미지를 Firebase Storage에 업로드하고
+ * 20명의 참가자 프로필 이미지를 Firebase Storage에 업로드하고
  * Firestore participants 컬렉션을 업데이트합니다.
  */
 
@@ -26,8 +26,134 @@ if (!getApps().length) {
 const db = getFirestore();
 const bucket = getStorage().bucket();
 
-// 업로드할 프로필 이미지 정보
+// 업로드할 프로필 이미지 정보 (20명 전체)
 const PROFILE_IMAGES = [
+  {
+    name: '박지영',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/1_박지영.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/박지영.png',
+    storagePath: 'profiles/park-jiyoung-profile.png',
+    circleStoragePath: 'profiles/park-jiyoung-circle.png',
+  },
+  {
+    name: '최종호',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/2_최종호.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/최종호.png',
+    storagePath: 'profiles/choi-jongho-profile.png',
+    circleStoragePath: 'profiles/choi-jongho-circle.png',
+  },
+  {
+    name: '서민석',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/3_서민석.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/서민석.png',
+    storagePath: 'profiles/seo-minseok-profile.png',
+    circleStoragePath: 'profiles/seo-minseok-circle.png',
+  },
+  {
+    name: '서현명',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/4_서현명.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/서현명.png',
+    storagePath: 'profiles/seo-hyunmyung-profile.png',
+    circleStoragePath: 'profiles/seo-hyunmyung-circle.png',
+  },
+  {
+    name: '김산하',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/5_김산하.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/김산하.png',
+    storagePath: 'profiles/kim-sanha-profile.png',
+    circleStoragePath: 'profiles/kim-sanha-circle.png',
+  },
+  {
+    name: '하진영',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/6_하진영.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/하진영.png',
+    storagePath: 'profiles/ha-jinyoung-profile.png',
+    circleStoragePath: 'profiles/ha-jinyoung-circle.png',
+  },
+  {
+    name: '이인재',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/7_이인재.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/이인재.png',
+    storagePath: 'profiles/lee-injae-profile.png',
+    circleStoragePath: 'profiles/lee-injae-circle.png',
+  },
+  {
+    name: '이예림',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/8_이예림.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/이예림.png',
+    storagePath: 'profiles/lee-yerim-profile.png',
+    circleStoragePath: 'profiles/lee-yerim-circle.png',
+  },
+  {
+    name: '유하람',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/9_유하람.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/유하람.png',
+    storagePath: 'profiles/yoo-haram-profile.png',
+    circleStoragePath: 'profiles/yoo-haram-circle.png',
+  },
+  {
+    name: '손다진',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/10_손다진.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/손다진.png',
+    storagePath: 'profiles/son-dajin-profile.png',
+    circleStoragePath: 'profiles/son-dajin-circle.png',
+  },
+  {
+    name: '이지현',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/11_이지현.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/이지현.png',
+    storagePath: 'profiles/lee-jihyun-profile.png',
+    circleStoragePath: 'profiles/lee-jihyun-circle.png',
+  },
+  {
+    name: '김청랑',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/12_김청랑.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/김청랑.png',
+    storagePath: 'profiles/kim-cheonglang-profile.png',
+    circleStoragePath: 'profiles/kim-cheonglang-circle.png',
+  },
+  {
+    name: '김정현',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/13_김정현.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/김정현.png',
+    storagePath: 'profiles/kim-junghyun-profile.png',
+    circleStoragePath: 'profiles/kim-junghyun-circle.png',
+  },
+  {
+    name: '김동현',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/14_김동현.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/김동현.png',
+    storagePath: 'profiles/kim-donghyun-profile.png',
+    circleStoragePath: 'profiles/kim-donghyun-circle.png',
+  },
+  {
+    name: '방유라',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/15_방유라.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/방유라.png',
+    storagePath: 'profiles/bang-yura-profile.png',
+    circleStoragePath: 'profiles/bang-yura-circle.png',
+  },
+  {
+    name: '유진욱',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/16_유진욱.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/유진욱.png',
+    storagePath: 'profiles/yoo-jinwook-profile.png',
+    circleStoragePath: 'profiles/yoo-jinwook-circle.png',
+  },
+  {
+    name: '조현우',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/17_조현우.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/조현우.png',
+    storagePath: 'profiles/jo-hyunwoo-profile.png',
+    circleStoragePath: 'profiles/jo-hyunwoo-circle.png',
+  },
+  {
+    name: '전승훈',
+    localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/18_전승훈.png',
+    circlePath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/profil-circle/전승훈.png',
+    storagePath: 'profiles/jeon-seunghun-profile.png',
+    circleStoragePath: 'profiles/jeon-seunghun-circle.png',
+  },
   {
     name: '김민준',
     localPath: '/Users/jclee/Desktop/휠즈랩스/projectpns/public/image/members_10/Profile_1기_김민준.png',
@@ -93,7 +219,11 @@ async function findParticipantByName(name: string) {
 /**
  * Firestore 참가자 문서 업데이트
  */
-async function updateParticipantImage(name: string, profileImageUrl: string) {
+async function updateParticipantImage(
+  name: string,
+  profileImageUrl: string,
+  profileImageCircleUrl: string
+) {
   const participantDoc = await findParticipantByName(name);
 
   if (!participantDoc) {
@@ -102,6 +232,7 @@ async function updateParticipantImage(name: string, profileImageUrl: string) {
 
   await participantDoc.ref.update({
     profileImage: profileImageUrl,
+    profileImageCircle: profileImageCircleUrl,
     updatedAt: new Date(),
   });
 
@@ -124,10 +255,10 @@ async function main() {
 
       // 2. 원형 프로필 이미지 업로드 (profil-circle)
       console.log(`📤 원형 이미지 업로드 중...`);
-      await uploadFile(profile.circlePath, profile.circleStoragePath);
+      const circleUrl = await uploadFile(profile.circlePath, profile.circleStoragePath);
 
-      // 3. Firestore 업데이트 (큰 이미지 URL 사용)
-      await updateParticipantImage(profile.name, profileUrl);
+      // 3. Firestore 업데이트 (큰 이미지 + 원형 이미지 모두 저장)
+      await updateParticipantImage(profile.name, profileUrl, circleUrl);
 
       console.log(`\n✅ ${profile.name} 처리 완료!`);
     } catch (error) {
