@@ -45,6 +45,17 @@ export const appRoutes = {
   },
 
   /**
+   * 참가자 목록 전용 페이지 (iOS PWA fallback)
+   * @param cohortId - 기수 ID
+   */
+  participants: (cohortId: string) => {
+    const params = new URLSearchParams({
+      cohort: cohortId,
+    });
+    return `/app/chat/participants?${params}`;
+  },
+
+  /**
    * 프로그램 소개 페이지
    * @param cohortId - 기수 ID
    */

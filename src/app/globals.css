@@ -171,7 +171,7 @@
 
   /* 웹앱 페이지에서만 body 스크롤 제거 (내부 스크롤은 허용) */
   body[data-app="true"] {
-    overflow: hidden;
+    overflow-y: auto;
     /* iOS에서 rubber-band 스크롤 방지 */
     overscroll-behavior: none;
     height: var(--app-viewport-height, 100vh);

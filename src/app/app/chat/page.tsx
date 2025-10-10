@@ -13,6 +13,7 @@ import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
 import { useSession } from '@/hooks/use-session';
+import { useIsIosStandalone } from '@/hooks/use-standalone-ios';
 import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
 import Header from '@/components/Header';
 import ParticipantsList from '@/components/ParticipantsList';
@@ -74,6 +75,7 @@ function ChatPageContent() {
   const [collapsedNotices, setCollapsedNotices] = useState<Set<string>>(new Set());
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const hasScrolledRef = useRef(false);
+  const isIosStandalone = useIsIosStandalone();
 
   // Firebase hooks for data fetching
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
@@ -287,7 +289,14 @@ function ChatPageContent() {
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden">
         <Header
-          onParticipantsClick={() => setParticipantsOpen(true)}
+        onParticipantsClick={() => {
+          if (isIosStandalone) {
+            if (!cohortId) return;
+            router.push(appRoutes.participants(cohortId));
+            return;
+          }
+          setParticipantsOpen(true);
+        }}
           onWriteClick={() => setWriteDialogOpen(true)}
           onMessageAdminClick={handleMessageAdmin}
           isAdmin={isAdmin}
@@ -318,7 +327,10 @@ function ChatPageContent() {
         <ProfileImageDialog
           participant={selectedParticipant}
           open={!!selectedParticipant}
-          onClose={() => setSelectedParticipant(null)}
+          onClose={() => {
+            setSelectedParticipant(null);
+            // 프로필 리스트는 유지 (닫지 않음)
+          }}
         />
         <main className="relative flex-1 overflow-y-auto bg-background pb-20">
           {/* 고정 공지 영역 - sticky로 스크롤 시 상단 고정 */}

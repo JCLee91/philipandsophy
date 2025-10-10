@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import UnifiedButton from '@/components/UnifiedButton';
 import { useMessages, useSendMessage, useMarkAsRead } from '@/hooks/use-messages';
-import { getConversationId } from '@/lib/firebase/messages';
+import { getConversationId, getAdminTeamConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -46,7 +46,9 @@ export default function DirectMessageDialog({
   const prevMessagesLengthRef = useRef(0);
 
   const conversationId = otherUser
-    ? getConversationId(currentUserId, otherUser.id)
+    ? otherUser.id === 'admin-team'
+      ? getAdminTeamConversationId(currentUserId)  // 관리자 팀과 대화할 때
+      : getConversationId(currentUserId, otherUser.id)  // 일반 사용자와 대화할 때
     : '';
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
@@ -77,7 +79,10 @@ export default function DirectMessageDialog({
       });
 
       if (conversationId && messages.length > 0) {
-        markAsReadMutation.mutate({ conversationId, userId: currentUserId });
+        markAsReadMutation.mutate({
+          conversationId,
+          userId: currentUserId
+        });
       }
     } else {
       // 닫힐 때 상태 초기화
@@ -131,7 +136,7 @@ export default function DirectMessageDialog({
       await sendMessageMutation.mutateAsync({
         conversationId,
         senderId: currentUserId,
-        receiverId: otherUser.id,
+        receiverId: otherUser.id === 'admin-team' ? 'admin-team' : otherUser.id,
         content: messageContent,
         imageUrl,
       });
@@ -194,6 +199,8 @@ export default function DirectMessageDialog({
           ) : (
             messages.map((msg) => {
               const isMine = msg.senderId === currentUserId;
+              const isFromAdminTeam = otherUser?.id === 'admin-team';
+
               return (
                 <div
                   key={msg.id}
@@ -204,17 +211,25 @@ export default function DirectMessageDialog({
                       src={
                         isMine
                           ? currentUser?.profileImageCircle || currentUser?.profileImage || '/favicon.webp'
-                          : otherUser.profileImageCircle || otherUser.profileImage
+                          : isFromAdminTeam
+                            ? '/favicon.webp'  // 관리자 팀은 기본 아이콘 사용
+                            : otherUser?.profileImageCircle || otherUser?.profileImage
                       }
-                      alt={isMine ? '나' : displayName}
+                      alt={isMine ? '나' : isFromAdminTeam ? '필립앤소피' : displayName}
                     />
                     <AvatarFallback>
-                      {isMine ? '나' : displayName[0]}
+                      {isMine ? '나' : isFromAdminTeam ? '필' : displayName[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div
                     className={`flex flex-col max-w-[70%] ${isMine ? 'items-end' : 'items-start'}`}
                   >
+                    {/* 관리자 팀의 경우 발신자 이름 표시 */}
+                    {isFromAdminTeam && !isMine && (
+                      <span className="text-xs text-muted-foreground mb-1 px-1">
+                        {msg.senderId === currentUserId ? '나' : '필립앤소피'}
+                      </span>
+                    )}
                     <div
                       className={`rounded-2xl ${msg.imageUrl ? 'p-2' : 'px-4 py-2'} ${
                         isMine

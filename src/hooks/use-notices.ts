@@ -133,7 +133,8 @@ export function useDeleteNotice() {
   return useMutation({
     mutationFn: (id: string) => deleteNotice(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: NOTICE_KEYS.lists() });
+      // 모든 공지 관련 쿼리 무효화 (lists와 cohort별 쿼리 모두)
+      queryClient.invalidateQueries({ queryKey: NOTICE_KEYS.all });
     },
   });
 }

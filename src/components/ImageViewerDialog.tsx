@@ -42,7 +42,8 @@ export default function ImageViewerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-4xl max-h-[90vh] p-0 bg-black/95 border-0 z-[60]"
+        hideCloseButton
+        className="max-w-[90vw] max-h-[90vh] w-full h-full p-0 bg-black/95 border-0 z-[60]"
         onEscapeKeyDown={(e) => {
           // ESC 키로 ImageViewer만 닫기 (DM Dialog는 유지)
           e.stopPropagation();
@@ -64,7 +65,7 @@ export default function ImageViewerDialog({
         </button>
 
         {/* 이미지 컨테이너 */}
-        <div className="relative w-full h-full min-h-[300px] max-h-[85vh] flex items-center justify-center p-4">
+        <div className="relative w-full h-full flex items-center justify-center">
           {imageError ? (
             <div className="text-white/70 text-center">
               <p className="text-lg mb-2">이미지를 불러올 수 없습니다</p>

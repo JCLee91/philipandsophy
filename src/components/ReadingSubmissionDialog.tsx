@@ -274,8 +274,8 @@ export default function ReadingSubmissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto pt-8 pb-6">
+        <DialogHeader className="mb-6">
           <DialogTitle className="text-xl">독서 인증하기</DialogTitle>
           <DialogDescription>
             오늘 읽은 내용을 기록하고 인증해보세요. 모든 항목은 필수입니다.
@@ -295,7 +295,7 @@ export default function ReadingSubmissionDialog({
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-6 pt-4">
           {/* 1. 책 사진 */}
           <div className="space-y-3">
             <Label className="text-base font-semibold">
