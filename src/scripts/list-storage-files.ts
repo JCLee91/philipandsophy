@@ -32,7 +32,8 @@ async function listStorageFiles() {
     console.log(`Found ${files.length} files in profile_images/:\n`);
 
     files.forEach((file, index) => {
-      const sizeKB = (file.metadata.size / 1024).toFixed(1);
+      const size = Number(file.metadata.size) || 0;
+      const sizeKB = (size / 1024).toFixed(1);
       console.log(`${index + 1}. ${file.name} (${sizeKB} KB)`);
     });
 
