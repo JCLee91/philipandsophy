@@ -8,13 +8,6 @@ import { strictRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
 
-/**
- * Firebase Admin 초기화 (통합 함수 사용)
- */
-function getFirebaseAdmin() {
-  return getAdminDb();
-}
-
 interface SubmissionData {
   participantId: string;
   dailyQuestion: string;
@@ -61,7 +54,7 @@ export async function POST(request: NextRequest) {
     const today = getTodayString();
 
     // 2. Firebase Admin 초기화 및 DB 가져오기
-    const db = getFirebaseAdmin();
+    const db = getAdminDb();
 
     // 3. 오늘 제출한 참가자들의 답변 가져오기
     const submissionsSnapshot = await db
@@ -287,7 +280,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Firebase Admin 초기화 및 DB 가져오기
-    const db = getFirebaseAdmin();
+    const db = getAdminDb();
 
     // Cohort 문서에서 매칭 결과 가져오기
     const cohortDoc = await db.collection('cohorts').doc(cohortId).get();
@@ -328,22 +321,36 @@ export async function GET(request: NextRequest) {
             assignments: {},
           };
 
-    // 참가자 이름 정보 가져오기
+    // 참가자 이름 정보 가져오기 (Batch read로 N+1 쿼리 최적화)
     const featuredSimilarIds = normalizedMatching.featured?.similar ?? [];
     const featuredOppositeIds = normalizedMatching.featured?.opposite ?? [];
     const participantIds = [...featuredSimilarIds, ...featuredOppositeIds];
-    const participantsData = await Promise.all(
-      participantIds.map(async (id) => {
-        const doc = await db.collection('participants').doc(id).get();
-        return doc.exists ? { id, name: doc.data()?.name } : { id, name: '알 수 없음' };
-      })
-    );
 
-    const similarParticipants = participantsData.filter((p) =>
-      featuredSimilarIds.includes(p.id)
+    // Batch read (최대 10개씩)
+    const BATCH_SIZE = 10;
+    const participantDataMap = new Map<string, { id: string; name: string }>();
+
+    for (let i = 0; i < participantIds.length; i += BATCH_SIZE) {
+      const batchIds = participantIds.slice(i, i + BATCH_SIZE);
+      const participantDocs = await db
+        .collection('participants')
+        .where(admin.firestore.FieldPath.documentId(), 'in', batchIds)
+        .get();
+
+      participantDocs.docs.forEach((doc) => {
+        participantDataMap.set(doc.id, {
+          id: doc.id,
+          name: doc.data()?.name ?? '알 수 없음'
+        });
+      });
+    }
+
+    // ID로 참가자 정보 매핑 (없으면 기본값)
+    const similarParticipants = featuredSimilarIds.map((id) =>
+      participantDataMap.get(id) ?? { id, name: '알 수 없음' }
     );
-    const oppositeParticipants = participantsData.filter((p) =>
-      featuredOppositeIds.includes(p.id)
+    const oppositeParticipants = featuredOppositeIds.map((id) =>
+      participantDataMap.get(id) ?? { id, name: '알 수 없음' }
     );
 
     return NextResponse.json({

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase/admin';
+import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 
 const SESSION_HEADER = 'x-session-token';
@@ -9,7 +9,8 @@ async function resolveSession(sessionToken: string | null) {
     return null;
   }
 
-  const snapshot = await adminDb
+  const db = getAdminDb();
+  const snapshot = await db
     .collection(COLLECTIONS.PARTICIPANTS)
     .where('sessionToken', '==', sessionToken)
     .limit(1)
@@ -54,7 +55,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'INVALID_ID' }, { status: 400 });
     }
 
-    await adminDb.collection(COLLECTIONS.NOTICES).doc(noticeId).delete();
+    const db = getAdminDb();
+    await db.collection(COLLECTIONS.NOTICES).doc(noticeId).delete();
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

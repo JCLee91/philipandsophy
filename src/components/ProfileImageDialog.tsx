@@ -93,17 +93,17 @@ export default function ProfileImageDialog({
           {participant.name}님의 프로필 이미지
         </DialogDescription>
         {participant.profileImage && imageLoaded ? (
-          <Image
-            src={participant.profileImage}
-            alt={participant.name}
-            width={1000}
-            height={1000}
-            className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-          />
+          <div className="relative max-w-[90vw] max-h-[90vh]" style={{ aspectRatio: 'auto' }}>
+            <img
+              src={participant.profileImage}
+              alt={participant.name}
+              className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+            />
+          </div>
         ) : (
           <div className="text-white text-center p-8">
             <p className="text-muted-foreground">프로필 이미지가 없습니다</p>

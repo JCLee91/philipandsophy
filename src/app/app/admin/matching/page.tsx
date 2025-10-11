@@ -6,6 +6,7 @@ import { Users, Check, X, Loader2 } from 'lucide-react';
 import { getTodayString } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { useSession } from '@/hooks/use-session';
+import { useSubmissionCount } from '@/hooks/use-submission-count';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
 import HeaderNavigation from '@/components/HeaderNavigation';
@@ -62,11 +63,12 @@ function MatchingPageContent() {
   const { toast } = useToast();
   const { data: cohortParticipants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
 
+  // 실시간 제출 카운트 (Firebase onSnapshot)
+  const { count: submissionCount, isLoading: isLoadingCount } = useSubmissionCount(cohortId || undefined);
+
   const [isMatching, setIsMatching] = useState(false);
   const [matchingResult, setMatchingResult] = useState<MatchingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [submissionCount, setSubmissionCount] = useState<number>(0);
-  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
 
   const today = getTodayString();
   const todayQuestion = getDailyQuestionText();
@@ -135,14 +137,11 @@ function MatchingPageContent() {
     }
   }, [sessionLoading, currentUser, cohortId, router, toast]);
 
-  // 기존 매칭 결과 및 제출 현황 로드
-  const fetchMatchingStatus = useCallback(async () => {
+  // 기존 매칭 결과 로드 (제출 현황은 useSubmissionCount가 실시간 처리)
+  const fetchMatchingResult = useCallback(async () => {
     if (!cohortId || !sessionToken) return;
     try {
-      setIsLoadingStatus(true);
-
-      // 기존 매칭 결과 조회
-      const matchingResponse = await fetch(
+      const response = await fetch(
         `/api/admin/matching?cohortId=${cohortId}&date=${today}`,
         {
           headers: {
@@ -151,37 +150,20 @@ function MatchingPageContent() {
         }
       );
 
-      if (matchingResponse.ok) {
-        const data = await matchingResponse.json();
+      if (response.ok) {
+        const data = await response.json();
         setMatchingResult(data);
       }
-
-      // 제출 현황 조회
-      const statusResponse = await fetch(
-        `/api/admin/matching/status?cohortId=${cohortId}&date=${today}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${sessionToken}`,
-          },
-        }
-      );
-
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json();
-        setSubmissionCount(statusData.submissionCount || 0);
-      }
     } catch (error) {
-      console.error('데이터 로드 실패:', error);
-    } finally {
-      setIsLoadingStatus(false);
+      console.error('매칭 결과 로드 실패:', error);
     }
   }, [cohortId, today, sessionToken]);
 
   useEffect(() => {
     if (cohortId) {
-      fetchMatchingStatus();
+      fetchMatchingResult();
     }
-  }, [cohortId, fetchMatchingStatus]);
+  }, [cohortId, fetchMatchingResult]);
 
   const handleOpenProfile = (participantId: string, theme: 'similar' | 'opposite') => {
     if (!cohortId) return;

@@ -70,23 +70,15 @@ async function convertToWebP(
   outputPath: string,
   type: 'full' | 'circle'
 ) {
-  if (type === 'circle') {
-    // Circle: 원본 크기 유지하고 WebP로만 변환
-    console.log(`      Converting to WebP (circle, original size)...`);
-    await sharp(inputPath)
-      .webp({ quality: 85 })
-      .toFile(outputPath);
-  } else {
-    // Full: 비율 유지하며 최대 1000px
-    console.log(`      Converting to WebP (full, max 1000px, aspect ratio preserved)...`);
-    await sharp(inputPath)
-      .resize(1000, 1000, {
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .webp({ quality: 85 })
-      .toFile(outputPath);
-  }
+  // 모든 이미지: 원본 크기 그대로 유지, 무손실 WebP 변환
+  console.log(`      Converting to lossless WebP (${type}, original size preserved)...`);
+  await sharp(inputPath)
+    .webp({
+      lossless: true,  // 무손실 압축
+      quality: 100,    // 최고 품질
+      nearLossless: false  // 완전 무손실
+    })
+    .toFile(outputPath);
 }
 
 async function deleteOldFile(storagePath: string) {

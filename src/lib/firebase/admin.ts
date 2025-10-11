@@ -138,17 +138,4 @@ export function isFirebaseAdminInitialized(): boolean {
   return isInitialized;
 }
 
-// 하위 호환성을 위한 export (deprecated)
-export const adminDb = new Proxy({} as ReturnType<typeof getAdminDb>, {
-  get(target, prop) {
-    return getAdminDb()[prop as keyof ReturnType<typeof getAdminDb>];
-  }
-});
-
-export const adminAuth = new Proxy({} as ReturnType<typeof getAdminAuth>, {
-  get(target, prop) {
-    return getAdminAuth()[prop as keyof ReturnType<typeof getAdminAuth>];
-  }
-});
-
 export { admin };

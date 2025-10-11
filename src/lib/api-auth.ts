@@ -106,8 +106,18 @@ export async function validateSession(
       return {
         user: null,
         error: NextResponse.json(
-          { error: '유효하지 않은 세션입니다.' },
-          { status: 401 }
+          {
+            error: '세션이 만료되었거나 유효하지 않습니다.',
+            code: 'SESSION_EXPIRED',
+            message: '다시 로그인해주세요.',
+          },
+          {
+            status: 401,
+            headers: {
+              'WWW-Authenticate': 'Bearer realm="PnS Member Portal"',
+              'X-Session-Status': 'expired',
+            },
+          }
         ),
       };
     }
@@ -118,7 +128,10 @@ export async function validateSession(
     return {
       user: null,
       error: NextResponse.json(
-        { error: '세션 검증 중 오류가 발생했습니다.' },
+        {
+          error: '세션 검증 중 오류가 발생했습니다.',
+          code: 'SESSION_VALIDATION_ERROR',
+        },
         { status: 500 }
       ),
     };

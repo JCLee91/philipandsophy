@@ -3,13 +3,7 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { getTodayString } from '@/lib/date-utils';
 import { requireAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
-
-/**
- * Firebase Admin 초기화 (통합 함수 사용)
- */
-function getFirebaseAdmin() {
-  return getAdminDb();
-}
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/matching/status?cohortId=xxx&date=yyyy-mm-dd
@@ -38,7 +32,7 @@ export async function GET(request: NextRequest) {
     const question = getDailyQuestionText(date);
 
     // Firebase Admin 초기화 및 DB 가져오기
-    const db = getFirebaseAdmin();
+    const db = getAdminDb();
 
     // 오늘 제출한 참가자 수 조회
     const submissionsSnapshot = await db
@@ -63,7 +57,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('제출 현황 조회 실패:', error);
+    logger.error('제출 현황 조회 실패', error);
     return NextResponse.json(
       {
         error: '제출 현황 조회 중 오류가 발생했습니다.',
