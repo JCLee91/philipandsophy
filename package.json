@@ -25,7 +25,12 @@
     "import:gender": "tsx src/scripts/import-gender-from-csv.ts",
     "cleanup:production": "tsx src/scripts/production-cleanup.ts",
     "update:profile-images": "tsx src/scripts/update-all-profile-images.ts",
-    "convert:profiles-webp": "tsx src/scripts/convert-profiles-to-webp.ts"
+    "convert:profiles-webp": "tsx src/scripts/convert-profiles-to-webp.ts",
+    "check:storage": "tsx src/scripts/check-storage-folders.ts",
+    "cleanup:unused-profiles": "tsx src/scripts/delete-unused-profiles-folder.ts",
+    "verify:profile-webp": "tsx src/scripts/verify-profile-images-webp.ts",
+    "update:dajin-profile": "tsx src/scripts/update-dajin-profile.ts",
+    "restore:dajin-circle": "tsx src/scripts/restore-dajin-circle.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",

@@ -278,12 +278,12 @@ function TodayLibraryContent() {
                 <div className="flex flex-col gap-12">
                 <div className="flex flex-col gap-3">
                   <h1 className="font-bold text-heading-xl text-black">
-                    매칭이 진행중이에요
+                    전달드릴 프로필북을 준비중이에요
                     <br />
-                    제출 다음날 오후 4시에 오픈됩니다
+                    제출 다음날 오후 2~4시에 준비됩니다
                   </h1>
                   <p className="font-medium text-body-base text-text-secondary">
-                    제출하신 답변을 바탕으로 AI가 프로필 매칭을 진행하고 있어요
+                    제출하신 답변을 바탕으로 AI가 프로필북을 분석하고 있어요
                   </p>
                 </div>
 
@@ -388,16 +388,16 @@ function TodayLibraryContent() {
                 {/* Empty State Message */}
                 <div className="space-y-3">
                   <h3 className="font-bold text-lg text-gray-900">
-                    매칭이 진행중이에요 ⏳
+                    전달드릴 프로필북을 준비중이에요
                   </h3>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600 leading-relaxed">
                       제출하신 답변을 바탕으로
                       <br />
-                      AI가 프로필 매칭을 진행하고 있어요.
+                      AI가 프로필북을 분석하고 있어요.
                     </p>
                     <p className="text-sm font-semibold text-blue-600">
-                      📅 제출 다음날 오후 4시에 오픈됩니다
+                      📅 제출 다음날 오후 2~4시에 준비됩니다
                     </p>
                   </div>
                 </div>
