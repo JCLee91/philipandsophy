@@ -30,7 +30,9 @@
     "cleanup:unused-profiles": "tsx src/scripts/delete-unused-profiles-folder.ts",
     "verify:profile-webp": "tsx src/scripts/verify-profile-images-webp.ts",
     "update:dajin-profile": "tsx src/scripts/update-dajin-profile.ts",
-    "restore:dajin-circle": "tsx src/scripts/restore-dajin-circle.ts"
+    "restore:dajin-circle": "tsx src/scripts/restore-dajin-circle.ts",
+    "batch:update-profiles": "tsx src/scripts/batch-update-profiles.ts",
+    "debug:submissions": "tsx src/scripts/debug-submission-count.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",

@@ -388,16 +388,15 @@ function TodayLibraryContent() {
                 {/* Empty State Message */}
                 <div className="space-y-3">
                   <h3 className="font-bold text-lg text-gray-900">
-                    전달드릴 프로필북을 준비중이에요
+                    AI가 답변을 분석해서
+                    <br />
+                    프로필 북을 선고 있어요
                   </h3>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      제출하신 답변을 바탕으로
+                      어제 멤버들이 제출한 답변들을
                       <br />
-                      AI가 프로필북을 분석하고 있어요.
-                    </p>
-                    <p className="text-sm font-semibold text-blue-600">
-                      📅 제출 다음날 오후 2~4시에 준비됩니다
+                      오후 2시에서 4시 사이에 열어볼 수 있어요
                     </p>
                   </div>
                 </div>
