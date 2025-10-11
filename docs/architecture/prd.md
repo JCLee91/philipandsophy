@@ -355,69 +355,26 @@ A. Phase 2 (Week 7-8)에 웹푸시 및 모바일 알림을 추가할 예정입�
 
 ## 변경 이력
 
-- **v1.0** (2025-01-01): 초기 PRD 작성 (멤버 전용 단방향 채팅방)
-- **v2.0** (2025-10-07): 실제 구현 반영 - 랜딩페이지, 프로필북, 독서 인증, Today's Library, 다이렉트 메시지 추가
-- **v2.1** (2025-10-07): 네이버 책 검색 API 통합, 코드 품질 개선 (Logger, Constants), 프로덕션 대비 최적화
-- **v2.2** (2025-10-08): 책 메타데이터 자동 저장 시스템 추가 및 11개 버그 수정
-
-### v2.2 주요 변경사항
-
-#### 신규 기능
-1. **책 메타데이터 자동 저장**
-   - 독서 인증 시 선택한 책 정보(제목, 저자, 표지) 자동 저장
-   - 다음 날 독서 인증 다이얼로그에서 이전 책 정보 자동 표시
-   - 책 정보 카드 UI로 시각적 표현 (표지 + 제목 + 저자 + 출판사)
-   - X 버튼으로 다른 책으로 변경 시 간편하게 초기화
-
-2. **Firebase 스키마 확장**
-   - `participants` 컬렉션에 책 메타데이터 필드 추가:
-     - `currentBookTitle?: string`
-     - `currentBookAuthor?: string`
-     - `currentBookCoverUrl?: string`
-   - 하위 호환성 유지 (선택적 필드)
-
-3. **새로운 API 함수**
-   - `updateParticipantBookInfo()`: 책 메타데이터 원자적 업데이트
-   - Firebase Transaction 패턴 적용
-
-#### 버그 수정 (11개)
-1. **Firebase Transaction 레이스 컨디션 방지** - `runTransaction()` 사용
-2. **수동 입력 메타데이터 손실 경고** - `window.confirm()` 추가
-3. **API 요청 취소 메커니즘** - abort flag 패턴
-4. **null/undefined 표준화** - 전체 코드베이스에서 `undefined` 일관성
-5. **initialBook 검증 강화** - title 필드 필수 체크
-6. **로딩 에러 처리** - toast 알림 추가
-7. **X 버튼 메타데이터 초기화** - onClear 콜백
-8. **하위 호환성** - 선택적 메타데이터 필드
-9. **useEffect 의존성 수정** - 무한 루프 방지
-10. **에러 토스트 알림** - 사용자 친화적 메시지
-11. **동시 업데이트 보호** - 원자적 트랜잭션
-
-#### UI/UX 개선
-1. **책 정보 카드 UI**
-   - 책 선택 시 카드 형태로 표시 (이전: 텍스트 input)
-   - 표지 이미지, 제목, 저자, 출판사 표시
-   - X 버튼으로 선택 취소
-   - autoComplete="off"로 브라우저 히스토리 비활성화
-
-2. **독서 인증 폼 최적화**
-   - 중복 UI 요소 제거 ("이전 독서 계속" 배지, "다른 책으로 변경" 버튼)
-   - 책 정보 카드로 시각적 일관성 확보
-   - 더 직관적인 인터랙션 패턴
-
-#### 변경된 파일
-- `src/types/database.ts`
-- `src/lib/firebase/participants.ts`
-- `src/lib/firebase/index.ts`
-- `src/components/BookSearchAutocomplete.tsx`
-- `src/components/ReadingSubmissionDialog.tsx`
+- **v1.0** (2025-10-11): V1.0 프로덕션 배포 완료
+  - 랜딩페이지 (Glassmorphism 디자인)
+  - 멤버 전용 웹앱 (/app)
+  - 4자리 코드 인증 시스템
+  - 공지사항 및 채팅
+  - 독서 인증 시스템 (네이버 책 검색 API 연동)
+  - 참가자 프로필북
+  - 오늘의 서재 (AI 기반 매칭)
+  - 다이렉트 메시지
+  - 관리자 시스템 (3명)
+  - 실유저 시스템 (2명)
+  - PWA 및 모바일 최적화
+  - SEO 최적화
 
 ---
 
-본 PRD는 현재 구현된 기능을 반영하여 작성되었습니다. 향후 피드백과 사용자 행동 데이터를 기반으로 단계적 개선을 진행합니다.
+본 PRD는 V1.0 프로덕션 배포 시점의 기능을 반영하여 작성되었습니다. 향후 피드백과 사용자 행동 데이터를 기반으로 단계적 개선을 진행합니다.
 
 ---
 
-**Last Updated**: 2025-10-10
-**Document Version**: v2.2.0
+**Last Updated**: 2025-10-11
+**Project Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/architecture/prd.md`

@@ -1,7 +1,8 @@
 # iOS PWA Scroll Bug Fix
 
-**Last Updated**: 2025-10-10
-**Category**: Troubleshooting / Platform-Specific Issues
+**Last Updated**: 2025-10-11
+**Version**: V1.0 (프로덕션 배포 완료)
+**Category**: troubleshooting
 
 ## 📱 Problem Summary
 

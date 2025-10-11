@@ -1,7 +1,8 @@
 # 버튼 디자인 시스템
 
-**최종 업데이트**: 2025-10-10
-**카테고리**: design
+**Last Updated**: 2025-10-11
+**Version**: V1.0 (프로덕션 배포 완료)
+**Category**: design
 
 ## 개요
 
@@ -560,5 +561,6 @@ import { BookOpen } from 'lucide-react';
 
 ---
 
-**마지막 업데이트**: 2025-10-10
-**문서 버전**: v1.0.0
+**Last Updated**: 2025-10-11
+**Version**: V1.0 (프로덕션 배포 완료)
+**Location**: `docs/design/button-system.md`

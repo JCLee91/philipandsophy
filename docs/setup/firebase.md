@@ -269,6 +269,6 @@ const submissions = await getSubmissionsByCode('ABC123');
 
 ---
 
-**Last Updated**: 2025-10-10
-**Document Version**: v2.2.0
+**Last Updated**: 2025-10-11
+**Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/setup/firebase.md`

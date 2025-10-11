@@ -82,15 +82,33 @@ docs/
 프로젝트의 구조와 설계를 이해하려면:
 
 ### [제품 요구사항 문서 (PRD)](./architecture/prd.md)
-- 프로젝트 비전 및 목표
-- 핵심 기능 명세
-- 사용자 스토리
-- 기술 요구사항
+**최종 업데이트**: 2025-10-11
+**주요 내용**:
+- ✅ V1.0 프로덕션 배포 완료 기준
+- ✅ 프로젝트 비전 및 목표
+- ✅ 핵심 기능 명세 (랜딩/웹앱/매칭/인증)
+- ✅ 사용자 스토리 (참가자/운영자/지원자)
+- ✅ 기술 스택 및 데이터베이스 구조
+
+### [기술 요구사항 문서 (TRD)](./architecture/trd.md)
+**최종 업데이트**: 2025-10-11
+**주요 내용**:
+- 🏗️ 시스템 아키텍처 (서버리스)
+- 🔧 기술 스택 상세 (Next.js 15, Firebase, APIs)
+- 📊 Firebase Firestore 스키마 (5개 컬렉션)
+- 🔒 보안 및 인증 시스템
+- ⚡ 성능 최적화 전략
+- 📱 PWA 및 모바일 최적화
+- 🚀 배포 및 CI/CD
 
 ### [정보 구조 (IA)](./architecture/ia.md)
-- 앱 구조 및 페이지 계층
-- 내비게이션 플로우
-- 사용자 여정 맵
+**최종 업데이트**: 2025-10-11
+**주요 내용**:
+- ✅ 3-Tier 아키텍처 (랜딩/프로그램/웹앱)
+- ✅ 전체 라우트 구조
+- ✅ 사용자 흐름 및 네비게이션
+- ✅ 컴포넌트 계층 구조
+- ✅ SEO 및 접근성
 
 ---
 
@@ -113,6 +131,9 @@ docs/
 
 ### 자주 찾는 문서
 - **Firebase 설정**: [setup/firebase.md](./setup/firebase.md)
+- **기술 요구사항 (TRD)**: [architecture/trd.md](./architecture/trd.md) ✨ NEW
+- **제품 요구사항 (PRD)**: [architecture/prd.md](./architecture/prd.md)
+- **정보 구조 (IA)**: [architecture/ia.md](./architecture/ia.md)
 - **성능 최적화**: [optimization/performance.md](./optimization/performance.md)
 - **DB 쿼리 패턴**: [optimization/database.md](./optimization/database.md)
 - **버튼 시스템**: [design/button-system.md](./design/button-system.md)
@@ -150,5 +171,5 @@ docs/
 
 ---
 
-**마지막 업데이트**: 2025-10-10
-**문서 버전**: v2.2.0
+**마지막 업데이트**: 2025-10-11
+**프로젝트 버전**: V1.0 (프로덕션 배포 완료)

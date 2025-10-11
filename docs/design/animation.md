@@ -740,11 +740,6 @@ module.exports = {
 
 ---
 
-**마지막 업데이트:** 2025-10-07
-**프로젝트:** pnschat2 (필립앤소피 프로필북)
-
----
-
-**Last Updated**: 2025-10-10
-**Document Version**: v2.2.0
+**Last Updated**: 2025-10-11
+**Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/design/animation.md`
