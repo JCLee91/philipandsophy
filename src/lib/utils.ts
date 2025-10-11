@@ -90,3 +90,31 @@ export const getInitials = (name: string): string => {
 export const getFirstName = (name: string): string => {
   return name.length > 2 ? name.slice(1) : name;
 };
+
+/**
+ * Promise에 타임아웃 적용
+ *
+ * @param promise - 타임아웃을 적용할 Promise
+ * @param timeoutMs - 타임아웃 시간 (밀리초)
+ * @param errorMessage - 타임아웃 시 에러 메시지
+ * @returns 타임아웃이 적용된 Promise
+ *
+ * @example
+ * const result = await withTimeout(
+ *   fetchData(),
+ *   5000,
+ *   'Data fetch timeout'
+ * );
+ */
+export function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage: string = '요청 시간이 초과되었습니다'
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    ),
+  ]);
+}
