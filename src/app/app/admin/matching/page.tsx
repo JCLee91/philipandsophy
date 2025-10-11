@@ -194,9 +194,6 @@ function MatchingPageContent() {
 
       setMatchingResult(data);
       
-      // 매칭 후 제출 현황 갱신
-      await fetchMatchingStatus();
-      
       const matchedCount =
         data.totalParticipants ??
         (data.matching?.assignments
@@ -269,7 +266,7 @@ function MatchingPageContent() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-[#8f98a3]">제출 완료</span>
                   <span className="text-2xl font-bold text-[#45a1fd]">
-                    {isLoadingStatus ? '...' : `${submissionCount}명`}
+                    {isLoadingCount ? '...' : `${submissionCount}명`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">

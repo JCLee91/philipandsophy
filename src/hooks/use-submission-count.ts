@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
+import { getDb } from '@/lib/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getTodayString } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
+import { logger } from '@/lib/logger';
 
 /**
  * 실시간 제출 현황 카운트 Hook
@@ -28,6 +29,7 @@ export function useSubmissionCount(cohortId?: string, date?: string) {
     setError(null);
 
     // 실시간 리스너 설정
+    const db = getDb();
     const q = query(
       collection(db, 'reading_submissions'),
       where('submissionDate', '==', targetDate),
@@ -48,7 +50,7 @@ export function useSubmissionCount(cohortId?: string, date?: string) {
         setIsLoading(false);
       },
       (err) => {
-        console.error('제출 현황 조회 실패:', err);
+        logger.error('실시간 제출 현황 조회 실패', err);
         setError(err as Error);
         setIsLoading(false);
       }
