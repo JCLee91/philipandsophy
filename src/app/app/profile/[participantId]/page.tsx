@@ -404,7 +404,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         {/* 인증 상세 모달 */}
         {selectedSubmission && (
           <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="profile-reading-dialog-ios-safe sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-base">
                   {formatShortDate(selectedSubmission.submittedAt)} 독서 기록
@@ -447,7 +447,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         />
 
         {/* Safe Area CSS */}
-        <style jsx>{`
+        <style jsx global>{`
           .safe-area-header {
             padding-top: calc(1rem + env(safe-area-inset-top));
           }
@@ -456,6 +456,37 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           @supports (padding-top: constant(safe-area-inset-top)) {
             .safe-area-header {
               padding-top: calc(1rem + constant(safe-area-inset-top));
+            }
+          }
+
+          /* iOS PWA 독서 기록 모달 Safe Area 대응 */
+          @media (max-width: 640px) and (display-mode: standalone) {
+            .profile-reading-dialog-ios-safe {
+              /* CSS Custom Properties로 중복 계산 방지 */
+              --safe-top: env(safe-area-inset-top, 0px);
+              --safe-bottom: env(safe-area-inset-bottom, 0px);
+              --dialog-height: calc(100vh - var(--safe-top) - var(--safe-bottom));
+
+              /* iOS Safe Area 대응 - top/bottom으로 위치 조정 */
+              top: var(--safe-top) !important;
+              bottom: var(--safe-bottom) !important;
+              height: var(--dialog-height) !important;
+              max-height: var(--dialog-height) !important;
+
+              /* 모달 내부 스크롤 활성화 */
+              overflow-y: auto;
+
+              /* 노치 영역 침범 방지 */
+              border-radius: 0;
+              margin: 0;
+            }
+
+            /* iOS 11.2 이전 버전 호환성 */
+            @supports (padding-top: constant(safe-area-inset-top)) {
+              .profile-reading-dialog-ios-safe {
+                --safe-top: constant(safe-area-inset-top);
+                --safe-bottom: constant(safe-area-inset-bottom);
+              }
             }
           }
         `}</style>
