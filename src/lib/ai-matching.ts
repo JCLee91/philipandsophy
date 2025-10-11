@@ -9,6 +9,7 @@ function getOpenAIClient() {
   }
   return new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
+    timeout: 25000, // 25초 타임아웃 (Vercel serverless 함수 제한 고려)
   });
 }
 

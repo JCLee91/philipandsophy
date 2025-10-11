@@ -55,11 +55,22 @@ async function getParticipantBySessionTokenServer(
 
     // 세션 만료 확인
     if (participant.sessionExpiry && participant.sessionExpiry < Date.now()) {
-      // 만료된 세션 토큰 제거
-      await db.collection('participants').doc(participant.id).update({
-        sessionToken: null,
-        sessionExpiry: null,
+      logger.info('세션 만료로 토큰 제거', {
+        participantId: participant.id,
+        expiry: new Date(participant.sessionExpiry).toISOString(),
       });
+
+      // 만료된 세션 토큰 제거 (비동기 처리, 응답 지연 방지)
+      db.collection('participants')
+        .doc(participant.id)
+        .update({
+          sessionToken: null,
+          sessionExpiry: null,
+        })
+        .catch((error) => {
+          logger.error('만료된 세션 토큰 제거 실패', { participantId: participant.id, error });
+        });
+
       return null;
     }
 

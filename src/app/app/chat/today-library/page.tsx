@@ -278,12 +278,14 @@ function TodayLibraryContent() {
                 <div className="flex flex-col gap-12">
                 <div className="flex flex-col gap-3">
                   <h1 className="font-bold text-heading-xl text-black">
-                    전달드릴 프로필북을 준비중이에요
+                    독서 인증을 하지 않으면
                     <br />
-                    제출 다음날 오후 2~4시에 준비됩니다
+                    프로필 북을 열어볼 수 없어요
                   </h1>
                   <p className="font-medium text-body-base text-text-secondary">
-                    제출하신 답변을 바탕으로 AI가 프로필북을 분석하고 있어요
+                    밤 12시까지 독서를 인증하고
+                    <br />
+                    멤버들의 프로필 북을 읽어보세요
                   </p>
                 </div>
 

@@ -81,45 +81,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. 참가자 정보와 답변 수집
+    // 3. 참가자 정보와 답변 수집 (Batch read로 N+1 쿼리 최적화)
     const participantAnswers: ParticipantAnswer[] = [];
-    const participantIds = new Set<string>();
+    const submissionsMap = new Map<string, SubmissionData>();
 
+    // 3-1. 중복 제거 및 제출물 수집
     for (const doc of submissionsSnapshot.docs) {
       const submission = doc.data() as SubmissionData;
 
-      // 중복 제거
-      if (participantIds.has(submission.participantId)) {
-        continue;
-      }
-      participantIds.add(submission.participantId);
+      // 중복 시 최신 데이터 우선 (나중에 처리된 것이 최신)
+      submissionsMap.set(submission.participantId, submission);
+    }
 
-      // 참가자 이름 가져오기
-      const participantDoc = await db
+    // 3-2. 참가자 ID 목록 추출
+    const uniqueParticipantIds = Array.from(submissionsMap.keys());
+
+    // 3-3. Batch read로 모든 참가자 정보 한 번에 가져오기 (최대 10개씩)
+    const BATCH_SIZE = 10;
+    const participantDataMap = new Map<string, ParticipantData>();
+
+    for (let i = 0; i < uniqueParticipantIds.length; i += BATCH_SIZE) {
+      const batchIds = uniqueParticipantIds.slice(i, i + BATCH_SIZE);
+      const participantDocs = await db
         .collection('participants')
-        .doc(submission.participantId)
+        .where(admin.firestore.FieldPath.documentId(), 'in', batchIds)
         .get();
 
-      if (!participantDoc.exists) {
-        logger.warn('참가자 정보를 찾을 수 없음', {
-          participantId: submission.participantId,
-        });
+      participantDocs.docs.forEach((doc) => {
+        participantDataMap.set(doc.id, doc.data() as ParticipantData);
+      });
+    }
+
+    // 3-4. 참가자 정보와 제출물 결합
+    for (const [participantId, submission] of submissionsMap.entries()) {
+      const participant = participantDataMap.get(participantId);
+
+      if (!participant) {
+        logger.warn('참가자 정보를 찾을 수 없음', { participantId });
         continue;
       }
-
-      const participant = participantDoc.data() as ParticipantData;
 
       // 관리자는 매칭에서 제외
       if (participant.isAdmin) {
         logger.info('관리자 참가자 매칭에서 제외', {
-          participantId: submission.participantId,
+          participantId,
           name: participant.name,
         });
         continue;
       }
 
       participantAnswers.push({
-        id: submission.participantId,
+        id: participantId,
         name: participant.name,
         answer: submission.dailyAnswer,
         gender: participant.gender,
@@ -179,25 +191,37 @@ export async function POST(request: NextRequest) {
     // 5. AI 매칭 수행
     const matching = await matchParticipantsByAI(todayQuestion, participantAnswers);
 
-    // 6. Cohort 문서에 매칭 결과 저장
+    // 6. Cohort 문서에 매칭 결과 저장 (Transaction으로 race condition 방지)
     const cohortRef = db.collection('cohorts').doc(cohortId);
-    const cohortDoc = await cohortRef.get();
 
-    if (!cohortDoc.exists) {
-      return NextResponse.json(
-        { error: 'Cohort를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+    try {
+      await db.runTransaction(async (transaction) => {
+        const cohortDoc = await transaction.get(cohortRef);
+
+        if (!cohortDoc.exists) {
+          throw new Error('Cohort를 찾을 수 없습니다.');
+        }
+
+        const cohortData = cohortDoc.data();
+        const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
+
+        // 동시 실행 시 덮어쓰기 방지
+        dailyFeaturedParticipants[today] = matching;
+
+        transaction.update(cohortRef, {
+          dailyFeaturedParticipants,
+          updatedAt: admin.firestore.Timestamp.now(),
+        });
+      });
+    } catch (transactionError) {
+      if (transactionError instanceof Error && transactionError.message === 'Cohort를 찾을 수 없습니다.') {
+        return NextResponse.json(
+          { error: 'Cohort를 찾을 수 없습니다.' },
+          { status: 404 }
+        );
+      }
+      throw transactionError; // 다른 에러는 외부 catch로 전파
     }
-
-    const cohortData = cohortDoc.data();
-    const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
-    dailyFeaturedParticipants[today] = matching;
-
-    await cohortRef.update({
-      dailyFeaturedParticipants,
-      updatedAt: admin.firestore.Timestamp.now(),
-    });
 
     // 6. 매칭 결과 요약 생성
     const participantNameMap = new Map(

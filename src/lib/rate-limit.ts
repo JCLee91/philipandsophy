@@ -27,7 +27,20 @@ interface RateLimitConfig {
 
 /**
  * Rate limit 저장소 (메모리 기반)
- * 프로덕션에서는 Redis 사용 권장
+ *
+ * ⚠️ CRITICAL WARNING: 메모리 기반 rate limiting은 Vercel/Netlify 등
+ * serverless 환경에서 작동하지 않습니다. 각 요청마다 새로운 인스턴스가
+ * 생성되어 rate limit이 전혀 적용되지 않습니다.
+ *
+ * 프로덕션 배포 전 필수 조치:
+ * 1. Upstash Redis 설정 (https://upstash.com)
+ * 2. @upstash/ratelimit 패키지 설치: npm install @upstash/ratelimit @upstash/redis
+ * 3. 환경 변수 설정:
+ *    - UPSTASH_REDIS_REST_URL
+ *    - UPSTASH_REDIS_REST_TOKEN
+ * 4. 이 파일을 Redis 기반으로 교체
+ *
+ * 참고: docs/setup/upstash-redis.md
  */
 const rateLimitStore = new Map<
   string,
@@ -40,18 +53,22 @@ const rateLimitStore = new Map<
 /**
  * Rate limit 저장소 정리 (메모리 누수 방지)
  * 1시간 주기로 만료된 항목 삭제
+ *
+ * ⚠️ WARNING: Serverless 환경에서는 이 setInterval이 실행되지 않습니다.
  */
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, value] of rateLimitStore.entries()) {
-      if (value.resetTime < now) {
-        rateLimitStore.delete(key);
+if (typeof setInterval !== 'undefined') {
+  setInterval(
+    () => {
+      const now = Date.now();
+      for (const [key, value] of rateLimitStore.entries()) {
+        if (value.resetTime < now) {
+          rateLimitStore.delete(key);
+        }
       }
-    }
-  },
-  60 * 60 * 1000
-); // 1시간마다 정리
+    },
+    60 * 60 * 1000
+  ); // 1시간마다 정리
+}
 
 /**
  * 기본 키 생성기: IP 주소 추출
