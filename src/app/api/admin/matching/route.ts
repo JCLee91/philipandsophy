@@ -6,25 +6,13 @@ import { getTodayString } from '@/lib/date-utils';
 import { requireAdmin } from '@/lib/api-auth';
 import { strictRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { getAdminDb } from '@/lib/firebase/admin';
 
 /**
- * Firebase Admin 초기화 (lazy initialization)
+ * Firebase Admin 초기화 (통합 함수 사용)
  */
 function getFirebaseAdmin() {
-  if (!admin.apps.length) {
-    // 환경 변수에서 service account 정보 로드
-    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT 환경 변수가 설정되지 않았습니다.');
-    }
-
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  }
-
-  return admin.firestore();
+  return getAdminDb();
 }
 
 interface SubmissionData {

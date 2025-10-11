@@ -277,9 +277,9 @@ function MatchingPageContent() {
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#cee7ff]">
                   <Users className="h-6 w-6 text-[#45a1fd]" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h2 className="text-lg font-semibold text-[#31363e]">오늘의 제출 현황</h2>
-                  <p className="text-sm text-[#8f98a3]">{today}</p>
+                  <p className="text-sm text-[#8f98a3]">{today} · Cohort {cohortId}</p>
                 </div>
               </div>
 
