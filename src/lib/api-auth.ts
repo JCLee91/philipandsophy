@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getParticipantBySessionToken } from '@/lib/firebase';
+import { logger } from '@/lib/logger';
 import type { Participant } from '@/types/database';
 
 /**
@@ -61,7 +62,7 @@ export async function validateSession(
 
     return { user, error: null };
   } catch (error) {
-    console.error('세션 검증 실패:', error);
+    logger.error('세션 검증 실패:', error);
     return {
       user: null,
       error: NextResponse.json(

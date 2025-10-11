@@ -169,7 +169,7 @@ export default function ParticipantsList({
   onProfileBookClick,
 }: ParticipantsListProps) {
   const { data: verifiedIds } = useVerifiedToday();
-  const { logout } = useSession();
+  const { logout, currentUser } = useSession();
 
   // 본인을 맨 위로 정렬
   const sortedParticipants = [...participants].sort((a, b) => {
@@ -234,7 +234,13 @@ export default function ParticipantsList({
                           <User className="mr-2 h-4 w-4" />
                           간단 프로필 보기
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onProfileBookClick?.(participant)}>
+                        <DropdownMenuItem onClick={() => {
+                          // cohortId는 currentUser에서 가져오거나, 없으면 participant에서 가져옴
+                          const cohortId = currentUser?.cohortId || participant.cohortId;
+                          if (cohortId && onProfileBookClick) {
+                            onProfileBookClick(participant);
+                          }
+                        }}>
                           <BookOpen className="mr-2 h-4 w-4" />
                           프로필북 보기
                         </DropdownMenuItem>

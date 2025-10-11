@@ -233,23 +233,16 @@ function TodayLibraryContent() {
     return null;
   }
 
-  // 오늘 인증 여부
-  const isVerifiedToday = verifiedIds?.has(currentUserId || '');
+  // 오늘 인증 여부 (방어적 프로그래밍)
+  const isVerifiedToday = verifiedIds?.has(currentUserId || '') ?? false;
   const isAdmin = currentUser?.isAdmin === true;
+  const isLocked = !isAdmin && !isVerifiedToday;
 
-  // 프로필북 클릭 핸들러 (인증 체크 포함)
+  // 프로필북 클릭 핸들러 (인증 체크는 isLocked에서 이미 완료)
   const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
-    console.log('🔍 Toast Debug:', {
-      isAdmin,
-      isVerifiedToday,
-      currentUserId,
-      verifiedIds: verifiedIds ? Array.from(verifiedIds) : [],
-      shouldShowToast: !isAdmin && !isVerifiedToday
-    });
-    
-    if (!isAdmin && !isVerifiedToday) {
-      // 미인증 시 Toast 알림 표시
-      console.log('🔔 Showing toast...');
+    // isLocked가 true인 경우 이 함수는 자물쇠 카드에서만 호출됨
+    // Toast는 미인증 상태에서 카드 클릭 시 표시
+    if (isLocked) {
       toast({
         title: '프로필 잠김 🔒',
         description: '오늘의 독서를 인증하면 프로필을 확인할 수 있어요',
@@ -259,7 +252,121 @@ function TodayLibraryContent() {
     router.push(appRoutes.profile(participantId, cohortId, theme));
   };
 
-  // 추천 참가자가 없을 때
+  // 1단계: 미인증 유저는 무조건 자물쇠 더미 카드 표시
+  if (isLocked) {
+    // 미인증 유저를 위한 더미 카드 (자물쇠 표시용)
+    const lockedPlaceholders = {
+      similar: [
+        { id: 'locked-1', name: '', profileImage: '', theme: 'similar' as const },
+        { id: 'locked-2', name: '', profileImage: '', theme: 'similar' as const },
+      ],
+      opposite: [
+        { id: 'locked-3', name: '', profileImage: '', theme: 'opposite' as const },
+        { id: 'locked-4', name: '', profileImage: '', theme: 'opposite' as const },
+      ],
+    };
+    return (
+      <PageTransition>
+        <div className="app-shell flex flex-col overflow-hidden">
+          <HeaderNavigation title="오늘의 서재" />
+
+          {/* Main Content */}
+          <main className="flex-1 overflow-y-auto bg-background">
+            <div className="mx-auto max-w-md px-4 w-full">
+              <div className="pt-12 pb-8">
+                {/* Header Section */}
+                <div className="flex flex-col gap-12">
+                <div className="flex flex-col gap-3">
+                  <h1 className="font-bold text-heading-xl text-black">
+                    매칭이 진행중이에요
+                    <br />
+                    제출 다음날 오후 4시에 오픈됩니다
+                  </h1>
+                  <p className="font-medium text-body-base text-text-secondary">
+                    제출하신 답변을 바탕으로 AI가 프로필 매칭을 진행하고 있어요
+                  </p>
+                </div>
+
+                {/* Bookmark Cards Section */}
+                <div className="flex flex-col w-full">
+                  {/* Top Row (Blue Theme - Similar) */}
+                  <div className="h-[140px] overflow-hidden relative w-full">
+                    <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-1" />
+                    <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
+                      {lockedPlaceholders.similar.map((participant, index) => (
+                        <BookmarkCard
+                          key={`similar-${participant.id}`}
+                          profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
+                          name={participant.name}
+                          theme="blue"
+                          isLocked={true}
+                          lockedImage={`/image/today-library/locked-profile-${index + 1}.png`}
+                          onClick={() => handleProfileClickWithAuth(participant.id, 'similar')}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <BlurDivider />
+
+                  {/* Bottom Row (Yellow Theme - Opposite) */}
+                  <div className="h-[160px] overflow-hidden relative w-full">
+                    <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-2" />
+                    <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
+                      {lockedPlaceholders.opposite.map((participant, index) => (
+                        <BookmarkCard
+                          key={`opposite-${participant.id}`}
+                          profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
+                          name={participant.name}
+                          theme="yellow"
+                          isLocked={true}
+                          lockedImage={`/image/today-library/locked-profile-${index + 3}.png`}
+                          onClick={() => handleProfileClickWithAuth(participant.id, 'opposite')}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <BlurDivider />
+                </div>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <FooterActions>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Unauthenticated: 2 Buttons */}
+              <UnifiedButton
+                variant="secondary"
+                onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
+                className="flex-1"
+              >
+                내 프로필 북 보기
+              </UnifiedButton>
+              <UnifiedButton
+                variant="primary"
+                onClick={() => setSubmissionDialogOpen(true)}
+                className="flex-1"
+              >
+                독서 인증하기
+              </UnifiedButton>
+            </div>
+          </FooterActions>
+
+          {/* 독서 인증 다이얼로그 */}
+          <ReadingSubmissionDialog
+            open={submissionDialogOpen}
+            onOpenChange={setSubmissionDialogOpen}
+            participantId={currentUserId || ''}
+            participationCode={currentUserId || ''}
+          />
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // 2단계: 인증 완료 유저 중 매칭 데이터가 없는 경우
   if (allFeaturedIds.length === 0) {
     return (
       <PageTransition>
@@ -311,28 +418,10 @@ function TodayLibraryContent() {
     );
   }
 
-  // 미인증 유저에게는 프로필 가리기
-  const isLocked = !isAdmin && !isVerifiedToday;
-
+  // 3단계: 인증 완료 + 매칭 데이터 있음 → 실제 프로필 카드 표시
   // 참가자를 theme별로 분리
   const similarParticipants = featuredParticipants.filter(p => p.theme === 'similar');
   const oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
-
-  // 미인증 유저를 위한 더미 카드 (자물쇠 표시용)
-  const lockedPlaceholders = {
-    similar: [
-      { id: 'locked-1', name: '', profileImage: '', theme: 'similar' as const },
-      { id: 'locked-2', name: '', profileImage: '', theme: 'similar' as const },
-    ],
-    opposite: [
-      { id: 'locked-3', name: '', profileImage: '', theme: 'opposite' as const },
-      { id: 'locked-4', name: '', profileImage: '', theme: 'opposite' as const },
-    ],
-  };
-
-  // 표시할 카드 결정 (미인증: 더미 카드, 인증: 실제 데이터)
-  const displaySimilar = isLocked ? lockedPlaceholders.similar : similarParticipants;
-  const displayOpposite = isLocked ? lockedPlaceholders.opposite : oppositeParticipants;
 
   return (
     <PageTransition>
@@ -347,22 +436,12 @@ function TodayLibraryContent() {
               <div className="flex flex-col gap-12">
               <div className="flex flex-col gap-3">
                 <h1 className="font-bold text-heading-xl text-black">
-                  {isLocked ? (
-                    <>
-                      매칭이 진행중이에요
-                      <br />
-                      제출 다음날 오후 4시에 오픈됩니다
-                    </>
-                  ) : (
-                    <>
-                      프로필 북을
-                      <br />
-                      확인해보세요
-                    </>
-                  )}
+                  프로필 북을
+                  <br />
+                  확인해보세요
                 </h1>
                 <p className="font-medium text-body-base text-text-secondary">
-                  {isLocked ? '제출하신 답변을 바탕으로 AI가 프로필 매칭을 진행하고 있어요' : '밤 12시까지만 읽을 수 있어요'}
+                  밤 12시까지만 읽을 수 있어요
                 </p>
               </div>
 
@@ -372,13 +451,13 @@ function TodayLibraryContent() {
                 <div className="h-[140px] overflow-hidden relative w-full">
                   <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-1" />
                   <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                    {displaySimilar.map((participant, index) => (
+                    {similarParticipants.map((participant, index) => (
                       <BookmarkCard
                         key={`similar-${participant.id}`}
                         profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
                         name={participant.name}
                         theme="blue"
-                        isLocked={isLocked}
+                        isLocked={false}
                         lockedImage={`/image/today-library/locked-profile-${index + 1}.png`}
                         onClick={() => handleProfileClickWithAuth(participant.id, 'similar')}
                       />
@@ -392,13 +471,13 @@ function TodayLibraryContent() {
                 <div className="h-[160px] overflow-hidden relative w-full">
                   <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-2" />
                   <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                    {displayOpposite.map((participant, index) => (
+                    {oppositeParticipants.map((participant, index) => (
                       <BookmarkCard
                         key={`opposite-${participant.id}`}
                         profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
                         name={participant.name}
                         theme="yellow"
-                        isLocked={isLocked}
+                        isLocked={false}
                         lockedImage={`/image/today-library/locked-profile-${index + 3}.png`}
                         onClick={() => handleProfileClickWithAuth(participant.id, 'opposite')}
                       />
@@ -414,47 +493,14 @@ function TodayLibraryContent() {
         </main>
 
         <FooterActions>
-          <div className={cn("flex gap-2", isLocked && "grid grid-cols-2")}>
-            {isLocked ? (
-              <>
-                {/* Unauthenticated: 2 Buttons */}
-                <UnifiedButton
-                  variant="secondary"
-                  onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
-                  className="flex-1"
-                >
-                  내 프로필 북 보기
-                </UnifiedButton>
-                <UnifiedButton
-                  variant="primary"
-                  onClick={() => setSubmissionDialogOpen(true)}
-                  className="flex-1"
-                >
-                  독서 인증하기
-                </UnifiedButton>
-              </>
-            ) : (
-              <>
-                {/* Authenticated: 1 Button */}
-                <UnifiedButton
-                  variant="primary"
-                  onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
-                  className="flex-1"
-                >
-                  내 프로필 북 보기
-                </UnifiedButton>
-              </>
-            )}
-          </div>
+          <UnifiedButton
+            variant="primary"
+            onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
+            className="flex-1"
+          >
+            내 프로필 북 보기
+          </UnifiedButton>
         </FooterActions>
-
-        {/* 독서 인증 다이얼로그 */}
-        <ReadingSubmissionDialog
-          open={submissionDialogOpen}
-          onOpenChange={setSubmissionDialogOpen}
-          participantId={currentUserId || ''}
-          participationCode={currentUserId || ''}
-        />
       </div>
     </PageTransition>
   );

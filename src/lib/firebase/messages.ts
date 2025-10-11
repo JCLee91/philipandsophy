@@ -21,6 +21,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getDb } from './client';
+import { logger } from '@/lib/logger';
 import type { DirectMessage } from '@/types/database';
 import { COLLECTIONS } from '@/types/database';
 
@@ -237,13 +238,20 @@ export const subscribeToMessages = (
     orderBy('createdAt', 'asc')
   );
 
-  return onSnapshot(q, (snapshot) => {
-    const messages = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as DirectMessage[];
-    callback(messages);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const messages = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as DirectMessage[];
+      callback(messages);
+    },
+    (error) => {
+      logger.error('subscribeToMessages failed:', error);
+      callback([]); // Fallback to empty array on error
+    }
+  );
 };
 
 /**

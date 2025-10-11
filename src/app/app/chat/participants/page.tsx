@@ -169,8 +169,13 @@ function ParticipantsPageContent() {
   }, [participants, currentUserId]);
 
   const handleProfileBookClick = (participant: Participant) => {
-    if (!cohortId) return;
-    router.push(appRoutes.profile(participant.id, cohortId));
+    // cohortId는 URL에서 가져오거나, 없으면 참가자의 cohortId 사용
+    const targetCohortId = cohortId || participant.cohortId;
+    if (!targetCohortId) {
+      logger.warn('ProfileBook: cohortId를 찾을 수 없습니다', { participant });
+      return;
+    }
+    router.push(appRoutes.profile(participant.id, targetCohortId));
   };
 
   const handleDMClick = (participant: Participant) => {

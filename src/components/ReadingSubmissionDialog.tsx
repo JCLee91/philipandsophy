@@ -284,7 +284,7 @@ export default function ReadingSubmissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-full sm:h-[90vh] flex flex-col gap-0 reading-dialog-safe-area">
+      <DialogContent className="max-w-2xl h-full sm:h-[90vh] flex flex-col gap-0 reading-dialog-ios-safe">
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl">독서 인증하기</DialogTitle>
           <DialogDescription>
@@ -469,25 +469,41 @@ export default function ReadingSubmissionDialog({
         </DialogFooter>
       </DialogContent>
 
-      {/* Safe Area CSS for iOS PWA - fixed 요소에 safe area 적용 */}
+      {/* Safe Area CSS for iOS PWA - PWA Standalone 모드에서만 적용 */}
       <style jsx global>{`
-        /* 모바일에서만 safe area 적용 */
-        @media (max-width: 640px) {
-          .reading-dialog-safe-area {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            padding-top: max(env(safe-area-inset-top), 0px) !important;
-            padding-bottom: max(env(safe-area-inset-bottom), 0px) !important;
+        /* PWA Standalone 모드에서만 iOS Safe Area 적용 */
+        @media (max-width: 640px) and (display-mode: standalone) {
+          .reading-dialog-ios-safe {
+            /* CSS Custom Properties로 중복 계산 방지 */
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --dialog-height: calc(100vh - var(--safe-top) - var(--safe-bottom));
+
+            /* iOS Safe Area 대응 - top/bottom으로 위치 조정 */
+            top: var(--safe-top) !important;
+            bottom: var(--safe-bottom) !important;
+            left: 0 !important;
+            right: 0 !important;
+
+            /* 높이를 safe area만큼 감소 */
+            height: var(--dialog-height) !important;
+            max-height: var(--dialog-height) !important;
+
+            /* 모바일 전체화면 스타일 (!important 불필요) */
+            margin: 0;
+            border-radius: 0;
           }
 
           /* iOS 11.2 이전 버전 호환성 */
           @supports (padding-top: constant(safe-area-inset-top)) {
-            .reading-dialog-safe-area {
-              padding-top: max(constant(safe-area-inset-top), 0px) !important;
-              padding-bottom: max(constant(safe-area-inset-bottom), 0px) !important;
+            .reading-dialog-ios-safe {
+              --safe-top: constant(safe-area-inset-top);
+              --safe-bottom: constant(safe-area-inset-bottom);
             }
           }
         }
+
+        /* Note: 모바일 브라우저(non-standalone)에서는 Radix UI 기본 스타일 사용 */
       `}</style>
     </Dialog>
   );

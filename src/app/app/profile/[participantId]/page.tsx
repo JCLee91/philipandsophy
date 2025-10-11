@@ -31,7 +31,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resolvedParams = use(params);
-  const participantId = resolvedParams.participantId;
+  // URL 디코딩: %EC%9D%B4%EC%9C%A4%EC%A7%80-4321 → 이윤지-4321
+  const participantId = decodeURIComponent(resolvedParams.participantId);
   const cohortId = searchParams.get('cohort');
 
   // 세션 기반 인증 (URL에서 userId 제거)
