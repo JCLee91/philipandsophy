@@ -12,7 +12,7 @@ import ErrorState from '@/components/ErrorState';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
-import { useVerifiedToday } from '@/hooks/use-verified-today';
+import { useVerifiedToday } from '@/stores/verified-today';
 import { useSession } from '@/hooks/use-session';
 import { getInitials, formatShortDate } from '@/lib/utils';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
@@ -404,7 +404,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         {/* 인증 상세 모달 */}
         {selectedSubmission && (
           <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-            <DialogContent className="sm:max-w-md" hideCloseButton>
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-base">
                   {formatShortDate(selectedSubmission.submittedAt)} 독서 기록
