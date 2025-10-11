@@ -392,13 +392,13 @@ function TodayLibraryContent() {
                   <h3 className="font-bold text-lg text-gray-900">
                     AI가 답변을 분석해서
                     <br />
-                    프로필 북을 선고 있어요
+                    프로필 북을 섞고 있어요
                   </h3>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      어제 멤버들이 제출한 답변들을
+                      멤버들이 제출한 답변들은
                       <br />
-                      오후 2시에서 4시 사이에 열어볼 수 있어요
+                      인증 다음날 오후 4시에 열어볼 수 있어요
                     </p>
                   </div>
                 </div>

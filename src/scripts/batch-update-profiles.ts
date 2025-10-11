@@ -42,19 +42,9 @@ interface ImageMapping {
 
 const IMAGE_MAPPINGS: ImageMapping[] = [
   {
-    fileName: 'Profile_1기_김정현.png',
-    participantName: '김정현',
+    fileName: '10_손다진.webp',
+    participantName: '손다진',
     type: 'full',
-  },
-  {
-    fileName: 'Profile_1기_서현명.png',
-    participantName: '서현명',
-    type: 'full',
-  },
-  {
-    fileName: '김정현.png',
-    participantName: '김정현',
-    type: 'circle',
   },
 ];
 
