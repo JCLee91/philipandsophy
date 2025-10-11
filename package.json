@@ -24,8 +24,8 @@
     "list:messages": "tsx scripts/list-all-messages.ts",
     "import:gender": "tsx src/scripts/import-gender-from-csv.ts",
     "cleanup:production": "tsx src/scripts/production-cleanup.ts",
-    "import:october": "tsx src/scripts/import-october-participants.ts",
-    "update:profile-images": "tsx src/scripts/update-all-profile-images.ts"
+    "update:profile-images": "tsx src/scripts/update-all-profile-images.ts",
+    "convert:profiles-webp": "tsx src/scripts/convert-profiles-to-webp.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",

@@ -156,16 +156,18 @@ function ParticipantsPageContent() {
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  // 참가자 정렬: 현재 사용자 최상단, 나머지는 이름순 (한글)
+  // 참가자 정렬: 관리자 제외, 현재 사용자 최상단, 나머지는 이름순 (한글)
   const sortedParticipants = useMemo(() => {
-    return [...participants].sort((a, b) => {
-      // 현재 사용자를 맨 위로
-      if (a.id === currentUserId) return -1;
-      if (b.id === currentUserId) return 1;
+    return [...participants]
+      .filter((p) => !p.isAdmin) // 관리자 제외
+      .sort((a, b) => {
+        // 현재 사용자를 맨 위로
+        if (a.id === currentUserId) return -1;
+        if (b.id === currentUserId) return 1;
 
-      // 나머지는 이름순 (한글 정렬)
-      return a.name.localeCompare(b.name, 'ko');
-    });
+        // 나머지는 이름순 (한글 정렬)
+        return a.name.localeCompare(b.name, 'ko');
+      });
   }, [participants, currentUserId]);
 
   const handleProfileBookClick = (participant: Participant) => {

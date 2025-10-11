@@ -47,3 +47,11 @@ firebase-service-account.json
 .claude/
 .cursor/
 .claude-squad/
+
+# Temporary/Test files (do not commit)
+test-*.js
+test-*.log
+parsed-*.json
+*-seed-data.json
+check-*.js
+check-*.mjs
