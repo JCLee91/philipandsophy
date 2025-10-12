@@ -105,7 +105,6 @@ export async function getParticipantsByCohort(
     orderBy('createdAt', 'asc')
   );
 
-  // 네트워크에서 직접 가져오기 (심플하고 직관적)
   const querySnapshot = await getDocs(q);
 
   return querySnapshot.docs.map((doc) => ({
