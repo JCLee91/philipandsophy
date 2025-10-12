@@ -30,7 +30,6 @@ import ProfileImageDialog from '@/components/ProfileImageDialog';
 import NoticeWriteDialog from '@/components/NoticeWriteDialog';
 import NoticeEditDialog from '@/components/NoticeEditDialog';
 import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
-import { NotificationPrompt } from '@/components/notifications/notification-prompt';
 
 /**
  * Set에서 item을 토글 (추가/삭제)
@@ -325,9 +324,6 @@ function ChatPageContent() {
           onMessageAdminClick={handleMessageAdmin}
           isAdmin={isAdmin}
         />
-
-        {/* 푸시 알림 권한 요청 배너 */}
-        {currentUserId && <NotificationPrompt participantId={currentUserId} />}
 
         <ParticipantsList
           participants={participants.filter((p) => !p.isAdmin)}
