@@ -16,7 +16,7 @@ import UnifiedButton from '@/components/UnifiedButton';
 import HeaderNavigation from '@/components/HeaderNavigation';
 import ParticipantAssignmentTable from '@/components/admin/ParticipantAssignmentTable';
 import { useToast } from '@/hooks/use-toast';
-import { useParticipantsByCohort } from '@/hooks/use-participants';
+import { useParticipantsByCohortRealtime } from '@/hooks/use-participants-realtime';
 import type { Participant } from '@/types/database';
 import type {
   MatchingResponse,
@@ -35,7 +35,7 @@ function MatchingPageContent() {
   const cohortId = searchParams.get('cohort');
   const { currentUser, isLoading: sessionLoading, sessionToken } = useSession();
   const { toast } = useToast();
-  const { data: cohortParticipants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
+  const { data: cohortParticipants = [], isLoading: participantsLoading, isFromCache } = useParticipantsByCohortRealtime(cohortId || undefined);
 
   // 실시간 제출 카운트 (Firebase onSnapshot)
   const { count: yesterdayCount, isLoading: isLoadingYesterday } = useYesterdaySubmissionCount(cohortId || undefined);
