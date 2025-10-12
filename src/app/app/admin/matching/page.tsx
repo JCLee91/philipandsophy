@@ -136,7 +136,7 @@ function MatchingPageContent() {
     } catch (error) {
       logger.error('로컬 스토리지 복원 실패', error);
     }
-  }, [cohortId, yesterday, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY, toast]);
+  }, [cohortId, submissionDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY, toast]);
 
   // beforeunload 경고: AI 매칭 처리 중 페이지 이탈 방지
   useEffect(() => {
