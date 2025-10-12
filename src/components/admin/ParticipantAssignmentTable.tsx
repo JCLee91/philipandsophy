@@ -2,18 +2,7 @@
 
 import { Loader2, Users } from 'lucide-react';
 import { CARD_STYLES } from '@/constants/ui';
-
-interface Target {
-  id: string;
-  name: string;
-}
-
-interface AssignmentRow {
-  viewerId: string;
-  viewerName: string;
-  similarTargets: Target[];
-  oppositeTargets: Target[];
-}
+import type { AssignmentRow } from '@/types/matching';
 
 interface ParticipantAssignmentTableProps {
   assignmentRows: AssignmentRow[];
@@ -28,6 +17,10 @@ export default function ParticipantAssignmentTable({
   onOpenProfile,
   matchingState,
 }: ParticipantAssignmentTableProps) {
+  // ✅ Solution 1-B: 데이터가 있으면 로딩 상태 무시하고 즉시 표시
+  const hasData = assignmentRows.length > 0;
+  const showLoading = participantsLoading && !hasData;
+
   return (
     <div className={CARD_STYLES.CONTAINER}>
       {/* 헤더 */}
@@ -46,7 +39,7 @@ export default function ParticipantAssignmentTable({
             <p className="text-sm text-admin-text-tertiary font-semibold">아직 매칭 결과가 없습니다</p>
             <p className="text-xs text-admin-text-secondary mt-1">매칭을 시작하면 여기에 결과가 표시됩니다</p>
           </div>
-        ) : participantsLoading ? (
+        ) : showLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-admin-brand" />
           </div>

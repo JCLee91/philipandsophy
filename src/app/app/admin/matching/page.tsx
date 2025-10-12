@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Users, Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2 } from 'lucide-react';
 import { getYesterdayString } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
@@ -18,51 +18,16 @@ import ParticipantAssignmentTable from '@/components/admin/ParticipantAssignment
 import { useToast } from '@/hooks/use-toast';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import type { Participant } from '@/types/database';
+import type {
+  MatchingResponse,
+  AssignmentRow,
+  MatchingTarget,
+} from '@/types/matching';
 import { appRoutes } from '@/lib/navigation';
 
-interface MatchingReasons {
-  similar?: string;
-  opposite?: string;
-  summary?: string;
-}
-
-interface ParticipantAssignment {
-  similar: string[];
-  opposite: string[];
-  reasons?: MatchingReasons | null;
-}
-
-interface MatchingResponse {
-  success: boolean;
-  date: string;
-  question?: string;
-  totalParticipants?: number;
-  matching: {
-    featured?: {
-      similar: string[];
-      opposite: string[];
-      reasons?: MatchingReasons | null;
-    };
-    assignments?: Record<string, ParticipantAssignment>;
-  };
-  featuredParticipants?: {
-    similar: Array<{ id: string; name: string }>;
-    opposite: Array<{ id: string; name: string }>;
-  };
-  submissionStats?: {
-    submitted: number;
-    notSubmitted: number;
-    notSubmittedList: Array<{ id: string; name: string }>;
-  };
-}
-
-interface AssignmentRow {
-  viewerId: string;
-  viewerName: string;
-  similarTargets: Array<{ id: string; name: string }>;
-  oppositeTargets: Array<{ id: string; name: string }>;
-  reasons?: MatchingReasons | null;
-}
+// localStorage 상수 (컴포넌트 외부 정의로 안정성 보장)
+const STORAGE_VERSION = '1.0';
+const STORAGE_TTL = 24 * 60 * 60 * 1000; // 24시간
 
 function MatchingPageContent() {
   const router = useRouter();
@@ -97,10 +62,7 @@ function MatchingPageContent() {
   const IN_PROGRESS_KEY = `matching-in-progress-${cohortId}-${submissionDate}`;
 
   // localStorage 데이터 검증 및 안전한 로드
-  const STORAGE_VERSION = '1.0';
-  const STORAGE_TTL = 24 * 60 * 60 * 1000; // 24시간
-
-  const loadFromStorage = (key: string): MatchingResponse | null => {
+  const loadFromStorage = useCallback((key: string): MatchingResponse | null => {
     try {
       const stored = localStorage.getItem(key);
       if (!stored) return null;
@@ -140,9 +102,9 @@ function MatchingPageContent() {
       }
       return null;
     }
-  };
+  }, []); // 상수만 사용하므로 dependency 불필요
 
-  const saveToStorage = (key: string, data: MatchingResponse) => {
+  const saveToStorage = useCallback((key: string, data: MatchingResponse) => {
     try {
       const stored = {
         version: STORAGE_VERSION,
@@ -153,32 +115,52 @@ function MatchingPageContent() {
     } catch (error) {
       logger.error('localStorage save error', { key, error });
     }
-  };
+  }, []); // 상수만 사용하므로 dependency 불필요
 
-  // 페이지 로드 시 자동 생성된 preview 또는 로컬 스토리지에서 복원
+  // ✅ Solution 3: localStorage 체크를 동기로 처리하여 초기 렌더링 블로킹 제거
   useEffect(() => {
     if (typeof window === 'undefined' || !cohortId) return;
 
-    const loadPreview = async () => {
+    // 1. 중단된 매칭 작업 감지 (동기 처리)
+    try {
+      const interruptedJob = localStorage.getItem(IN_PROGRESS_KEY);
+      if (interruptedJob) {
+        const timestamp = parseInt(interruptedJob, 10);
+        const elapsedMinutes = Math.floor((Date.now() - timestamp) / 1000 / 60);
+
+        toast({
+          title: '중단된 매칭 작업 감지',
+          description: `${elapsedMinutes}분 전 시작된 매칭이 완료되지 않았습니다. 다시 시도하시겠습니까?`,
+          variant: 'default',
+        });
+
+        localStorage.removeItem(IN_PROGRESS_KEY);
+        logger.warn('중단된 매칭 작업 감지', { timestamp, elapsedMinutes });
+      }
+
+      // 2. 로컬 스토리지 복원 우선 (동기, 즉시 표시)
+
+      // ✅ 2-A. 확정 결과 복원 (최우선)
+      const savedConfirmed = loadFromStorage(CONFIRMED_STORAGE_KEY);
+      if (savedConfirmed) {
+        setConfirmedResult(savedConfirmed);
+        setMatchingState('confirmed');
+        return; // 확정 결과가 있으면 프리뷰는 무시
+      }
+
+      // ✅ 2-B. 프리뷰 결과 복원 (확정 결과가 없을 때만)
+      const savedPreview = loadFromStorage(PREVIEW_STORAGE_KEY);
+      if (savedPreview) {
+        setPreviewResult(savedPreview);
+        setMatchingState('previewing');
+      }
+    } catch (error) {
+      logger.error('localStorage 처리 실패', error);
+    }
+
+    // 3. Firestore 조회는 비동기로 백그라운드 실행 (UI 블로킹 안 함)
+    const loadFirestorePreview = async () => {
       try {
-        // 1. 중단된 매칭 작업 감지
-        const interruptedJob = localStorage.getItem(IN_PROGRESS_KEY);
-        if (interruptedJob) {
-          const timestamp = parseInt(interruptedJob, 10);
-          const elapsedMinutes = Math.floor((Date.now() - timestamp) / 1000 / 60);
-
-          toast({
-            title: '중단된 매칭 작업 감지',
-            description: `${elapsedMinutes}분 전 시작된 매칭이 완료되지 않았습니다. 다시 시도하시겠습니까?`,
-            variant: 'default',
-          });
-
-          // 플래그 제거 (한 번만 알림)
-          localStorage.removeItem(IN_PROGRESS_KEY);
-          logger.warn('중단된 매칭 작업 감지', { timestamp, elapsedMinutes });
-        }
-
-        // 2. Firestore에서 자동 생성된 preview 조회 (scheduled function이 생성한 것)
         const { getDb } = await import('@/lib/firebase');
         const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
 
@@ -195,7 +177,6 @@ function MatchingPageContent() {
         const snapshot = await getDocs(q);
 
         if (!snapshot.empty) {
-          // 자동 생성된 preview 발견!
           const doc = snapshot.docs[0];
           const data = doc.data();
 
@@ -209,51 +190,24 @@ function MatchingPageContent() {
             submissionStats: data.submissionStats,
           };
 
+          // localStorage보다 최신 데이터가 있으면 덮어쓰기
           setPreviewResult(autoGeneratedPreview);
           setMatchingState('previewing');
-
-          // 로컬 스토리지에도 저장 (페이지 새로고침 대비)
           saveToStorage(PREVIEW_STORAGE_KEY, autoGeneratedPreview);
-
-          logger.info('🤖 자동 생성된 매칭 프리뷰 로드 완료', {
-            date: data.date,
-            docId: doc.id,
-            autoGenerated: true
-          });
 
           toast({
             title: '🤖 자동 분석 완료',
             description: `AI가 ${data.totalParticipants}명의 답변을 분석했어요!`,
           });
-
-          return; // 자동 생성된 preview를 찾았으므로 로컬 스토리지 체크 생략
         }
-
-        // 3. Firestore에 없으면 로컬 스토리지에서 복원
-        const savedPreview = loadFromStorage(PREVIEW_STORAGE_KEY);
-        if (savedPreview) {
-          setPreviewResult(savedPreview);
-          setMatchingState('previewing');
-          logger.info('프리뷰 결과 복원 완료 (로컬 스토리지)', { date: submissionDate });
-        }
-
-        // ⚠️ 확정 결과는 서버에서 가져오므로 로컬 스토리지 복원 제거
-        // fetchMatchingResult()가 서버의 최신 confirmed 결과를 가져옴
       } catch (error) {
-        logger.error('프리뷰 로드 실패', error);
-
-        // Firestore 조회 실패 시에도 로컬 스토리지 fallback 시도
-        const fallbackPreview = loadFromStorage(PREVIEW_STORAGE_KEY);
-        if (fallbackPreview) {
-          setPreviewResult(fallbackPreview);
-          setMatchingState('previewing');
-          logger.info('프리뷰 결과 복원 완료 (fallback)', { date: submissionDate });
-        }
+        // Firestore 조회 실패는 무시 (localStorage 데이터가 이미 표시됨)
+        logger.debug('Firestore preview 조회 실패 (무시)', error);
       }
     };
 
-    loadPreview();
-  }, [cohortId, submissionDate, PREVIEW_STORAGE_KEY, IN_PROGRESS_KEY, toast]);
+    loadFirestorePreview();
+  }, [cohortId, submissionDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY, loadFromStorage, saveToStorage, toast]);
 
   // beforeunload 경고: AI 매칭 처리 중 페이지 이탈 방지
   useEffect(() => {
@@ -382,11 +336,12 @@ function MatchingPageContent() {
     }
   }, [cohortId, submissionDate, sessionToken]);
 
+  // ✅ 확정 결과가 localStorage에 없을 때만 API 호출
   useEffect(() => {
-    if (cohortId) {
+    if (cohortId && matchingState !== 'confirmed') {
       fetchMatchingResult();
     }
-  }, [cohortId, fetchMatchingResult]);
+  }, [cohortId, fetchMatchingResult, matchingState]);
 
   const handleOpenProfile = (participantId: string, theme: 'similar' | 'opposite') => {
     if (!cohortId) return;

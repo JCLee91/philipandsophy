@@ -60,6 +60,11 @@ export function useParticipantByPhone(phoneNumber: string | undefined) {
 
 /**
  * 기수별 참가자 조회
+ *
+ * ✅ 최적화 전략:
+ * 1. React Query 캐시 우선 활용 (30분 staleTime)
+ * 2. Firestore IndexedDB 캐시 우선 읽기 (getDocsFromCache)
+ * 3. notifyOnChangeProps로 불필요한 리렌더링 방지
  */
 export function useParticipantsByCohort(cohortId: string | undefined) {
   return useQuery({
@@ -71,6 +76,8 @@ export function useParticipantsByCohort(cohortId: string | undefined) {
     gcTime: 60 * 60 * 1000, // 60분 (증가)
     refetchOnMount: false, // 마운트 시 자동 refetch 안 함 (캐시 활용)
     refetchOnWindowFocus: false, // 창 포커스 시 refetch 안 함
+    // ✅ Solution 1-A: 데이터만 감시하여 불필요한 로딩 상태 리렌더링 방지
+    notifyOnChangeProps: ['data', 'error'],
   });
 }
 
