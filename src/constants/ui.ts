@@ -25,3 +25,19 @@ export const FOOTER_STYLES = {
   /** 이미지 미리보기 하단 여백 */
   IMAGE_PREVIEW_MARGIN: 'mb-3',
 } as const;
+
+/**
+ * Admin 페이지 카드 스타일 상수
+ *
+ * 관리자 페이지의 모든 카드 컨테이너에서 일관된 디자인을 유지하기 위한 표준 스타일
+ */
+export const CARD_STYLES = {
+  /** 카드 컨테이너 기본 스타일 */
+  CONTAINER: 'bg-admin-bg-card rounded-xl border border-admin-border shadow-sm overflow-hidden',
+
+  /** 카드 헤더 영역 */
+  HEADER: 'px-5 py-4 border-b border-admin-border',
+
+  /** 카드 본문 영역 */
+  BODY: 'px-5 py-4',
+} as const;

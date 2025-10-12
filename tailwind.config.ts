@@ -54,6 +54,32 @@ const config = {
         'library-yellow': '#ffd362',
         'text-primary': '#31363e',
         'text-secondary': '#575e68',
+        // Admin panel color system
+        admin: {
+          text: {
+            primary: '#31363e',
+            secondary: '#8f98a3',
+            tertiary: '#575e68',
+          },
+          bg: {
+            page: '#eff6ff',
+            card: '#ffffff',
+            gray: '#f5f5f5',
+            stripe: '#fafbfc',
+            hover: '#f9fafb',
+            info: '#cee7ff',
+            warning: '#fff2d2',
+          },
+          border: {
+            DEFAULT: '#dddddd',
+            warning: '#ffd362',
+          },
+          brand: {
+            DEFAULT: '#45a1fd',
+            success: '#52c41a',
+            warning: '#ffa940',
+          },
+        },
       },
       fontSize: {
         'heading-xl': ['24px', { lineHeight: '1.4', letterSpacing: '-0.24px' }],
