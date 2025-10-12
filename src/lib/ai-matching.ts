@@ -1,7 +1,6 @@
 import OpenAI from 'openai';
 import { logger } from './logger';
 import { MATCHING_CONFIG } from '@/constants/matching';
-import { validateMatchingGenderBalance } from './matching-validation';
 import type { DailyMatchingReasons, DailyParticipantAssignment } from '@/types/database';
 
 // OpenAI 클라이언트는 함수 내부에서 생성 (환경 변수 로드 후)
@@ -204,6 +203,13 @@ ${participantPromptList}
 중요: JSON 형식만 반환하고 다른 텍스트는 포함하지 마세요.
 `;
 
+    logger.info('🤖 OpenAI API 호출 시작', {
+      model: 'gpt-4-turbo',
+      participantCount: participants.length,
+      promptLength: prompt.length,
+    });
+
+    const apiStartTime = Date.now();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
@@ -215,6 +221,12 @@ ${participantPromptList}
         { role: 'user', content: prompt },
       ],
       response_format: { type: 'json_object' },
+    });
+    const apiDuration = Date.now() - apiStartTime;
+
+    logger.info('✅ OpenAI API 응답 완료', {
+      duration: `${(apiDuration / 1000).toFixed(1)}초`,
+      tokensUsed: completion.usage?.total_tokens,
     });
 
     const responseText = completion.choices[0].message.content;
@@ -257,20 +269,10 @@ ${participantPromptList}
       };
     }
 
-    // AI 응답 성별 균형 검증
+    // AI 매칭 완료 (검증 없이 바로 반환 - 수동 검토 단계에서 조정)
     const matching = { featured, assignments };
-    const validation = validateMatchingGenderBalance(matching, participants);
 
-    if (!validation.valid) {
-      logger.error('AI 매칭 결과 성별 균형 검증 실패', {
-        errors: validation.errors,
-      });
-      throw new Error(
-        `AI 매칭 결과가 성별 균형 요구사항을 충족하지 않습니다:\n${validation.errors.join('\n')}`
-      );
-    }
-
-    logger.info('AI 매칭 완료 (성별 균형 검증 통과)', {
+    logger.info('✅ AI 매칭 완료 (수동 검토 대기)', {
       question,
       featuredSimilar: featured.similar,
       featuredOpposite: featured.opposite,
@@ -285,57 +287,15 @@ ${participantPromptList}
 }
 
 /**
- * Retry 로직이 포함된 AI 매칭 함수
- * OpenAI API 타임아웃 또는 rate limit 발생 시 exponential backoff로 재시도
+ * AI 매칭 함수 (단순 버전 - retry 없음)
+ * Human-in-the-loop 방식: AI가 초안을 생성하고 관리자가 수동으로 검토/조정
  */
 export async function matchParticipantsByAI(
   question: string,
   participants: ParticipantAnswer[]
 ): Promise<MatchingResult> {
-  const maxRetries = MATCHING_CONFIG.MAX_RETRY_ATTEMPTS;
-  let lastError: Error | null = null;
+  logger.info('AI 매칭 시작 (Human-in-the-loop)', { participantCount: participants.length });
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      logger.info('AI 매칭 시도', { attempt, maxRetries, participantCount: participants.length });
-
-      const result = await _matchParticipantsByAI(question, participants);
-
-      if (attempt > 1) {
-        logger.info('AI 매칭 재시도 성공', { attempt, maxRetries });
-      }
-
-      return result;
-    } catch (error) {
-      lastError = error as Error;
-
-      // 재시도 가능한 에러인지 확인
-      const isRetryable =
-        error instanceof Error &&
-        (error.message.toLowerCase().includes('timeout') ||
-         error.message.toLowerCase().includes('rate_limit') ||
-         error.message.toLowerCase().includes('overloaded') ||
-         error.message.toLowerCase().includes('connection') ||
-         error.message.toLowerCase().includes('econnreset'));
-
-      // 재시도 불가능한 에러이거나 마지막 시도인 경우
-      if (!isRetryable || attempt === maxRetries) {
-        logger.error(`AI 매칭 최종 실패 (시도 ${attempt}/${maxRetries})`, error);
-        throw error;
-      }
-
-      // Exponential backoff 계산: 2초, 4초, 8초
-      const delayMs = Math.pow(2, attempt) * 1000;
-      logger.warn(`AI 매칭 실패 - ${delayMs}ms 후 재시도 (${attempt}/${maxRetries})`, {
-        error: error instanceof Error ? error.message : String(error),
-        nextAttempt: attempt + 1,
-      });
-
-      // 대기
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-  }
-
-  // 모든 재시도 실패 (여기 도달하면 안 됨)
-  throw lastError || new Error('AI 매칭 실패 (알 수 없는 오류)');
+  // 단순히 내부 함수 호출 (retry 없음)
+  return await _matchParticipantsByAI(question, participants);
 }

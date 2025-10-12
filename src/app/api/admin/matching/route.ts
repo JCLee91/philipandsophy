@@ -6,7 +6,6 @@ import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getTodayString, getYesterdayString } from '@/lib/date-utils';
 import { requireAdmin } from '@/lib/api-auth';
 import { requireAdminWithRateLimit } from '@/lib/api-middleware';
-import { validateParticipantGenderDistribution } from '@/lib/matching-validation';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
 
@@ -138,41 +137,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. 성별 데이터 및 분포 검증
-    const genderValidation = validateParticipantGenderDistribution(participantAnswers);
-
-    if (!genderValidation.valid) {
-      logger.error('성별 검증 실패', {
-        missingGenderCount: genderValidation.missingGender.length,
-        maleCount: genderValidation.maleCount,
-        femaleCount: genderValidation.femaleCount,
-        requiredPerGender: genderValidation.requiredPerGender,
-        errors: genderValidation.errors,
-      });
-
+    // 4. 필터링 후 참가자 수 재검증 (AI 최소 인원 조건)
+    if (participantAnswers.length < MATCHING_CONFIG.MIN_PARTICIPANTS) {
       return NextResponse.json(
         {
-          error: genderValidation.errors[0],
-          genderDistribution: {
-            male: genderValidation.maleCount,
-            female: genderValidation.femaleCount,
-            required: genderValidation.requiredPerGender,
-          },
+          error: '매칭하기에 충분한 참가자가 없습니다.',
+          message: `필터링 후 ${participantAnswers.length}명만 남았습니다. 최소 ${MATCHING_CONFIG.MIN_PARTICIPANTS}명이 필요합니다.`,
+          participantCount: participantAnswers.length,
         },
         { status: 400 }
       );
     }
 
-    logger.info('성별 분포 검증 통과', {
-      maleCount: genderValidation.maleCount,
-      femaleCount: genderValidation.femaleCount,
+    logger.info('매칭 시작 (Human-in-the-loop)', {
       totalCount: participantAnswers.length,
+      maleCount: participantAnswers.filter(p => p.gender === 'male').length,
+      femaleCount: participantAnswers.filter(p => p.gender === 'female').length,
     });
 
-    // 5. AI 매칭 수행
+    // 5. AI 매칭 수행 (검증 없음 - 관리자가 수동으로 검토/조정)
     const matching = await matchParticipantsByAI(yesterdayQuestion, participantAnswers);
 
-    // 6. Cohort 문서에 매칭 결과 저장 (Transaction으로 race condition 방지)
+    // 7. Cohort 문서에 매칭 결과 저장 (Transaction으로 race condition 방지)
     const cohortRef = db.collection('cohorts').doc(cohortId);
 
     try {

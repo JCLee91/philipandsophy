@@ -163,6 +163,8 @@ function MatchingPageContent() {
         }
       );
 
+      // ℹ️ 404는 정상 응답 - 아직 매칭을 실행하지 않았을 때
+      // 브라우저 콘솔의 404 에러는 무시해도 됩니다
       if (response.ok) {
         const data = await response.json();
         setConfirmedResult(data);

@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = 'philipandsophy-v1';
+const CACHE_NAME = 'philipandsophy-v2'; // 버전 업데이트로 캐시 무효화
 const urlsToCache = [
   '/',
   '/app',
@@ -39,11 +39,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // 🚫 API 요청은 절대 캐싱하지 않음 (항상 최신 데이터 필요)
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Only cache GET requests (Cache API doesn't support POST/PUT/DELETE)
-        if (event.request.method === 'GET') {
+        // ✅ 성공 응답만 캐싱 (404, 500 등 에러 응답은 캐싱 안 함)
+        if (event.request.method === 'GET' && response.ok) {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME)
             .then((cache) => cache.put(event.request, responseToCache));
