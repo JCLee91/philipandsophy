@@ -5,7 +5,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  getDocsFromCache,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -93,10 +92,8 @@ export async function getParticipantByPhoneNumber(
 /**
  * 기수별 참가자 조회
  *
- * ✅ 최적화:
- * 1. getDocsFromCache 우선 시도 (IndexedDB, 50-100ms)
- * 2. 캐시 미스 시 네트워크 요청 (자동 캐시 저장)
- * 3. logger 호출 최소화 (오버헤드 감소)
+ * 심플하고 직관적인 방식: 네트워크에서 직접 가져오기
+ * 참가자 리스트는 항상 완전한 데이터가 필요하므로 캐시 전략을 사용하지 않음
  */
 export async function getParticipantsByCohort(
   cohortId: string
@@ -108,26 +105,8 @@ export async function getParticipantsByCohort(
     orderBy('createdAt', 'asc')
   );
 
-  // ✅ Solution 2: 캐시 우선 전략 + 불필요한 로깅 제거
-  try {
-    const cachedSnapshot = await getDocsFromCache(q);
-    if (!cachedSnapshot.empty) {
-      // 🔧 logger 호출 제거 (캐시 히트는 정상 동작이므로 로그 불필요)
-      return cachedSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Participant[];
-    }
-  } catch (cacheError) {
-    // 캐시 미스는 정상 시나리오이므로 debug 레벨 유지
-  }
-
-  // 캐시에 없으면 네트워크에서 가져오기 (자동으로 캐시에 저장됨)
+  // 네트워크에서 직접 가져오기 (심플하고 직관적)
   const querySnapshot = await getDocs(q);
-  // 🔧 네트워크 요청 시에만 로그 (디버깅용)
-  if (process.env.NODE_ENV === 'development') {
-    logger.info('Participants loaded from network', { cohortId, count: querySnapshot.size });
-  }
 
   return querySnapshot.docs.map((doc) => ({
     id: doc.id,
