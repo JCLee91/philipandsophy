@@ -2,13 +2,14 @@
 
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Users, Check, X, Loader2 } from 'lucide-react';
-import { getTodayString } from '@/lib/date-utils';
+import { Users, Check, X, Loader2, Calendar } from 'lucide-react';
+import { getTodayString, getYesterdayString } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { logger } from '@/lib/logger';
 import { useSession } from '@/hooks/use-session';
-import { useSubmissionCount } from '@/hooks/use-submission-count';
+import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-count';
+import { useTodaySubmissionCount } from '@/hooks/use-today-submission-count';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
 import HeaderNavigation from '@/components/HeaderNavigation';
@@ -67,7 +68,8 @@ function MatchingPageContent() {
   const { data: cohortParticipants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
 
   // 실시간 제출 카운트 (Firebase onSnapshot)
-  const { count: submissionCount, isLoading: isLoadingCount } = useSubmissionCount(cohortId || undefined);
+  const { count: yesterdayCount, isLoading: isLoadingYesterday } = useYesterdaySubmissionCount(cohortId || undefined);
+  const { count: todayCount, isLoading: isLoadingToday } = useTodaySubmissionCount(cohortId || undefined);
 
   // 매칭 상태 관리: idle | previewing | confirmed
   const [matchingState, setMatchingState] = useState<'idle' | 'previewing' | 'confirmed'>('idle');
@@ -76,8 +78,10 @@ function MatchingPageContent() {
   const [confirmedResult, setConfirmedResult] = useState<MatchingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const yesterday = getYesterdayString();
   const today = getTodayString();
-  const todayQuestion = getDailyQuestionText();
+  const yesterdayQuestion = getDailyQuestionText(yesterday);
+  const todayQuestion = getDailyQuestionText(today);
 
   const participantsById = useMemo(() => {
     const map = new Map<string, Participant>();
@@ -146,12 +150,12 @@ function MatchingPageContent() {
     }
   }, [sessionLoading, currentUser, cohortId, router, toast]);
 
-  // 기존 매칭 결과 로드 (제출 현황은 useSubmissionCount가 실시간 처리)
+  // 기존 매칭 결과 로드 (어제 날짜 기준)
   const fetchMatchingResult = useCallback(async () => {
     if (!cohortId || !sessionToken) return;
     try {
       const response = await fetch(
-        `/api/admin/matching?cohortId=${cohortId}&date=${today}`,
+        `/api/admin/matching?cohortId=${cohortId}&date=${yesterday}`,
         {
           headers: {
             'Authorization': `Bearer ${sessionToken}`,
@@ -167,7 +171,7 @@ function MatchingPageContent() {
     } catch (error) {
       logger.error('매칭 결과 로드 실패', error);
     }
-  }, [cohortId, today, sessionToken]);
+  }, [cohortId, yesterday, sessionToken]);
 
   useEffect(() => {
     if (cohortId) {
@@ -299,7 +303,7 @@ function MatchingPageContent() {
     return null;
   }
 
-  const canMatch = submissionCount >= MATCHING_CONFIG.MIN_SUBMISSIONS_FOR_MATCHING;
+  const canMatch = yesterdayCount >= MATCHING_CONFIG.MIN_SUBMISSIONS_FOR_MATCHING;
 
   return (
     <PageTransition>
@@ -312,15 +316,16 @@ function MatchingPageContent() {
 
         <main className="flex-1 overflow-y-auto bg-[#eff6ff]">
           <div className="mx-auto max-w-md px-4 py-6 space-y-4">
-            {/* 상태 카드 */}
+            {/* 어제 제출 현황 카드 (매칭 대상) */}
             <div className="bg-white rounded-xl border border-[#dddddd] p-5 shadow-sm space-y-4">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#cee7ff]">
-                  <Users className="h-6 w-6 text-[#45a1fd]" />
+                  <Calendar className="h-6 w-6 text-[#45a1fd]" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-lg font-semibold text-[#31363e]">오늘의 제출 현황</h2>
-                  <p className="text-sm text-[#8f98a3]">{today} · Cohort {cohortId}</p>
+                  <h2 className="text-lg font-semibold text-[#31363e]">어제 제출 현황</h2>
+                  <p className="text-sm text-[#8f98a3]">{yesterday} · Cohort {cohortId}</p>
+                  <p className="text-xs text-[#ffa940] font-semibold mt-1">📌 오늘 매칭 대상</p>
                 </div>
               </div>
 
@@ -328,7 +333,7 @@ function MatchingPageContent() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-[#8f98a3]">제출 완료</span>
                   <span className="text-2xl font-bold text-[#45a1fd]">
-                    {isLoadingCount ? '...' : `${submissionCount}명`}
+                    {isLoadingYesterday ? '...' : `${yesterdayCount}명`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -344,6 +349,39 @@ function MatchingPageContent() {
                       불가능 (최소 4명 필요)
                     </span>
                   )}
+                </div>
+              </div>
+
+              {/* 어제의 질문 */}
+              <div className="pt-4 border-t border-[#dddddd]">
+                <p className="text-xs font-semibold mb-2 text-[#8f98a3]">
+                  어제의 질문
+                </p>
+                <p className="text-sm leading-relaxed text-[#575e68]">
+                  {yesterdayQuestion}
+                </p>
+              </div>
+            </div>
+
+            {/* 오늘 제출 현황 카드 (내일 매칭 예정) */}
+            <div className="bg-white rounded-xl border border-[#dddddd] p-5 shadow-sm space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#fff2d2]">
+                  <Users className="h-6 w-6 text-[#ffa940]" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-[#31363e]">오늘 제출 현황</h2>
+                  <p className="text-sm text-[#8f98a3]">{today} · Cohort {cohortId}</p>
+                  <p className="text-xs text-[#8f98a3] mt-1">🔮 내일 매칭 예정</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[#8f98a3]">제출 완료</span>
+                  <span className="text-2xl font-bold text-[#ffa940]">
+                    {isLoadingToday ? '...' : `${todayCount}명`}
+                  </span>
                 </div>
               </div>
 
@@ -395,7 +433,7 @@ function MatchingPageContent() {
                     <div className="text-right">
                       <p className="text-xs text-[#8f98a3]">매칭 인원</p>
                       <p className="text-xl font-bold text-[#ffa940]">
-                        {(previewResult.totalParticipants ?? submissionCount) || 0}명
+                        {(previewResult.totalParticipants ?? yesterdayCount) || 0}명
                       </p>
                     </div>
                   </div>
@@ -460,7 +498,7 @@ function MatchingPageContent() {
                     <div className="text-right">
                       <p className="text-xs text-[#8f98a3]">매칭 인원</p>
                       <p className="text-xl font-bold text-[#45a1fd]">
-                        {(confirmedResult.totalParticipants ?? submissionCount) || 0}명
+                        {(confirmedResult.totalParticipants ?? yesterdayCount) || 0}명
                       </p>
                     </div>
                   </div>
