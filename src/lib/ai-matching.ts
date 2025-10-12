@@ -204,14 +204,14 @@ ${participantPromptList}
 `;
 
     logger.info('🤖 OpenAI API 호출 시작', {
-      model: 'gpt-4-turbo',
+      model: 'gpt-5-nano',
       participantCount: participants.length,
       promptLength: prompt.length,
     });
 
     const apiStartTime = Date.now();
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo',
+      model: 'gpt-5-nano',
       messages: [
         {
           role: 'system',

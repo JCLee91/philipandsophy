@@ -410,7 +410,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   {formatShortDate(selectedSubmission.submittedAt)} 독서 기록
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 overflow-y-auto flex-1 min-h-0">
+              <div className="space-y-4 overflow-y-auto flex-1">
                 {/* 책 이미지 */}
                 {selectedSubmission.bookImageUrl && (
                   <div className="relative aspect-video overflow-hidden rounded-xl border bg-muted flex-shrink-0">
