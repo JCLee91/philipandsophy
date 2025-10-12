@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
-import { getYesterdayString } from '@/lib/date-utils';
+import { getYesterdayString, getTodayString } from '@/lib/date-utils';
 import { requireAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -30,9 +30,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. 어제의 질문 가져오기 (매칭은 어제 제출 기반)
-    const yesterday = getYesterdayString();
-    const yesterdayQuestion = getDailyQuestionText(yesterday);
+    // 1. 날짜 정의
+    const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터)
+    const matchingDate = getTodayString(); // 매칭 실행 날짜 (오늘 Firebase 키로 사용)
+    const submissionQuestion = getDailyQuestionText(submissionDate);
 
     // 2. Firebase Admin 초기화 및 DB 가져오기
     const db = getAdminDb();
@@ -40,8 +41,8 @@ export async function POST(request: NextRequest) {
     // 3. 어제 제출한 참가자들의 답변 가져오기 (매칭 대상)
     const submissionsSnapshot = await db
       .collection('reading_submissions')
-      .where('submissionDate', '==', yesterday)
-      .where('dailyQuestion', '==', yesterdayQuestion)
+      .where('submissionDate', '==', submissionDate)
+      .where('dailyQuestion', '==', submissionQuestion)
       .get();
 
     if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
 
     // 6. AI 매칭 수행 (검증 없음 - 관리자가 수동으로 검토/조정)
     logger.info('AI 매칭 시작 (프리뷰 모드)', { totalParticipants: participantAnswers.length });
-    const matching = await matchParticipantsByAI(yesterdayQuestion, participantAnswers);
+    const matching = await matchParticipantsByAI(submissionQuestion, participantAnswers);
     logger.info('AI 매칭 완료 (프리뷰 모드)');
 
     // 7. ⚠️ Firebase 저장하지 않음 (프리뷰 모드)
@@ -183,8 +184,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       preview: true, // 프리뷰 모드 플래그
-      date: yesterday,
-      question: yesterdayQuestion,
+      date: matchingDate, // 매칭 날짜 (오늘, Firebase 키로 사용)
+      submissionDate, // 제출 날짜 (어제, 스포일러 방지용)
+      question: submissionQuestion,
       totalParticipants: participantAnswers.length,
       matching,
       featuredParticipants: {

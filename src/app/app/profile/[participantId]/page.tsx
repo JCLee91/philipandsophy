@@ -20,7 +20,7 @@ import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { getTodayString, filterSubmissionsByDate } from '@/lib/date-utils';
+import { getTodayString, getYesterdayString, filterSubmissionsByDate } from '@/lib/date-utils';
 import { normalizeMatchingData } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 
@@ -36,7 +36,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const participantId = decodeURIComponent(resolvedParams.participantId);
   const cohortId = searchParams.get('cohort');
 
-  // 매칭 날짜 파라미터 (오늘의 서재에서 전달된 경우 해당 날짜까지만 표시)
+  // 제출 날짜 cutoff (URL 파라미터: 스포일러 방지를 위해 이 날짜까지만 표시)
+  // today-library에서 submissionDate(어제)를 matchingDate 파라미터로 전달함
   const matchingDate = searchParams.get('matchingDate');
 
   // 세션 기반 인증 (URL에서 userId 제거)
@@ -138,11 +139,14 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 접근 권한 체크
   const isSelf = checkIsSelf(participantId);
 
-  // 오늘 날짜 (YYYY-MM-DD 형식)
-  const today = getTodayString();
+  // 매칭 날짜 (오늘, Firebase 키로 사용)
+  const todayMatchingDate = getTodayString();
+  const yesterdayMatchingDate = getYesterdayString();
 
   // 오늘의 추천 참가자 목록 (개별 매칭 기반)
-  const rawMatching = cohort?.dailyFeaturedParticipants?.[today];
+  // 임시: 오늘 날짜로 못 찾으면 어제 날짜도 확인 (날짜 키 혼란 대응)
+  const rawMatching = cohort?.dailyFeaturedParticipants?.[todayMatchingDate]
+    || cohort?.dailyFeaturedParticipants?.[yesterdayMatchingDate];
   const todayMatching = useMemo(
     () => normalizeMatchingData(rawMatching),
     [rawMatching]
@@ -410,6 +414,22 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                     />
                   </div>
                 )}
+                {/* 읽은 책 */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    읽은 책
+                  </p>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedSubmission.bookTitle}
+                    </p>
+                    {selectedSubmission.bookAuthor && (
+                      <p className="text-sm text-muted-foreground">
+                        {selectedSubmission.bookAuthor}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 {/* 한 줄 감상평 */}
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">

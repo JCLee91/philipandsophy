@@ -83,28 +83,46 @@ function MatchingPageContent() {
   const [confirmedResult, setConfirmedResult] = useState<MatchingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 날짜 정보
-  const yesterday = getYesterdayString();
-  const today = getTodayString();
-  const yesterdayQuestion = getDailyQuestionText(yesterday);
-  const todayQuestion = getDailyQuestionText(today);
+  // 날짜 정의
+  const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터)
+  const matchingDate = getTodayString(); // 매칭 실행 날짜 (오늘, Firebase 키)
+  const submissionQuestion = getDailyQuestionText(submissionDate);
+  const todayQuestion = getDailyQuestionText(matchingDate);
 
-  // 로컬 스토리지 키
-  const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${yesterday}`;
-  const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${yesterday}`;
+  // 로컬 스토리지 키 (matchingDate 기준)
+  const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${matchingDate}`;
+  const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${matchingDate}`;
+  const IN_PROGRESS_KEY = `matching-in-progress-${cohortId}-${matchingDate}`;
 
   // 페이지 로드 시 로컬 스토리지에서 복원
   useEffect(() => {
     if (typeof window === 'undefined' || !cohortId) return;
 
     try {
+      // 중단된 매칭 작업 감지
+      const interruptedJob = localStorage.getItem(IN_PROGRESS_KEY);
+      if (interruptedJob) {
+        const timestamp = parseInt(interruptedJob, 10);
+        const elapsedMinutes = Math.floor((Date.now() - timestamp) / 1000 / 60);
+
+        toast({
+          title: '중단된 매칭 작업 감지',
+          description: `${elapsedMinutes}분 전 시작된 매칭이 완료되지 않았습니다. 다시 시도하시겠습니까?`,
+          variant: 'default',
+        });
+
+        // 플래그 제거 (한 번만 알림)
+        localStorage.removeItem(IN_PROGRESS_KEY);
+        logger.warn('중단된 매칭 작업 감지', { timestamp, elapsedMinutes });
+      }
+
       // 프리뷰 결과 복원
       const savedPreview = localStorage.getItem(PREVIEW_STORAGE_KEY);
       if (savedPreview) {
         const parsed = JSON.parse(savedPreview);
         setPreviewResult(parsed);
         setMatchingState('previewing');
-        logger.info('프리뷰 결과 복원 완료', { date: yesterday });
+        logger.info('프리뷰 결과 복원 완료', { date: matchingDate });
       }
 
       // 확정 결과 복원
@@ -113,12 +131,25 @@ function MatchingPageContent() {
         const parsed = JSON.parse(savedConfirmed);
         setConfirmedResult(parsed);
         setMatchingState('confirmed');
-        logger.info('확정 결과 복원 완료', { date: yesterday });
+        logger.info('확정 결과 복원 완료', { date: matchingDate });
       }
     } catch (error) {
       logger.error('로컬 스토리지 복원 실패', error);
     }
-  }, [cohortId, yesterday, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY]);
+  }, [cohortId, yesterday, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY, toast]);
+
+  // beforeunload 경고: AI 매칭 처리 중 페이지 이탈 방지
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isProcessing) {
+        e.preventDefault();
+        e.returnValue = ''; // 브라우저 기본 경고 메시지 표시
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isProcessing]);
 
   const participantsById = useMemo(() => {
     const map = new Map<string, Participant>();
@@ -194,12 +225,12 @@ function MatchingPageContent() {
     }
   }, [sessionLoading, currentUser, cohortId, router, toast]);
 
-  // 기존 매칭 결과 로드 (어제 날짜 기준)
+  // 기존 매칭 결과 로드 (matchingDate 기준)
   const fetchMatchingResult = useCallback(async () => {
     if (!cohortId || !sessionToken) return;
     try {
       const response = await fetch(
-        `/api/admin/matching?cohortId=${cohortId}&date=${yesterday}`,
+        `/api/admin/matching?cohortId=${cohortId}&date=${matchingDate}`,
         {
           headers: {
             'Authorization': `Bearer ${sessionToken}`,
@@ -217,7 +248,7 @@ function MatchingPageContent() {
     } catch (error) {
       logger.error('매칭 결과 로드 실패', error);
     }
-  }, [cohortId, yesterday, sessionToken]);
+  }, [cohortId, matchingDate, sessionToken]);
 
   useEffect(() => {
     if (cohortId) {
@@ -227,8 +258,8 @@ function MatchingPageContent() {
 
   const handleOpenProfile = (participantId: string, theme: 'similar' | 'opposite') => {
     if (!cohortId) return;
-    // 매칭 날짜(어제)를 URL에 포함하여 스포일러 방지
-    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(yesterday)}`;
+    // 제출 날짜(어제)를 URL에 포함하여 스포일러 방지 (오늘 제출분은 아직 안 보이도록)
+    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(submissionDate)}`;
     router.push(profileUrl);
   };
 
@@ -238,6 +269,14 @@ function MatchingPageContent() {
 
     setIsProcessing(true);
     setError(null);
+
+    // 중단 감지용 플래그 설정 (AI 처리 시작 시점 기록)
+    try {
+      localStorage.setItem(IN_PROGRESS_KEY, Date.now().toString());
+      logger.info('매칭 작업 시작 플래그 설정', { matchingDate, submissionDate });
+    } catch (storageError) {
+      logger.error('로컬 스토리지 플래그 설정 실패', storageError);
+    }
 
     try {
       const response = await fetch('/api/admin/matching/preview', {
@@ -261,7 +300,7 @@ function MatchingPageContent() {
       // 로컬 스토리지에 프리뷰 결과 저장
       try {
         localStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(data));
-        logger.info('프리뷰 결과 로컬 스토리지 저장 완료', { date: yesterday });
+        logger.info('프리뷰 결과 로컬 스토리지 저장 완료', { matchingDate });
       } catch (storageError) {
         logger.error('로컬 스토리지 저장 실패', storageError);
       }
@@ -276,6 +315,14 @@ function MatchingPageContent() {
         title: 'AI 매칭 완료',
         description: `${matchedCount}명의 참가자 매칭 결과를 확인하세요.`,
       });
+
+      // 성공 시 중단 플래그 제거
+      try {
+        localStorage.removeItem(IN_PROGRESS_KEY);
+        logger.info('매칭 작업 완료, 플래그 제거', { matchingDate });
+      } catch (storageError) {
+        logger.error('로컬 스토리지 플래그 제거 실패', storageError);
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : '매칭 실행 중 오류가 발생했습니다.';
@@ -285,6 +332,14 @@ function MatchingPageContent() {
         description: errorMessage,
         variant: 'destructive',
       });
+
+      // 실패 시에도 중단 플래그 제거 (재시도 가능하도록)
+      try {
+        localStorage.removeItem(IN_PROGRESS_KEY);
+        logger.info('매칭 작업 실패, 플래그 제거', { matchingDate });
+      } catch (storageError) {
+        logger.error('로컬 스토리지 플래그 제거 실패', storageError);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -326,7 +381,7 @@ function MatchingPageContent() {
       try {
         localStorage.removeItem(PREVIEW_STORAGE_KEY); // 프리뷰는 삭제
         localStorage.setItem(CONFIRMED_STORAGE_KEY, JSON.stringify(previewResult)); // 확정 결과 저장
-        logger.info('확정 결과 로컬 스토리지 저장 완료', { date: yesterday });
+        logger.info('확정 결과 로컬 스토리지 저장 완료', { matchingDate });
       } catch (storageError) {
         logger.error('로컬 스토리지 저장 실패', storageError);
       }
@@ -389,7 +444,7 @@ function MatchingPageContent() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-semibold text-[#31363e]">어제 제출 현황</h2>
-                  <p className="text-sm text-[#8f98a3]">{yesterday} · Cohort {cohortId}</p>
+                  <p className="text-sm text-[#8f98a3]">{submissionDate} · Cohort {cohortId}</p>
                   <p className="text-xs text-[#ffa940] font-semibold mt-1">📌 오늘 매칭 대상</p>
                 </div>
               </div>
@@ -417,13 +472,13 @@ function MatchingPageContent() {
                 </div>
               </div>
 
-              {/* 어제의 질문 */}
+              {/* 제출 날짜의 질문 */}
               <div className="pt-4 border-t border-[#dddddd]">
                 <p className="text-xs font-semibold mb-2 text-[#8f98a3]">
                   어제의 질문
                 </p>
                 <p className="text-sm leading-relaxed text-[#575e68]">
-                  {yesterdayQuestion}
+                  {submissionQuestion}
                 </p>
               </div>
             </div>
@@ -436,7 +491,7 @@ function MatchingPageContent() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-semibold text-[#31363e]">오늘 제출 현황</h2>
-                  <p className="text-sm text-[#8f98a3]">{today} · Cohort {cohortId}</p>
+                  <p className="text-sm text-[#8f98a3]">{matchingDate} · Cohort {cohortId}</p>
                   <p className="text-xs text-[#8f98a3] mt-1">🔮 내일 매칭 예정</p>
                 </div>
               </div>

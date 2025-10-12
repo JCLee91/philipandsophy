@@ -41,13 +41,15 @@ function TodayLibraryContent() {
   // 독서 인증 다이얼로그 상태
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
 
-  // 오늘 날짜
-  const today = getTodayString();
-  // 어제 날짜 (매칭은 어제 제출 기준)
-  const yesterday = getYesterdayString();
+  // 날짜 정의
+  const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터)
+  const matchingDate = getTodayString(); // 매칭 실행 날짜 (오늘, Firebase 키)
 
-  // 오늘의 매칭 결과
-  const rawMatching = cohort?.dailyFeaturedParticipants?.[today];
+  // 오늘의 매칭 결과 (matchingDate 키로 조회, 없으면 submissionDate로 fallback)
+  // 어제 제출분으로 오늘 매칭을 실행했기 때문에 matchingDate(오늘) 키로 저장됨
+  // 임시: 오늘 날짜로 못 찾으면 어제 날짜도 확인 (날짜 키 혼란 대응)
+  const rawMatching = cohort?.dailyFeaturedParticipants?.[matchingDate]
+    || cohort?.dailyFeaturedParticipants?.[submissionDate];
   const todayMatching = useMemo(() => {
     // 매칭 데이터가 없으면 null 반환
     if (!rawMatching) return null;
@@ -75,7 +77,7 @@ function TodayLibraryContent() {
 
   // 추천 참가자들의 정보 가져오기
   const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
-    queryKey: ['featured-participants', allFeaturedIds],
+    queryKey: ['featured-participants-v3', allFeaturedIds],
     queryFn: async () => {
       if (allFeaturedIds.length === 0) return [];
 
@@ -92,13 +94,31 @@ function TodayLibraryContent() {
       })) as Participant[];
 
       // 각 참가자에 theme 정보 추가
-      return participants.map((participant) => ({
-        ...participant,
-        theme: similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite',
-      }));
+      return participants.map((participant) => {
+        const inferCircleUrl = (url?: string) => {
+          if (!url) return undefined;
+          const [base, query] = url.split('?');
+          if (!base.includes('_full')) return undefined;
+          const circleBase = base.replace('_full', '_circle');
+          return query ? `${circleBase}?${query}` : circleBase;
+        };
+
+        const circleImage = participant.profileImageCircle || inferCircleUrl(participant.profileImage);
+
+        // ⚠️ 중요: BookmarkCard는 profileImage prop을 사용하므로,
+        // profileImage 필드 자체를 원형 이미지로 덮어써야 함
+        return {
+          ...participant,
+          profileImage: circleImage || participant.profileImage, // 원형 이미지로 교체
+          profileImageCircle: circleImage,
+          theme: similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite',
+        };
+      });
     },
     // 🔒 보안 수정: 인증된 유저(또는 관리자)만 개인정보 다운로드 가능
     enabled: allFeaturedIds.length > 0 && !isLocked,
+    cacheTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결)
+    staleTime: 0, // 항상 신선한 데이터 fetch
   });
 
   // 세션 및 cohort 검증
@@ -199,8 +219,8 @@ function TodayLibraryContent() {
       });
       return;
     }
-    // 매칭 날짜를 URL에 포함 (매칭은 어제 제출 기준이므로 어제 날짜 전달)
-    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(yesterday)}`;
+    // 제출 날짜를 URL에 포함하여 스포일러 방지 (오늘 제출분은 아직 안 보이도록)
+    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(submissionDate)}`;
     router.push(profileUrl);
   };
 
@@ -399,7 +419,7 @@ function TodayLibraryContent() {
           <UnifiedButton
             variant="primary"
             onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
-            className="flex-1"
+            className="w-full"
           >
             내 프로필 북 보기
           </UnifiedButton>

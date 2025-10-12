@@ -11,6 +11,7 @@ interface ParticipantData {
   id: string;
   name: string;
   profileImage?: string;
+  profileImageCircle?: string;
   theme: 'similar' | 'opposite';
 }
 
@@ -61,7 +62,11 @@ export default function BookmarkRow({
         {participants.map((participant, idx) => (
           <BookmarkCard
             key={`${participant.theme}-${participant.id}`}
-            profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
+            profileImage={
+              participant.profileImageCircle ||
+              participant.profileImage ||
+              APP_CONSTANTS.DEFAULT_PROFILE_IMAGE
+            }
             name={participant.name}
             theme={theme}
             isLocked={isLocked}

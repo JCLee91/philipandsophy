@@ -58,15 +58,15 @@ export async function POST(request: NextRequest) {
       throw validationError;
     }
 
-    const today = date || getTodayString();
+    const matchingDate = date || getTodayString(); // 매칭 날짜 (Firebase 키로 사용)
 
     // Validate date format
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(today)) {
+    if (!dateRegex.test(matchingDate)) {
       return NextResponse.json(
         {
           error: 'date 파라미터 형식이 올바르지 않습니다.',
-          message: 'YYYY-MM-DD 형식이어야 합니다. (예: 2025-10-11)',
+          message: 'YYYY-MM-DD 형식이어야 합니다. (예: 2025-10-12)',
         },
         { status: 400 }
       );
@@ -89,13 +89,13 @@ export async function POST(request: NextRequest) {
         const cohortData = cohortDoc.data();
         const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
 
-        // Race condition 방지: 이미 오늘 날짜의 매칭이 존재하는지 확인
-        if (dailyFeaturedParticipants[today]?.featured) {
-          throw new Error('이미 오늘 날짜의 매칭 결과가 존재합니다. 다시 매칭하려면 기존 결과를 먼저 삭제하세요.');
+        // Race condition 방지: 이미 해당 날짜의 매칭이 존재하는지 확인
+        if (dailyFeaturedParticipants[matchingDate]?.featured) {
+          throw new Error('이미 해당 날짜의 매칭 결과가 존재합니다. 다시 매칭하려면 기존 결과를 먼저 삭제하세요.');
         }
 
-        // 매칭 결과 저장
-        dailyFeaturedParticipants[today] = matching;
+        // 매칭 결과 저장 (matchingDate를 키로 사용)
+        dailyFeaturedParticipants[matchingDate] = matching;
 
         transaction.update(cohortRef, {
           dailyFeaturedParticipants,
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
         logger.info('매칭 결과 저장 완료', {
           cohortId,
-          date: today,
+          date: matchingDate,
           adminId: user!.id,
           adminName: user!.name,
           participantCount: Object.keys(matching.assignments || {}).length,
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
             { status: 404 }
           );
         }
-        if (transactionError.message.includes('이미 오늘 날짜의 매칭 결과가 존재합니다')) {
+        if (transactionError.message.includes('이미 해당 날짜의 매칭 결과가 존재합니다')) {
           return NextResponse.json(
             { error: transactionError.message },
             { status: 409 }
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       confirmed: true,
-      date: today,
+      date: matchingDate,
       message: '매칭 결과가 성공적으로 저장되었습니다.',
     });
 

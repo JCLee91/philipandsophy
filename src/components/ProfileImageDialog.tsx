@@ -20,6 +20,8 @@ export default function ProfileImageDialog({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const isMountedRef = useRef(true);
+  const wasClosedByBackButton = useRef(false);
+  const historyEntryTimestamp = useRef<number>(0);
 
   // Track component mount state to prevent race conditions
   useEffect(() => {
@@ -51,6 +53,52 @@ export default function ProfileImageDialog({
       setImageLoaded(false);
     }
   }, [open, participant?.profileImage]);
+
+  // 안드로이드 back button 처리 (history API 활용)
+  useEffect(() => {
+    if (!open) {
+      wasClosedByBackButton.current = false;
+      return;
+    }
+
+    // 다이얼로그가 열릴 때 고유한 타임스탬프와 함께 history state 추가
+    historyEntryTimestamp.current = Date.now();
+    const historyState = {
+      profileDialog: true,
+      timestamp: historyEntryTimestamp.current
+    };
+    window.history.pushState(historyState, '');
+
+    // popstate 이벤트 리스너 (back button 감지)
+    const handlePopState = (event: PopStateEvent) => {
+      // 우리가 추가한 history entry가 pop된 경우에만 처리
+      if (
+        event.state?.profileDialog !== true ||
+        event.state?.timestamp !== historyEntryTimestamp.current
+      ) {
+        // Back button으로 우리의 history entry가 pop되면 다이얼로그 닫기
+        wasClosedByBackButton.current = true;
+        onClose();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+
+      // 다이얼로그가 닫힐 때:
+      // 1. Back button으로 닫힌 경우: 이미 history가 pop되었으므로 history.back() 호출 안 함
+      // 2. ESC/외부클릭으로 닫힌 경우: 추가한 history entry 제거
+      if (
+        !wasClosedByBackButton.current &&
+        window.history.state?.profileDialog === true &&
+        window.history.state?.timestamp === historyEntryTimestamp.current
+      ) {
+        window.history.back();
+      }
+    };
+  }, [open]); // onClose 의존성 제거 - effect 재실행 방지
 
   if (!participant) return null;
 

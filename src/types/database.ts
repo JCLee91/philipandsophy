@@ -166,7 +166,25 @@ export const COLLECTIONS = {
   READING_SUBMISSIONS: 'reading_submissions',
   NOTICES: 'notices',
   MESSAGES: 'messages',
+  MATCHING_JOBS: 'matching_jobs',
 } as const;
+
+/**
+ * AI 매칭 작업 상태 (비동기 처리용)
+ */
+export type MatchingJobStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface MatchingJob {
+  id: string; // 문서 ID (UUID)
+  status: MatchingJobStatus;
+  cohortId: string;
+  date: string; // YYYY-MM-DD (매칭 대상 날짜, 어제)
+  result: DailyMatchingEntry | null; // 완료 시 결과
+  error: string | null; // 실패 시 에러 메시지
+  progress?: number; // 진행률 (0-100, 선택적)
+  createdAt: Timestamp;
+  completedAt: Timestamp | null;
+}
 
 /**
  * 타입 가드 함수들
