@@ -5,33 +5,17 @@ import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getTodayString, getYesterdayString } from '@/lib/date-utils';
 import { requireAdmin } from '@/lib/api-auth';
-import { requireAdminWithRateLimit } from '@/lib/api-middleware';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
-
-interface SubmissionData {
-  participantId: string;
-  dailyQuestion: string;
-  dailyAnswer: string;
-  submissionDate: string;
-}
-
-interface ParticipantData {
-  id: string;
-  name: string;
-  gender?: 'male' | 'female' | 'other';
-  isAdmin?: boolean;
-  isAdministrator?: boolean;
-  cohortId: string;
-}
+import type { SubmissionData, ParticipantData } from '@/types/database';
 
 /**
  * POST /api/admin/matching
  * AI 매칭 실행 API
  */
 export async function POST(request: NextRequest) {
-  // 관리자 권한 + Rate limit 검증
-  const { user, error } = await requireAdminWithRateLimit(request);
+  // 관리자 권한 검증
+  const { user, error } = await requireAdmin(request);
   if (error) {
     return error;
   }
@@ -49,6 +33,7 @@ export async function POST(request: NextRequest) {
     // 1. 어제의 질문 가져오기 (매칭은 어제 제출 기반)
     const yesterday = getYesterdayString();
     const yesterdayQuestion = getDailyQuestionText(yesterday);
+    const today = getTodayString(); // 매칭 결과는 오늘 날짜로 저장
 
     // 2. Firebase Admin 초기화 및 DB 가져오기
     const db = getAdminDb();
@@ -172,8 +157,8 @@ export async function POST(request: NextRequest) {
         const cohortData = cohortDoc.data();
         const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
 
-        // 어제 날짜 키로 매칭 결과 저장 (참가자들이 "오늘의 서재"에서 확인)
-        dailyFeaturedParticipants[yesterday] = matching;
+        // 오늘 날짜 키로 매칭 결과 저장 (참가자들이 "오늘의 서재"에서 확인)
+        dailyFeaturedParticipants[today] = matching;
 
         transaction.update(cohortRef, {
           dailyFeaturedParticipants,
@@ -206,15 +191,39 @@ export async function POST(request: NextRequest) {
       name: participantNameMap.get(id) ?? '알 수 없음',
     }));
 
+    // 전체 코호트 참가자 ID 목록 (제출 여부 구분용)
+    const allCohortParticipantsSnapshot = await db
+      .collection('participants')
+      .where('cohortId', '==', cohortId)
+      .get();
+
+    const submittedIds = new Set(participantAnswers.map(p => p.id));
+    const notSubmittedParticipants = allCohortParticipantsSnapshot.docs
+      .filter(doc => {
+        const data = doc.data() as ParticipantData;
+        // 관리자 제외 + 제출 안 한 사람만
+        return !submittedIds.has(doc.id) &&
+               !(data.isAdmin || data.isAdministrator);
+      })
+      .map(doc => ({
+        id: doc.id,
+        name: doc.data().name,
+      }));
+
     return NextResponse.json({
       success: true,
-      date: yesterday,
-      question: yesterdayQuestion,
+      date: today, // 매칭 결과는 오늘 날짜로 반환
+      question: yesterdayQuestion, // 질문은 어제 질문 (어제 제출 데이터 기반)
       totalParticipants: participantAnswers.length,
       matching,
       featuredParticipants: {
         similar: featuredSimilarParticipants,
         opposite: featuredOppositeParticipants,
+      },
+      submissionStats: {
+        submitted: participantAnswers.length,
+        notSubmitted: notSubmittedParticipants.length,
+        notSubmittedList: notSubmittedParticipants,
       },
     });
 

@@ -12,15 +12,16 @@ import ErrorState from '@/components/ErrorState';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
-import { useVerifiedToday } from '@/stores/verified-today';
 import { useSession } from '@/hooks/use-session';
+import { useAccessControl } from '@/hooks/use-access-control';
 import { getInitials, formatShortDate } from '@/lib/utils';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { getTodayString } from '@/lib/date-utils';
+import { getTodayString, filterSubmissionsByDate } from '@/lib/date-utils';
+import { normalizeMatchingData } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 
 interface ProfileBookContentProps {
@@ -34,6 +35,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // URL 디코딩: %EC%9D%B4%EC%9C%A4%EC%A7%80-4321 → 이윤지-4321
   const participantId = decodeURIComponent(resolvedParams.participantId);
   const cohortId = searchParams.get('cohort');
+
+  // 매칭 날짜 파라미터 (오늘의 서재에서 전달된 경우 해당 날짜까지만 표시)
+  const matchingDate = searchParams.get('matchingDate');
 
   // 세션 기반 인증 (URL에서 userId 제거)
   const { currentUser, isLoading: sessionLoading } = useSession();
@@ -78,8 +82,16 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 데이터 페칭
   const { data: participant, isLoading: participantLoading } = useParticipant(participantId);
   const { data: cohort } = useCohort(cohortId || undefined);
-  const { data: submissions = [], isLoading: submissionsLoading } = useParticipantSubmissionsRealtime(participantId);
-  const { data: verifiedIds } = useVerifiedToday();
+  const { data: rawSubmissions = [], isLoading: submissionsLoading } = useParticipantSubmissionsRealtime(participantId);
+
+  // 접근 제어
+  const { isSelf: checkIsSelf, isAdmin, isVerified: isVerifiedToday } = useAccessControl();
+
+  // 매칭 날짜 필터링: matchingDate가 있으면 그 날짜까지만 표시 (스포일러 방지)
+  const submissions = useMemo(
+    () => filterSubmissionsByDate(rawSubmissions, matchingDate),
+    [rawSubmissions, matchingDate]
+  );
 
   // 세션 검증 (리다이렉트 플래그로 중복 방지)
   const hasRedirectedRef = useRef(false);
@@ -124,44 +136,17 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   }, [allQuestionsAnswers]); // allQuestionsAnswers는 이제 안정적인 참조
 
   // 접근 권한 체크
-  const isSelf = currentUserId === participantId;
-  const isAdmin = currentUser?.isAdmin === true;
+  const isSelf = checkIsSelf(participantId);
 
   // 오늘 날짜 (YYYY-MM-DD 형식)
   const today = getTodayString();
 
-  // 오늘 인증 여부
-  const isVerifiedToday = currentUserId ? verifiedIds?.has(currentUserId) : false;
-
   // 오늘의 추천 참가자 목록 (개별 매칭 기반)
   const rawMatching = cohort?.dailyFeaturedParticipants?.[today];
-  const todayMatching = useMemo(() => {
-    if (!rawMatching) {
-      return {
-        featured: { similar: [], opposite: [] },
-        assignments: {} as Record<string, { similar: string[]; opposite: string[] }>,
-      };
-    }
-
-    if ('featured' in rawMatching || 'assignments' in rawMatching) {
-      return {
-        featured: {
-          similar: rawMatching.featured?.similar ?? [],
-          opposite: rawMatching.featured?.opposite ?? [],
-        },
-        assignments: rawMatching.assignments ?? {},
-      };
-    }
-
-    // Legacy 데이터 호환
-    return {
-      featured: {
-        similar: rawMatching.similar ?? [],
-        opposite: rawMatching.opposite ?? [],
-      },
-      assignments: {},
-    };
-  }, [rawMatching]);
+  const todayMatching = useMemo(
+    () => normalizeMatchingData(rawMatching),
+    [rawMatching]
+  );
 
   const viewerAssignment = currentUserId
     ? todayMatching.assignments?.[currentUserId] ?? null

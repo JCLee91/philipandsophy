@@ -48,6 +48,11 @@ interface MatchingResponse {
     similar: Array<{ id: string; name: string }>;
     opposite: Array<{ id: string; name: string }>;
   };
+  submissionStats?: {
+    submitted: number;
+    notSubmitted: number;
+    notSubmittedList: Array<{ id: string; name: string }>;
+  };
 }
 
 interface AssignmentRow {
@@ -78,10 +83,42 @@ function MatchingPageContent() {
   const [confirmedResult, setConfirmedResult] = useState<MatchingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 날짜 정보
   const yesterday = getYesterdayString();
   const today = getTodayString();
   const yesterdayQuestion = getDailyQuestionText(yesterday);
   const todayQuestion = getDailyQuestionText(today);
+
+  // 로컬 스토리지 키
+  const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${yesterday}`;
+  const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${yesterday}`;
+
+  // 페이지 로드 시 로컬 스토리지에서 복원
+  useEffect(() => {
+    if (typeof window === 'undefined' || !cohortId) return;
+
+    try {
+      // 프리뷰 결과 복원
+      const savedPreview = localStorage.getItem(PREVIEW_STORAGE_KEY);
+      if (savedPreview) {
+        const parsed = JSON.parse(savedPreview);
+        setPreviewResult(parsed);
+        setMatchingState('previewing');
+        logger.info('프리뷰 결과 복원 완료', { date: yesterday });
+      }
+
+      // 확정 결과 복원
+      const savedConfirmed = localStorage.getItem(CONFIRMED_STORAGE_KEY);
+      if (savedConfirmed) {
+        const parsed = JSON.parse(savedConfirmed);
+        setConfirmedResult(parsed);
+        setMatchingState('confirmed');
+        logger.info('확정 결과 복원 완료', { date: yesterday });
+      }
+    } catch (error) {
+      logger.error('로컬 스토리지 복원 실패', error);
+    }
+  }, [cohortId, yesterday, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY]);
 
   const participantsById = useMemo(() => {
     const map = new Map<string, Participant>();
@@ -97,7 +134,14 @@ function MatchingPageContent() {
     if (!currentResult?.matching.assignments) return [];
 
     return cohortParticipants
-      .filter((participant) => !participant.isAdmin && !participant.isAdministrator)
+      .filter((participant) => {
+        // 관리자 제외
+        if (participant.isAdmin || participant.isAdministrator) return false;
+
+        // 매칭 결과가 있는 참가자만 포함 (어제 제출한 사람만)
+        const assignment = currentResult.matching.assignments?.[participant.id];
+        return assignment && (assignment.similar?.length > 0 || assignment.opposite?.length > 0);
+      })
       .map((participant) => {
         const assignment = currentResult.matching.assignments?.[participant.id];
         const similarTargets = assignment?.similar ?? [];
@@ -183,7 +227,9 @@ function MatchingPageContent() {
 
   const handleOpenProfile = (participantId: string, theme: 'similar' | 'opposite') => {
     if (!cohortId) return;
-    router.push(appRoutes.profile(participantId, cohortId, theme));
+    // 매칭 날짜(어제)를 URL에 포함하여 스포일러 방지
+    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(yesterday)}`;
+    router.push(profileUrl);
   };
 
   // 1단계: AI 매칭 프리뷰 (저장하지 않음)
@@ -211,6 +257,14 @@ function MatchingPageContent() {
 
       setPreviewResult(data);
       setMatchingState('previewing');
+
+      // 로컬 스토리지에 프리뷰 결과 저장
+      try {
+        localStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(data));
+        logger.info('프리뷰 결과 로컬 스토리지 저장 완료', { date: yesterday });
+      } catch (storageError) {
+        logger.error('로컬 스토리지 저장 실패', storageError);
+      }
 
       const matchedCount =
         data.totalParticipants ??
@@ -267,6 +321,15 @@ function MatchingPageContent() {
       setConfirmedResult(previewResult);
       setPreviewResult(null);
       setMatchingState('confirmed');
+
+      // 로컬 스토리지 업데이트 (프리뷰 삭제, 확정 저장)
+      try {
+        localStorage.removeItem(PREVIEW_STORAGE_KEY); // 프리뷰는 삭제
+        localStorage.setItem(CONFIRMED_STORAGE_KEY, JSON.stringify(previewResult)); // 확정 결과 저장
+        logger.info('확정 결과 로컬 스토리지 저장 완료', { date: yesterday });
+      } catch (storageError) {
+        logger.error('로컬 스토리지 저장 실패', storageError);
+      }
 
       toast({
         title: '매칭 적용 완료',
@@ -484,6 +547,31 @@ function MatchingPageContent() {
                   participantsLoading={participantsLoading}
                   onOpenProfile={handleOpenProfile}
                 />
+
+                {/* 제출하지 않은 참가자 목록 */}
+                {previewResult.submissionStats && previewResult.submissionStats.notSubmitted > 0 && (
+                  <div className="bg-[#f5f5f5] rounded-xl border border-[#dddddd] p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-[#31363e]">어제 인증하지 않은 참가자</h3>
+                      <span className="text-xs font-medium text-[#8f98a3]">
+                        {previewResult.submissionStats.notSubmitted}명
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {previewResult.submissionStats.notSubmittedList.map((p) => (
+                        <span
+                          key={p.id}
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-[#dddddd] text-sm text-[#8f98a3]"
+                        >
+                          {p.name}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#8f98a3] mt-4">
+                      ℹ️ 이 참가자들은 어제 독서 인증을 하지 않아 프로필북이 전달되지 않습니다.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -536,6 +624,31 @@ function MatchingPageContent() {
                   participantsLoading={participantsLoading}
                   onOpenProfile={handleOpenProfile}
                 />
+
+                {/* 제출하지 않은 참가자 목록 */}
+                {confirmedResult.submissionStats && confirmedResult.submissionStats.notSubmitted > 0 && (
+                  <div className="bg-[#f5f5f5] rounded-xl border border-[#dddddd] p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-[#31363e]">어제 인증하지 않은 참가자</h3>
+                      <span className="text-xs font-medium text-[#8f98a3]">
+                        {confirmedResult.submissionStats.notSubmitted}명
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {confirmedResult.submissionStats.notSubmittedList.map((p) => (
+                        <span
+                          key={p.id}
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-[#dddddd] text-sm text-[#8f98a3]"
+                        >
+                          {p.name}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#8f98a3] mt-4">
+                      ℹ️ 이 참가자들은 어제 독서 인증을 하지 않아 프로필북이 전달되지 않습니다.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

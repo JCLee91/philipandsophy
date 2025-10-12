@@ -4,33 +4,18 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getYesterdayString } from '@/lib/date-utils';
-import { requireAdminWithRateLimit } from '@/lib/api-middleware';
+import { requireAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
-
-interface SubmissionData {
-  participantId: string;
-  dailyQuestion: string;
-  dailyAnswer: string;
-  submissionDate: string;
-}
-
-interface ParticipantData {
-  id: string;
-  name: string;
-  gender?: 'male' | 'female' | 'other';
-  isAdmin?: boolean;
-  isAdministrator?: boolean;
-  cohortId: string;
-}
+import type { SubmissionData, ParticipantData } from '@/types/database';
 
 /**
  * POST /api/admin/matching/preview
  * AI 매칭 실행 (프리뷰 모드 - Firebase 저장하지 않음)
  */
 export async function POST(request: NextRequest) {
-  // 관리자 권한 + Rate limit 검증
-  const { user, error } = await requireAdminWithRateLimit(request);
+  // 관리자 권한 검증
+  const { user, error } = await requireAdmin(request);
   if (error) {
     return error;
   }
@@ -176,6 +161,25 @@ export async function POST(request: NextRequest) {
       name: participantNameMap.get(id) ?? '알 수 없음',
     }));
 
+    // 전체 코호트 참가자 ID 목록 (제출 여부 구분용)
+    const allCohortParticipantsSnapshot = await db
+      .collection('participants')
+      .where('cohortId', '==', cohortId)
+      .get();
+
+    const submittedIds = new Set(participantAnswers.map(p => p.id));
+    const notSubmittedParticipants = allCohortParticipantsSnapshot.docs
+      .filter(doc => {
+        const participant = doc.data() as ParticipantData;
+        // 관리자 제외 + 제출 안 한 사람만
+        return !submittedIds.has(doc.id) &&
+               !(participant.isAdmin || participant.isAdministrator);
+      })
+      .map(doc => ({
+        id: doc.id,
+        name: doc.data().name,
+      }));
+
     return NextResponse.json({
       success: true,
       preview: true, // 프리뷰 모드 플래그
@@ -186,6 +190,11 @@ export async function POST(request: NextRequest) {
       featuredParticipants: {
         similar: featuredSimilarParticipants,
         opposite: featuredOppositeParticipants,
+      },
+      submissionStats: {
+        submitted: participantAnswers.length,
+        notSubmitted: notSubmittedParticipants.length,
+        notSubmittedList: notSubmittedParticipants,
       },
     });
 

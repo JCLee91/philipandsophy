@@ -10,16 +10,17 @@ import BlurDivider from '@/components/BlurDivider';
 import UnifiedButton from '@/components/UnifiedButton';
 import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import { useCohort } from '@/hooks/use-cohorts';
-import { useVerifiedToday } from '@/stores/verified-today';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/hooks/use-session';
+import { useAccessControl } from '@/hooks/use-access-control';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import type { Participant } from '@/types/database';
-import { getTodayString } from '@/lib/date-utils';
+import { getTodayString, getYesterdayString } from '@/lib/date-utils';
+import { normalizeMatchingData } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
@@ -34,42 +35,25 @@ function TodayLibraryContent() {
   const currentUserId = currentUser?.id;
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
-  const { data: verifiedIds } = useVerifiedToday();
   const { toast } = useToast();
+  const { isVerified, isAdmin, isLocked } = useAccessControl();
 
   // 독서 인증 다이얼로그 상태
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
 
   // 오늘 날짜
   const today = getTodayString();
+  // 어제 날짜 (매칭은 어제 제출 기준)
+  const yesterday = getYesterdayString();
 
   // 오늘의 매칭 결과
   const rawMatching = cohort?.dailyFeaturedParticipants?.[today];
   const todayMatching = useMemo(() => {
-    // 매칭 데이터가 없으면 null 반환 (fallback 제거)
-    if (!rawMatching) {
-      return null;
-    }
+    // 매칭 데이터가 없으면 null 반환
+    if (!rawMatching) return null;
 
-    if ('featured' in rawMatching || 'assignments' in rawMatching) {
-      const featured = rawMatching.featured ?? { similar: [], opposite: [] };
-      return {
-        featured: {
-          similar: featured.similar ?? [],
-          opposite: featured.opposite ?? [],
-        },
-        assignments: rawMatching.assignments ?? {},
-      };
-    }
-
-    // Legacy 데이터 호환용
-    return {
-      featured: {
-        similar: rawMatching.similar ?? [],
-        opposite: rawMatching.opposite ?? [],
-      },
-      assignments: {},
-    };
+    // v1.0/v2.0 형식 모두 처리
+    return normalizeMatchingData(rawMatching);
   }, [rawMatching]);
 
   const userAssignment = currentUserId && todayMatching
@@ -88,11 +72,6 @@ function TodayLibraryContent() {
   const allFeaturedIds = Array.from(
     new Set([...similarFeaturedIds, ...oppositeFeaturedIds])
   );
-
-  // 🔒 보안: 인증 상태를 쿼리 enabled 조건보다 먼저 계산
-  const isVerifiedToday = verifiedIds?.has(currentUserId || '') ?? false;
-  const isAdmin = currentUser?.isAdmin === true || currentUser?.isAdministrator === true;
-  const isLocked = !isAdmin && !isVerifiedToday;
 
   // 추천 참가자들의 정보 가져오기
   const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
@@ -220,7 +199,9 @@ function TodayLibraryContent() {
       });
       return;
     }
-    router.push(appRoutes.profile(participantId, cohortId, theme));
+    // 매칭 날짜를 URL에 포함 (매칭은 어제 제출 기준이므로 어제 날짜 전달)
+    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(yesterday)}`;
+    router.push(profileUrl);
   };
 
   // 1단계: 미인증 유저는 무조건 자물쇠 더미 카드 표시

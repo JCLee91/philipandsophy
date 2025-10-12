@@ -10,7 +10,7 @@ function getOpenAIClient() {
   }
   return new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 25000, // 25초 타임아웃 (Vercel serverless 함수 제한 고려)
+    timeout: 600000, // 600초 (10분) 타임아웃
   });
 }
 
@@ -131,6 +131,88 @@ function fillIfEmpty(
   return fallback.filter((id) => (excludeId ? id !== excludeId : true));
 }
 
+/**
+ * 성별 균형 검증 함수
+ * 각 참가자의 similar/opposite 추천이 1남 + 1녀 규칙을 따르는지 확인
+ */
+function validateGenderBalance(
+  matching: MatchingResult,
+  participants: ParticipantAnswer[]
+): void {
+  const participantMap = new Map(participants.map(p => [p.id, p]));
+  const violations: string[] = [];
+
+  // Featured 검증
+  const featuredSimilar = matching.featured.similar
+    .map(id => participantMap.get(id))
+    .filter((p): p is ParticipantAnswer => p !== undefined);
+  const featuredOpposite = matching.featured.opposite
+    .map(id => participantMap.get(id))
+    .filter((p): p is ParticipantAnswer => p !== undefined);
+
+  const featuredSimilarGenders = featuredSimilar.map(p => p.gender);
+  const featuredOppositeGenders = featuredOpposite.map(p => p.gender);
+
+  const hasMaleAndFemaleSimilar =
+    featuredSimilarGenders.includes('male') && featuredSimilarGenders.includes('female');
+  const hasMaleAndFemaleOpposite =
+    featuredOppositeGenders.includes('male') && featuredOppositeGenders.includes('female');
+
+  if (!hasMaleAndFemaleSimilar) {
+    violations.push(
+      `Featured 비슷한 가치관: 성별 균형 위반 (${featuredSimilar.map(p => `${p.name}(${p.gender})`).join(', ')})`
+    );
+  }
+  if (!hasMaleAndFemaleOpposite) {
+    violations.push(
+      `Featured 상반된 가치관: 성별 균형 위반 (${featuredOpposite.map(p => `${p.name}(${p.gender})`).join(', ')})`
+    );
+  }
+
+  // 각 참가자별 assignments 검증
+  for (const [participantId, assignment] of Object.entries(matching.assignments)) {
+    const participant = participantMap.get(participantId);
+    if (!participant) continue;
+
+    const similarAssignments = assignment.similar
+      .map(id => participantMap.get(id))
+      .filter((p): p is ParticipantAnswer => p !== undefined);
+    const oppositeAssignments = assignment.opposite
+      .map(id => participantMap.get(id))
+      .filter((p): p is ParticipantAnswer => p !== undefined);
+
+    const similarGenders = similarAssignments.map(p => p.gender);
+    const oppositeGenders = oppositeAssignments.map(p => p.gender);
+
+    const hasBalancedSimilar =
+      similarGenders.includes('male') && similarGenders.includes('female');
+    const hasBalancedOpposite =
+      oppositeGenders.includes('male') && oppositeGenders.includes('female');
+
+    if (!hasBalancedSimilar) {
+      violations.push(
+        `${participant.name} - 비슷한 가치관: 성별 균형 위반 (${similarAssignments.map(p => `${p.name}(${p.gender})`).join(', ')})`
+      );
+    }
+    if (!hasBalancedOpposite) {
+      violations.push(
+        `${participant.name} - 상반된 가치관: 성별 균형 위반 (${oppositeAssignments.map(p => `${p.name}(${p.gender})`).join(', ')})`
+      );
+    }
+  }
+
+  // 위반 사항 로깅
+  if (violations.length > 0) {
+    logger.warn('⚠️ 성별 균형 규칙 위반 감지', {
+      violationCount: violations.length,
+      violations,
+      message: '관리자가 수동으로 조정이 필요합니다.',
+    });
+  } else {
+    logger.info('✅ 성별 균형 규칙 준수 확인');
+  }
+}
+
 
 /**
  * OpenAI를 사용하여 일일 질문에 대한 참가자들의 답변을 분석하고
@@ -165,15 +247,14 @@ async function _matchParticipantsByAI(
 ${participantPromptList}
 
 **필수 규칙:**
-1. 모든 참가자에게 각각 "비슷한 가치관" 2명과 "상반된 가치관" 2명을 추천합니다.
-2. **성별 균형 규칙 (매우 중요):**
-   - 비슷한 가치관 2명: 남성 1명 + 여성 1명
-   - 상반된 가치관 2명: 남성 1명 + 여성 1명
-   - 총 4명의 프로필북: 남성 2명 + 여성 2명
-3. 동일한 사람을 중복 추천하지 말고, 본인(ID)을 결과에 포함하지 마세요.
-4. 추천 이유는 핵심만 1~2문장으로 요약합니다.
-5. 전체 그룹에서 오늘의 서재에 공개할 대표 4명(비슷한 2명, 반대 2명)을 선정하세요.
-6. **모든 참가자의 프로필북이 최소 1명에게는 추천되어야 합니다.**
+1. 각 참가자에게 "비슷한 가치관" 2명과 "상반된 가치관" 2명을 추천합니다.
+2. **성별 균형 (필수 - 최우선 규칙):**
+   - 비슷한 가치관: 반드시 남성 1명 + 여성 1명
+   - 상반된 가치관: 반드시 남성 1명 + 여성 1명
+   - ⚠️ 성별이 부족한 경우에만 동일 성별 2명 허용
+3. 본인(ID)은 추천에서 제외하고, 중복 추천 불가.
+4. 추천 이유는 1문장으로 간결하게.
+5. 전체 그룹에서 대표 4명(비슷한 2명, 반대 2명)을 선정하세요.
 
 **응답 형식(JSON만 반환):**
 {
@@ -269,8 +350,11 @@ ${participantPromptList}
       };
     }
 
-    // AI 매칭 완료 (검증 없이 바로 반환 - 수동 검토 단계에서 조정)
+    // AI 매칭 완료
     const matching = { featured, assignments };
+
+    // 성별 균형 규칙 검증
+    validateGenderBalance(matching, participants);
 
     logger.info('✅ AI 매칭 완료 (수동 검토 대기)', {
       question,

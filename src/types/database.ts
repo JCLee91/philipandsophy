@@ -5,6 +5,28 @@ import { Timestamp } from 'firebase/firestore';
  */
 
 /**
+ * Reading submission data structure (from Firestore)
+ */
+export interface SubmissionData {
+  participantId: string;
+  dailyQuestion: string;
+  dailyAnswer: string;
+  submissionDate: string;
+}
+
+/**
+ * Participant data structure (from Firestore)
+ */
+export interface ParticipantData {
+  id: string;
+  name: string;
+  gender?: 'male' | 'female' | 'other';
+  isAdmin?: boolean;
+  isAdministrator?: boolean;
+  cohortId: string;
+}
+
+/**
  * Daily matching metadata shared across admin & participant views
  */
 export interface DailyMatchingReasons {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { getTodayString } from '@/lib/date-utils';
-import { requireAdminWithRateLimit } from '@/lib/api-middleware';
+import { requireAdmin } from '@/lib/api-auth';
 import { MatchingSchema } from '@/types/schemas';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -12,8 +12,8 @@ import { getAdminDb } from '@/lib/firebase/admin';
  * AI 매칭 결과를 최종 확인하고 Firebase에 저장
  */
 export async function POST(request: NextRequest) {
-  // 관리자 권한 + Rate limit 검증
-  const { user, error } = await requireAdminWithRateLimit(request);
+  // 관리자 권한 검증
+  const { user, error } = await requireAdmin(request);
   if (error) {
     return error;
   }
