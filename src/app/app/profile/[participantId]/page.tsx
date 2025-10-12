@@ -404,16 +404,16 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         {/* 인증 상세 모달 */}
         {selectedSubmission && (
           <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-            <DialogContent className="profile-reading-dialog-ios-safe sm:max-w-md max-h-[85vh] flex flex-col">
-              <DialogHeader className="flex-shrink-0">
+            <DialogContent className="profile-reading-dialog-ios-safe sm:max-w-md">
+              <DialogHeader>
                 <DialogTitle className="text-base">
                   {formatShortDate(selectedSubmission.submittedAt)} 독서 기록
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 overflow-y-auto flex-1">
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                 {/* 책 이미지 */}
                 {selectedSubmission.bookImageUrl && (
-                  <div className="relative aspect-video overflow-hidden rounded-xl border bg-muted flex-shrink-0">
+                  <div className="relative aspect-video overflow-hidden rounded-xl border bg-muted">
                     <Image
                       src={selectedSubmission.bookImageUrl}
                       alt="책 사진"
@@ -426,7 +426,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   </div>
                 )}
                 {/* 한 줄 감상평 */}
-                <div className="space-y-2 flex-shrink-0">
+                <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     한 줄 감상평
                   </p>
