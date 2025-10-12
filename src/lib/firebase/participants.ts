@@ -5,6 +5,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getDocsFromCache,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -102,7 +103,24 @@ export async function getParticipantsByCohort(
     orderBy('createdAt', 'asc')
   );
 
+  // 캐시 우선 전략: IndexedDB 캐시에서 먼저 읽기 시도 (빠름)
+  try {
+    const cachedSnapshot = await getDocsFromCache(q);
+    if (!cachedSnapshot.empty) {
+      logger.info('Participants loaded from cache', { cohortId, count: cachedSnapshot.size });
+      return cachedSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Participant[];
+    }
+  } catch (cacheError) {
+    // 캐시에 없으면 네트워크로 fallback
+    logger.debug('Cache miss, fetching from network', { cohortId });
+  }
+
+  // 캐시에 없으면 네트워크에서 가져오기 (자동으로 캐시에 저장됨)
   const querySnapshot = await getDocs(q);
+  logger.info('Participants loaded from network', { cohortId, count: querySnapshot.size });
 
   return querySnapshot.docs.map((doc) => ({
     id: doc.id,

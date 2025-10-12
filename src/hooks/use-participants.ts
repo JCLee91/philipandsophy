@@ -66,9 +66,11 @@ export function useParticipantsByCohort(cohortId: string | undefined) {
     queryKey: PARTICIPANT_KEYS.byCohort(cohortId || ''),
     queryFn: () => (cohortId ? getParticipantsByCohort(cohortId) : []),
     enabled: !!cohortId,
-    // 네트워크에서 가져온 후 즉시 캐시
-    staleTime: 10 * 60 * 1000, // 10분
-    gcTime: 15 * 60 * 1000, // 15분
+    // Firestore 캐시 우선 전략과 함께 사용
+    staleTime: 30 * 60 * 1000, // 30분 (증가)
+    gcTime: 60 * 60 * 1000, // 60분 (증가)
+    refetchOnMount: false, // 마운트 시 자동 refetch 안 함 (캐시 활용)
+    refetchOnWindowFocus: false, // 창 포커스 시 refetch 안 함
   });
 }
 
