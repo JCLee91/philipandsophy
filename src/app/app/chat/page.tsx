@@ -30,6 +30,7 @@ import ProfileImageDialog from '@/components/ProfileImageDialog';
 import NoticeWriteDialog from '@/components/NoticeWriteDialog';
 import NoticeEditDialog from '@/components/NoticeEditDialog';
 import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
+import { NotificationPrompt } from '@/components/notifications/notification-prompt';
 
 /**
  * Set에서 item을 토글 (추가/삭제)
@@ -88,9 +89,10 @@ function ChatPageContent() {
 
   // 오늘 제출 여부 확인
   const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);
-  const hasSubmittedToday = submissions.some(
+  const todaySubmission = submissions.find(
     (sub) => sub.submissionDate === getTodayString()
   );
+  const hasSubmittedToday = !!todaySubmission;
 
   // Firebase hooks
   const { data: noticesData = [], isLoading } = useNoticesByCohort(cohortId || undefined);
@@ -323,6 +325,10 @@ function ChatPageContent() {
           onMessageAdminClick={handleMessageAdmin}
           isAdmin={isAdmin}
         />
+
+        {/* 푸시 알림 권한 요청 배너 */}
+        {currentUserId && <NotificationPrompt participantId={currentUserId} />}
+
         <ParticipantsList
           participants={participants.filter((p) => !p.isAdmin)}
           currentUserId={currentUserId || ''}
@@ -345,6 +351,7 @@ function ChatPageContent() {
           onOpenChange={setSubmissionDialogOpen}
           participantId={currentUserId || ''}
           participationCode={currentUserId || ''}
+          existingSubmission={todaySubmission || undefined}
         />
         <ProfileImageDialog
           participant={selectedParticipant}
@@ -446,9 +453,9 @@ function ChatPageContent() {
               variant="primary"
               onClick={() => setSubmissionDialogOpen(true)}
               icon={<BookOpen className="h-5 w-5" />}
-              disabled={hasSubmittedToday}
+              className={hasSubmittedToday ? 'opacity-50' : ''}
             >
-              {hasSubmittedToday ? '인증 완료' : '독서 인증'}
+              {hasSubmittedToday ? '독서 인증 수정하기' : '독서 인증'}
             </UnifiedButton>
 
             {/* 오늘의 서재 버튼 */}

@@ -13,7 +13,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import UnifiedButton from '@/components/UnifiedButton';
-import { useCreateSubmission, useSubmissionsByParticipant } from '@/hooks/use-submissions';
+import { useCreateSubmission, useUpdateSubmission, useSubmissionsByParticipant } from '@/hooks/use-submissions';
 import { uploadReadingImage, getParticipantById, updateParticipantBookInfo } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X, AlertCircle } from 'lucide-react';
@@ -26,12 +26,14 @@ import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { format } from 'date-fns';
 import { getTodayString } from '@/lib/date-utils';
 import { validateImageFile } from '@/lib/image-compression';
+import type { ReadingSubmission } from '@/types/database';
 
 interface ReadingSubmissionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   participantId: string;
   participationCode: string;
+  existingSubmission?: ReadingSubmission; // 수정 모드: 기존 제출물
 }
 
 export default function ReadingSubmissionDialog({
@@ -39,7 +41,10 @@ export default function ReadingSubmissionDialog({
   onOpenChange,
   participantId,
   participationCode,
+  existingSubmission,
 }: ReadingSubmissionDialogProps) {
+  
+  const isEditMode = !!existingSubmission;
 
   const [bookImage, setBookImage] = useState<File | null>(null);
   const [bookImagePreview, setBookImagePreview] = useState<string>('');
@@ -58,11 +63,36 @@ export default function ReadingSubmissionDialog({
 
   const { toast } = useToast();
   const createSubmission = useCreateSubmission();
+  const updateSubmission = useUpdateSubmission();
   const { data: allSubmissions = [] } = useSubmissionsByParticipant(participantId);
 
-  // 다이얼로그가 열릴 때 참가자의 현재 책 제목 로드 및 새로운 질문 생성
+  // 다이얼로그가 열릴 때 데이터 로드
   useEffect(() => {
     if (open) {
+      // 수정 모드: 기존 데이터 pre-fill
+      if (isEditMode && existingSubmission) {
+        setBookTitle(existingSubmission.bookTitle || '');
+        setBookAuthor(existingSubmission.bookAuthor || '');
+        setBookCoverUrl(existingSubmission.bookCoverUrl || '');
+        setBookDescription(existingSubmission.bookDescription || '');
+        setReview(existingSubmission.review || '');
+        setDailyAnswer(existingSubmission.dailyAnswer || '');
+        setBookImagePreview(existingSubmission.bookImageUrl || '');
+        setIsAutoFilled(true);
+        
+        // 기존 질문 로드
+        if (existingSubmission.dailyQuestion) {
+          setDailyQuestion({
+            question: existingSubmission.dailyQuestion,
+            category: '가치관 & 삶', // 기본 카테고리
+          });
+        }
+        
+        setAlreadySubmittedToday(false); // 수정 모드에서는 경고 표시 안 함
+        return; // 수정 모드에서는 추가 로드 불필요
+      }
+      
+      // 신규 제출 모드: 기존 로직
       const question = getDailyQuestion();
       setDailyQuestion(question);
 
@@ -114,7 +144,7 @@ export default function ReadingSubmissionDialog({
         isCancelled = true;
       };
     }
-  }, [open, participantId, allSubmissions]); // allSubmissions 의존성 추가 - 제출 후 상태 동기화
+  }, [open, participantId, allSubmissions, isEditMode, existingSubmission]); // 의존성 추가
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -244,9 +274,32 @@ export default function ReadingSubmissionDialog({
     if (uploading) return;
 
     setUploading(true);
-    setUploadStep('1/3'); // 1단계 시작
 
     try {
+      // ========== 수정 모드 ==========
+      if (isEditMode && existingSubmission) {
+        setUploadStep('수정 중...'); 
+
+        await updateSubmission.mutateAsync({
+          id: existingSubmission.id,
+          data: {
+            review: review.trim(),
+            dailyAnswer: dailyAnswer.trim(),
+          },
+        });
+
+        toast({
+          title: '독서 인증 수정 완료 ✅',
+          description: '수정 내용이 저장되었습니다.',
+        });
+
+        onOpenChange(false);
+        return;
+      }
+
+      // ========== 신규 제출 모드 ==========
+      setUploadStep('1/3'); // 1단계 시작
+
       const trimmedBookTitle = bookTitle.trim();
 
       // 1. 책 정보 변경 감지 및 DB 업데이트
@@ -340,9 +393,14 @@ export default function ReadingSubmissionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-full sm:h-[90vh] flex flex-col gap-0 reading-dialog-ios-safe">
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
-          <DialogTitle className="text-xl">독서 인증하기</DialogTitle>
+          <DialogTitle className="text-xl">
+            {isEditMode ? '독서 인증 수정하기' : '독서 인증하기'}
+          </DialogTitle>
           <DialogDescription>
-            오늘 읽은 내용을 기록하고 인증해보세요. 모든 항목은 필수입니다.
+            {isEditMode 
+              ? '리뷰와 답변을 수정할 수 있습니다. 책 정보와 이미지는 수정할 수 없습니다.'
+              : '오늘 읽은 내용을 기록하고 인증해보세요. 모든 항목은 필수입니다.'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -368,7 +426,7 @@ export default function ReadingSubmissionDialog({
               1. 책 사진 <span className="text-destructive">*</span>
             </Label>
             <p className="text-sm text-muted-foreground">
-              오늘 읽은 책의 사진을 첨부해주세요.
+              {isEditMode ? '책 사진은 수정할 수 없습니다.' : '오늘 읽은 책의 사진을 첨부해주세요.'}
             </p>
 
             {!bookImagePreview ? (
@@ -378,7 +436,7 @@ export default function ReadingSubmissionDialog({
                   variant="outline"
                   className="w-full h-32 border-dashed"
                   onClick={() => document.getElementById('book-image-input')?.click()}
-                  disabled={uploading || alreadySubmittedToday}
+                  disabled={uploading || alreadySubmittedToday || isEditMode}
                 >
                   <div className="flex flex-col items-center gap-2">
                     <Upload className="h-8 w-8 text-muted-foreground" />
@@ -393,7 +451,7 @@ export default function ReadingSubmissionDialog({
                   accept="image/*"
                   className="hidden"
                   onChange={handleImageChange}
-                  disabled={uploading}
+                  disabled={uploading || isEditMode}
                 />
               </div>
             ) : (
@@ -406,16 +464,18 @@ export default function ReadingSubmissionDialog({
                   priority
                   className="object-cover"
                 />
-                <UnifiedButton
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={handleRemoveImage}
-                  disabled={uploading}
-                >
-                  <X className="h-4 w-4" />
-                </UnifiedButton>
+                {!isEditMode && (
+                  <UnifiedButton
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={handleRemoveImage}
+                    disabled={uploading}
+                  >
+                    <X className="h-4 w-4" />
+                  </UnifiedButton>
+                )}
               </div>
             )}
           </div>
@@ -425,7 +485,7 @@ export default function ReadingSubmissionDialog({
             value={bookTitle}
             onChange={handleBookTitleChange}
             onBookSelect={handleBookSelect}
-            disabled={uploading || isLoadingBookTitle}
+            disabled={uploading || isLoadingBookTitle || isEditMode}
             isAutoFilled={isAutoFilled}
             onClear={handleClearTitle}
             initialBook={
@@ -508,17 +568,24 @@ export default function ReadingSubmissionDialog({
           <UnifiedButton
             onClick={handleSubmit}
             disabled={
-              alreadySubmittedToday ||
-              !bookImage ||
-              !bookTitle.trim() ||
-              review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ||
-              dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+              isEditMode ? (
+                // 수정 모드: 리뷰와 답변만 검증
+                review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ||
+                dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+              ) : (
+                // 신규 제출 모드: 모든 필드 검증
+                alreadySubmittedToday ||
+                !bookImage ||
+                !bookTitle.trim() ||
+                review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ||
+                dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+              )
             }
             loading={uploading}
-            loadingText={uploadStep ? `제출 중 (${uploadStep})` : '제출 중...'}
+            loadingText={uploadStep || (isEditMode ? '수정 중...' : '제출 중...')}
             size="sm"
           >
-            {alreadySubmittedToday ? '오늘 제출 완료' : '제출하기'}
+            {isEditMode ? '수정하기' : (alreadySubmittedToday ? '오늘 제출 완료' : '제출하기')}
           </UnifiedButton>
         </DialogFooter>
       </DialogContent>
