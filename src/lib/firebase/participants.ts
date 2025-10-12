@@ -338,11 +338,22 @@ export async function getParticipantBySessionToken(
     ...doc.data(),
   } as Participant;
 
-  // 세션 만료 확인
+  // 세션 만료 확인 (5분 유예 시간 포함)
   if (participant.sessionExpiry && participant.sessionExpiry < Date.now()) {
-    // 만료된 세션 토큰 제거
-    await clearSessionToken(participant.id);
-    return null;
+    // 시계 오차 및 네트워크 지연을 고려한 유예 시간
+    const GRACE_PERIOD_MS = 5 * 60 * 1000; // 5분
+
+    // 유예 시간이 지난 경우에만 토큰 제거
+    if (Date.now() - participant.sessionExpiry > GRACE_PERIOD_MS) {
+      await clearSessionToken(participant.id);
+      return null;
+    }
+
+    // 유예 시간 내: 경고 로그만 출력하고 세션 유지
+    logger.warn('세션 만료 임박 (유예 시간 내)', {
+      participantId: participant.id,
+      expiryDiff: Math.floor((Date.now() - participant.sessionExpiry) / 1000 / 60) + '분'
+    });
   }
 
   return participant;

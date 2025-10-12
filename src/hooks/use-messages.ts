@@ -50,15 +50,22 @@ export const useMessages = (conversationId: string) => {
   useEffect(() => {
     if (!conversationId) return undefined;
 
-    // 클로저로 현재 conversationId 고정 (race condition 방지)
+    // 이 effect가 여전히 활성 상태인지 추적 (경쟁 조건 방지)
+    let isActive = true;
     const currentConversationId = conversationId;
 
     const unsubscribe = subscribeToMessages(currentConversationId, (messages) => {
-      // 구독 시점의 conversationId가 현재와 같을 때만 업데이트
-      queryClient.setQueryData(messageKeys.conversation(currentConversationId), messages);
+      // 이 구독이 여전히 활성 상태일 때만 업데이트
+      // (사용자가 다른 대화방으로 이동한 경우 업데이트 무시)
+      if (isActive) {
+        queryClient.setQueryData(messageKeys.conversation(currentConversationId), messages);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      isActive = false; // cleanup 시 비활성화
+      unsubscribe();
+    };
   }, [conversationId, queryClient]);
 
   return query;

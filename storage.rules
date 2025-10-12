@@ -15,6 +15,10 @@ service firebase.storage {
       return request.resource.contentType.matches('image/.*');
     }
     
+    function isUnder50MB() {
+      return request.resource.size < 50 * 1024 * 1024;
+    }
+
     function isUnder10MB() {
       return request.resource.size < 10 * 1024 * 1024;
     }
@@ -26,8 +30,8 @@ service firebase.storage {
       // 읽기: 모두 허용 (공개 이미지)
       allow read: if true;
       
-      // 업로드: 이미지 파일만, 10MB 이하
-      allow create: if isValidImage() && isUnder10MB();
+      // 업로드: 이미지 파일만, 50MB 이하
+      allow create: if isValidImage() && isUnder50MB();
       
       // 수정/삭제: 금지
       allow update, delete: if false;
@@ -55,8 +59,8 @@ service firebase.storage {
       // 읽기: 모두 허용 (대화 참여자만 URL 알고 있음)
       allow read: if true;
       
-      // 업로드: 이미지 파일만, 10MB 이하
-      allow create: if isValidImage() && isUnder10MB();
+      // 업로드: 이미지 파일만, 50MB 이하
+      allow create: if isValidImage() && isUnder50MB();
       
       // 수정/삭제: 금지
       allow update, delete: if false;
@@ -69,14 +73,12 @@ service firebase.storage {
       // 읽기: 모두 허용 (공개 프로필)
       allow read: if true;
       
-      // 업로드: 이미지 파일만, 5MB 이하
-      allow create: if isValidImage() && 
-                      request.resource.size < 5 * 1024 * 1024;
+      // 업로드: 이미지 파일만, 50MB 이하
+      allow create: if isValidImage() && isUnder50MB();
       
       // 수정: 본인만 (Firebase Auth 필요)
       // 임시: 허용
-      allow update: if isValidImage() && 
-                      request.resource.size < 5 * 1024 * 1024;
+      allow update: if isValidImage() && isUnder50MB();
       
       // 삭제: 금지
       allow delete: if false;

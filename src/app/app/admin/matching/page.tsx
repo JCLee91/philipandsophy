@@ -5,11 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Users, Check, X, Loader2 } from 'lucide-react';
 import { getTodayString } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
+import { MATCHING_CONFIG } from '@/constants/matching';
+import { logger } from '@/lib/logger';
 import { useSession } from '@/hooks/use-session';
 import { useSubmissionCount } from '@/hooks/use-submission-count';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
 import HeaderNavigation from '@/components/HeaderNavigation';
+import ParticipantAssignmentTable from '@/components/admin/ParticipantAssignmentTable';
 import { useToast } from '@/hooks/use-toast';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import type { Participant } from '@/types/database';
@@ -66,8 +69,11 @@ function MatchingPageContent() {
   // 실시간 제출 카운트 (Firebase onSnapshot)
   const { count: submissionCount, isLoading: isLoadingCount } = useSubmissionCount(cohortId || undefined);
 
-  const [isMatching, setIsMatching] = useState(false);
-  const [matchingResult, setMatchingResult] = useState<MatchingResponse | null>(null);
+  // 매칭 상태 관리: idle | previewing | confirmed
+  const [matchingState, setMatchingState] = useState<'idle' | 'previewing' | 'confirmed'>('idle');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [previewResult, setPreviewResult] = useState<MatchingResponse | null>(null);
+  const [confirmedResult, setConfirmedResult] = useState<MatchingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const today = getTodayString();
@@ -82,12 +88,14 @@ function MatchingPageContent() {
   }, [cohortParticipants]);
 
   const assignmentRows = useMemo<AssignmentRow[]>(() => {
-    if (!matchingResult?.matching.assignments) return [];
+    // 프리뷰 또는 확인된 결과 중 하나 사용
+    const currentResult = previewResult || confirmedResult;
+    if (!currentResult?.matching.assignments) return [];
 
     return cohortParticipants
-      .filter((participant) => !participant.isAdmin)
+      .filter((participant) => !participant.isAdmin && !participant.isAdministrator)
       .map((participant) => {
-        const assignment = matchingResult.matching.assignments?.[participant.id];
+        const assignment = currentResult.matching.assignments?.[participant.id];
         const similarTargets = assignment?.similar ?? [];
         const oppositeTargets = assignment?.opposite ?? [];
 
@@ -112,7 +120,7 @@ function MatchingPageContent() {
           reasons: assignment?.reasons ?? null,
         };
       });
-  }, [matchingResult, cohortParticipants, participantsById]);
+  }, [previewResult, confirmedResult, cohortParticipants, participantsById]);
 
   // 권한 체크
   useEffect(() => {
@@ -121,7 +129,8 @@ function MatchingPageContent() {
         router.replace('/app');
         return;
       }
-      if (!currentUser.isAdmin) {
+      // 🔒 isAdmin + isAdministrator 이중 체크 (필드명 호환성)
+      if (!currentUser.isAdmin && !currentUser.isAdministrator) {
         toast({
           title: '접근 권한 없음',
           description: '관리자만 접근할 수 있는 페이지입니다.',
@@ -152,10 +161,11 @@ function MatchingPageContent() {
 
       if (response.ok) {
         const data = await response.json();
-        setMatchingResult(data);
+        setConfirmedResult(data);
+        setMatchingState('confirmed');
       }
     } catch (error) {
-      console.error('매칭 결과 로드 실패:', error);
+      logger.error('매칭 결과 로드 실패', error);
     }
   }, [cohortId, today, sessionToken]);
 
@@ -170,14 +180,15 @@ function MatchingPageContent() {
     router.push(appRoutes.profile(participantId, cohortId, theme));
   };
 
+  // 1단계: AI 매칭 프리뷰 (저장하지 않음)
   const handleStartMatching = async () => {
     if (!cohortId || !sessionToken) return;
 
-    setIsMatching(true);
+    setIsProcessing(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/admin/matching', {
+      const response = await fetch('/api/admin/matching/preview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -192,8 +203,9 @@ function MatchingPageContent() {
         throw new Error(data.message || data.error || '매칭 실행 실패');
       }
 
-      setMatchingResult(data);
-      
+      setPreviewResult(data);
+      setMatchingState('previewing');
+
       const matchedCount =
         data.totalParticipants ??
         (data.matching?.assignments
@@ -201,8 +213,8 @@ function MatchingPageContent() {
           : 0);
 
       toast({
-        title: '매칭 완료',
-        description: `${matchedCount}명의 참가자를 성공적으로 매칭했습니다.`,
+        title: 'AI 매칭 완료',
+        description: `${matchedCount}명의 참가자 매칭 결과를 확인하세요.`,
       });
     } catch (error) {
       const errorMessage =
@@ -214,7 +226,57 @@ function MatchingPageContent() {
         variant: 'destructive',
       });
     } finally {
-      setIsMatching(false);
+      setIsProcessing(false);
+    }
+  };
+
+  // 2단계: 매칭 결과 최종 확인 및 저장
+  const handleConfirmMatching = async () => {
+    if (!cohortId || !sessionToken || !previewResult) return;
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/matching/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`,
+        },
+        body: JSON.stringify({
+          cohortId,
+          matching: previewResult.matching,
+          date: previewResult.date,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || '매칭 저장 실패');
+      }
+
+      // 프리뷰 결과를 확인된 결과로 이동
+      setConfirmedResult(previewResult);
+      setPreviewResult(null);
+      setMatchingState('confirmed');
+
+      toast({
+        title: '매칭 적용 완료',
+        description: '오늘의 서재에서 참가자들이 확인할 수 있습니다.',
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '매칭 저장 중 오류가 발생했습니다.';
+      setError(errorMessage);
+      toast({
+        title: '저장 실패',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -233,11 +295,11 @@ function MatchingPageContent() {
   }
 
   // 권한 없음
-  if (!currentUser?.isAdmin || !cohortId) {
+  if ((!currentUser?.isAdmin && !currentUser?.isAdministrator) || !cohortId) {
     return null;
   }
 
-  const canMatch = submissionCount >= 4;
+  const canMatch = submissionCount >= MATCHING_CONFIG.MIN_SUBMISSIONS_FOR_MATCHING;
 
   return (
     <PageTransition>
@@ -303,37 +365,102 @@ function MatchingPageContent() {
               </div>
             )}
 
-            {/* 매칭 시작 버튼 */}
-            {!matchingResult && (
+            {/* 매칭 시작 버튼 (idle 상태일 때만) */}
+            {matchingState === 'idle' && (
               <UnifiedButton
                 variant="primary"
                 onClick={handleStartMatching}
-                disabled={!canMatch || isMatching}
+                disabled={!canMatch || isProcessing}
                 icon={
-                  isMatching ? (
+                  isProcessing ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : undefined
                 }
                 className="w-full"
               >
-                {isMatching ? 'AI 분석 중...' : '매칭 시작하기'}
+                {isProcessing ? 'AI 분석 중...' : '매칭 시작하기'}
               </UnifiedButton>
             )}
 
-            {/* 매칭 결과 */}
-            {matchingResult && (
+            {/* 프리뷰 상태: 최종 확인 필요 */}
+            {matchingState === 'previewing' && previewResult && (
               <div className="space-y-4">
-                {/* 매칭 완료 상태 카드 */}
+                {/* 프리뷰 상태 카드 */}
+                <div className="bg-[#fff2d2] rounded-xl border border-[#ffd362] p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-[#31363e]">✅ AI 매칭 완료 (미적용)</h3>
+                      <p className="text-xs text-[#8f98a3]">{previewResult.date}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-[#8f98a3]">매칭 인원</p>
+                      <p className="text-xl font-bold text-[#ffa940]">
+                        {(previewResult.totalParticipants ?? submissionCount) || 0}명
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-[#575e68] mb-4">
+                    아래 결과를 확인한 후 <strong>최종 확인 및 적용</strong> 버튼을 눌러주세요.
+                    <br />
+                    적용 전까지는 참가자들에게 노출되지 않습니다.
+                  </p>
+
+                  <div className="flex flex-col gap-2">
+                    <UnifiedButton
+                      variant="primary"
+                      fullWidth
+                      onClick={handleConfirmMatching}
+                      disabled={isProcessing}
+                      icon={
+                        isProcessing ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Check className="h-5 w-5" />
+                        )
+                      }
+                    >
+                      {isProcessing ? '저장 중...' : '최종 확인 및 적용'}
+                    </UnifiedButton>
+                    <UnifiedButton
+                      variant="outline"
+                      fullWidth
+                      onClick={handleStartMatching}
+                      disabled={!canMatch || isProcessing}
+                      icon={
+                        isProcessing ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : undefined
+                      }
+                    >
+                      {isProcessing ? 'AI 분석 중...' : '다시 매칭하기'}
+                    </UnifiedButton>
+                  </div>
+                </div>
+
+                {/* 참가자별 추천 테이블 (프리뷰) */}
+                <ParticipantAssignmentTable
+                  assignmentRows={assignmentRows}
+                  participantsLoading={participantsLoading}
+                  onOpenProfile={handleOpenProfile}
+                />
+              </div>
+            )}
+
+            {/* 확인된 상태: 매칭 적용 완료 */}
+            {matchingState === 'confirmed' && confirmedResult && (
+              <div className="space-y-4">
+                {/* 확인 완료 상태 카드 */}
                 <div className="bg-white rounded-xl border border-[#dddddd] p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-[#31363e]">매칭 완료</h3>
-                      <p className="text-xs text-[#8f98a3]">{matchingResult.date}</p>
+                      <h3 className="text-lg font-semibold text-[#31363e]">매칭 완료 ✅</h3>
+                      <p className="text-xs text-[#8f98a3]">{confirmedResult.date}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-[#8f98a3]">매칭 인원</p>
                       <p className="text-xl font-bold text-[#45a1fd]">
-                        {(matchingResult.totalParticipants ?? submissionCount) || 0}명
+                        {(confirmedResult.totalParticipants ?? submissionCount) || 0}명
                       </p>
                     </div>
                   </div>
@@ -351,105 +478,24 @@ function MatchingPageContent() {
                       variant="outline"
                       fullWidth
                       onClick={handleStartMatching}
-                      disabled={!canMatch || isMatching}
+                      disabled={!canMatch || isProcessing}
                       icon={
-                        isMatching ? (
+                        isProcessing ? (
                           <Loader2 className="h-5 w-5 animate-spin" />
                         ) : undefined
                       }
                     >
-                      {isMatching ? 'AI 분석 중...' : '다시 매칭하기'}
+                      {isProcessing ? 'AI 분석 중...' : '다시 매칭하기'}
                     </UnifiedButton>
                   </div>
                 </div>
 
-                {/* 참가자별 추천 테이블 */}
-                <div className="bg-white rounded-xl border border-[#dddddd] p-5 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-[#31363e]">참가자별 추천 현황</h3>
-                    <span className="text-xs font-medium text-[#8f98a3]">
-                      총 {assignmentRows.length}명
-                    </span>
-                  </div>
-
-                  {participantsLoading ? (
-                    <div className="flex items-center justify-center py-6">
-                      <Loader2 className="h-6 w-6 animate-spin text-[#45a1fd]" />
-                    </div>
-                  ) : assignmentRows.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <Users className="h-12 w-12 text-[#8f98a3] mb-3" />
-                      <p className="text-sm text-[#575e68] font-semibold">추천 데이터가 없습니다</p>
-                      <p className="text-xs text-[#8f98a3] mt-1">매칭을 시작하면 여기에 결과가 표시됩니다</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {assignmentRows.map((row) => (
-                        <div
-                          key={row.viewerId}
-                          className="rounded-lg border border-[#dddddd] bg-[#eff6ff] p-3 space-y-2 transition-all duration-normal hover:shadow-md hover:border-[#cee7ff]"
-                        >
-                          <div className="flex items-center justify-between">
-                            <p className="font-semibold text-sm text-[#31363e]">
-                              {row.viewerName}
-                            </p>
-                            <UnifiedButton
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleOpenProfile(row.viewerId, 'similar')}
-                            >
-                              프로필 보기
-                            </UnifiedButton>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                              <p className="font-semibold mb-1 text-[#45a1fd]">비슷한 가치관</p>
-                              {row.similarTargets.length > 0 ? (
-                                <div className="space-y-0.5">
-                                  {row.similarTargets.map((target) => (
-                                    <button
-                                      key={`${row.viewerId}-similar-${target.id}`}
-                                      type="button"
-                                      className="text-left hover:underline text-[#575e68] focus:outline-none focus:ring-2 focus:ring-[#45a1fd]"
-                                      onClick={() => handleOpenProfile(target.id, 'similar')}
-                                      aria-label={`${target.name} 프로필 보기`}
-                                    >
-                                      • {target.name}
-                                    </button>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-[#8f98a3]">없음</p>
-                              )}
-                            </div>
-
-                            <div>
-                              <p className="font-semibold mb-1 text-[#ffd362]">반대 가치관</p>
-                              {row.oppositeTargets.length > 0 ? (
-                                <div className="space-y-0.5">
-                                  {row.oppositeTargets.map((target) => (
-                                    <button
-                                      key={`${row.viewerId}-opposite-${target.id}`}
-                                      type="button"
-                                      className="text-left hover:underline text-[#575e68] focus:outline-none focus:ring-2 focus:ring-[#ffd362]"
-                                      onClick={() => handleOpenProfile(target.id, 'opposite')}
-                                      aria-label={`${target.name} 프로필 보기`}
-                                    >
-                                      • {target.name}
-                                    </button>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-[#8f98a3]">없음</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {/* 참가자별 추천 테이블 (확인됨) */}
+                <ParticipantAssignmentTable
+                  assignmentRows={assignmentRows}
+                  participantsLoading={participantsLoading}
+                  onOpenProfile={handleOpenProfile}
+                />
               </div>
             )}
 

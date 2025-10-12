@@ -69,7 +69,8 @@ export interface Participant {
   profileImage?: string; // 프로필 이미지 URL (큰 이미지, 프로필 상세용)
   profileImageCircle?: string; // 원형 프로필 이미지 URL (작은 아바타용)
   profileBookUrl?: string; // 프로필북 URL
-  isAdmin?: boolean; // 운영자 여부
+  isAdmin?: boolean; // 운영자 여부 (legacy)
+  isAdministrator?: boolean; // 관리자 여부 (최신 필드명)
   occupation?: string; // 직업/하는 일
   bio?: string; // 한 줄 소개 (2줄 이내)
   currentBookTitle?: string; // 현재 읽고 있는 책 제목 (프로필북에 표시)

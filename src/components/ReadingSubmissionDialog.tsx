@@ -25,8 +25,7 @@ import { logger } from '@/lib/logger';
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { format } from 'date-fns';
 import { getTodayString } from '@/lib/date-utils';
-import { compressImageIfNeeded, validateImageFile } from '@/lib/image-compression';
-import { withTimeout } from '@/lib/utils';
+import { validateImageFile } from '@/lib/image-compression';
 
 interface ReadingSubmissionDialogProps {
   open: boolean;
@@ -55,7 +54,6 @@ export default function ReadingSubmissionDialog({
   const [isAutoFilled, setIsAutoFilled] = useState(false);
   const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
   const [alreadySubmittedToday, setAlreadySubmittedToday] = useState(false);
-  const [isCompressing, setIsCompressing] = useState(false);
   const [uploadStep, setUploadStep] = useState<string>(''); // 업로드 진행 단계
 
   const { toast } = useToast();
@@ -122,8 +120,8 @@ export default function ReadingSubmissionDialog({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 1. 파일 유효성 검증
-    const validation = validateImageFile(file, 5);
+    // 1. 파일 유효성 검증 (50MB 기준)
+    const validation = validateImageFile(file, SUBMISSION_VALIDATION.MAX_IMAGE_SIZE / (1024 * 1024));
     if (!validation.valid) {
       toast({
         title: '파일 검증 실패',
@@ -137,33 +135,10 @@ export default function ReadingSubmissionDialog({
     let isActive = true;
 
     try {
-      setIsCompressing(true);
+      // 2. 원본 이미지 그대로 사용 (압축 없음)
+      setBookImage(file);
 
-      // 2. 이미지 자동 압축 (5MB 초과 시) with 30초 타임아웃
-      const processedFile = await withTimeout(
-        compressImageIfNeeded(file, 5),
-        30000, // 30초 타임아웃
-        '이미지 압축 시간이 초과되었습니다. 더 작은 이미지를 선택해주세요.'
-      );
-
-      // 컴포넌트 언마운트 체크
-      if (!isActive) return;
-
-      // 3. 압축 결과 사용자에게 알림 (압축된 경우만)
-      if (processedFile.size < file.size) {
-        const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
-        const compressedSizeMB = (processedFile.size / 1024 / 1024).toFixed(2);
-        const reduction = (((file.size - processedFile.size) / file.size) * 100).toFixed(0);
-
-        toast({
-          title: '이미지 자동 압축 완료',
-          description: `${originalSizeMB}MB → ${compressedSizeMB}MB (${reduction}% 감소)`,
-        });
-      }
-
-      setBookImage(processedFile);
-
-      // 4. 이미지 미리보기 with cleanup
+      // 3. 이미지 미리보기 with cleanup
       const reader = new FileReader();
 
       reader.onloadend = () => {
@@ -183,7 +158,7 @@ export default function ReadingSubmissionDialog({
         }
       };
 
-      reader.readAsDataURL(processedFile);
+      reader.readAsDataURL(file);
 
       // Cleanup function
       return () => {
@@ -203,9 +178,7 @@ export default function ReadingSubmissionDialog({
         variant: 'destructive',
       });
     } finally {
-      if (isActive) {
-        setIsCompressing(false);
-      }
+      // No cleanup needed
     }
   };
 
@@ -276,32 +249,44 @@ export default function ReadingSubmissionDialog({
     try {
       const trimmedBookTitle = bookTitle.trim();
 
-      // 1. 책 정보 변경 감지 및 DB 업데이트 (30초 타임아웃)
-      await withTimeout(
-        updateParticipantBookInfo(
-          participantId,
-          trimmedBookTitle,
-          bookAuthor?.trim() || undefined,
-          bookCoverUrl || undefined
-        ),
-        30000,
-        '책 정보 업데이트 중 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.'
+      // 1. 책 정보 변경 감지 및 DB 업데이트
+      await updateParticipantBookInfo(
+        participantId,
+        trimmedBookTitle,
+        bookAuthor?.trim() || undefined,
+        bookCoverUrl || undefined
       );
 
       setUploadStep('2/3'); // 2단계 시작
 
-      // 2. 이미지 업로드 (60초 타임아웃)
-      const bookImageUrl = await withTimeout(
-        uploadReadingImage(bookImage, participationCode),
-        60000,
-        '이미지 업로드 중 시간이 초과되었습니다. 네트워크 상태를 확인하거나 이미지 크기를 줄여주세요.'
-      );
+      // 2. 이미지 업로드 (원본 그대로)
+      if (!bookImage) {
+        throw new Error('책 사진을 선택해주세요');
+      }
+
+      let bookImageUrl: string;
+      try {
+        bookImageUrl = await uploadReadingImage(bookImage, participationCode);
+      } catch (uploadError) {
+        // Firebase Storage specific error handling
+        if (uploadError instanceof Error) {
+          if (uploadError.message.includes('storage/quota-exceeded')) {
+            throw new Error('스토리지 용량이 초과되었습니다. 관리자에게 문의하세요.');
+          }
+          if (uploadError.message.includes('storage/unauthorized')) {
+            throw new Error('업로드 권한이 없습니다. 다시 시도해주세요.');
+          }
+          if (uploadError.message.includes('storage/canceled')) {
+            throw new Error('업로드가 취소되었습니다.');
+          }
+        }
+        throw uploadError; // Re-throw for generic handler
+      }
 
       setUploadStep('3/3'); // 3단계 시작
 
-      // 3. 제출 생성 (30초 타임아웃)
-      await withTimeout(
-        createSubmission.mutateAsync({
+      // 3. 제출 생성
+      await createSubmission.mutateAsync({
           participantId,
           participationCode,
           bookTitle: trimmedBookTitle,
@@ -314,10 +299,7 @@ export default function ReadingSubmissionDialog({
           dailyAnswer: dailyAnswer.trim(),
           submittedAt: Timestamp.now(),
           status: 'approved', // status 필드는 유지 (DB 스키마 호환성)
-        }),
-        30000,
-        '제출 처리 중 시간이 초과되었습니다. 다시 시도해주세요.'
-      );
+        });
 
       toast({
         title: '독서 인증 완료 ✅',
@@ -396,24 +378,13 @@ export default function ReadingSubmissionDialog({
                   variant="outline"
                   className="w-full h-32 border-dashed"
                   onClick={() => document.getElementById('book-image-input')?.click()}
-                  disabled={uploading || alreadySubmittedToday || isCompressing}
+                  disabled={uploading || alreadySubmittedToday}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    {isCompressing ? (
-                      <>
-                        <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-                        <span className="text-sm text-muted-foreground">
-                          이미지 압축 중...
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          책 사진 업로드하기
-                        </span>
-                      </>
-                    )}
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      책 사진 업로드하기
+                    </span>
                   </div>
                 </UnifiedButton>
                 <input

@@ -85,13 +85,14 @@ export async function uploadMultipleFiles(
  */
 export async function uploadReadingImage(
   file: File,
-  participationCode: string
+  participationCode: string,
+  onProgress?: (progress: number) => void
 ): Promise<string> {
   const timestamp = Date.now();
   const fileName = `${timestamp}_${file.name}`;
   const path = `reading_submissions/${participationCode}/${fileName}`;
 
-  return uploadFile(file, path);
+  return uploadFileWithProgress(file, path, onProgress);
 }
 
 /**

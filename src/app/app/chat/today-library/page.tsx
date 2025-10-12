@@ -3,32 +3,24 @@
 import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
-import BookmarkCard from '@/components/BookmarkCard';
-import BookmarkCardSkeleton from '@/components/BookmarkCardSkeleton';
+import BookmarkRow from '@/components/BookmarkRow';
 import HeaderNavigation from '@/components/HeaderNavigation';
-import EllipseShadow from '@/components/EllipseShadow';
 import FooterActions from '@/components/FooterActions';
 import BlurDivider from '@/components/BlurDivider';
 import UnifiedButton from '@/components/UnifiedButton';
 import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import { useCohort } from '@/hooks/use-cohorts';
-import { useVerifiedToday } from '@/hooks/use-verified-today';
+import { useVerifiedToday } from '@/stores/verified-today';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/hooks/use-session';
-import { format } from 'date-fns';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import type { Participant } from '@/types/database';
-import { SHADOW_OFFSETS, SPACING } from '@/constants/today-library';
-import { APP_CONSTANTS } from '@/constants/app';
 import { getTodayString } from '@/lib/date-utils';
 import { appRoutes } from '@/lib/navigation';
-
-// Firestore 'in' query limit
-const FIRESTORE_IN_LIMIT = 10;
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
@@ -97,6 +89,11 @@ function TodayLibraryContent() {
     new Set([...similarFeaturedIds, ...oppositeFeaturedIds])
   );
 
+  // 🔒 보안: 인증 상태를 쿼리 enabled 조건보다 먼저 계산
+  const isVerifiedToday = verifiedIds?.has(currentUserId || '') ?? false;
+  const isAdmin = currentUser?.isAdmin === true || currentUser?.isAdministrator === true;
+  const isLocked = !isAdmin && !isVerifiedToday;
+
   // 추천 참가자들의 정보 가져오기
   const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
     queryKey: ['featured-participants', allFeaturedIds],
@@ -106,44 +103,7 @@ function TodayLibraryContent() {
       const db = getDb();
       const participantsRef = collection(db, 'participants');
 
-      // Firestore 'in' 연산자는 최대 10개 제한
-      // 10개 초과 시 청크로 분할하여 병렬 쿼리
-      if (allFeaturedIds.length > FIRESTORE_IN_LIMIT) {
-        logger.warn(`Featured participants (${allFeaturedIds.length}) exceeds Firestore 'in' limit (${FIRESTORE_IN_LIMIT}). Splitting into chunks.`);
-
-        // 청크로 분할
-        const chunks: string[][] = [];
-        for (let i = 0; i < allFeaturedIds.length; i += FIRESTORE_IN_LIMIT) {
-          chunks.push(allFeaturedIds.slice(i, i + FIRESTORE_IN_LIMIT));
-        }
-
-        // 병렬 쿼리 실행
-        const results = await Promise.all(
-          chunks.map(chunk => {
-            const q = query(participantsRef, where('__name__', 'in', chunk));
-            return getDocs(q);
-          })
-        );
-
-        // 결과 병합
-        const participants: Participant[] = [];
-        results.forEach(snapshot => {
-          snapshot.docs.forEach(doc => {
-            participants.push({
-              id: doc.id,
-              ...doc.data(),
-            } as Participant);
-          });
-        });
-
-        // Theme 정보 추가
-        return participants.map((participant) => ({
-          ...participant,
-          theme: similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite',
-        }));
-      }
-
-      // 10개 이하: 단일 쿼리
+      // 단일 쿼리 (Featured는 항상 4명 이하이므로 Firestore 'in' 제한 10개 이하)
       const q = query(participantsRef, where('__name__', 'in', allFeaturedIds));
       const snapshot = await getDocs(q);
 
@@ -158,22 +118,40 @@ function TodayLibraryContent() {
         theme: similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite',
       }));
     },
-    enabled: allFeaturedIds.length > 0,
+    // 🔒 보안 수정: 인증된 유저(또는 관리자)만 개인정보 다운로드 가능
+    enabled: allFeaturedIds.length > 0 && !isLocked,
   });
 
   // 세션 및 cohort 검증
   useEffect(() => {
-    if (!sessionLoading) {
+    if (!sessionLoading && !cohortLoading) {
       if (!currentUser) {
+        toast({
+          title: '로그인이 필요합니다',
+          description: '접근 코드를 입력해주세요',
+        });
         router.replace('/app');
         return;
       }
       if (!cohortId) {
+        toast({
+          title: '잘못된 접근입니다',
+          description: '올바른 기수 정보가 필요합니다',
+        });
+        router.replace('/app');
+        return;
+      }
+      // cohortId는 있지만 cohort 데이터가 없는 경우 (잘못된 기수 ID)
+      if (cohortId && !cohort) {
+        toast({
+          title: '존재하지 않는 기수입니다',
+          description: '올바른 접근 코드로 다시 입장해주세요',
+        });
         router.replace('/app');
         return;
       }
     }
-  }, [sessionLoading, currentUser, cohortId, router]);
+  }, [sessionLoading, cohortLoading, currentUser, cohortId, cohort, router, toast]);
 
   // 로딩 상태 - 스켈레톤 UI 표시
   if (sessionLoading || cohortLoading || participantsLoading) {
@@ -195,25 +173,21 @@ function TodayLibraryContent() {
 
                   {/* Bookmark Cards Skeleton */}
                   <div className="flex flex-col w-full">
-                    {/* Top Row Skeleton */}
-                    <div className="h-[140px] overflow-hidden relative w-full">
-                      <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-skeleton-1" />
-                      <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                        <BookmarkCardSkeleton theme="blue" />
-                        <BookmarkCardSkeleton theme="blue" />
-                      </div>
-                    </div>
-
+                    <BookmarkRow
+                      participants={[]}
+                      theme="blue"
+                      isLocked={false}
+                      isLoading={true}
+                      onCardClick={() => {}}
+                    />
                     <BlurDivider />
-
-                    {/* Bottom Row Skeleton */}
-                    <div className="h-[160px] overflow-hidden relative w-full">
-                      <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-skeleton-2" />
-                      <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                        <BookmarkCardSkeleton theme="yellow" />
-                        <BookmarkCardSkeleton theme="yellow" />
-                      </div>
-                    </div>
+                    <BookmarkRow
+                      participants={[]}
+                      theme="yellow"
+                      isLocked={false}
+                      isLoading={true}
+                      onCardClick={() => {}}
+                    />
                   </div>
                 </div>
               </div>
@@ -228,15 +202,12 @@ function TodayLibraryContent() {
     );
   }
 
-  // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리됨)
+  // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리 중)
+  // cohortLoading이 끝나지 않았으면 위의 스켈레톤 UI가 표시됨
+  // 여기 도달 시점에는 검증 완료 상태이므로 안전하게 null 반환
   if (!currentUser || !cohort || !cohortId) {
     return null;
   }
-
-  // 오늘 인증 여부 (방어적 프로그래밍)
-  const isVerifiedToday = verifiedIds?.has(currentUserId || '') ?? false;
-  const isAdmin = currentUser?.isAdmin === true;
-  const isLocked = !isAdmin && !isVerifiedToday;
 
   // 프로필북 클릭 핸들러 (인증 체크는 isLocked에서 이미 완료)
   const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
@@ -291,44 +262,19 @@ function TodayLibraryContent() {
 
                 {/* Bookmark Cards Section */}
                 <div className="flex flex-col w-full">
-                  {/* Top Row (Blue Theme - Similar) */}
-                  <div className="h-[140px] overflow-hidden relative w-full">
-                    <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-1" />
-                    <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                      {lockedPlaceholders.similar.map((participant, index) => (
-                        <BookmarkCard
-                          key={`similar-${participant.id}`}
-                          profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
-                          name={participant.name}
-                          theme="blue"
-                          isLocked={true}
-                          lockedImage={`/image/today-library/locked-profile-${index + 1}.png`}
-                          onClick={() => handleProfileClickWithAuth(participant.id, 'similar')}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
+                  <BookmarkRow
+                    participants={lockedPlaceholders.similar}
+                    theme="blue"
+                    isLocked={true}
+                    onCardClick={handleProfileClickWithAuth}
+                  />
                   <BlurDivider />
-
-                  {/* Bottom Row (Yellow Theme - Opposite) */}
-                  <div className="h-[160px] overflow-hidden relative w-full">
-                    <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-2" />
-                    <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                      {lockedPlaceholders.opposite.map((participant, index) => (
-                        <BookmarkCard
-                          key={`opposite-${participant.id}`}
-                          profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
-                          name={participant.name}
-                          theme="yellow"
-                          isLocked={true}
-                          lockedImage={`/image/today-library/locked-profile-${index + 3}.png`}
-                          onClick={() => handleProfileClickWithAuth(participant.id, 'opposite')}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
+                  <BookmarkRow
+                    participants={lockedPlaceholders.opposite}
+                    theme="yellow"
+                    isLocked={true}
+                    onCardClick={handleProfileClickWithAuth}
+                  />
                   <BlurDivider />
                 </div>
                 </div>
@@ -448,44 +394,19 @@ function TodayLibraryContent() {
 
               {/* Bookmark Cards Section */}
               <div className="flex flex-col w-full">
-                {/* Top Row (Blue Theme - Similar) */}
-                <div className="h-[140px] overflow-hidden relative w-full">
-                  <EllipseShadow topOffset={SHADOW_OFFSETS.TOP_ROW} gradientId="ellipse-gradient-1" />
-                  <div className="flex justify-center relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                    {similarParticipants.map((participant, index) => (
-                      <BookmarkCard
-                        key={`similar-${participant.id}`}
-                        profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
-                        name={participant.name}
-                        theme="blue"
-                        isLocked={false}
-                        lockedImage={`/image/today-library/locked-profile-${index + 1}.png`}
-                        onClick={() => handleProfileClickWithAuth(participant.id, 'similar')}
-                      />
-                    ))}
-                  </div>
-                </div>
-
+                <BookmarkRow
+                  participants={similarParticipants}
+                  theme="blue"
+                  isLocked={false}
+                  onCardClick={handleProfileClickWithAuth}
+                />
                 <BlurDivider />
-
-                {/* Bottom Row (Yellow Theme - Opposite) */}
-                <div className="h-[160px] overflow-hidden relative w-full">
-                  <EllipseShadow topOffset={SHADOW_OFFSETS.BOTTOM_ROW} gradientId="ellipse-gradient-2" />
-                  <div className="flex justify-center pt-6 relative z-10" style={{ gap: `${SPACING.CARD_GAP}px` }}>
-                    {oppositeParticipants.map((participant, index) => (
-                      <BookmarkCard
-                        key={`opposite-${participant.id}`}
-                        profileImage={participant.profileImage || APP_CONSTANTS.DEFAULT_PROFILE_IMAGE}
-                        name={participant.name}
-                        theme="yellow"
-                        isLocked={false}
-                        lockedImage={`/image/today-library/locked-profile-${index + 3}.png`}
-                        onClick={() => handleProfileClickWithAuth(participant.id, 'opposite')}
-                      />
-                    ))}
-                  </div>
-                </div>
-
+                <BookmarkRow
+                  participants={oppositeParticipants}
+                  theme="yellow"
+                  isLocked={false}
+                  onCardClick={handleProfileClickWithAuth}
+                />
                 <BlurDivider />
               </div>
               </div>

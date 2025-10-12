@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { getDailyQuestionText } from '@/constants/daily-questions';
+import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getTodayString } from '@/lib/date-utils';
 import { requireAdmin } from '@/lib/api-auth';
-import { strictRateLimit } from '@/lib/rate-limit';
+import { requireAdminWithRateLimit } from '@/lib/api-middleware';
+import { validateParticipantGenderDistribution } from '@/lib/matching-validation';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
 
@@ -20,6 +22,8 @@ interface ParticipantData {
   name: string;
   gender?: 'male' | 'female' | 'other';
   isAdmin?: boolean;
+  isAdministrator?: boolean;
+  cohortId: string;
 }
 
 /**
@@ -27,16 +31,10 @@ interface ParticipantData {
  * AI 매칭 실행 API
  */
 export async function POST(request: NextRequest) {
-  // 1. 관리자 권한 검증
-  const { user, error: authError } = await requireAdmin(request);
-  if (authError) {
-    return authError;
-  }
-
-  // 2. Rate limiting (1분에 3회)
-  const { error: rateLimitError } = await strictRateLimit(request, user!.id);
-  if (rateLimitError) {
-    return rateLimitError;
+  // 관리자 권한 + Rate limit 검증
+  const { user, error } = await requireAdminWithRateLimit(request);
+  if (error) {
+    return error;
   }
 
   try {
@@ -63,11 +61,11 @@ export async function POST(request: NextRequest) {
       .where('dailyQuestion', '==', todayQuestion)
       .get();
 
-    if (submissionsSnapshot.size < 4) {
+    if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
       return NextResponse.json(
         {
           error: '매칭하기에 충분한 참가자가 없습니다.',
-          message: `최소 4명이 필요하지만 현재 ${submissionsSnapshot.size}명만 제출했습니다.`,
+          message: `최소 ${MATCHING_CONFIG.MIN_PARTICIPANTS}명이 필요하지만 현재 ${submissionsSnapshot.size}명만 제출했습니다.`,
           participantCount: submissionsSnapshot.size,
         },
         { status: 400 }
@@ -90,11 +88,10 @@ export async function POST(request: NextRequest) {
     const uniqueParticipantIds = Array.from(submissionsMap.keys());
 
     // 3-3. Batch read로 모든 참가자 정보 한 번에 가져오기 (최대 10개씩)
-    const BATCH_SIZE = 10;
     const participantDataMap = new Map<string, ParticipantData>();
 
-    for (let i = 0; i < uniqueParticipantIds.length; i += BATCH_SIZE) {
-      const batchIds = uniqueParticipantIds.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < uniqueParticipantIds.length; i += MATCHING_CONFIG.BATCH_SIZE) {
+      const batchIds = uniqueParticipantIds.slice(i, i + MATCHING_CONFIG.BATCH_SIZE);
       const participantDocs = await db
         .collection('participants')
         .where(admin.firestore.FieldPath.documentId(), 'in', batchIds)
@@ -114,8 +111,18 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      // 🔒 다른 코호트 참가자 제외 (다중 코호트 운영 시 데이터 혼입 방지)
+      if (participant.cohortId !== cohortId) {
+        logger.warn('다른 코호트 참가자 제외', {
+          participantId,
+          expectedCohort: cohortId,
+          actualCohort: participant.cohortId,
+        });
+        continue;
+      }
+
       // 관리자는 매칭에서 제외
-      if (participant.isAdmin) {
+      if (participant.isAdmin || participant.isAdministrator) {
         logger.info('관리자 참가자 매칭에서 제외', {
           participantId,
           name: participant.name,
@@ -132,43 +139,24 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. 성별 데이터 및 분포 검증
-    const withoutGender = participantAnswers.filter(p => !p.gender);
-    if (withoutGender.length > 0) {
-      logger.error('성별 정보 없는 참가자 발견', {
-        count: withoutGender.length,
-        participants: withoutGender.map(p => ({ id: p.id, name: p.name })),
+    const genderValidation = validateParticipantGenderDistribution(participantAnswers);
+
+    if (!genderValidation.valid) {
+      logger.error('성별 검증 실패', {
+        missingGenderCount: genderValidation.missingGender.length,
+        maleCount: genderValidation.maleCount,
+        femaleCount: genderValidation.femaleCount,
+        requiredPerGender: genderValidation.requiredPerGender,
+        errors: genderValidation.errors,
       });
 
       return NextResponse.json(
         {
-          error: '성별 정보가 없는 참가자가 있습니다.',
-          message: `성별 균형 매칭을 위해서는 모든 참가자의 성별 정보가 필요합니다. (${withoutGender.length}명 누락)`,
-          participantsWithoutGender: withoutGender.map(p => p.name),
-        },
-        { status: 400 }
-      );
-    }
-
-    // 성별 분포 확인
-    const males = participantAnswers.filter(p => p.gender === 'male');
-    const females = participantAnswers.filter(p => p.gender === 'female');
-    const MIN_PER_GENDER = 3; // 각 성별당 최소 3명 필요 (자기 자신 제외)
-
-    if (males.length < MIN_PER_GENDER || females.length < MIN_PER_GENDER) {
-      logger.error('성별 분포 부족', {
-        maleCount: males.length,
-        femaleCount: females.length,
-        required: MIN_PER_GENDER,
-      });
-
-      return NextResponse.json(
-        {
-          error: '성별 균형 매칭을 위한 참가자가 부족합니다.',
-          message: `각 성별당 최소 ${MIN_PER_GENDER}명이 필요합니다. (현재: 남성 ${males.length}명, 여성 ${females.length}명)`,
+          error: genderValidation.errors[0],
           genderDistribution: {
-            male: males.length,
-            female: females.length,
-            required: MIN_PER_GENDER,
+            male: genderValidation.maleCount,
+            female: genderValidation.femaleCount,
+            required: genderValidation.requiredPerGender,
           },
         },
         { status: 400 }
@@ -176,8 +164,8 @@ export async function POST(request: NextRequest) {
     }
 
     logger.info('성별 분포 검증 통과', {
-      maleCount: males.length,
-      femaleCount: females.length,
+      maleCount: genderValidation.maleCount,
+      femaleCount: genderValidation.femaleCount,
       totalCount: participantAnswers.length,
     });
 
@@ -327,11 +315,10 @@ export async function GET(request: NextRequest) {
     const participantIds = [...featuredSimilarIds, ...featuredOppositeIds];
 
     // Batch read (최대 10개씩)
-    const BATCH_SIZE = 10;
     const participantDataMap = new Map<string, { id: string; name: string }>();
 
-    for (let i = 0; i < participantIds.length; i += BATCH_SIZE) {
-      const batchIds = participantIds.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < participantIds.length; i += MATCHING_CONFIG.BATCH_SIZE) {
+      const batchIds = participantIds.slice(i, i + MATCHING_CONFIG.BATCH_SIZE);
       const participantDocs = await db
         .collection('participants')
         .where(admin.firestore.FieldPath.documentId(), 'in', batchIds)

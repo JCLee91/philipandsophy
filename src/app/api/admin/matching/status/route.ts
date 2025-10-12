@@ -41,18 +41,37 @@ export async function GET(request: NextRequest) {
       .where('dailyQuestion', '==', question)
       .get();
 
-    // 중복 제거 (한 사람이 여러 번 제출한 경우)
-    const uniqueParticipantIds = new Set<string>();
+    // 🔒 해당 코호트 참가자만 필터링 (다중 코호트 운영 시 데이터 혼입 방지)
+    const participantIds = new Set<string>();
     submissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      uniqueParticipantIds.add(data.participantId);
+      participantIds.add(data.participantId);
     });
+
+    // 배치 처리로 참가자 정보 조회 및 cohortId 검증
+    const validParticipantIds = new Set<string>();
+    const participantIdsArray = Array.from(participantIds);
+
+    for (let i = 0; i < participantIdsArray.length; i += 10) {
+      const batchIds = participantIdsArray.slice(i, i + 10);
+      const batchDocs = await db
+        .collection('participants')
+        .where('__name__', 'in', batchIds)
+        .get();
+
+      batchDocs.docs.forEach((doc) => {
+        const participant = doc.data();
+        if (participant.cohortId === cohortId) {
+          validParticipantIds.add(doc.id);
+        }
+      });
+    }
 
     return NextResponse.json({
       success: true,
       date,
       question,
-      submissionCount: uniqueParticipantIds.size,
+      submissionCount: validParticipantIds.size,
       totalSubmissions: submissionsSnapshot.size,
     });
 

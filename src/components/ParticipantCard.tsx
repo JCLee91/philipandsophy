@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Check, MessageSquare, MoreHorizontal, User } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
-import { useVerifiedToday } from '@/hooks/use-verified-today';
+import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';

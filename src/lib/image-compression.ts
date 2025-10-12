@@ -1,10 +1,22 @@
 'use client';
 
+/**
+ * @deprecated 이 파일은 더 이상 사용되지 않습니다 (2025-10-10)
+ *
+ * 원본 이미지를 직접 업로드하는 방식으로 변경되었습니다.
+ * - 압축 로직 제거: compressImageIfNeeded, compressImageWithProgress
+ * - 유지되는 함수: validateImageFile (파일 검증용)
+ *
+ * 압축 기능이 다시 필요할 경우를 대비해 코드는 보존합니다.
+ */
+
 import imageCompression from 'browser-image-compression';
 import { logger } from './logger';
+import { withTimeout } from './utils';
 
 /**
  * 이미지 압축 설정
+ * @deprecated 압축 기능은 더 이상 사용되지 않습니다
  */
 export const IMAGE_COMPRESSION_CONFIG = {
   MAX_SIZE_MB: 5, // 최대 파일 크기 (MB)
@@ -16,6 +28,7 @@ export const IMAGE_COMPRESSION_CONFIG = {
 
 /**
  * 이미지 파일을 자동으로 압축
+ * @deprecated 더 이상 사용되지 않습니다. 원본 이미지 직접 업로드로 변경되었습니다.
  *
  * @param file - 원본 이미지 파일
  * @param maxSizeMB - 최대 파일 크기 (기본: 5MB)
@@ -30,54 +43,130 @@ export const IMAGE_COMPRESSION_CONFIG = {
  */
 export async function compressImageIfNeeded(
   file: File,
-  maxSizeMB: number = IMAGE_COMPRESSION_CONFIG.MAX_SIZE_MB
+  maxSizeMB: number = IMAGE_COMPRESSION_CONFIG.MAX_SIZE_MB,
+  onProgress?: (attempt: number, total: number) => void
 ): Promise<File> {
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
-  try {
-    // 1. 파일 크기가 제한 이하면 원본 반환
-    if (file.size <= maxSizeBytes) {
-      logger.info('이미지 압축 불필요', {
-        originalSize: (file.size / 1024 / 1024).toFixed(2) + 'MB',
-        threshold: maxSizeMB + 'MB',
-      });
-      return file;
-    }
-
-    logger.info('이미지 압축 시작', {
+  // 1. 제한 이하라면 즉시 반환
+  if (file.size <= maxSizeBytes) {
+    logger.info('이미지 압축 불필요', {
       originalSize: (file.size / 1024 / 1024).toFixed(2) + 'MB',
-      originalType: file.type,
-      targetSize: maxSizeMB + 'MB',
+      threshold: maxSizeMB + 'MB',
     });
+    return file;
+  }
 
-    // 2. 압축 옵션 설정
-    const options = {
+  logger.info('이미지 압축 시작', {
+    originalSize: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+    originalType: file.type,
+    targetSize: maxSizeMB + 'MB',
+  });
+
+  // 2단계 압축 전략 (4단계에서 단순화)
+  const attempts = [
+    {
       maxSizeMB,
       maxWidthOrHeight: IMAGE_COMPRESSION_CONFIG.MAX_WIDTH_OR_HEIGHT,
       useWebWorker: IMAGE_COMPRESSION_CONFIG.USE_WEB_WORKER,
       fileType: IMAGE_COMPRESSION_CONFIG.FILE_TYPE,
       initialQuality: IMAGE_COMPRESSION_CONFIG.INITIAL_QUALITY,
+    },
+    {
+      maxSizeMB: maxSizeMB * 0.9,
+      maxWidthOrHeight: 1600,
+      useWebWorker: true,
+      fileType: IMAGE_COMPRESSION_CONFIG.FILE_TYPE,
+      initialQuality: 0.6,
+    },
+  ] as const;
+
+  const COMPRESSION_TIMEOUT_PER_ATTEMPT = 15000; // 각 시도당 15초
+  let workingFile = file;
+  let webWorkerDisabled = false; // Web Worker 타임아웃 발생 시 비활성화
+
+  for (let attempt = 0; attempt < attempts.length; attempt++) {
+    const options = {
+      ...attempts[attempt],
+      useWebWorker: attempts[attempt].useWebWorker && !webWorkerDisabled,
     };
 
-    // 3. 압축 실행
-    const compressedFile = await imageCompression(file, options);
+    try {
+      onProgress?.(attempt + 1, attempts.length);
 
-    logger.info('이미지 압축 완료', {
-      originalSize: (file.size / 1024 / 1024).toFixed(2) + 'MB',
-      compressedSize: (compressedFile.size / 1024 / 1024).toFixed(2) + 'MB',
-      reduction: (((file.size - compressedFile.size) / file.size) * 100).toFixed(1) + '%',
+      // 각 시도마다 15초 타임아웃 적용
+      const compressed = await withTimeout(
+        imageCompression(workingFile, options),
+        COMPRESSION_TIMEOUT_PER_ATTEMPT,
+        `압축 시도 ${attempt + 1} 시간 초과`
+      );
+
+      logger.info('이미지 압축 시도 성공', {
+        attempt: attempt + 1,
+        compressedSize: (compressed.size / 1024 / 1024).toFixed(2) + 'MB',
+        reduction: (((workingFile.size - compressed.size) / workingFile.size) * 100).toFixed(1) + '%',
+      });
+
+      workingFile = compressed;
+
+      // 목표 크기 달성 시 즉시 반환
+      if (workingFile.size <= maxSizeBytes) {
+        logger.info('목표 크기 달성', {
+          finalSize: (workingFile.size / 1024 / 1024).toFixed(2) + 'MB',
+          totalAttempts: attempt + 1,
+        });
+        return workingFile;
+      }
+    } catch (error) {
+      const isTimeout = error instanceof Error && error.message.includes('시간 초과');
+
+      logger.warn('이미지 압축 시도 실패', {
+        attempt: attempt + 1,
+        isTimeout,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      // 타임아웃 발생 시 Web Worker 비활성화 (다음 시도는 메인 스레드)
+      if (isTimeout && options.useWebWorker) {
+        webWorkerDisabled = true;
+        logger.info('Web Worker 타임아웃 발생, 이후 시도는 메인 스레드 사용');
+      }
+
+      // 다음 시도로 계속 진행 (workingFile은 최선의 결과 유지)
+    }
+  }
+
+  // 모든 시도 후 최종 검증
+  const finalFile = workingFile.size < file.size ? workingFile : file;
+  const finalSizeMB = (finalFile.size / 1024 / 1024).toFixed(1);
+
+  // 크리티컬 버그 수정: 5MB 초과 시 에러 던지기 (업로드 차단)
+  if (finalFile.size > maxSizeBytes) {
+    logger.error('압축 실패: 목표 크기 달성 불가', {
+      finalSize: finalSizeMB + 'MB',
+      targetSize: maxSizeMB + 'MB',
     });
 
-    return compressedFile;
-  } catch (error) {
-    // 4. 압축 실패 시 원본 반환 (fallback)
-    logger.error('이미지 압축 실패, 원본 파일 사용', error);
-    return file;
+    throw new Error(
+      `이미지를 ${maxSizeMB}MB 이하로 압축할 수 없습니다 (현재: ${finalSizeMB}MB).\n\n` +
+      `💡 해결 방법:\n` +
+      `• 사진 앱에서 이미지를 편집 후 저장하면 크기가 줄어듭니다\n` +
+      `• 더 작은 해상도의 이미지를 선택해주세요`
+    );
   }
+
+  logger.info('압축 완료', {
+    finalSize: finalSizeMB + 'MB',
+    originalSize: (file.size / 1024 / 1024).toFixed(1) + 'MB',
+    reduction: (((file.size - finalFile.size) / file.size) * 100).toFixed(0) + '%',
+  });
+
+  return finalFile;
 }
 
 /**
  * 이미지 압축 with 진행률 콜백
+ * @deprecated 더 이상 사용되지 않습니다. 원본 이미지 직접 업로드로 변경되었습니다.
  *
  * @param file - 원본 이미지 파일
  * @param onProgress - 진행률 콜백 (0-100)
@@ -137,14 +226,22 @@ export function validateImageFile(
     return { valid: false, error: '이미지 파일만 업로드 가능합니다.' };
   }
 
-  // 파일 크기 검증 (압축 전 원본 기준)
-  const maxSizeBytes = maxSizeMB * 1024 * 1024;
-  const MAX_ORIGINAL_SIZE = 50 * 1024 * 1024; // 원본 최대 50MB (압축 후 5MB 이하로 만들 수 있음)
-
-  if (file.size > MAX_ORIGINAL_SIZE) {
+  // 최소 크기 검증 (100KB)
+  const MIN_SIZE_BYTES = 100 * 1024; // 100KB
+  if (file.size < MIN_SIZE_BYTES) {
     return {
       valid: false,
-      error: `파일이 너무 큽니다. 최대 ${MAX_ORIGINAL_SIZE / 1024 / 1024}MB까지 가능합니다.`,
+      error: '이미지가 너무 작습니다. 최소 100KB 이상이어야 합니다.',
+    };
+  }
+
+  // 최대 크기 검증 (원본 기준)
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+  if (file.size > maxSizeBytes) {
+    return {
+      valid: false,
+      error: `파일이 너무 큽니다. 최대 ${maxSizeMB}MB까지 가능합니다.`,
     };
   }
 

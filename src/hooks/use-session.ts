@@ -110,9 +110,11 @@ export function useSession() {
           setCurrentUser(null);
         }
       } catch (error) {
-        logger.error('세션 검증 실패:', error);
-        removeSessionToken();
+        // 네트워크 에러나 Firebase 일시적 문제일 수 있으므로 토큰은 유지
+        // 다음 페이지 로드/새로고침 시 자동으로 재시도됨
+        logger.error('세션 검증 실패 (토큰 유지):', error);
         setCurrentUser(null);
+        // removeSessionToken()을 호출하지 않음 → localStorage에 토큰 유지
       } finally {
         setIsLoading(false);
       }

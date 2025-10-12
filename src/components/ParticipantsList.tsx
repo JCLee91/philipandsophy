@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sheet';
 import { getInitials, getFirstName } from '@/lib/utils';
 import { User, MessageSquare, Check, BookOpen, LogOut, MoreHorizontal } from 'lucide-react';
-import { useVerifiedToday } from '@/hooks/use-verified-today';
+import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import { useSession } from '@/hooks/use-session';

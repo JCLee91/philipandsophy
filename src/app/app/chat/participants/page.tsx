@@ -18,7 +18,7 @@ import UnifiedButton from '@/components/UnifiedButton';
 import { Check, MessageSquare, User, BookOpen, LogOut, MoreHorizontal } from 'lucide-react';
 import { useSession } from '@/hooks/use-session';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
-import { useVerifiedToday } from '@/hooks/use-verified-today';
+import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import { appRoutes } from '@/lib/navigation';

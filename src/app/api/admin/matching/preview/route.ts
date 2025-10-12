@@ -1,0 +1,215 @@
+import { NextRequest, NextResponse } from 'next/server';
+import * as admin from 'firebase-admin';
+import { getDailyQuestionText } from '@/constants/daily-questions';
+import { MATCHING_CONFIG } from '@/constants/matching';
+import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
+import { getTodayString } from '@/lib/date-utils';
+import { requireAdminWithRateLimit } from '@/lib/api-middleware';
+import { validateParticipantGenderDistribution } from '@/lib/matching-validation';
+import { logger } from '@/lib/logger';
+import { getAdminDb } from '@/lib/firebase/admin';
+
+interface SubmissionData {
+  participantId: string;
+  dailyQuestion: string;
+  dailyAnswer: string;
+  submissionDate: string;
+}
+
+interface ParticipantData {
+  id: string;
+  name: string;
+  gender?: 'male' | 'female' | 'other';
+  isAdmin?: boolean;
+  isAdministrator?: boolean;
+  cohortId: string;
+}
+
+/**
+ * POST /api/admin/matching/preview
+ * AI 매칭 실행 (프리뷰 모드 - Firebase 저장하지 않음)
+ */
+export async function POST(request: NextRequest) {
+  // 관리자 권한 + Rate limit 검증
+  const { user, error } = await requireAdminWithRateLimit(request);
+  if (error) {
+    return error;
+  }
+
+  try {
+    const { cohortId } = await request.json();
+
+    if (!cohortId) {
+      return NextResponse.json(
+        { error: 'cohortId가 필요합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 1. 오늘의 질문 가져오기
+    const todayQuestion = getDailyQuestionText();
+    const today = getTodayString();
+
+    // 2. Firebase Admin 초기화 및 DB 가져오기
+    const db = getAdminDb();
+
+    // 3. 오늘 제출한 참가자들의 답변 가져오기
+    const submissionsSnapshot = await db
+      .collection('reading_submissions')
+      .where('submissionDate', '==', today)
+      .where('dailyQuestion', '==', todayQuestion)
+      .get();
+
+    if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
+      return NextResponse.json(
+        {
+          error: '매칭하기에 충분한 참가자가 없습니다.',
+          message: `최소 ${MATCHING_CONFIG.MIN_PARTICIPANTS}명이 필요하지만 현재 ${submissionsSnapshot.size}명만 제출했습니다.`,
+          participantCount: submissionsSnapshot.size,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 4. 참가자 정보와 답변 수집 (Batch read로 N+1 쿼리 최적화)
+    const participantAnswers: ParticipantAnswer[] = [];
+    const submissionsMap = new Map<string, SubmissionData>();
+
+    // 4-1. 중복 제거 및 제출물 수집
+    for (const doc of submissionsSnapshot.docs) {
+      const submission = doc.data() as SubmissionData;
+      submissionsMap.set(submission.participantId, submission);
+    }
+
+    // 4-2. 참가자 ID 목록 추출
+    const uniqueParticipantIds = Array.from(submissionsMap.keys());
+
+    // 4-3. Batch read로 모든 참가자 정보 한 번에 가져오기 (최대 10개씩)
+    const participantDataMap = new Map<string, ParticipantData>();
+
+    for (let i = 0; i < uniqueParticipantIds.length; i += MATCHING_CONFIG.BATCH_SIZE) {
+      const batchIds = uniqueParticipantIds.slice(i, i + MATCHING_CONFIG.BATCH_SIZE);
+      const participantDocs = await db
+        .collection('participants')
+        .where(admin.firestore.FieldPath.documentId(), 'in', batchIds)
+        .get();
+
+      participantDocs.docs.forEach((doc) => {
+        participantDataMap.set(doc.id, doc.data() as ParticipantData);
+      });
+    }
+
+    // 4-4. 참가자 정보와 제출물 결합
+    for (const [participantId, submission] of submissionsMap.entries()) {
+      const participant = participantDataMap.get(participantId);
+
+      if (!participant) {
+        logger.warn('참가자 정보를 찾을 수 없음', { participantId });
+        continue;
+      }
+
+      // 🔒 다른 코호트 참가자 제외 (다중 코호트 운영 시 데이터 혼입 방지)
+      if (participant.cohortId !== cohortId) {
+        logger.warn('다른 코호트 참가자 제외', {
+          participantId,
+          expectedCohort: cohortId,
+          actualCohort: participant.cohortId,
+        });
+        continue;
+      }
+
+      // 관리자는 매칭에서 제외
+      if (participant.isAdmin || participant.isAdministrator) {
+        logger.info('관리자 참가자 매칭에서 제외', {
+          participantId,
+          name: participant.name,
+        });
+        continue;
+      }
+
+      participantAnswers.push({
+        id: participantId,
+        name: participant.name,
+        answer: submission.dailyAnswer,
+        gender: participant.gender,
+      });
+    }
+
+    // 5. 성별 데이터 및 분포 검증
+    const genderValidation = validateParticipantGenderDistribution(participantAnswers);
+
+    if (!genderValidation.valid) {
+      logger.error('성별 검증 실패', {
+        missingGenderCount: genderValidation.missingGender.length,
+        maleCount: genderValidation.maleCount,
+        femaleCount: genderValidation.femaleCount,
+        requiredPerGender: genderValidation.requiredPerGender,
+        errors: genderValidation.errors,
+      });
+
+      return NextResponse.json(
+        {
+          error: genderValidation.errors[0],
+          genderDistribution: {
+            male: genderValidation.maleCount,
+            female: genderValidation.femaleCount,
+            required: genderValidation.requiredPerGender,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    logger.info('성별 분포 검증 통과', {
+      maleCount: genderValidation.maleCount,
+      femaleCount: genderValidation.femaleCount,
+      totalCount: participantAnswers.length,
+    });
+
+    // 6. AI 매칭 수행
+    logger.info('AI 매칭 시작 (프리뷰 모드)', { totalParticipants: participantAnswers.length });
+    const matching = await matchParticipantsByAI(todayQuestion, participantAnswers);
+    logger.info('AI 매칭 완료 (프리뷰 모드)');
+
+    // 7. ⚠️ Firebase 저장하지 않음 (프리뷰 모드)
+    // 매칭 결과를 response로만 반환
+
+    // 8. 매칭 결과 요약 생성
+    const participantNameMap = new Map(
+      participantAnswers.map((p) => [p.id, p.name] as const)
+    );
+    const featuredSimilarIds = matching.featured?.similar ?? [];
+    const featuredOppositeIds = matching.featured?.opposite ?? [];
+
+    const featuredSimilarParticipants = featuredSimilarIds.map((id) => ({
+      id,
+      name: participantNameMap.get(id) ?? '알 수 없음',
+    }));
+    const featuredOppositeParticipants = featuredOppositeIds.map((id) => ({
+      id,
+      name: participantNameMap.get(id) ?? '알 수 없음',
+    }));
+
+    return NextResponse.json({
+      success: true,
+      preview: true, // 프리뷰 모드 플래그
+      date: today,
+      question: todayQuestion,
+      totalParticipants: participantAnswers.length,
+      matching,
+      featuredParticipants: {
+        similar: featuredSimilarParticipants,
+        opposite: featuredOppositeParticipants,
+      },
+    });
+
+  } catch (error) {
+    logger.error('매칭 프리뷰 실패', error);
+    return NextResponse.json(
+      {
+        error: '매칭 실행 중 오류가 발생했습니다.',
+      },
+      { status: 500 }
+    );
+  }
+}

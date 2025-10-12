@@ -12,7 +12,7 @@ interface VerifiedTodayState {
   currentDate: string;
   subscriberCount: number;
   unsubscribe: (() => void) | null;
-  dateCheckInterval: NodeJS.Timeout | null;
+  dateCheckInterval: ReturnType<typeof setInterval> | null;
 
   // Actions
   subscribe: () => void;

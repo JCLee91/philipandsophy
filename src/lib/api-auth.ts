@@ -60,7 +60,8 @@ async function getParticipantBySessionTokenServer(
         expiry: new Date(participant.sessionExpiry).toISOString(),
       });
 
-      // 만료된 세션 토큰 제거 (비동기 처리, 응답 지연 방지)
+      // 만료된 세션 토큰 제거 (Fire-and-forget: 삭제 실패해도 null 반환)
+      // 토큰 삭제는 정리 작업일 뿐, 실패해도 사용자 접근은 차단되어야 함
       db.collection('participants')
         .doc(participant.id)
         .update({
@@ -68,9 +69,14 @@ async function getParticipantBySessionTokenServer(
           sessionExpiry: null,
         })
         .catch((error) => {
-          logger.error('만료된 세션 토큰 제거 실패', { participantId: participant.id, error });
+          // 삭제 실패는 경고만 (다음 로그인 시 자동으로 덮어씌워짐)
+          logger.warn('만료된 세션 토큰 제거 실패 (무시됨)', {
+            participantId: participant.id,
+            error: error.message
+          });
         });
 
+      // 토큰 삭제 완료를 기다리지 않고 즉시 null 반환
       return null;
     }
 
@@ -150,7 +156,8 @@ export async function requireAdmin(
     return { user: null, error };
   }
 
-  if (!user?.isAdmin) {
+  // 🔒 isAdmin + isAdministrator 이중 체크 (필드명 호환성)
+  if (!user?.isAdmin && !user?.isAdministrator) {
     return {
       user: null,
       error: NextResponse.json(

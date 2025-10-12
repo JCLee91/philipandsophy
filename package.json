@@ -33,7 +33,9 @@
     "restore:dajin-circle": "tsx src/scripts/restore-dajin-circle.ts",
     "batch:update-profiles": "tsx src/scripts/batch-update-profiles.ts",
     "debug:submissions": "tsx src/scripts/debug-submission-count.ts",
-    "check:cohorts": "tsx src/scripts/check-cohort-participants.ts"
+    "check:cohorts": "tsx src/scripts/check-cohort-participants.ts",
+    "add:backdated-submission": "tsx src/scripts/add-backdated-submission.ts",
+    "update:occupations": "tsx src/scripts/update-all-occupations.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",
@@ -52,6 +54,7 @@
     "clsx": "^2.1.1",
     "csv-parse": "^6.1.0",
     "date-fns": "^4",
+    "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.3",
     "firebase": "^12.3.0",
     "firebase-admin": "^13.5.0",

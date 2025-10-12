@@ -105,16 +105,35 @@ export const getFirstName = (name: string): string => {
  *   5000,
  *   'Data fetch timeout'
  * );
+ *
+ * @note 타이머 누수 방지를 위해 Promise 완료 시 타이머 자동 정리
  */
 export function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
   errorMessage: string = '요청 시간이 초과되었습니다'
 ): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, timeoutMs);
+  });
+
   return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    promise.then(
+      (result) => {
+        // 성공 시 타이머 정리
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        return result;
+      },
+      (error) => {
+        // 실패 시 타이머 정리
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        throw error;
+      }
     ),
+    timeoutPromise,
   ]);
 }
