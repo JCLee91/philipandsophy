@@ -665,13 +665,12 @@ function MatchingPageContent() {
             )}
 
             {/* 3. 프로필북 현황 (항상 표시) */}
-            {(matchingState === 'previewing' || matchingState === 'confirmed') && (
-              <ParticipantAssignmentTable
-                assignmentRows={assignmentRows}
-                participantsLoading={participantsLoading}
-                onOpenProfile={handleOpenProfile}
-              />
-            )}
+            <ParticipantAssignmentTable
+              assignmentRows={assignmentRows}
+              participantsLoading={participantsLoading}
+              onOpenProfile={handleOpenProfile}
+              matchingState={matchingState}
+            />
 
             {/* 안내 메시지 */}
             <div className="rounded-xl p-4 border bg-admin-bg-info border-admin-border">

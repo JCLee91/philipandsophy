@@ -19,12 +19,14 @@ interface ParticipantAssignmentTableProps {
   assignmentRows: AssignmentRow[];
   participantsLoading: boolean;
   onOpenProfile: (participantId: string, theme: 'similar' | 'opposite') => void;
+  matchingState: 'idle' | 'previewing' | 'confirmed';
 }
 
 export default function ParticipantAssignmentTable({
   assignmentRows,
   participantsLoading,
   onOpenProfile,
+  matchingState,
 }: ParticipantAssignmentTableProps) {
   return (
     <div className={CARD_STYLES.CONTAINER}>
@@ -38,7 +40,13 @@ export default function ParticipantAssignmentTable({
 
       {/* 테이블 컨테이너 */}
       <div className="overflow-x-auto">
-        {participantsLoading ? (
+        {matchingState === 'idle' ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Users className="h-12 w-12 text-admin-text-secondary mb-3" />
+            <p className="text-sm text-admin-text-tertiary font-semibold">아직 매칭 결과가 없습니다</p>
+            <p className="text-xs text-admin-text-secondary mt-1">매칭을 시작하면 여기에 결과가 표시됩니다</p>
+          </div>
+        ) : participantsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-admin-brand" />
           </div>
@@ -46,7 +54,7 @@ export default function ParticipantAssignmentTable({
           <div className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-admin-text-secondary mb-3" />
             <p className="text-sm text-admin-text-tertiary font-semibold">추천 데이터가 없습니다</p>
-            <p className="text-xs text-admin-text-secondary mt-1">매칭을 시작하면 여기에 결과가 표시됩니다</p>
+            <p className="text-xs text-admin-text-secondary mt-1">참가자 제출이 완료되면 자동으로 표시됩니다</p>
           </div>
         ) : (
           <table className="w-full">
