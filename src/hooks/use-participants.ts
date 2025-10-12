@@ -66,6 +66,9 @@ export function useParticipantsByCohort(cohortId: string | undefined) {
     queryKey: PARTICIPANT_KEYS.byCohort(cohortId || ''),
     queryFn: () => (cohortId ? getParticipantsByCohort(cohortId) : []),
     enabled: !!cohortId,
+    // 네트워크에서 가져온 후 즉시 캐시
+    staleTime: 10 * 60 * 1000, // 10분
+    gcTime: 15 * 60 * 1000, // 15분
   });
 }
 

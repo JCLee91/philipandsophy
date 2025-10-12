@@ -1,9 +1,10 @@
 'use client';
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
+import { logger } from '@/lib/logger';
 
 /**
  * Firebase Client Setup
@@ -26,6 +27,20 @@ export function initializeFirebase() {
 
   db = getFirestore(app);
   storage = getStorage(app);
+
+  // Enable offline persistence (IndexedDB cache)
+  // This dramatically improves load times for repeat visits
+  if (typeof window !== 'undefined') {
+    enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code === 'failed-precondition') {
+        logger.warn('Persistence failed: Multiple tabs open');
+      } else if (err.code === 'unimplemented') {
+        logger.warn('Persistence not supported by browser');
+      } else {
+        logger.error('Persistence error', err);
+      }
+    });
+  }
 
   return { app, db, storage };
 }

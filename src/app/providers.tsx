@@ -19,9 +19,13 @@ function makeQueryClient() {
       queries: {
         // With SSR, we usually want to set some default staleTime
         // above 0 to avoid refetching immediately on the client
-        // 정적 데이터(cohort/participants) 기본 캐시: 5분
+        // 정적 데이터(cohort/participants) 기본 캐시: 10분
         // 동적 데이터(notices/messages)는 개별 hook에서 override
-        staleTime: CACHE_TIMES.STATIC, // 5분
+        staleTime: CACHE_TIMES.STATIC, // 10분
+
+        // gcTime: 캐시 유지 시간 (메모리에서 삭제되기 전)
+        // staleTime보다 길게 설정하여 재방문 시 즉시 표시
+        gcTime: 15 * 60 * 1000, // 15분 (기본값: 5분)
       },
     },
   });
