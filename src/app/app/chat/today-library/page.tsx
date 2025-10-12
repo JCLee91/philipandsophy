@@ -117,7 +117,7 @@ function TodayLibraryContent() {
     },
     // 🔒 보안 수정: 인증된 유저(또는 관리자)만 개인정보 다운로드 가능
     enabled: allFeaturedIds.length > 0 && !isLocked,
-    cacheTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결)
+    gcTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결) - React Query v5: cacheTime → gcTime
     staleTime: 0, // 항상 신선한 데이터 fetch
   });
 
