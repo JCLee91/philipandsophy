@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Users, Check, X, Loader2, Calendar } from 'lucide-react';
-import { getTodayString, getYesterdayString } from '@/lib/date-utils';
+import { getYesterdayString } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { logger } from '@/lib/logger';
@@ -84,15 +84,13 @@ function MatchingPageContent() {
   const [error, setError] = useState<string | null>(null);
 
   // 날짜 정의
-  const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터)
-  const matchingDate = getTodayString(); // 매칭 실행 날짜 (오늘, Firebase 키)
+  const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터, Firebase 키로 사용)
   const submissionQuestion = getDailyQuestionText(submissionDate);
-  const todayQuestion = getDailyQuestionText(matchingDate);
 
-  // 로컬 스토리지 키 (matchingDate 기준)
-  const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${matchingDate}`;
-  const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${matchingDate}`;
-  const IN_PROGRESS_KEY = `matching-in-progress-${cohortId}-${matchingDate}`;
+  // 로컬 스토리지 키 (submissionDate 기준)
+  const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${submissionDate}`;
+  const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${submissionDate}`;
+  const IN_PROGRESS_KEY = `matching-in-progress-${cohortId}-${submissionDate}`;
 
   // 페이지 로드 시 로컬 스토리지에서 복원
   useEffect(() => {
@@ -122,17 +120,11 @@ function MatchingPageContent() {
         const parsed = JSON.parse(savedPreview);
         setPreviewResult(parsed);
         setMatchingState('previewing');
-        logger.info('프리뷰 결과 복원 완료', { date: matchingDate });
+        logger.info('프리뷰 결과 복원 완료', { date: submissionDate });
       }
 
-      // 확정 결과 복원
-      const savedConfirmed = localStorage.getItem(CONFIRMED_STORAGE_KEY);
-      if (savedConfirmed) {
-        const parsed = JSON.parse(savedConfirmed);
-        setConfirmedResult(parsed);
-        setMatchingState('confirmed');
-        logger.info('확정 결과 복원 완료', { date: matchingDate });
-      }
+      // ⚠️ 확정 결과는 서버에서 가져오므로 로컬 스토리지 복원 제거
+      // fetchMatchingResult()가 서버의 최신 confirmed 결과를 가져옴
     } catch (error) {
       logger.error('로컬 스토리지 복원 실패', error);
     }
@@ -225,12 +217,12 @@ function MatchingPageContent() {
     }
   }, [sessionLoading, currentUser, cohortId, router, toast]);
 
-  // 기존 매칭 결과 로드 (matchingDate 기준)
+  // 기존 매칭 결과 로드 (submissionDate 기준)
   const fetchMatchingResult = useCallback(async () => {
     if (!cohortId || !sessionToken) return;
     try {
       const response = await fetch(
-        `/api/admin/matching?cohortId=${cohortId}&date=${matchingDate}`,
+        `/api/admin/matching?cohortId=${cohortId}&date=${submissionDate}`,
         {
           headers: {
             'Authorization': `Bearer ${sessionToken}`,
@@ -248,7 +240,7 @@ function MatchingPageContent() {
     } catch (error) {
       logger.error('매칭 결과 로드 실패', error);
     }
-  }, [cohortId, matchingDate, sessionToken]);
+  }, [cohortId, submissionDate, sessionToken]);
 
   useEffect(() => {
     if (cohortId) {
@@ -273,7 +265,7 @@ function MatchingPageContent() {
     // 중단 감지용 플래그 설정 (AI 처리 시작 시점 기록)
     try {
       localStorage.setItem(IN_PROGRESS_KEY, Date.now().toString());
-      logger.info('매칭 작업 시작 플래그 설정', { matchingDate, submissionDate });
+      logger.info('매칭 작업 시작 플래그 설정', { submissionDate });
     } catch (storageError) {
       logger.error('로컬 스토리지 플래그 설정 실패', storageError);
     }
@@ -300,7 +292,7 @@ function MatchingPageContent() {
       // 로컬 스토리지에 프리뷰 결과 저장
       try {
         localStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(data));
-        logger.info('프리뷰 결과 로컬 스토리지 저장 완료', { matchingDate });
+        logger.info('프리뷰 결과 로컬 스토리지 저장 완료', { submissionDate });
       } catch (storageError) {
         logger.error('로컬 스토리지 저장 실패', storageError);
       }
@@ -319,7 +311,7 @@ function MatchingPageContent() {
       // 성공 시 중단 플래그 제거
       try {
         localStorage.removeItem(IN_PROGRESS_KEY);
-        logger.info('매칭 작업 완료, 플래그 제거', { matchingDate });
+        logger.info('매칭 작업 완료, 플래그 제거', { submissionDate });
       } catch (storageError) {
         logger.error('로컬 스토리지 플래그 제거 실패', storageError);
       }
