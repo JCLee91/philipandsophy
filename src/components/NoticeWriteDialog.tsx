@@ -39,7 +39,7 @@ export default function NoticeWriteDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
-        <DialogHeader className="px-6 py-4 border-b">
+        <DialogHeader className="px-6 py-6 border-b">
           <DialogTitle>공지 작성</DialogTitle>
           <DialogDescription>
             참가자들에게 전달할 공지사항을 작성하세요.
@@ -73,8 +73,8 @@ export default function NoticeWriteDialog({
           )}
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t flex-row items-center gap-2">
-          <label className="flex-1">
+        <DialogFooter className="px-6 py-3 border-t flex-row items-center gap-2">
+          <label>
             <input
               type="file"
               accept="image/*"
@@ -86,15 +86,13 @@ export default function NoticeWriteDialog({
               <span>이미지 첨부</span>
             </div>
           </label>
-          <UnifiedButton variant="outline" onClick={handleClose} size="sm">
-            취소
-          </UnifiedButton>
           <UnifiedButton
             onClick={handleSubmit}
             disabled={!content.trim()}
             loading={uploading}
             loadingText="업로드 중..."
             size="sm"
+            className="ml-auto"
           >
             작성
           </UnifiedButton>

@@ -481,6 +481,7 @@ function ChatPageContent() {
         content={editContent}
         onContentChange={setEditContent}
         onSave={handleSaveEdit}
+        saving={updateNoticeMutation.isPending}
       />
 
       <NoticeDeleteDialog
@@ -488,6 +489,7 @@ function ChatPageContent() {
         onOpenChange={(open) => !open && setDeleteConfirm(null)}
         notice={deleteConfirm}
         onConfirm={handleDeleteNotice}
+        deleting={deleteNoticeMutation.isPending}
       />
       </div>
     </PageTransition>

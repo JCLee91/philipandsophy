@@ -118,6 +118,24 @@ export default function NoticeItem({
         </div>
 
         <div className="space-y-2">
+          {!isCollapsed && notice.imageUrl && (
+            <div className="w-full max-w-lg mx-auto">
+              <div
+                className="relative w-full overflow-hidden rounded cursor-pointer hover:opacity-90 transition-opacity duration-fast"
+                onClick={() => setSelectedImage(notice.imageUrl || null)}
+              >
+                <Image
+                  src={notice.imageUrl}
+                  alt="공지 이미지"
+                  width={600}
+                  height={400}
+                  className="object-contain w-full h-auto"
+                  priority={priority}
+                />
+              </div>
+            </div>
+          )}
+
           <div className={showCollapseButton && isCollapsed ? 'line-clamp-2' : ''}>
             <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
               {notice.content
@@ -139,24 +157,6 @@ export default function NoticeItem({
                   )}
             </p>
           </div>
-
-          {!isCollapsed && notice.imageUrl && (
-            <div className="w-full max-w-lg">
-              <div
-                className="relative w-full overflow-hidden rounded cursor-pointer hover:opacity-90 transition-opacity duration-fast"
-                onClick={() => setSelectedImage(notice.imageUrl || null)}
-              >
-                <Image
-                  src={notice.imageUrl}
-                  alt="공지 이미지"
-                  width={600}
-                  height={400}
-                  className="object-contain w-full h-auto"
-                  priority={priority}
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
