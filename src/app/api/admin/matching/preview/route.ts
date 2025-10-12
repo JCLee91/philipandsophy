@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
-import { getTodayString } from '@/lib/date-utils';
+import { getYesterdayString } from '@/lib/date-utils';
 import { requireAdminWithRateLimit } from '@/lib/api-middleware';
 import { validateParticipantGenderDistribution } from '@/lib/matching-validation';
 import { logger } from '@/lib/logger';
@@ -46,18 +46,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. 오늘의 질문 가져오기
-    const todayQuestion = getDailyQuestionText();
-    const today = getTodayString();
+    // 1. 어제의 질문 가져오기 (매칭은 어제 제출 기반)
+    const yesterday = getYesterdayString();
+    const yesterdayQuestion = getDailyQuestionText(yesterday);
 
     // 2. Firebase Admin 초기화 및 DB 가져오기
     const db = getAdminDb();
 
-    // 3. 오늘 제출한 참가자들의 답변 가져오기
+    // 3. 어제 제출한 참가자들의 답변 가져오기 (매칭 대상)
     const submissionsSnapshot = await db
       .collection('reading_submissions')
-      .where('submissionDate', '==', today)
-      .where('dailyQuestion', '==', todayQuestion)
+      .where('submissionDate', '==', yesterday)
+      .where('dailyQuestion', '==', yesterdayQuestion)
       .get();
 
     if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     // 6. AI 매칭 수행
     logger.info('AI 매칭 시작 (프리뷰 모드)', { totalParticipants: participantAnswers.length });
-    const matching = await matchParticipantsByAI(todayQuestion, participantAnswers);
+    const matching = await matchParticipantsByAI(yesterdayQuestion, participantAnswers);
     logger.info('AI 매칭 완료 (프리뷰 모드)');
 
     // 7. ⚠️ Firebase 저장하지 않음 (프리뷰 모드)
@@ -193,8 +193,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       preview: true, // 프리뷰 모드 플래그
-      date: today,
-      question: todayQuestion,
+      date: yesterday,
+      question: yesterdayQuestion,
       totalParticipants: participantAnswers.length,
       matching,
       featuredParticipants: {
