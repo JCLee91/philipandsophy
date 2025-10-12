@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { BOOKMARK_DIMENSIONS, BOOKMARK_THEMES } from '@/constants/today-library';
+import { getFirstName } from '@/lib/utils';
 
 interface BookmarkCardProps {
   profileImage: string;
@@ -88,7 +89,7 @@ export default function BookmarkCard({
           {!isLocked && (
             <div className="flex flex-col items-start w-full">
               <p className="font-[family-name:var(--font-pretendard)] font-semibold text-body-base text-text-primary text-center w-full">
-                {name}
+                {getFirstName(name)}
               </p>
             </div>
           )}
