@@ -56,6 +56,7 @@ export default function ReadingSubmissionDialog({
   const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
   const [alreadySubmittedToday, setAlreadySubmittedToday] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [uploadStep, setUploadStep] = useState<string>(''); // 업로드 진행 단계
 
   const { toast } = useToast();
   const createSubmission = useCreateSubmission();
@@ -115,7 +116,7 @@ export default function ReadingSubmissionDialog({
         isCancelled = true;
       };
     }
-  }, [open, participantId]); // allSubmissions 의존성 제거 - effect 내부에서만 사용
+  }, [open, participantId, allSubmissions]); // allSubmissions 의존성 추가 - 제출 후 상태 동기화
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -132,11 +133,21 @@ export default function ReadingSubmissionDialog({
       return;
     }
 
+    // Cleanup flag for memory leak prevention
+    let isActive = true;
+
     try {
       setIsCompressing(true);
 
-      // 2. 이미지 자동 압축 (5MB 초과 시)
-      const processedFile = await compressImageIfNeeded(file, 5);
+      // 2. 이미지 자동 압축 (5MB 초과 시) with 30초 타임아웃
+      const processedFile = await withTimeout(
+        compressImageIfNeeded(file, 5),
+        30000, // 30초 타임아웃
+        '이미지 압축 시간이 초과되었습니다. 더 작은 이미지를 선택해주세요.'
+      );
+
+      // 컴포넌트 언마운트 체크
+      if (!isActive) return;
 
       // 3. 압축 결과 사용자에게 알림 (압축된 경우만)
       if (processedFile.size < file.size) {
@@ -152,32 +163,49 @@ export default function ReadingSubmissionDialog({
 
       setBookImage(processedFile);
 
-      // 4. 이미지 미리보기
+      // 4. 이미지 미리보기 with cleanup
       const reader = new FileReader();
 
       reader.onloadend = () => {
-        setBookImagePreview(reader.result as string);
+        if (isActive) {
+          setBookImagePreview(reader.result as string);
+        }
       };
 
       reader.onerror = () => {
-        reader.abort();
-        toast({
-          title: '이미지 로드 실패',
-          description: '이미지를 불러올 수 없습니다.',
-          variant: 'destructive',
-        });
+        if (isActive) {
+          reader.abort();
+          toast({
+            title: '이미지 로드 실패',
+            description: '이미지를 불러올 수 없습니다.',
+            variant: 'destructive',
+          });
+        }
       };
 
       reader.readAsDataURL(processedFile);
+
+      // Cleanup function
+      return () => {
+        isActive = false;
+        // FileReader가 아직 실행 중이면 중단
+        if (reader.readyState === FileReader.LOADING) {
+          reader.abort();
+        }
+      };
     } catch (error) {
+      if (!isActive) return;
+
       logger.error('Image processing error:', error);
       toast({
         title: '이미지 처리 실패',
-        description: '이미지를 처리할 수 없습니다. 다른 이미지를 시도해주세요.',
+        description: error instanceof Error ? error.message : '이미지를 처리할 수 없습니다. 다른 이미지를 시도해주세요.',
         variant: 'destructive',
       });
     } finally {
-      setIsCompressing(false);
+      if (isActive) {
+        setIsCompressing(false);
+      }
     }
   };
 
@@ -243,6 +271,7 @@ export default function ReadingSubmissionDialog({
     if (uploading) return;
 
     setUploading(true);
+    setUploadStep('1/3'); // 1단계 시작
 
     try {
       const trimmedBookTitle = bookTitle.trim();
@@ -259,12 +288,16 @@ export default function ReadingSubmissionDialog({
         '책 정보 업데이트 중 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.'
       );
 
+      setUploadStep('2/3'); // 2단계 시작
+
       // 2. 이미지 업로드 (60초 타임아웃)
       const bookImageUrl = await withTimeout(
         uploadReadingImage(bookImage, participationCode),
         60000,
         '이미지 업로드 중 시간이 초과되었습니다. 네트워크 상태를 확인하거나 이미지 크기를 줄여주세요.'
       );
+
+      setUploadStep('3/3'); // 3단계 시작
 
       // 3. 제출 생성 (30초 타임아웃)
       await withTimeout(
@@ -317,6 +350,7 @@ export default function ReadingSubmissionDialog({
       });
     } finally {
       setUploading(false);
+      setUploadStep(''); // 진행 상태 초기화
     }
   };
 
@@ -510,7 +544,7 @@ export default function ReadingSubmissionDialog({
               dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
             }
             loading={uploading}
-            loadingText="제출 중..."
+            loadingText={uploadStep ? `제출 중 (${uploadStep})` : '제출 중...'}
             size="sm"
           >
             {alreadySubmittedToday ? '오늘 제출 완료' : '제출하기'}
