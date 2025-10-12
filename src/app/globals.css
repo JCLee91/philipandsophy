@@ -229,6 +229,15 @@
   padding-bottom: calc(16px + var(--app-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
+/* iOS PWA Standalone 모드: 하단 여백 줄이기 */
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: standalone) {
+    .app-footer {
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+}
+
 /* 모든 버튼과 인터랙티브 요소에 cursor pointer 적용 - utilities 레이어로 최상위 우선순위 보장 */
 @layer utilities {
   button,
