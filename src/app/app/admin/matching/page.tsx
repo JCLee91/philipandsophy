@@ -87,6 +87,10 @@ function MatchingPageContent() {
   const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터, Firebase 키로 사용)
   const submissionQuestion = getDailyQuestionText(submissionDate);
 
+  // 오늘 제출 현황 표시용 (UI 전용)
+  const todayDate = new Date().toISOString().split('T')[0]; // 오늘 날짜
+  const todayQuestion = getDailyQuestionText(todayDate);
+
   // 로컬 스토리지 키 (submissionDate 기준)
   const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${submissionDate}`;
   const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${submissionDate}`;
@@ -251,7 +255,7 @@ function MatchingPageContent() {
   const handleOpenProfile = (participantId: string, theme: 'similar' | 'opposite') => {
     if (!cohortId) return;
     // 제출 날짜(어제)를 URL에 포함하여 스포일러 방지 (오늘 제출분은 아직 안 보이도록)
-    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(submissionDate)}`;
+    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&submissionDate=${encodeURIComponent(submissionDate)}`;
     router.push(profileUrl);
   };
 
@@ -328,7 +332,7 @@ function MatchingPageContent() {
       // 실패 시에도 중단 플래그 제거 (재시도 가능하도록)
       try {
         localStorage.removeItem(IN_PROGRESS_KEY);
-        logger.info('매칭 작업 실패, 플래그 제거', { matchingDate });
+        logger.info('매칭 작업 실패, 플래그 제거', { submissionDate });
       } catch (storageError) {
         logger.error('로컬 스토리지 플래그 제거 실패', storageError);
       }
@@ -373,7 +377,7 @@ function MatchingPageContent() {
       try {
         localStorage.removeItem(PREVIEW_STORAGE_KEY); // 프리뷰는 삭제
         localStorage.setItem(CONFIRMED_STORAGE_KEY, JSON.stringify(previewResult)); // 확정 결과 저장
-        logger.info('확정 결과 로컬 스토리지 저장 완료', { matchingDate });
+        logger.info('확정 결과 로컬 스토리지 저장 완료', { submissionDate });
       } catch (storageError) {
         logger.error('로컬 스토리지 저장 실패', storageError);
       }
@@ -483,7 +487,7 @@ function MatchingPageContent() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-semibold text-[#31363e]">오늘 제출 현황</h2>
-                  <p className="text-sm text-[#8f98a3]">{matchingDate} · Cohort {cohortId}</p>
+                  <p className="text-sm text-[#8f98a3]">{todayDate} · Cohort {cohortId}</p>
                   <p className="text-xs text-[#8f98a3] mt-1">🔮 내일 매칭 예정</p>
                 </div>
               </div>
