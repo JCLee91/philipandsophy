@@ -10,11 +10,11 @@ interface BackHeaderProps {
 export default function BackHeader({ onBack, title }: BackHeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur safe-area-header">
-      <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
+      <div className="container mx-auto flex h-14 max-w-2xl items-center px-6 relative">
         <button
           type="button"
           onClick={onBack}
-          className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors duration-normal relative z-10"
+          className="flex h-11 w-11 items-center justify-center -ml-3 hover:bg-muted rounded-lg transition-colors duration-normal relative z-10"
           aria-label="뒤로가기"
         >
           <Image
