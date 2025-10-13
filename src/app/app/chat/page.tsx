@@ -13,7 +13,7 @@ import { appRoutes } from '@/lib/navigation';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 import { useIsIosStandalone } from '@/hooks/use-standalone-ios';
 import { useSubmissionsByParticipant } from '@/hooks/use-submissions';
 import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
@@ -61,8 +61,8 @@ function ChatPageContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
 
-  // 세션 기반 인증 (URL에서 userId 제거)
-  const { currentUser, isLoading: sessionLoading, sessionToken } = useSession();
+  // Firebase Auth 기반 인증
+  const { currentUser, isLoading: sessionLoading } = useAuth();
   const currentUserId = currentUser?.id;
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
@@ -103,7 +103,7 @@ function ChatPageContent() {
   const createNoticeMutation = useCreateNotice();
   const updateNoticeMutation = useUpdateNotice();
   const togglePinMutation = useToggleNoticePin();
-  const deleteNoticeMutation = useDeleteNotice(sessionToken);
+  const deleteNoticeMutation = useDeleteNotice();
 
   // localStorage에서 접힌 공지 목록 로드 (클라이언트 전용, SSR 호환)
   useEffect(() => {

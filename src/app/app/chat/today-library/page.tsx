@@ -11,7 +11,7 @@ import UnifiedButton from '@/components/UnifiedButton';
 import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useToast } from '@/hooks/use-toast';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -30,8 +30,8 @@ function TodayLibraryContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
 
-  // 세션 기반 인증 (URL에서 userId 제거)
-  const { currentUser, isLoading: sessionLoading } = useSession();
+  // Firebase Auth 기반 인증
+  const { currentUser, isLoading: sessionLoading } = useAuth();
   const currentUserId = currentUser?.id;
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);

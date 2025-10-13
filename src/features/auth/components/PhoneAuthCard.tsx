@@ -55,16 +55,20 @@ export default function PhoneAuthCard() {
       return;
     }
 
-    try {
-      recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
-      logger.debug('reCAPTCHA 초기화 완료');
-    } catch (error) {
-      logger.error('reCAPTCHA 초기화 실패:', error);
-      setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
-    }
+    // Firebase 초기화를 기다림 (약간의 지연)
+    const timer = setTimeout(() => {
+      try {
+        recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
+        logger.debug('reCAPTCHA 초기화 완료');
+      } catch (error) {
+        logger.error('reCAPTCHA 초기화 실패:', error);
+        setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
+      }
+    }, 100);
 
     // Cleanup
     return () => {
+      clearTimeout(timer);
       if (recaptchaVerifierRef.current) {
         recaptchaVerifierRef.current.clear();
         recaptchaVerifierRef.current = null;
@@ -242,7 +246,7 @@ export default function PhoneAuthCard() {
 
       logger.info('참가자 조회 성공', { participantId: participant.id });
 
-      // 채팅 페이지로 이동
+      // 채팅 페이지로 이동 (Firebase Auth가 자동으로 세션 관리)
       router.replace(appRoutes.chat(participant.cohortId));
     } catch (error: any) {
       logger.error('인증 코드 확인 실패:', error);
