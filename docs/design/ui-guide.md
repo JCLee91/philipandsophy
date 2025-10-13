@@ -363,7 +363,7 @@ interface BookSearchAutocompleteProps {
 
 ## 🎨 Shimmer Animation System
 
-**Last Updated**: 2025-10-10
+**Last Updated**: 2025-10-13
 
 통일된 로딩 상태 UI를 위한 Shimmer 애니메이션 시스템입니다.
 
@@ -551,6 +551,6 @@ export function NoticeSkeleton() {
 
 ---
 
-**Last Updated**: 2025-10-11
+**Last Updated**: 2025-10-13
 **Project Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/design/ui-guide.md`

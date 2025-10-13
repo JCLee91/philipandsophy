@@ -1,6 +1,6 @@
 # iOS PWA 버그 수정 완료 보고서
 
-**Last Updated**: 2025-10-11
+**Last Updated**: 2025-10-13
 **Version**: V1.0 (프로덕션 배포 완료)
 **Category**: troubleshooting
 
@@ -474,6 +474,6 @@ iOS PWA 참가자 목록 기능의 **모든 Critical 버그를 수정**하고, *
 
 ---
 
-**Last Updated**: 2025-10-11
+**Last Updated**: 2025-10-13
 **Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/troubleshooting/ios-pwa-fixes-summary.md`

@@ -50,51 +50,20 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 ## 📊 데이터베이스 구조
 
-### Collections
+**📚 완전한 Firestore 스키마 정의는 [TRD 문서](../architecture/trd.md#41-firebase-firestore-스키마)를 참조하세요.**
 
-#### 1. `participants` (참가자)
+이 프로젝트는 6개의 주요 컬렉션을 사용합니다:
+1. **cohorts**: 기수 정보 (accessCode, 날짜 범위, AI 매칭 결과)
+2. **participants**: 참가자 프로필 (세션 관리, 책 메타데이터)
+3. **reading_submissions**: 독서 인증 제출물 (자동 승인)
+4. **notices**: 공지사항
+5. **messages**: 1:1 다이렉트 메시지
+6. **matching_jobs**: AI 매칭 작업 큐 (비동기 처리)
 
-```typescript
-{
-  id: string;                    // 문서 ID
-  participationCode: string;     // 참여 코드 (고유값)
-  name: string;                  // 이름
-  email?: string;                // 이메일 (선택)
-  phoneNumber?: string;          // 전화번호 (선택)
-  cohort?: string;               // 기수 (선택)
-  createdAt: Timestamp;          // 생성 일시
-  updatedAt: Timestamp;          // 수정 일시
-  metadata?: Record<string, any>; // 추가 정보 (확장 가능)
-}
-```
-
-#### 2. `reading_submissions` (독서 인증)
-
-```typescript
-{
-  id: string;                    // 문서 ID
-  participantId: string;         // 참가자 ID
-  participationCode: string;     // 참여 코드
-  bookTitle: string;             // 책 제목 (필수)
-  bookAuthor?: string;           // 책 저자 (선택)
-  bookCoverUrl?: string;         // 책 표지 URL (선택)
-  bookDescription?: string;      // 책 소개글 (네이버 API, 선택)
-  bookImageUrl: string;          // 독서 인증 사진 URL (필수)
-  review: string;                // 간단 감상평 (필수)
-  dailyQuestion: string;         // 오늘의 질문 (필수)
-  dailyAnswer: string;           // 질문에 대한 답변 (필수)
-  submittedAt: Timestamp;        // 제출 일시
-  submissionDate: string;        // 제출 날짜 (yyyy-MM-dd)
-  status: 'approved';            // 항상 자동 승인 (deprecated, DB 호환성 유지)
-  createdAt: Timestamp;          // 생성 일시
-  updatedAt: Timestamp;          // 수정 일시
-}
-```
-
-**주요 변경사항 (v2.3)**:
-- ✅ **자동 승인 시스템**: 모든 제출이 `status: 'approved'`로 저장
-- ✅ **책 정보 통합**: 네이버 책 검색 API 연동으로 메타데이터 자동 저장
-- ✅ **구조화된 필드**: title/content 대신 bookTitle/review 등 명확한 필드명 사용
+**주요 특징**:
+- ✅ **자동 승인 시스템**: 모든 독서 인증이 즉시 승인
+- ✅ **책 메타데이터**: 네이버 책 검색 API 연동
+- ✅ **세션 관리**: Firebase Auth 없이 자체 토큰 시스템 사용
 
 ## 🔐 Firestore 보안 규칙 (추천)
 
@@ -269,6 +238,6 @@ const submissions = await getSubmissionsByCode('ABC123');
 
 ---
 
-**Last Updated**: 2025-10-11
+**Last Updated**: 2025-10-13
 **Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/setup/firebase.md`

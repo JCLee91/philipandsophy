@@ -227,46 +227,16 @@
   - `ui.ts`: UI 상수 (스크롤 임계값: 50px)
 
 ### 데이터 구조 (Firestore Collections)
-```
-cohorts/                    # 기수 정보
-  - cohortId
-  - name (예: "1기")
-  - accessCode (4자리)
-  - startDate, endDate
 
-participants/               # 참가자 정보
-  - participantId
-  - cohortId (참조)
-  - name, nickname
-  - profileImage
-  - bio, mbti, interests
-  - currentBookTitle (선택) # 현재 읽고 있는 책 제목
-  - currentBookAuthor (선택) # 현재 읽고 있는 책 저자
-  - currentBookCoverUrl (선택) # 현재 읽고 있는 책 표지 URL
+**📚 상세한 Firestore 스키마 정의는 [TRD 문서](./trd.md#41-firebase-firestore-스키마)를 참조하세요.**
 
-notices/                    # 공지사항
-  - noticeId
-  - cohortId (참조)
-  - content, images, links
-  - createdAt
-
-reading_submissions/        # 독서 인증
-  - submissionId
-  - participantId (참조)
-  - imageUrl
-  - review (한줄 리뷰)
-  - submittedAt
-
-messages/                   # 다이렉트 메시지
-  - messageId
-  - senderId, receiverId
-  - content
-  - createdAt
-```
-
-**책 메타데이터 필드**:
-- 모든 책 메타데이터 필드는 선택 사항 (optional)으로 하위 호환성 유지
-- Firebase Transaction (`runTransaction()`)을 통해 원자적 업데이트 보장
+주요 컬렉션:
+- `cohorts`: 기수 정보 (accessCode, 날짜 범위)
+- `participants`: 참가자 정보 (프로필, 책 메타데이터)
+- `notices`: 공지사항
+- `reading_submissions`: 독서 인증
+- `messages`: 다이렉트 메시지
+- `matching_jobs`: AI 매칭 작업 큐
 - `updateParticipantBookInfo()` 함수로 제목, 저자, 표지 URL을 한 번에 저장
 
 ### 보안 및 제약

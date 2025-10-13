@@ -54,6 +54,6 @@ Service Account 키 다운로드 후:
 
 ---
 
-**Last Updated**: 2025-10-11
+**Last Updated**: 2025-10-13
 **Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/setup/admin-sdk.md`

@@ -1,6 +1,6 @@
 # Push Notifications Setup Guide
 
-**Last Updated**: 2025-10-12
+**Last Updated**: 2025-10-13
 **Category**: setup
 
 ## Overview
