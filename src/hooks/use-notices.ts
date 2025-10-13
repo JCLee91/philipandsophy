@@ -124,22 +124,17 @@ export function useToggleNoticePin() {
 }
 
 /**
- * 공지 삭제
+ * 공지 삭제 (Firebase Auth 사용)
  */
-export function useDeleteNotice(sessionToken: string | null) {
+export function useDeleteNotice() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!sessionToken) {
-        throw new Error('세션이 만료되었습니다. 다시 로그인해 주세요.');
-      }
-
       const response = await fetch(`/api/notices/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'x-session-token': sessionToken,
         },
       });
 

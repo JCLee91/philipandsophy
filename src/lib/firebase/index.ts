@@ -51,9 +51,6 @@ export {
   updateParticipantBookInfo,
   deleteParticipant,
   searchParticipants,
-  createSessionToken,
-  getParticipantBySessionToken,
-  clearSessionToken,
 } from './participants';
 
 // Submission operations
