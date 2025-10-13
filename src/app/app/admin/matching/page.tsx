@@ -569,34 +569,34 @@ function MatchingPageContent() {
           <div className="mx-auto max-w-md px-4 py-6 space-y-4">
             {/* 1. 오늘의 인증 현황 */}
             <div className={CARD_STYLES.CONTAINER}>
-              <div className={CARD_STYLES.HEADER}>
-                <h3 className="font-bold text-admin-text-primary">오늘의 인증 현황</h3>
-                <p className="text-xs text-admin-text-secondary mt-1">{todayDate}</p>
-              </div>
-              <div className={CARD_STYLES.BODY}>
+              <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-admin-text-tertiary">제출 완료</span>
+                  <div>
+                    <h3 className="font-bold text-admin-text-primary">오늘의 인증 현황</h3>
+                    <p className="text-xs text-admin-text-secondary">{todayDate}</p>
+                  </div>
                   <span className="text-2xl font-bold text-admin-brand">
                     {isLoadingToday ? '...' : `${todayCount}명`}
                   </span>
                 </div>
-                <p className="text-xs text-admin-text-secondary mt-2">내일 매칭 예정</p>
+                <p className="text-xs text-admin-text-secondary">내일 매칭 예정</p>
               </div>
             </div>
 
-            {/* 2. 어제 인증 + 매칭하기 */}
+            {/* 2. 프로필 북 전달 대상 */}
             <div className={CARD_STYLES.CONTAINER}>
-              <div className={CARD_STYLES.HEADER}>
+              <div className="p-4 space-y-3">
+                {/* 헤더: 제목 + 숫자 + 상태 */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-bold text-admin-text-primary">프로필 북 전달 대상</h3>
-                    <p className="text-xs text-admin-text-secondary mt-1">{submissionDate}</p>
-                    <p className="text-xs text-admin-text-secondary mt-2">어제 인증 완료</p>
+                    <p className="text-xs text-admin-text-secondary">{submissionDate}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-admin-brand">
+                    <span className="text-2xl font-bold text-admin-brand">
                       {isLoadingYesterday ? '...' : `${yesterdayCount}명`}
-                    </p>
+                    </span>
+                    {/* 상태 배지 */}
                     <div className="mt-1">
                       {matchingState === 'confirmed' ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-admin-brand-success">
@@ -622,44 +622,12 @@ function MatchingPageContent() {
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className={CARD_STYLES.BODY}>
-                {matchingState === 'idle' && (
-                  <UnifiedButton
-                    variant="primary"
-                    onClick={handleStartMatching}
-                    disabled={!canMatch || isProcessing}
-                    icon={
-                      isProcessing ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : undefined
-                    }
-                    className="w-full"
-                  >
-                    {isProcessing ? 'AI 분석 중...' : '매칭 시작하기'}
-                  </UnifiedButton>
-                )}
 
-                {matchingState === 'previewing' && (
-                  <div className="space-y-2">
+                {/* 액션 버튼 */}
+                <div className="pt-1">
+                  {matchingState === 'idle' && (
                     <UnifiedButton
                       variant="primary"
-                      fullWidth
-                      onClick={handleConfirmMatching}
-                      disabled={isProcessing}
-                      icon={
-                        isProcessing ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <Check className="h-5 w-5" />
-                        )
-                      }
-                    >
-                      {isProcessing ? '저장 중...' : '최종 확인 및 적용'}
-                    </UnifiedButton>
-                    <UnifiedButton
-                      variant="outline"
-                      fullWidth
                       onClick={handleStartMatching}
                       disabled={!canMatch || isProcessing}
                       icon={
@@ -667,11 +635,45 @@ function MatchingPageContent() {
                           <Loader2 className="h-5 w-5 animate-spin" />
                         ) : undefined
                       }
+                      className="w-full"
                     >
-                      {isProcessing ? 'AI 분석 중...' : '다시 매칭하기'}
+                      {isProcessing ? 'AI 분석 중...' : '매칭 시작하기'}
                     </UnifiedButton>
-                  </div>
-                )}
+                  )}
+
+                  {matchingState === 'previewing' && (
+                    <div className="space-y-2">
+                      <UnifiedButton
+                        variant="primary"
+                        fullWidth
+                        onClick={handleConfirmMatching}
+                        disabled={isProcessing}
+                        icon={
+                          isProcessing ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Check className="h-5 w-5" />
+                          )
+                        }
+                      >
+                        {isProcessing ? '저장 중...' : '최종 확인 및 적용'}
+                      </UnifiedButton>
+                      <UnifiedButton
+                        variant="outline"
+                        fullWidth
+                        onClick={handleStartMatching}
+                        disabled={!canMatch || isProcessing}
+                        icon={
+                          isProcessing ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : undefined
+                        }
+                      >
+                        {isProcessing ? 'AI 분석 중...' : '다시 매칭하기'}
+                      </UnifiedButton>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
