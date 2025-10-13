@@ -175,21 +175,9 @@ export async function POST(request: NextRequest) {
       throw transactionError; // 다른 에러는 외부 catch로 전파
     }
 
-    // 6. 매칭 결과 요약 생성
-    const participantNameMap = new Map(
-      participantAnswers.map((p) => [p.id, p.name] as const)
-    );
-    const featuredSimilarIds = matching.featured?.similar ?? [];
-    const featuredOppositeIds = matching.featured?.opposite ?? [];
-
-    const featuredSimilarParticipants = featuredSimilarIds.map((id) => ({
-      id,
-      name: participantNameMap.get(id) ?? '알 수 없음',
-    }));
-    const featuredOppositeParticipants = featuredOppositeIds.map((id) => ({
-      id,
-      name: participantNameMap.get(id) ?? '알 수 없음',
-    }));
+    // Featured는 더 이상 사용하지 않음 (빈 배열 반환)
+    const featuredSimilarParticipants: Array<{ id: string; name: string }> = [];
+    const featuredOppositeParticipants: Array<{ id: string; name: string }> = [];
 
     // 전체 코호트 참가자 ID 목록 (제출 여부 구분용)
     const allCohortParticipantsSnapshot = await db
@@ -304,36 +292,9 @@ export async function GET(request: NextRequest) {
             assignments: {},
           };
 
-    // 참가자 이름 정보 가져오기 (Batch read로 N+1 쿼리 최적화)
-    const featuredSimilarIds = normalizedMatching.featured?.similar ?? [];
-    const featuredOppositeIds = normalizedMatching.featured?.opposite ?? [];
-    const participantIds = [...featuredSimilarIds, ...featuredOppositeIds];
-
-    // Batch read (최대 10개씩)
-    const participantDataMap = new Map<string, { id: string; name: string }>();
-
-    for (let i = 0; i < participantIds.length; i += MATCHING_CONFIG.BATCH_SIZE) {
-      const batchIds = participantIds.slice(i, i + MATCHING_CONFIG.BATCH_SIZE);
-      const participantDocs = await db
-        .collection('participants')
-        .where(admin.firestore.FieldPath.documentId(), 'in', batchIds)
-        .get();
-
-      participantDocs.docs.forEach((doc) => {
-        participantDataMap.set(doc.id, {
-          id: doc.id,
-          name: doc.data()?.name ?? '알 수 없음'
-        });
-      });
-    }
-
-    // ID로 참가자 정보 매핑 (없으면 기본값)
-    const similarParticipants = featuredSimilarIds.map((id) =>
-      participantDataMap.get(id) ?? { id, name: '알 수 없음' }
-    );
-    const oppositeParticipants = featuredOppositeIds.map((id) =>
-      participantDataMap.get(id) ?? { id, name: '알 수 없음' }
-    );
+    // Featured는 더 이상 사용하지 않음 (빈 배열 반환)
+    const similarParticipants: Array<{ id: string; name: string }> = [];
+    const oppositeParticipants: Array<{ id: string; name: string }> = [];
 
     return NextResponse.json({
       success: true,

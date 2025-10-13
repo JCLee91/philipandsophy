@@ -146,21 +146,9 @@ export async function POST(request: NextRequest) {
     // 7. ⚠️ Firebase 저장하지 않음 (프리뷰 모드)
     // 매칭 결과를 response로만 반환
 
-    // 8. 매칭 결과 요약 생성
-    const participantNameMap = new Map(
-      participantAnswers.map((p) => [p.id, p.name] as const)
-    );
-    const featuredSimilarIds = matching.featured?.similar ?? [];
-    const featuredOppositeIds = matching.featured?.opposite ?? [];
-
-    const featuredSimilarParticipants = featuredSimilarIds.map((id) => ({
-      id,
-      name: participantNameMap.get(id) ?? '알 수 없음',
-    }));
-    const featuredOppositeParticipants = featuredOppositeIds.map((id) => ({
-      id,
-      name: participantNameMap.get(id) ?? '알 수 없음',
-    }));
+    // 8. Featured는 더 이상 사용하지 않음 (빈 배열 반환)
+    const featuredSimilarParticipants: Array<{ id: string; name: string }> = [];
+    const featuredOppositeParticipants: Array<{ id: string; name: string }> = [];
 
     // 전체 코호트 참가자 ID 목록 (제출 여부 구분용)
     const allCohortParticipantsSnapshot = await db

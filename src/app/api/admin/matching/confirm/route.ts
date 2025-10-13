@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
 
         // Race condition 방지: 이미 해당 날짜의 매칭이 존재하는지 확인
-        if (dailyFeaturedParticipants[matchingDate]?.featured) {
+        if (dailyFeaturedParticipants[matchingDate]?.assignments) {
           throw new Error('이미 해당 날짜의 매칭 결과가 존재합니다. 다시 매칭하려면 기존 결과를 먼저 삭제하세요.');
         }
 
@@ -108,8 +108,6 @@ export async function POST(request: NextRequest) {
           adminId: user!.id,
           adminName: user!.name,
           participantCount: Object.keys(matching.assignments || {}).length,
-          featuredSimilar: matching.featured?.similar || [],
-          featuredOpposite: matching.featured?.opposite || [],
         });
       });
     } catch (transactionError) {
