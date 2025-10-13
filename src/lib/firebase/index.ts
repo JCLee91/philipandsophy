@@ -13,6 +13,9 @@ export {
   getFirebaseApp,
 } from './client';
 
+// Auth instance
+export { getAuthInstance } from './config';
+
 // Cohort operations
 export {
   createCohort,
