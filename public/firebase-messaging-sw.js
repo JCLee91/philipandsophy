@@ -29,7 +29,7 @@ messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
   // Extract notification data
-  const notificationTitle = payload.notification?.title || '필립앤소피';
+  // title 없이 body만 사용 (manifest.json의 short_name이 자동으로 표시됨)
   const notificationOptions = {
     body: payload.notification?.body || '새 알림이 도착했습니다',
     icon: payload.notification?.icon || '/image/favicon.webp',
@@ -50,8 +50,8 @@ messaging.onBackgroundMessage((payload) => {
     ] : undefined,
   };
 
-  // Show notification
-  return self.registration.showNotification(notificationTitle, notificationOptions);
+  // Show notification (첫 번째 인자는 빈 문자열로 - manifest name이 표시됨)
+  return self.registration.showNotification('', notificationOptions);
 });
 
 /**

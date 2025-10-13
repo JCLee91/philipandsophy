@@ -325,7 +325,7 @@ function setupForegroundMessageHandler(messaging: Messaging): void {
     logger.info('Foreground message received', payload);
 
     // Show browser notification
-    const notificationTitle = payload.notification?.title || '필립앤소피';
+    // title을 비워서 manifest.json의 short_name이 자동으로 표시되도록 함
     const notificationOptions = {
       body: payload.notification?.body || '새 알림이 도착했습니다',
       icon: payload.notification?.icon || '/image/favicon.webp',
@@ -334,9 +334,9 @@ function setupForegroundMessageHandler(messaging: Messaging): void {
       data: payload.data || {},
     };
 
-    // Show notification using Notification API
+    // Show notification using Notification API (title은 빈 문자열)
     if (Notification.permission === 'granted') {
-      const notification = new Notification(notificationTitle, notificationOptions);
+      const notification = new Notification('', notificationOptions);
 
       // Handle notification click
       notification.onclick = (event) => {

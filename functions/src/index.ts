@@ -95,12 +95,15 @@ async function sendPushNotification(
     const message: admin.messaging.Message = {
       token,
       notification: {
-        title,
+        // title을 비워서 manifest.json의 short_name만 표시
+        // 이렇게 하면 "필립앤소피 from 필립앤소피" 중복 방지
         body,
       },
       data: {
         url,
         type,
+        // title을 data에 포함 (필요시 클릭 핸들러에서 사용 가능)
+        title,
       },
       webpush: {
         notification: {

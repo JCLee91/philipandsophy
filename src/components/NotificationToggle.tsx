@@ -94,12 +94,6 @@ export function NotificationToggle() {
         if (token) {
           setIsEnabled(true);
           logger.info('Notifications enabled successfully');
-
-          // 3. 성공 알림 표시
-          new Notification('필립앤소피', {
-            body: '알림이 활성화되었습니다 🎉',
-            icon: '/image/favicon.webp',
-          });
         } else {
           logger.error('Failed to get FCM token');
           setErrorMessage('알림 토큰을 가져올 수 없습니다. 다시 시도해주세요.');
