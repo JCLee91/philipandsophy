@@ -90,6 +90,51 @@ export async function getParticipantByPhoneNumber(
 }
 
 /**
+ * 참가자 조회 (Firebase UID로)
+ *
+ * Firebase Phone Auth로 로그인한 사용자의 UID로 참가자 조회
+ */
+export async function getParticipantByFirebaseUid(
+  firebaseUid: string
+): Promise<Participant | null> {
+  const db = getDb();
+  const q = query(
+    collection(db, COLLECTIONS.PARTICIPANTS),
+    where('firebaseUid', '==', firebaseUid)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return null;
+  }
+
+  const doc = querySnapshot.docs[0];
+  return {
+    id: doc.id,
+    ...doc.data(),
+  } as Participant;
+}
+
+/**
+ * 참가자에 Firebase UID 연결
+ *
+ * 기존 참가자 계정을 Firebase Auth와 연결
+ */
+export async function linkFirebaseUid(
+  participantId: string,
+  firebaseUid: string
+): Promise<void> {
+  const db = getDb();
+  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
+
+  await updateDoc(docRef, {
+    firebaseUid,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+/**
  * 기수별 참가자 조회
  *
  * 심플하고 직관적인 방식: 네트워크에서 직접 가져오기

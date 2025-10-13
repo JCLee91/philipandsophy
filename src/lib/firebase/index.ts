@@ -16,6 +16,17 @@ export {
 // Auth instance
 export { getAuthInstance } from './config';
 
+// Auth operations
+export {
+  initRecaptcha,
+  sendSmsVerification,
+  confirmSmsCode,
+  signInWithPhoneCredential,
+  signOut,
+  formatPhoneNumberForDisplay,
+  formatPhoneNumberToE164,
+} from './auth';
+
 // Cohort operations
 export {
   createCohort,
@@ -32,6 +43,8 @@ export {
   createParticipant,
   getParticipantById,
   getParticipantByPhoneNumber,
+  getParticipantByFirebaseUid,
+  linkFirebaseUid,
   getParticipantsByCohort,
   getAllParticipants,
   updateParticipant,

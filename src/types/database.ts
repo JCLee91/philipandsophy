@@ -92,8 +92,9 @@ export interface Participant {
   currentBookAuthor?: string; // 현재 읽고 있는 책 저자 (자동 채움용)
   currentBookCoverUrl?: string; // 현재 읽고 있는 책 표지 URL (자동 채움용)
   bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
-  sessionToken?: string; // 세션 토큰 (로그인 세션 관리용)
-  sessionExpiry?: number; // 세션 만료 시간 (Unix timestamp, 밀리초)
+  sessionToken?: string; // 세션 토큰 (로그인 세션 관리용) - DEPRECATED: Firebase Auth 마이그레이션 후 제거 예정
+  sessionExpiry?: number; // 세션 만료 시간 (Unix timestamp, 밀리초) - DEPRECATED: Firebase Auth 마이그레이션 후 제거 예정
+  firebaseUid?: string; // Firebase Auth UID (Phone Auth 연동용)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
