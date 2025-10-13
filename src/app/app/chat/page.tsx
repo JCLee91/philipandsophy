@@ -30,6 +30,7 @@ import ProfileImageDialog from '@/components/ProfileImageDialog';
 import NoticeWriteDialog from '@/components/NoticeWriteDialog';
 import NoticeEditDialog from '@/components/NoticeEditDialog';
 import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
+import SettingsDialog from '@/components/SettingsDialog';
 
 /**
  * Set에서 item을 토글 (추가/삭제)
@@ -76,6 +77,7 @@ function ChatPageContent() {
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   const [collapsedNotices, setCollapsedNotices] = useState<Set<string>>(new Set());
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const isIosStandalone = useIsIosStandalone();
 
   // Race Condition 방지: 이미 네비게이션 중인지 추적
@@ -322,6 +324,7 @@ function ChatPageContent() {
           onParticipantsClick={handleParticipantsClick}
           onWriteClick={() => setWriteDialogOpen(true)}
           onMessageAdminClick={handleMessageAdmin}
+          onSettingsClick={() => setSettingsOpen(true)}
           isAdmin={isAdmin}
         />
 
@@ -490,6 +493,11 @@ function ChatPageContent() {
         notice={deleteConfirm}
         onConfirm={handleDeleteNotice}
         deleting={deleteNoticeMutation.isPending}
+      />
+
+      <SettingsDialog
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
       />
       </div>
     </PageTransition>

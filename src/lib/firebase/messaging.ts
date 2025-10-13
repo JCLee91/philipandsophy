@@ -25,23 +25,48 @@ export function isPushNotificationSupported(): boolean {
 }
 
 /**
- * Check if service worker is ready
+ * Register and ensure service worker is ready
+ * This fixes the issue where navigator.serviceWorker.ready never resolves
+ * because Firebase SDK expects the service worker to already be registered
  */
 async function ensureServiceWorkerReady(): Promise<ServiceWorkerRegistration> {
+  logger.info('[ensureServiceWorkerReady] Checking service worker support...');
+
   if (!('serviceWorker' in navigator)) {
+    logger.error('[ensureServiceWorkerReady] Service Worker not supported');
     throw new Error('Service Worker not supported');
   }
 
-  // Wait for service worker to be ready
-  const registration = await navigator.serviceWorker.ready;
+  logger.info('[ensureServiceWorkerReady] Registering firebase-messaging-sw.js...');
 
-  // Ensure the firebase-messaging-sw.js is registered
-  if (!registration || !registration.active) {
-    throw new Error('Service Worker not active');
+  try {
+    // Register the service worker explicitly
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
+    logger.info('[ensureServiceWorkerReady] Service worker registered, waiting for active...', {
+      scope: registration.scope,
+      installing: !!registration.installing,
+      waiting: !!registration.waiting,
+      active: !!registration.active
+    });
+
+    // Wait for service worker to become active
+    if (registration.installing) {
+      await new Promise<void>((resolve) => {
+        registration.installing!.addEventListener('statechange', function handler(e) {
+          if ((e.target as ServiceWorker).state === 'activated') {
+            resolve();
+          }
+        });
+      });
+    }
+
+    logger.info('[ensureServiceWorkerReady] Service worker is active', { scope: registration.scope });
+    return registration;
+  } catch (error) {
+    logger.error('[ensureServiceWorkerReady] Failed to register service worker', error);
+    throw error;
   }
-
-  logger.info('Service Worker is ready', { scope: registration.scope });
-  return registration;
 }
 
 /**
@@ -83,22 +108,29 @@ export function getNotificationPermission(): NotificationPermission {
  */
 export async function getFCMToken(messaging: Messaging): Promise<string | null> {
   try {
-    // Ensure service worker is ready
-    await ensureServiceWorkerReady();
+    logger.info('[getFCMToken] Starting...');
+
+    // Register and ensure service worker is ready
+    logger.info('[getFCMToken] Ensuring service worker is ready...');
+    const registration = await ensureServiceWorkerReady();
+    logger.info('[getFCMToken] Service worker is ready');
 
     // Get VAPID key from environment variables
     const vapidKey = process.env.NEXT_PUBLIC_FCM_VAPID_KEY;
+    logger.info('[getFCMToken] VAPID key exists:', !!vapidKey);
 
     if (!vapidKey) {
       logger.error('VAPID key not found in environment variables');
       throw new Error('VAPID key not configured');
     }
 
-    // Get FCM token
+    // Get FCM token with the registered service worker
+    logger.info('[getFCMToken] Calling getToken with registration...');
     const currentToken = await getToken(messaging, {
       vapidKey,
-      serviceWorkerRegistration: await navigator.serviceWorker.ready,
+      serviceWorkerRegistration: registration,
     });
+    logger.info('[getFCMToken] getToken completed, token exists:', !!currentToken);
 
     if (currentToken) {
       logger.info('FCM token obtained', { tokenPrefix: currentToken.substring(0, 20) + '...' });
@@ -179,14 +211,18 @@ export async function initializePushNotifications(
   participantId: string
 ): Promise<string | null> {
   try {
+    logger.info('[initializePushNotifications] Starting...');
+
     // Check if push notifications are supported
     if (!isPushNotificationSupported()) {
       logger.warn('Push notifications not supported on this device');
       return null;
     }
+    logger.info('[initializePushNotifications] Push notifications supported');
 
     // Check current permission status
     const permission = getNotificationPermission();
+    logger.info('[initializePushNotifications] Current permission:', permission);
 
     if (permission === 'denied') {
       logger.warn('Notification permission denied');
@@ -195,6 +231,7 @@ export async function initializePushNotifications(
 
     // If permission is not granted, request it
     if (permission !== 'granted') {
+      logger.info('[initializePushNotifications] Requesting permission...');
       const newPermission = await requestNotificationPermission();
       if (newPermission !== 'granted') {
         logger.warn('User denied notification permission');
@@ -203,7 +240,9 @@ export async function initializePushNotifications(
     }
 
     // Get FCM token
+    logger.info('[initializePushNotifications] Getting FCM token...');
     const token = await getFCMToken(messaging);
+    logger.info('[initializePushNotifications] FCM token received:', token ? 'YES' : 'NO');
 
     if (!token) {
       logger.error('Failed to get FCM token');
@@ -211,9 +250,12 @@ export async function initializePushNotifications(
     }
 
     // Save token to Firestore
+    logger.info('[initializePushNotifications] Saving token to Firestore...');
     await savePushTokenToFirestore(participantId, token);
+    logger.info('[initializePushNotifications] Token saved to Firestore');
 
     // Setup foreground message handler
+    logger.info('[initializePushNotifications] Setting up foreground handler...');
     setupForegroundMessageHandler(messaging);
 
     logger.info('Push notifications initialized successfully', { participantId });

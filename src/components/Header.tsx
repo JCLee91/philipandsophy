@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, PenSquare, Mail } from 'lucide-react';
+import { Users, PenSquare, Mail, Settings } from 'lucide-react';
 import { useTotalUnreadCount } from '@/hooks/use-messages';
 import { useSession } from '@/hooks/use-session';
 
@@ -8,6 +8,7 @@ interface HeaderProps {
   onParticipantsClick?: () => void;
   onWriteClick?: () => void;
   onMessageAdminClick?: () => void;
+  onSettingsClick?: () => void;
   isAdmin?: boolean;
 }
 
@@ -15,6 +16,7 @@ export default function Header({
   onParticipantsClick,
   onWriteClick,
   onMessageAdminClick,
+  onSettingsClick,
   isAdmin
 }: HeaderProps) {
   const { currentUser } = useSession();
@@ -23,9 +25,24 @@ export default function Header({
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-area-header">
       <div className="container flex h-14 items-center justify-center relative px-4">
+        {/* Left side - Settings icon */}
+        <div className="absolute left-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onSettingsClick}
+            className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+            aria-label="설정"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Center - Title */}
         <h1 className="text-lg font-bold text-foreground">
           필립앤소피
         </h1>
+
+        {/* Right side - Action icons */}
         <div className="absolute right-4 flex items-center gap-2">
           {isAdmin ? (
             <button
