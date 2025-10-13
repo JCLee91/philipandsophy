@@ -11,6 +11,12 @@ import {
 } from 'firebase/auth';
 import { getAuthInstance } from './config';
 import { logger } from '@/lib/logger';
+import {
+  PHONE_VALIDATION,
+  AUTH_ERROR_MESSAGES,
+  FIREBASE_ERROR_CODE_MAP,
+  RECAPTCHA_CONFIG,
+} from '@/constants/auth';
 
 /**
  * Firebase Phone Authentication Utilities
@@ -24,8 +30,8 @@ import { logger } from '@/lib/logger';
  * @returns RecaptchaVerifier 인스턴스
  */
 export function initRecaptcha(
-  containerId: string,
-  size: 'invisible' | 'normal' = 'invisible'
+  containerId: string = RECAPTCHA_CONFIG.CONTAINER_ID,
+  size: 'invisible' | 'normal' = RECAPTCHA_CONFIG.DEFAULT_SIZE
 ): RecaptchaVerifier {
   const auth = getAuthInstance();
 
@@ -53,14 +59,8 @@ export async function sendSmsVerification(
 ): Promise<ConfirmationResult> {
   const auth = getAuthInstance();
 
-  // 한국 전화번호 형식 검증 및 변환
-  const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
-  if (!cleanNumber.startsWith('010') || cleanNumber.length !== 11) {
-    throw new Error('올바른 휴대폰 번호를 입력해주세요. (010-XXXX-XXXX)');
-  }
-
-  // E.164 형식으로 변환: +82 10 XXXX XXXX
-  const e164Number = `+82${cleanNumber.slice(1)}`;
+  // 기존 유틸리티 함수로 E.164 변환 (DRY)
+  const e164Number = formatPhoneNumberToE164(phoneNumber);
 
   logger.debug('SMS 전송 시도:', { phoneNumber: e164Number });
 
@@ -75,16 +75,11 @@ export async function sendSmsVerification(
   } catch (error: any) {
     logger.error('SMS 전송 실패:', error);
 
-    // Firebase 에러 메시지를 사용자 친화적으로 변환
-    if (error.code === 'auth/invalid-phone-number') {
-      throw new Error('올바른 휴대폰 번호를 입력해주세요.');
-    } else if (error.code === 'auth/too-many-requests') {
-      throw new Error('너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.');
-    } else if (error.code === 'auth/captcha-check-failed') {
-      throw new Error('보안 인증에 실패했습니다. 페이지를 새로고침 후 다시 시도해주세요.');
-    }
+    // Firebase 에러 코드를 사용자 친화적인 메시지로 변환
+    const userMessage = FIREBASE_ERROR_CODE_MAP[error.code] ||
+      `${AUTH_ERROR_MESSAGES.SMS_SEND_FAILED} (오류: ${error.code || 'UNKNOWN'})`;
 
-    throw new Error('SMS 전송에 실패했습니다. 다시 시도해주세요.');
+    throw new Error(userMessage);
   }
 }
 
@@ -101,10 +96,10 @@ export async function confirmSmsCode(
 ): Promise<UserCredential> {
   logger.debug('인증 코드 확인 시도');
 
-  // 6자리 숫자 검증
+  // 인증 코드 길이 검증
   const cleanCode = verificationCode.replace(/[^\d]/g, '');
-  if (cleanCode.length !== 6) {
-    throw new Error('6자리 인증 코드를 입력해주세요.');
+  if (cleanCode.length !== PHONE_VALIDATION.VERIFICATION_CODE_LENGTH) {
+    throw new Error(AUTH_ERROR_MESSAGES.INVALID_VERIFICATION_CODE);
   }
 
   try {
@@ -114,14 +109,11 @@ export async function confirmSmsCode(
   } catch (error: any) {
     logger.error('인증 코드 확인 실패:', error);
 
-    // Firebase 에러 메시지를 사용자 친화적으로 변환
-    if (error.code === 'auth/invalid-verification-code') {
-      throw new Error('인증 코드가 올바르지 않습니다. 다시 확인해주세요.');
-    } else if (error.code === 'auth/code-expired') {
-      throw new Error('인증 코드가 만료되었습니다. 다시 요청해주세요.');
-    }
+    // Firebase 에러 코드를 사용자 친화적인 메시지로 변환
+    const userMessage = FIREBASE_ERROR_CODE_MAP[error.code] ||
+      AUTH_ERROR_MESSAGES.AUTH_FAILED;
 
-    throw new Error('인증에 실패했습니다. 다시 시도해주세요.');
+    throw new Error(userMessage);
   }
 }
 
@@ -147,13 +139,10 @@ export async function signInWithPhoneCredential(
   } catch (error: any) {
     logger.error('전화번호 로그인 실패:', error);
 
-    if (error.code === 'auth/invalid-verification-code') {
-      throw new Error('인증 코드가 올바르지 않습니다.');
-    } else if (error.code === 'auth/code-expired') {
-      throw new Error('인증 코드가 만료되었습니다.');
-    }
+    const userMessage = FIREBASE_ERROR_CODE_MAP[error.code] ||
+      AUTH_ERROR_MESSAGES.AUTH_FAILED;
 
-    throw new Error('로그인에 실패했습니다.');
+    throw new Error(userMessage);
   }
 }
 
@@ -168,7 +157,7 @@ export async function signOut(): Promise<void> {
     logger.info('로그아웃 성공');
   } catch (error) {
     logger.error('로그아웃 실패:', error);
-    throw new Error('로그아웃에 실패했습니다.');
+    throw new Error(AUTH_ERROR_MESSAGES.LOGOUT_FAILED);
   }
 }
 
@@ -193,9 +182,12 @@ export function formatPhoneNumberToE164(phoneNumber: string): string {
   // 010-1234-5678 → +821012345678
   const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
 
-  if (!cleanNumber.startsWith('010') || cleanNumber.length !== 11) {
-    throw new Error('올바른 휴대폰 번호를 입력해주세요.');
+  if (
+    !cleanNumber.startsWith(PHONE_VALIDATION.KOREAN_PREFIX) ||
+    cleanNumber.length !== PHONE_VALIDATION.PHONE_LENGTH
+  ) {
+    throw new Error(AUTH_ERROR_MESSAGES.INVALID_PHONE_SHORT);
   }
 
-  return `+82${cleanNumber.slice(1)}`;
+  return `${PHONE_VALIDATION.COUNTRY_CODE}${cleanNumber.slice(1)}`;
 }

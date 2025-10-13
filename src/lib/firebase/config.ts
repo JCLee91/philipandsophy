@@ -1,4 +1,5 @@
 import { getAuth, Auth } from 'firebase/auth';
+import { getApp } from 'firebase/app';
 
 /**
  * Firebase Configuration
@@ -31,9 +32,14 @@ let authInstance: Auth | null = null;
 export function getAuthInstance(): Auth {
   if (!authInstance) {
     try {
-      authInstance = getAuth();
+      // 명시적으로 Firebase app 존재 확인
+      const app = getApp();
+      authInstance = getAuth(app);
     } catch (error) {
-      throw new Error('Firebase app must be initialized before accessing Auth. Call initializeFirebase() first.');
+      throw new Error(
+        'Firebase app must be initialized before accessing Auth. ' +
+        'Call initializeFirebase() in your app providers first.'
+      );
     }
   }
   return authInstance;

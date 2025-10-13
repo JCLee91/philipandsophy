@@ -16,8 +16,9 @@ import { initRecaptcha, sendSmsVerification, confirmSmsCode } from '@/lib/fireba
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 import { logger } from '@/lib/logger';
 import { appRoutes } from '@/lib/navigation';
+import { PHONE_VALIDATION, AUTH_ERROR_MESSAGES, STORAGE_KEYS } from '@/constants/auth';
 
-const LAST_PHONE_KEY = 'pns-last-phone';
+const LAST_PHONE_KEY = STORAGE_KEYS.LAST_PHONE;
 
 type AuthStep = 'phone' | 'code';
 
@@ -48,12 +49,18 @@ export default function PhoneAuthCard() {
 
   // reCAPTCHA 초기화 (컴포넌트 마운트 시 1회)
   useEffect(() => {
+    // Strict Mode 대응: 이미 초기화되었으면 스킵
+    if (recaptchaVerifierRef.current) {
+      logger.debug('reCAPTCHA 이미 초기화됨 (Strict Mode skip)');
+      return;
+    }
+
     try {
       recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
       logger.debug('reCAPTCHA 초기화 완료');
     } catch (error) {
       logger.error('reCAPTCHA 초기화 실패:', error);
-      setError('보안 인증 초기화에 실패했습니다. 페이지를 새로고침해주세요.');
+      setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
     }
 
     // Cleanup
@@ -61,6 +68,7 @@ export default function PhoneAuthCard() {
       if (recaptchaVerifierRef.current) {
         recaptchaVerifierRef.current.clear();
         recaptchaVerifierRef.current = null;
+        logger.debug('reCAPTCHA cleanup 완료');
       }
     };
   }, []);
@@ -126,13 +134,13 @@ export default function PhoneAuthCard() {
   const handleSendSms = async () => {
     const cleanNumber = phoneNumber.replace(/-/g, '');
 
-    if (cleanNumber.length !== 11) {
-      setError('11자리 휴대폰 번호를 입력해주세요.');
+    if (cleanNumber.length !== PHONE_VALIDATION.PHONE_LENGTH) {
+      setError(AUTH_ERROR_MESSAGES.PHONE_LENGTH_REQUIRED);
       return;
     }
 
     if (!recaptchaVerifierRef.current) {
-      setError('보안 인증이 준비되지 않았습니다. 페이지를 새로고침해주세요.');
+      setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
       return;
     }
 
@@ -151,7 +159,7 @@ export default function PhoneAuthCard() {
       logger.info('SMS 전송 성공');
     } catch (error: any) {
       logger.error('SMS 전송 실패:', error);
-      setError(error.message || 'SMS 전송에 실패했습니다. 다시 시도해주세요.');
+      setError(error.message || AUTH_ERROR_MESSAGES.SMS_SEND_FAILED);
     } finally {
       setIsSubmitting(false);
     }
@@ -159,13 +167,13 @@ export default function PhoneAuthCard() {
 
   // 인증 코드 확인
   const handleVerifyCode = async () => {
-    if (verificationCode.length !== 6) {
-      setError('6자리 인증 코드를 입력해주세요.');
+    if (verificationCode.length !== PHONE_VALIDATION.VERIFICATION_CODE_LENGTH) {
+      setError(AUTH_ERROR_MESSAGES.INVALID_VERIFICATION_CODE);
       return;
     }
 
     if (!confirmationResultRef.current) {
-      setError('인증 세션이 만료되었습니다. 다시 시작해주세요.');
+      setError(AUTH_ERROR_MESSAGES.AUTH_SESSION_EXPIRED);
       setStep('phone');
       return;
     }
@@ -191,28 +199,43 @@ export default function PhoneAuthCard() {
 
       // Firestore에서 participant 조회
       // 1순위: firebaseUid로 조회 (이미 연결된 계정)
-      // 2순위: 전화번호로 조회 후 firebaseUid 자동 연결 (첫 로그인)
+      // 2순위: 전화번호로 조회 후 firebaseUid 연결 (첫 로그인)
       const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid } = await import('@/lib/firebase');
 
       let participant = await getParticipantByFirebaseUid(userCredential.user.uid);
 
       if (!participant) {
-        // firebaseUid가 없는 경우 → 전화번호로 조회 후 자동 연결
+        // firebaseUid가 없는 경우 → 전화번호로 조회
         const cleanNumber = phoneNumber.replace(/-/g, '');
         participant = await getParticipantByPhoneNumber(cleanNumber);
 
         if (participant) {
-          // Firebase UID 자동 연결 (첫 로그인 시)
-          await linkFirebaseUid(participant.id, userCredential.user.uid);
-          logger.info('Firebase UID 자동 연결 완료', {
-            participantId: participant.id,
-            firebaseUid: userCredential.user.uid,
-          });
+          // 보안 체크: 이미 다른 firebaseUid와 연결되어 있는지 확인
+          if (participant.firebaseUid && participant.firebaseUid !== userCredential.user.uid) {
+            // 전화번호 재사용 공격 방지
+            logger.warn('전화번호 재사용 감지', {
+              phoneNumber: cleanNumber,
+              existingFirebaseUid: participant.firebaseUid,
+              attemptedFirebaseUid: userCredential.user.uid,
+            });
+            setError(AUTH_ERROR_MESSAGES.PHONE_ALREADY_LINKED);
+            setIsSubmitting(false);
+            return;
+          }
+
+          // 안전: firebaseUid가 없는 경우에만 연결 (첫 로그인)
+          if (!participant.firebaseUid) {
+            await linkFirebaseUid(participant.id, userCredential.user.uid);
+            logger.info('Firebase UID 첫 연결 완료', {
+              participantId: participant.id,
+              firebaseUid: userCredential.user.uid,
+            });
+          }
         }
       }
 
       if (!participant) {
-        setError('등록되지 않은 번호입니다. 다시 확인해주세요.');
+        setError(AUTH_ERROR_MESSAGES.PARTICIPANT_NOT_FOUND);
         setIsSubmitting(false);
         return;
       }
@@ -223,7 +246,7 @@ export default function PhoneAuthCard() {
       router.replace(appRoutes.chat(participant.cohortId));
     } catch (error: any) {
       logger.error('인증 코드 확인 실패:', error);
-      setError(error.message || '인증에 실패했습니다. 다시 시도해주세요.');
+      setError(error.message || AUTH_ERROR_MESSAGES.AUTH_FAILED);
     } finally {
       setIsSubmitting(false);
     }
@@ -238,8 +261,8 @@ export default function PhoneAuthCard() {
   };
 
   // 완료 여부 체크
-  const isPhoneComplete = phoneNumber.replace(/-/g, '').length === 11;
-  const isCodeComplete = verificationCode.length === 6;
+  const isPhoneComplete = phoneNumber.replace(/-/g, '').length === PHONE_VALIDATION.PHONE_LENGTH;
+  const isCodeComplete = verificationCode.length === PHONE_VALIDATION.VERIFICATION_CODE_LENGTH;
 
   return (
     <>

@@ -58,13 +58,9 @@ export function useAuth() {
           await firebaseSignOut();
         }
       } catch (error) {
-        // 네트워크 에러 등: 기존 상태 유지
-        logger.error('참가자 정보 조회 실패 (상태 유지):', error);
-
-        // 기존 currentUser가 있으면 유지, 없으면 null
-        if (!currentUser) {
-          setCurrentUser(null);
-        }
+        // 네트워크 에러: 명확하게 null 설정 (stale closure 방지)
+        logger.error('참가자 정보 조회 실패:', error);
+        setCurrentUser(null);
       } finally {
         setIsLoading(false);
       }
