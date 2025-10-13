@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, X, Loader2 } from 'lucide-react';
-import { getYesterdayString } from '@/lib/date-utils';
+import { getTodayString, getYesterdayString } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { CARD_STYLES } from '@/constants/ui';
@@ -50,17 +50,17 @@ function MatchingPageContent() {
   const [error, setError] = useState<string | null>(null);
 
   // 날짜 정의
-  const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터, Firebase 키로 사용)
+  const submissionDate = getYesterdayString(); // 제출 날짜 (어제 제출 데이터 조회용)
   const submissionQuestion = getDailyQuestionText(submissionDate);
 
-  // 오늘 제출 현황 표시용 (UI 전용)
-  const todayDate = new Date().toISOString().split('T')[0]; // 오늘 날짜
+  // 오늘 날짜 (Firestore 매칭 키 & localStorage 키로 사용)
+  const todayDate = getTodayString(); // KST 기준 오늘 날짜
   const todayQuestion = getDailyQuestionText(todayDate);
 
-  // 로컬 스토리지 키 (submissionDate 기준)
-  const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${submissionDate}`;
-  const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${submissionDate}`;
-  const IN_PROGRESS_KEY = `matching-in-progress-${cohortId}-${submissionDate}`;
+  // 로컬 스토리지 키 (todayDate 기준 - Firestore 키와 일치)
+  const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${todayDate}`;
+  const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${todayDate}`;
+  const IN_PROGRESS_KEY = `matching-in-progress-${cohortId}-${todayDate}`;
 
   // localStorage 데이터 검증 및 안전한 로드
   const loadFromStorage = useCallback((key: string): MatchingResponse | null => {
