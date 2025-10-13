@@ -119,16 +119,69 @@ function normalizeIds(
   return result;
 }
 
-function fillIfEmpty(
-  values: string[],
-  fallback: string[],
-  excludeId?: string
-): string[] {
-  if (values.length > 0) {
-    return values;
+/**
+ * 다양성 검증 함수
+ * 특정 인물이 과도하게 많은 추천을 받는지 확인
+ */
+function validateDiversity(
+  matching: MatchingResult,
+  participants: ParticipantAnswer[]
+): void {
+  const participantMap = new Map(participants.map(p => [p.id, p]));
+  const recommendationCount = new Map<string, number>();
+
+  // 모든 추천 카운트
+  for (const assignment of Object.values(matching.assignments)) {
+    for (const id of [...assignment.similar, ...assignment.opposite]) {
+      recommendationCount.set(id, (recommendationCount.get(id) || 0) + 1);
+    }
   }
-  if (!fallback.length) return [];
-  return fallback.filter((id) => (excludeId ? id !== excludeId : true));
+
+  // 평균 및 최대 추천 수 계산
+  const counts = Array.from(recommendationCount.values());
+  const avgRecommendations = counts.reduce((a, b) => a + b, 0) / counts.length;
+  const maxRecommendations = Math.max(...counts);
+
+  // 과도한 추천을 받은 사람들 찾기 (평균의 2배 이상)
+  const overRecommended: string[] = [];
+  for (const [id, count] of recommendationCount.entries()) {
+    if (count > avgRecommendations * 2) {
+      const participant = participantMap.get(id);
+      overRecommended.push(`${participant?.name}(${count}회)`);
+    }
+  }
+
+  // 추천을 전혀 받지 못한 사람들 찾기
+  const notRecommended: string[] = [];
+  for (const participant of participants) {
+    if (!recommendationCount.has(participant.id)) {
+      notRecommended.push(participant.name);
+    }
+  }
+
+  // 로깅
+  logger.info('📊 다양성 분석 결과', {
+    totalParticipants: participants.length,
+    avgRecommendations: avgRecommendations.toFixed(1),
+    maxRecommendations,
+    overRecommendedCount: overRecommended.length,
+    notRecommendedCount: notRecommended.length,
+  });
+
+  if (overRecommended.length > 0) {
+    logger.warn(`⚠️ 과도한 추천을 받은 참가자 (평균의 2배 이상): ${overRecommended.join(', ')}`);
+  }
+
+  // 0번 추천받은 사람이 있으면 심각한 에러
+  if (notRecommended.length > 0) {
+    logger.error(`🚨 치명적 오류: 추천을 받지 못한 참가자 ${notRecommended.length}명 발견`);
+    logger.error(`⛔ 0번 추천받은 참가자: ${notRecommended.join(', ')}`);
+    logger.error(`💡 해결 방법: AI 매칭을 재실행하거나 관리자가 수동으로 추천을 추가해주세요.`);
+  }
+
+  if (overRecommended.length === 0 && notRecommended.length === 0) {
+    logger.info('✅ 추천 분산도 양호');
+  }
 }
 
 /**
@@ -141,33 +194,6 @@ function validateGenderBalance(
 ): void {
   const participantMap = new Map(participants.map(p => [p.id, p]));
   const violations: string[] = [];
-
-  // Featured 검증
-  const featuredSimilar = matching.featured.similar
-    .map(id => participantMap.get(id))
-    .filter((p): p is ParticipantAnswer => p !== undefined);
-  const featuredOpposite = matching.featured.opposite
-    .map(id => participantMap.get(id))
-    .filter((p): p is ParticipantAnswer => p !== undefined);
-
-  const featuredSimilarGenders = featuredSimilar.map(p => p.gender);
-  const featuredOppositeGenders = featuredOpposite.map(p => p.gender);
-
-  const hasMaleAndFemaleSimilar =
-    featuredSimilarGenders.includes('male') && featuredSimilarGenders.includes('female');
-  const hasMaleAndFemaleOpposite =
-    featuredOppositeGenders.includes('male') && featuredOppositeGenders.includes('female');
-
-  if (!hasMaleAndFemaleSimilar) {
-    violations.push(
-      `Featured 비슷한 가치관: 성별 균형 위반 (${featuredSimilar.map(p => `${p.name}(${p.gender})`).join(', ')})`
-    );
-  }
-  if (!hasMaleAndFemaleOpposite) {
-    violations.push(
-      `Featured 상반된 가치관: 성별 균형 위반 (${featuredOpposite.map(p => `${p.name}(${p.gender})`).join(', ')})`
-    );
-  }
 
   // 각 참가자별 assignments 검증
   for (const [participantId, assignment] of Object.entries(matching.assignments)) {
@@ -238,54 +264,73 @@ async function _matchParticipantsByAI(
       .join('\n');
 
     const prompt = `
-당신은 독서 모임 참가자들을 매칭하는 전문가입니다.
-아래 질문에 대한 참가자들의 답변을 토대로, 각 참가자가 읽으면 좋을 프로필북을 추천해주세요.
+독서 모임 참가자 매칭 과제입니다.
 
-**질문:** ${question}
+질문: ${question}
 
-**참가자 답변:**
+참가자 목록 (총 ${participants.length}명):
 ${participantPromptList}
 
-**필수 규칙:**
-1. 각 참가자에게 "비슷한 가치관" 2명과 "상반된 가치관" 2명을 추천합니다.
-2. **성별 균형 (필수 - 최우선 규칙):**
-   - 비슷한 가치관: 반드시 남성 1명 + 여성 1명
-   - 상반된 가치관: 반드시 남성 1명 + 여성 1명
-   - ⚠️ 성별이 부족한 경우에만 동일 성별 2명 허용
-3. 본인(ID)은 추천에서 제외하고, 중복 추천 불가.
-4. 추천 이유는 1문장으로 간결하게.
-5. 전체 그룹에서 대표 4명(비슷한 2명, 반대 2명)을 선정하세요.
+========================================
+추천 기준:
+========================================
 
-**응답 형식(JSON만 반환):**
+**비슷한 가치관**: 답변의 핵심 메시지, 가치관, 생각의 방향성이 유사한 사람
+- 같은 결론이나 관점을 공유하는 경우
+- 비슷한 경험이나 배경을 가진 경우
+- 서로 공감하고 깊이 있는 대화를 나눌 수 있는 사람
+
+**상반된 가치관**: 답변의 관점, 접근 방식, 결론이 대조적인 사람
+- 정반대의 의견이나 가치관을 가진 경우
+- 다른 각도에서 생각하는 경우
+- 새로운 시각을 제공하고 토론을 자극할 수 있는 사람
+
+========================================
+핵심 규칙 (반드시 준수):
+========================================
+
+1. 🎯 모든 ${participants.length}명이 최소 1번 이상 추천받아야 함 (0명 추천받는 사람 금지)
+
+2. 각 참가자마다:
+   - 비슷한 가치관 2명 추천 (남성 1명 + 여성 1명)
+   - 상반된 가치관 2명 추천 (남성 1명 + 여성 1명)
+   - 본인 제외, 중복 불가
+
+3. 다양성 보장:
+   - 특정인이 과도하게 많이 추천받지 않도록 균등하게 분산
+   - 각 참가자에게 고유한 매칭 제공
+   - 추천 횟수를 공평하게 분배
+
+========================================
+응답 형식 (JSON만):
+========================================
+
 {
-  "featured": {
-    "similar": ["id1", "id2"],
-    "opposite": ["id3", "id4"],
-    "reasons": {
-      "similar": "비슷한 가치관 선정 이유",
-      "opposite": "반대 가치관 선정 이유",
-      "summary": "전체 선정 요약 (선택)"
-    }
-  },
   "assignments": {
-    "participantId": {
+    "참가자ID1": {
       "similar": ["idA", "idB"],
       "opposite": ["idC", "idD"],
       "reasons": {
-        "similar": "비슷한 추천 근거",
-        "opposite": "반대 추천 근거",
-        "summary": "추가 요약 (선택)"
+        "similar": "1문장",
+        "opposite": "1문장"
       }
     },
-    ...
+    "참가자ID2": { ... },
+    ... (모든 ${participants.length}명 포함)
   }
 }
 
-중요: JSON 형식만 반환하고 다른 텍스트는 포함하지 마세요.
+⚠️ 검증 체크리스트:
+☑ assignments에 ${participants.length}개 키 모두 있는가?
+☑ 모든 참가자가 최소 1번 이상 추천받았는가?
+☑ 성별 균형 (남1+여1) 지켜졌는가?
+☑ 본인 자신은 제외했는가?
+
+JSON만 반환하세요.
 `;
 
     logger.info('🤖 OpenAI API 호출 시작', {
-      model: 'gpt-5-nano-2025-08-07',
+      model: 'gpt-5-nano',
       participantCount: participants.length,
       promptLength: prompt.length,
     });
@@ -297,7 +342,7 @@ ${participantPromptList}
         {
           role: 'system',
           content:
-            '당신은 사람들의 가치관과 생각을 분석하여 의미있는 매칭을 만드는 전문가입니다. JSON 형식으로만 응답합니다.',
+            '당신은 독서 모임 매칭 전문가입니다. 모든 참가자에게 개별적으로 분석한 고유한 추천을 제공하세요. 규칙을 정확히 따르고 JSON만 반환하세요.',
         },
         { role: 'user', content: prompt },
       ],
@@ -318,49 +363,67 @@ ${participantPromptList}
     const raw = JSON.parse(responseText) as RawMatchingResponse;
     const validIds = new Set(participants.map((p) => p.id));
 
-    if (!raw.featured) {
-      throw new Error('AI 응답에 featured 정보가 없습니다.');
-    }
     if (!raw.assignments) {
       throw new Error('AI 응답에 assignments 정보가 없습니다.');
     }
 
-    const rawFeaturedSimilar = normalizeIds(raw.featured.similar, validIds);
-    const rawFeaturedOpposite = normalizeIds(raw.featured.opposite, validIds);
-    const featuredReasons = ensureReasons(normalizeReasons(raw.featured.reasons));
-
+    // Featured는 더 이상 사용하지 않음 (하위 호환성을 위해 빈 객체 반환)
     const featured = {
-      similar: rawFeaturedSimilar.slice(0, 2),
-      opposite: rawFeaturedOpposite.slice(0, 2),
-      ...(featuredReasons ? { reasons: featuredReasons } : {}),
+      similar: [],
+      opposite: [],
     };
 
     const assignments: Record<string, DailyParticipantAssignment> = {};
+    const missingAssignments: string[] = [];
 
     for (const participant of participants) {
       const entry = raw.assignments[participant.id];
-      const similarIds = normalizeIds(entry?.similar, validIds, participant.id);
-      const oppositeIds = normalizeIds(entry?.opposite, validIds, participant.id);
-      const reasons = ensureReasons(normalizeReasons(entry?.reasons));
+      
+      if (!entry) {
+        missingAssignments.push(participant.name);
+        logger.error(`❌ AI가 ${participant.name}(${participant.id})에 대한 추천을 생성하지 않았습니다.`);
+        continue;
+      }
+
+      const similarIds = normalizeIds(entry.similar, validIds, participant.id);
+      const oppositeIds = normalizeIds(entry.opposite, validIds, participant.id);
+      const reasons = ensureReasons(normalizeReasons(entry.reasons));
+
+      // 추천이 부족한 경우 경고 로그
+      if (similarIds.length < 2) {
+        logger.warn(`${participant.name}의 similar 추천이 ${similarIds.length}명뿐입니다.`);
+      }
+      if (oppositeIds.length < 2) {
+        logger.warn(`${participant.name}의 opposite 추천이 ${oppositeIds.length}명뿐입니다.`);
+      }
 
       assignments[participant.id] = {
-        similar: fillIfEmpty(similarIds, featured.similar, participant.id).slice(0, 2),
-        opposite: fillIfEmpty(oppositeIds, featured.opposite, participant.id).slice(0, 2),
+        similar: similarIds.slice(0, 2),
+        opposite: oppositeIds.slice(0, 2),
         ...(reasons ? { reasons } : {}),
       };
     }
 
+    // 누락된 assignments 에러 처리
+    if (missingAssignments.length > 0) {
+      const errorMsg = `AI가 ${missingAssignments.length}명에 대한 추천을 생성하지 않았습니다: ${missingAssignments.join(', ')}`;
+      logger.error(`🚨 ${errorMsg}`);
+      throw new Error(`매칭 생성 실패: ${errorMsg}. AI 매칭을 다시 실행해주세요.`);
+    }
+
     // AI 매칭 완료
     const matching = { featured, assignments };
+
+    // 중복도 검증
+    validateDiversity(matching, participants);
 
     // 성별 균형 규칙 검증
     validateGenderBalance(matching, participants);
 
     logger.info('✅ AI 매칭 완료 (수동 검토 대기)', {
       question,
-      featuredSimilar: featured.similar,
-      featuredOpposite: featured.opposite,
       participantCount: participants.length,
+      assignmentsCount: Object.keys(assignments).length,
     });
 
     return matching;
