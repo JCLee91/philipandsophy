@@ -12,23 +12,34 @@ export function NotificationPrompt() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
 
   useEffect(() => {
+    console.log('[NotificationPrompt] Component mounted');
+
     // 브라우저가 알림을 지원하는지 확인
     if (!('Notification' in window)) {
+      console.log('[NotificationPrompt] Notification API not supported');
       return;
     }
+
+    console.log('[NotificationPrompt] Current permission:', Notification.permission);
 
     // 현재 알림 권한 상태 확인
     setPermission(Notification.permission);
 
     // 권한이 아직 결정되지 않았고, 사용자가 이전에 거부하지 않았다면 프롬프트 표시
     const hasDeclinedBefore = localStorage.getItem('notification-declined');
+    console.log('[NotificationPrompt] Has declined before:', hasDeclinedBefore);
+
     if (Notification.permission === 'default' && !hasDeclinedBefore) {
+      console.log('[NotificationPrompt] Will show prompt in 3 seconds');
       // 페이지 로드 후 3초 뒤에 프롬프트 표시
       const timer = setTimeout(() => {
+        console.log('[NotificationPrompt] Showing prompt now');
         setShowPrompt(true);
       }, 3000);
 
       return () => clearTimeout(timer);
+    } else {
+      console.log('[NotificationPrompt] Will NOT show prompt - permission:', Notification.permission, 'hasDeclined:', hasDeclinedBefore);
     }
   }, []);
 

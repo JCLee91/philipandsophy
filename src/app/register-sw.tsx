@@ -10,59 +10,30 @@ import { logger } from '@/lib/logger';
 export default function RegisterServiceWorker() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      // 🔄 개발 환경: 기존 Service Worker 완전히 제거하고 새로 등록 (캐시 문제 해결)
-      if (process.env.NODE_ENV === 'development') {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          registrations.forEach((registration) => {
+      // 기존 sw.js 제거 (캐싱 충돌 방지)
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          if (registration.active?.scriptURL.includes('/sw.js')) {
             registration.unregister();
-          });
-
-          // 기존 캐시도 모두 삭제
-          caches.keys().then((cacheNames) => {
-            cacheNames.forEach((cacheName) => {
-              caches.delete(cacheName);
-            });
-          });
-
-          // 짧은 딜레이 후 새로 등록
-          setTimeout(() => {
-            navigator.serviceWorker
-              .register('/sw.js', { updateViaCache: 'none' })
-              .then((registration) => {
-                logger.info('Service Worker registered:', registration);
-              })
-              .catch((error) => {
-                logger.error('Service Worker registration failed:', error);
-              });
-          }, 100);
+            logger.info('Unregistered sw.js to avoid HMR conflicts');
+          }
         });
-      } else {
-        // 🚀 프로덕션: 정상 등록 + 자동 업데이트
-        navigator.serviceWorker
-          .register('/sw.js', { updateViaCache: 'none' })
-          .then((registration) => {
-            logger.info('Service Worker registered:', registration);
+      });
 
-            // 업데이트 확인
-            registration.update();
+      // PWA 캐시만 선택적으로 삭제 (Firestore 캐시 보호)
+      caches.keys().then((cacheNames) => {
+        cacheNames.forEach((cacheName) => {
+          // workbox 또는 next-pwa 캐시만 삭제
+          if (cacheName.startsWith('workbox-') || cacheName.startsWith('next-')) {
+            caches.delete(cacheName);
+            logger.info('Deleted PWA cache:', cacheName);
+          }
+        });
+      });
 
-            // 업데이트가 발견되면 자동 활성화
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              if (newWorker) {
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'activated') {
-                    logger.info('Service Worker updated, reloading...');
-                    window.location.reload();
-                  }
-                });
-              }
-            });
-          })
-          .catch((error) => {
-            logger.error('Service Worker registration failed:', error);
-          });
-      }
+      // ⚠️ Note: firebase-messaging-sw.js는 Firebase SDK에서 자동 등록됨
+      // usePushNotifications 훅에서 getToken() 호출 시 자동으로 등록
+      logger.info('Service Worker cleanup completed. Firebase Messaging SW will be auto-registered by Firebase SDK.');
     }
   }, []);
 

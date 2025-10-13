@@ -22,11 +22,6 @@ export interface ParticipantAnswer {
 }
 
 export interface MatchingResult {
-  featured: {
-    similar: string[];
-    opposite: string[];
-    reasons?: DailyMatchingReasons;
-  };
   assignments: Record<string, DailyParticipantAssignment>;
 }
 
@@ -43,11 +38,6 @@ interface RawParticipantAssignment {
 }
 
 interface RawMatchingResponse {
-  featured?: {
-    similar?: unknown;
-    opposite?: unknown;
-    reasons?: RawMatchingReasons;
-  };
   assignments?: Record<string, RawParticipantAssignment>;
 }
 
@@ -367,12 +357,6 @@ JSON만 반환하세요.
       throw new Error('AI 응답에 assignments 정보가 없습니다.');
     }
 
-    // Featured는 더 이상 사용하지 않음 (하위 호환성을 위해 빈 객체 반환)
-    const featured = {
-      similar: [],
-      opposite: [],
-    };
-
     const assignments: Record<string, DailyParticipantAssignment> = {};
     const missingAssignments: string[] = [];
 
@@ -412,7 +396,7 @@ JSON만 반환하세요.
     }
 
     // AI 매칭 완료
-    const matching = { featured, assignments };
+    const matching = { assignments };
 
     // 중복도 검증
     validateDiversity(matching, participants);

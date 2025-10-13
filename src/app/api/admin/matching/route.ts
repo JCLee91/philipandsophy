@@ -175,10 +175,6 @@ export async function POST(request: NextRequest) {
       throw transactionError; // 다른 에러는 외부 catch로 전파
     }
 
-    // Featured는 더 이상 사용하지 않음 (빈 배열 반환)
-    const featuredSimilarParticipants: Array<{ id: string; name: string }> = [];
-    const featuredOppositeParticipants: Array<{ id: string; name: string }> = [];
-
     // 전체 코호트 참가자 ID 목록 (제출 여부 구분용)
     const allCohortParticipantsSnapshot = await db
       .collection('participants')
@@ -204,10 +200,6 @@ export async function POST(request: NextRequest) {
       question: yesterdayQuestion, // 질문은 어제 질문 (어제 제출 데이터 기반)
       totalParticipants: participantAnswers.length,
       matching,
-      featuredParticipants: {
-        similar: featuredSimilarParticipants,
-        opposite: featuredOppositeParticipants,
-      },
       submissionStats: {
         submitted: participantAnswers.length,
         notSubmitted: notSubmittedParticipants.length,
@@ -273,38 +265,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const normalizedMatching =
-      'featured' in matchingEntry || 'assignments' in matchingEntry
-        ? {
-            featured: {
-              similar: matchingEntry.featured?.similar ?? [],
-              opposite: matchingEntry.featured?.opposite ?? [],
-              reasons: matchingEntry.featured?.reasons,
-            },
-            assignments: matchingEntry.assignments ?? {},
-          }
-        : {
-            featured: {
-              similar: matchingEntry.similar ?? [],
-              opposite: matchingEntry.opposite ?? [],
-              reasons: matchingEntry.reasons,
-            },
-            assignments: {},
-          };
-
-    // Featured는 더 이상 사용하지 않음 (빈 배열 반환)
-    const similarParticipants: Array<{ id: string; name: string }> = [];
-    const oppositeParticipants: Array<{ id: string; name: string }> = [];
+    // v3.0+ 형식: assignments 필드가 존재
+    const normalizedMatching = {
+      assignments: matchingEntry.assignments ?? {},
+    };
 
     return NextResponse.json({
       success: true,
       date,
       question: getDailyQuestionText(date),
       matching: normalizedMatching,
-      featuredParticipants: {
-        similar: similarParticipants,
-        opposite: oppositeParticipants,
-      },
     });
 
   } catch (error) {

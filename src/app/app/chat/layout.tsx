@@ -1,21 +1,32 @@
-import type { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: '필립앤소피 | 승인제 독서소셜클럽',
-  description: '깊이 있는 대화가 설레는 만남으로',
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    noarchive: true,
-    noimageindex: true,
-  },
-};
+import { NotificationPrompt } from '@/components/notifications/notification-prompt';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { useEffect, useState } from 'react';
 
 export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  const [participantId, setParticipantId] = useState<string | undefined>(undefined);
+
+  // 로컬 스토리지에서 참가자 ID 가져오기
+  useEffect(() => {
+    const storedParticipantId = localStorage.getItem('participantId');
+    if (storedParticipantId) {
+      setParticipantId(storedParticipantId);
+    }
+  }, []);
+
+  // 푸시 알림 초기화
+  const { isSupported, permission } = usePushNotifications(participantId, true);
+
+  return (
+    <>
+      {children}
+      {/* 알림 권한 요청 프롬프트 */}
+      <NotificationPrompt />
+    </>
+  );
 }

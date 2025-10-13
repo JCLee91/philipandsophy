@@ -129,9 +129,8 @@ async function testAIMatching() {
     const matching = await matchParticipantsByAI(todayQuestion, participantAnswers);
 
     console.log('✨ 매칭 결과:');
-    console.log(`   오늘 공개 (비슷한 가치관): ${(matching.featured?.similar ?? []).join(', ')}`);
-    console.log(`   오늘 공개 (반대 가치관): ${(matching.featured?.opposite ?? []).join(', ')}\n`);
-    console.log(`   배포 대상 참가자 수: ${Object.keys(matching.assignments).length}\n`);
+    console.log(`   총 참가자 수: ${Object.keys(matching.assignments).length}`);
+    console.log(`   모든 참가자에게 개별 추천 제공\n`);
 
     // 4. Cohort 문서에 저장
     const cohortDoc = await db.collection('cohorts').doc('1').get();

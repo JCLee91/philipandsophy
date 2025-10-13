@@ -41,16 +41,9 @@ export interface DailyParticipantAssignment {
   reasons?: DailyMatchingReasons;
 }
 
-export interface DailyMatchingSummary {
-  similar: string[];
-  opposite: string[];
-  reasons?: DailyMatchingReasons;
-}
-
 export interface DailyMatchingEntry {
-  featured?: DailyMatchingSummary;
-  assignments?: Record<string, DailyParticipantAssignment>;
-  // Legacy 데이터 호환용 (v1.0)
+  assignments: Record<string, DailyParticipantAssignment>;
+  // Legacy 데이터 호환용 (v1.0 - 읽기 전용, 신규 저장 시 사용 안 함)
   similar?: string[];
   opposite?: string[];
   reasons?: DailyMatchingReasons;

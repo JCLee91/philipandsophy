@@ -44,19 +44,8 @@ export interface MatchingResponse {
   totalParticipants?: number;
   /** 매칭 결과 */
   matching: {
-    /** 특별 추천 (선택) */
-    featured?: {
-      similar: string[];
-      opposite: string[];
-      reasons?: MatchingReasons | null;
-    };
     /** 전체 참가자 배정 */
-    assignments?: Record<string, ParticipantAssignment>;
-  };
-  /** 특별 추천 참가자 상세 정보 */
-  featuredParticipants?: {
-    similar: Array<{ id: string; name: string }>;
-    opposite: Array<{ id: string; name: string }>;
+    assignments: Record<string, ParticipantAssignment>;
   };
   /** 제출 통계 */
   submissionStats?: {

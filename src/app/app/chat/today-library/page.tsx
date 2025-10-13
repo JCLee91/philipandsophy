@@ -62,14 +62,8 @@ function TodayLibraryContent() {
     ? todayMatching.assignments?.[currentUserId] ?? null
     : null;
 
-  const similarFeaturedIds =
-    (userAssignment?.similar && userAssignment.similar.length > 0
-      ? userAssignment.similar
-      : todayMatching?.featured?.similar) ?? [];
-  const oppositeFeaturedIds =
-    (userAssignment?.opposite && userAssignment.opposite.length > 0
-      ? userAssignment.opposite
-      : todayMatching?.featured?.opposite) ?? [];
+  const similarFeaturedIds = userAssignment?.similar ?? [];
+  const oppositeFeaturedIds = userAssignment?.opposite ?? [];
 
   const allFeaturedIds = Array.from(
     new Set([...similarFeaturedIds, ...oppositeFeaturedIds])

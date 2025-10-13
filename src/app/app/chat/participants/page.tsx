@@ -156,7 +156,7 @@ function ParticipantsPageContent() {
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  // 참가자 정렬: 관리자 제외, 현재 사용자 최상단, 나머지는 이름순 (한글)
+  // 참가자 정렬: 관리자 제외, 현재 사용자 최상단, 나머지는 원래 순서
   const sortedParticipants = useMemo(() => {
     return [...participants]
       .filter((p) => !p.isAdmin) // 관리자 제외
@@ -165,8 +165,8 @@ function ParticipantsPageContent() {
         if (a.id === currentUserId) return -1;
         if (b.id === currentUserId) return 1;
 
-        // 나머지는 이름순 (한글 정렬)
-        return a.name.localeCompare(b.name, 'ko');
+        // 나머지는 원래 순서 유지
+        return 0;
       });
   }, [participants, currentUserId]);
 

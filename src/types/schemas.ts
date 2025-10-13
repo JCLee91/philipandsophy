@@ -21,13 +21,8 @@ export const DailyParticipantAssignmentSchema = z.object({
   reasons: DailyMatchingReasonsSchema.optional(),
 });
 
-// Complete matching result (featured + all assignments)
+// Complete matching result (assignments only)
 export const MatchingSchema = z.object({
-  featured: z.object({
-    similar: z.array(z.string()).min(2).max(2),
-    opposite: z.array(z.string()).min(2).max(2),
-    reasons: DailyMatchingReasonsSchema.optional(),
-  }),
   assignments: z.record(z.string(), DailyParticipantAssignmentSchema),
 });
 

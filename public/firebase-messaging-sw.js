@@ -29,9 +29,9 @@ messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
   // Extract notification data
-  const notificationTitle = payload.notification?.title || 'D½dŒ<';
+  const notificationTitle = payload.notification?.title || 'í•„ë¦½ì•¤ì†Œí”¼';
   const notificationOptions = {
-    body: payload.notification?.body || 'È\´ L¼t Ä)ˆµÈä',
+    body: payload.notification?.body || 'ìƒˆë¡œìš´ ì•Œë¦¼ì´ ë„ì°©í–ˆìŠµë‹ˆë‹¤',
     icon: payload.notification?.icon || '/image/favicon.webp',
     badge: '/image/favicon.webp',
     tag: payload.data?.type || 'general',
@@ -41,11 +41,11 @@ messaging.onBackgroundMessage((payload) => {
     actions: payload.data?.type === 'dm' ? [
       {
         action: 'open',
-        title: 'UxX0',
+        title: 'ì—´ê¸°',
       },
       {
         action: 'close',
-        title: 'ë0',
+        title: 'ë‹«ê¸°',
       }
     ] : undefined,
   };

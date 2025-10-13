@@ -43,6 +43,7 @@ function MatchingPageContent() {
 
   // 매칭 상태 관리: idle | previewing | confirmed
   const [matchingState, setMatchingState] = useState<'idle' | 'previewing' | 'confirmed'>('idle');
+  const [hasFetchedInitialResult, setHasFetchedInitialResult] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewResult, setPreviewResult] = useState<MatchingResponse | null>(null);
   const [confirmedResult, setConfirmedResult] = useState<MatchingResponse | null>(null);
@@ -117,6 +118,10 @@ function MatchingPageContent() {
     }
   }, []); // 상수만 사용하므로 dependency 불필요
 
+  useEffect(() => {
+    setHasFetchedInitialResult(false);
+  }, [cohortId, submissionDate]);
+
   // ✅ Solution 3: localStorage 체크를 동기로 처리하여 초기 렌더링 블로킹 제거
   useEffect(() => {
     if (typeof window === 'undefined' || !cohortId) return;
@@ -186,7 +191,6 @@ function MatchingPageContent() {
             question: data.question,
             totalParticipants: data.totalParticipants,
             matching: data.matching,
-            featuredParticipants: data.featuredParticipants,
             submissionStats: data.submissionStats,
           };
 
@@ -313,7 +317,7 @@ function MatchingPageContent() {
 
   // 기존 매칭 결과 로드 (submissionDate 기준)
   const fetchMatchingResult = useCallback(async () => {
-    if (!cohortId || !sessionToken) return;
+    if (!cohortId || !sessionToken || hasFetchedInitialResult) return;
     try {
       const response = await fetch(
         `/api/admin/matching?cohortId=${cohortId}&date=${submissionDate}`,
@@ -325,16 +329,22 @@ function MatchingPageContent() {
       );
 
       // ℹ️ 404는 정상 응답 - 아직 매칭을 실행하지 않았을 때
-      // 브라우저 콘솔의 404 에러는 무시해도 됩니다
+      if (response.status === 404) {
+        setHasFetchedInitialResult(true);
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         setConfirmedResult(data);
         setMatchingState('confirmed');
+        setHasFetchedInitialResult(true);
       }
     } catch (error) {
       logger.error('매칭 결과 로드 실패', error);
+      setHasFetchedInitialResult(true);
     }
-  }, [cohortId, submissionDate, sessionToken]);
+  }, [cohortId, submissionDate, sessionToken, hasFetchedInitialResult]);
 
   // ✅ 확정 결과가 localStorage에 없을 때만 API 호출
   useEffect(() => {

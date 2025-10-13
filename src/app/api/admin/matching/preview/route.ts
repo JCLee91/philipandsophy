@@ -146,10 +146,6 @@ export async function POST(request: NextRequest) {
     // 7. ⚠️ Firebase 저장하지 않음 (프리뷰 모드)
     // 매칭 결과를 response로만 반환
 
-    // 8. Featured는 더 이상 사용하지 않음 (빈 배열 반환)
-    const featuredSimilarParticipants: Array<{ id: string; name: string }> = [];
-    const featuredOppositeParticipants: Array<{ id: string; name: string }> = [];
-
     // 전체 코호트 참가자 ID 목록 (제출 여부 구분용)
     const allCohortParticipantsSnapshot = await db
       .collection('participants')
@@ -177,10 +173,6 @@ export async function POST(request: NextRequest) {
       question: submissionQuestion,
       totalParticipants: participantAnswers.length,
       matching,
-      featuredParticipants: {
-        similar: featuredSimilarParticipants,
-        opposite: featuredOppositeParticipants,
-      },
       submissionStats: {
         submitted: participantAnswers.length,
         notSubmitted: notSubmittedParticipants.length,

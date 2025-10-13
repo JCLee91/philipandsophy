@@ -21,16 +21,15 @@ if (!getApps().length) {
 
 const db = getFirestore();
 
-// Helper to generate today's featured participants (legacy fallback)
+// Helper to generate today's matching (seed용 빈 데이터)
 function getTodayMatching() {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   return {
     [today]: {
-      featured: {
-        similar: ['1', '2'], // 다은, 다진
-        opposite: ['3', '4'], // 구종, 현명
+      assignments: {
+        // Seed 데이터이므로 빈 assignments
+        // 실제 매칭은 AI를 통해 생성됩니다
       },
-      assignments: {},
     },
   };
 }

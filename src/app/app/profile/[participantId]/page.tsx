@@ -157,8 +157,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     : null;
 
   const accessibleProfileIds = new Set([
-    ...(viewerAssignment?.similar ?? todayMatching.featured.similar ?? []),
-    ...(viewerAssignment?.opposite ?? todayMatching.featured.opposite ?? []),
+    ...(viewerAssignment?.similar ?? []),
+    ...(viewerAssignment?.opposite ?? []),
   ]);
 
   const isFeatured = accessibleProfileIds.has(participantId);

@@ -74,10 +74,6 @@ export interface MatchingAssignment {
 }
 
 export interface MatchingResult {
-  featured: {
-    similar: string[];
-    opposite: string[];
-  };
   assignments: Record<string, MatchingAssignment>;
 }
 
@@ -110,7 +106,7 @@ function hasGenderBalance(
 /**
  * AI 매칭 결과의 성별 균형 검증
  *
- * @param matching - AI 매칭 결과 (featured + assignments)
+ * @param matching - AI 매칭 결과 (assignments)
  * @param participants - 참가자 목록 (성별 정보 포함)
  * @returns 검증 결과 (valid, errors)
  */
@@ -120,15 +116,6 @@ export function validateMatchingGenderBalance(
 ): GenderBalanceResult {
   const errors: string[] = [];
   const genderMap = new Map(participants.map((p) => [p.id, p.gender]));
-
-  // Featured 검증
-  if (!hasGenderBalance(matching.featured.similar, genderMap)) {
-    errors.push('Featured similar 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.');
-  }
-
-  if (!hasGenderBalance(matching.featured.opposite, genderMap)) {
-    errors.push('Featured opposite 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.');
-  }
 
   // 모든 참가자의 assignments 검증
   for (const [participantId, assignment] of Object.entries(matching.assignments)) {
