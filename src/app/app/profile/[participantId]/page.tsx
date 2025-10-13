@@ -10,7 +10,7 @@ import PageTransition from '@/components/PageTransition';
 import HistoryWeekRow from '@/components/HistoryWeekRow';
 import ErrorState from '@/components/ErrorState';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
-import MatchingReasonBanner from '@/components/MatchingReasonBanner';
+// import MatchingReasonBanner from '@/components/MatchingReasonBanner'; // 논의 중인 기능
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useSession } from '@/hooks/use-session';
@@ -306,14 +306,14 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   )}
                 </div>
 
-                {/* 매칭 이유 배너 (본인 프로필이 아니고 이유가 있을 때만 표시) */}
-                {!isSelf && matchingReason && (
+                {/* 매칭 이유 배너 - 논의 중인 기능으로 일시적으로 비활성화 */}
+                {/* {!isSelf && matchingReason && (
                   <MatchingReasonBanner
                     reason={matchingReason.text}
                     theme={matchingReason.theme}
                     className="w-full mb-8"
                   />
-                )}
+                )} */}
 
                 {/* 최근 본 도서 */}
                 {latestSubmission && (

@@ -74,6 +74,8 @@ export default function UnifiedButton({
         // Icon만 있을 때는 gap 없이 중앙 정렬, 텍스트가 있으면 gap 적용
         (icon || loading) && 'flex items-center justify-center',
         (icon || loading) && hasTextContent && 'gap-2',
+        // Text: 줄바꿈 방지
+        'whitespace-nowrap',
         // States
         'enabled:active:scale-95',
         'disabled:opacity-50 disabled:cursor-not-allowed',

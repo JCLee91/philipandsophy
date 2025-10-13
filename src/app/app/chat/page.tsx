@@ -454,7 +454,7 @@ function ChatPageContent() {
               icon={<BookOpen className="h-5 w-5" />}
               className={hasSubmittedToday ? 'opacity-50' : ''}
             >
-              {hasSubmittedToday ? '독서 인증 수정하기' : '독서 인증'}
+              {hasSubmittedToday ? '인증 수정하기' : '독서 인증'}
             </UnifiedButton>
 
             {/* 오늘의 서재 버튼 */}
