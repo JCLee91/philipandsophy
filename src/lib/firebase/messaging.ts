@@ -325,7 +325,6 @@ function setupForegroundMessageHandler(messaging: Messaging): void {
     logger.info('Foreground message received', payload);
 
     // Show browser notification
-    // title을 비워서 manifest.json의 short_name이 자동으로 표시되도록 함
     // body를 data 필드에서 읽음 (notification 필드는 사용하지 않음)
     const notificationOptions = {
       body: payload.data?.body || '새 알림이 도착했습니다',
@@ -335,9 +334,9 @@ function setupForegroundMessageHandler(messaging: Messaging): void {
       data: payload.data || {},
     };
 
-    // Show notification using Notification API (title은 빈 문자열)
+    // Show notification using Notification API
     if (Notification.permission === 'granted') {
-      const notification = new Notification('', notificationOptions);
+      const notification = new Notification('필립앤소피', notificationOptions);
 
       // Handle notification click
       notification.onclick = (event) => {
