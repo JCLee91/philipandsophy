@@ -266,6 +266,9 @@ export async function initializePushNotifications(
   }
 }
 
+// Prevent concurrent token refresh for same participant
+const tokenRefreshPromises = new Map<string, Promise<string | null>>();
+
 /**
  * Refresh push token (for iOS expired token issue)
  *
@@ -280,37 +283,54 @@ export async function refreshPushToken(
   messaging: Messaging,
   participantId: string
 ): Promise<string | null> {
-  try {
-    logger.info('Refreshing push token', { participantId });
-
-    // Get current token from Firestore
-    const storedToken = await getPushTokenFromFirestore(participantId);
-
-    // Get new token from FCM
-    const newToken = await getFCMToken(messaging);
-
-    if (!newToken) {
-      logger.error('Failed to get new FCM token');
-      return null;
-    }
-
-    // If token changed, update Firestore
-    if (storedToken !== newToken) {
-      logger.info('Push token changed, updating Firestore', {
-        participantId,
-        oldTokenPrefix: storedToken?.substring(0, 20) + '...',
-        newTokenPrefix: newToken.substring(0, 20) + '...',
-      });
-      await savePushTokenToFirestore(participantId, newToken);
-    } else {
-      logger.info('Push token unchanged', { participantId });
-    }
-
-    return newToken;
-  } catch (error) {
-    logger.error('Error refreshing push token', error);
-    return null;
+  // Check if refresh is already in progress
+  const existingPromise = tokenRefreshPromises.get(participantId);
+  if (existingPromise) {
+    logger.info('Token refresh already in progress, reusing promise', { participantId });
+    return existingPromise;
   }
+
+  // Create new refresh promise
+  const refreshPromise = (async () => {
+    try {
+      logger.info('Refreshing push token', { participantId });
+
+      // Get current token from Firestore
+      const storedToken = await getPushTokenFromFirestore(participantId);
+
+      // Get new token from FCM
+      const newToken = await getFCMToken(messaging);
+
+      if (!newToken) {
+        logger.error('Failed to get new FCM token');
+        return null;
+      }
+
+      // If token changed, update Firestore
+      if (storedToken !== newToken) {
+        logger.info('Push token changed, updating Firestore', {
+          participantId,
+          oldTokenPrefix: storedToken?.substring(0, 20) + '...',
+          newTokenPrefix: newToken.substring(0, 20) + '...',
+        });
+        await savePushTokenToFirestore(participantId, newToken);
+      } else {
+        logger.info('Push token unchanged', { participantId });
+      }
+
+      return newToken;
+    } catch (error) {
+      logger.error('Error refreshing push token', error);
+      return null;
+    } finally {
+      // Clean up promise from map
+      tokenRefreshPromises.delete(participantId);
+    }
+  })();
+
+  // Store promise
+  tokenRefreshPromises.set(participantId, refreshPromise);
+  return refreshPromise;
 }
 
 /**

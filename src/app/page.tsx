@@ -58,40 +58,6 @@ export default function LandingPage() {
         })}
       </Script>
 
-      {/* JSON-LD Structured Data - Event */}
-      <Script id="json-ld-event" type="application/ld+json" strategy="afterInteractive">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Event",
-          "name": "11월의 필립앤소피 독서소셜클럽",
-          "description": "2주간 온라인 독서 프로그램과 클로징 파티. 승인된 20명의 멤버와 함께하는 깊이 있는 대화와 설레는 만남.",
-          "eventStatus": "https://schema.org/EventScheduled",
-          "eventAttendanceMode": "https://schema.org/MixedEventAttendanceMode",
-          "location": {
-            "@type": "Place",
-            "name": "서울",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "서울",
-              "addressCountry": "KR"
-            }
-          },
-          "organizer": {
-            "@type": "Organization",
-            "name": "Philip & Sophy",
-            "url": "https://www.philipandsophy.kr/"
-          },
-          "offers": {
-            "@type": "Offer",
-            "url": "https://smore.im/form/13J1nUevrX",
-            "price": "90000",
-            "priceCurrency": "KRW",
-            "availability": "https://schema.org/InStock",
-            "validFrom": "2025-10-25"
-          }
-        })}
-      </Script>
-
       {/* SEO 최적화를 위한 숨김 텍스트 */}
       <div className="seo-content">
         <h1>필립앤소피 | 승인제 독서소셜클럽</h1>

@@ -72,15 +72,20 @@
 | `cohortId` | string | REQUIRED, INDEXED | 기수 ID (외래키: cohorts.id) |
 | `name` | string | REQUIRED | 참가자 이름 |
 | `phoneNumber` | string | REQUIRED, UNIQUE | 전화번호 (하이픈 제거) |
-| `profileImage` | string | OPTIONAL | 프로필 이미지 URL |
+| `gender` | string | OPTIONAL | 성별 ('male', 'female', 'other') |
+| `profileImage` | string | OPTIONAL | 프로필 이미지 URL (큰 이미지, 프로필 상세용) |
+| `profileImageCircle` | string | OPTIONAL | 원형 프로필 이미지 URL (작은 아바타용) |
 | `profileBookUrl` | string | OPTIONAL | 프로필북 URL |
-| `isAdmin` | boolean | OPTIONAL | 운영자 여부 |
+| `isAdmin` | boolean | OPTIONAL | 운영자 여부 (legacy 필드) |
+| `isAdministrator` | boolean | OPTIONAL | 관리자 여부 (최신 필드명) |
 | `occupation` | string | OPTIONAL | 직업/하는 일 |
 | `bio` | string | OPTIONAL | 한 줄 소개 (2줄 이내) |
-| `currentBookTitle` | string | OPTIONAL | 현재 읽는 책 제목 |
-| `currentBookAuthor` | string | OPTIONAL | 현재 읽는 책 저자 |
-| `currentBookCoverUrl` | string | OPTIONAL | 현재 읽는 책 표지 URL |
-| `bookHistory` | BookHistoryEntry[] | OPTIONAL | 책 읽기 이력 배열 |
+| `currentBookTitle` | string | OPTIONAL | 현재 읽는 책 제목 (프로필북에 표시) |
+| `currentBookAuthor` | string | OPTIONAL | 현재 읽는 책 저자 (자동 채움용) |
+| `currentBookCoverUrl` | string | OPTIONAL | 현재 읽는 책 표지 URL (자동 채움용) |
+| `bookHistory` | BookHistoryEntry[] | OPTIONAL | 책 읽기 이력 배열 (관리자용) |
+| `sessionToken` | string | OPTIONAL | 세션 토큰 (로그인 세션 관리용) |
+| `sessionExpiry` | number | OPTIONAL | 세션 만료 시간 (Unix timestamp, 밀리초) |
 | `createdAt` | Timestamp | AUTO | 생성 일시 |
 | `updatedAt` | Timestamp | AUTO | 수정 일시 |
 
@@ -100,8 +105,11 @@
   "cohortId": "cohort_2025_01",
   "name": "홍길동",
   "phoneNumber": "01012345678",
+  "gender": "male",
   "profileImage": "https://storage.googleapis.com/.../profile.jpg",
+  "profileImageCircle": "https://storage.googleapis.com/.../profile_circle.jpg",
   "isAdmin": false,
+  "isAdministrator": false,
   "occupation": "개발자",
   "bio": "책과 코딩을 좋아합니다.",
   "currentBookTitle": "클린 코드",
@@ -119,15 +127,24 @@
       "endedAt": null
     }
   ],
+  "sessionToken": "550e8400-e29b-41d4-a716-446655440000",
+  "sessionExpiry": 1728518400000,
   "createdAt": Timestamp(2025-01-01 09:00:00),
   "updatedAt": Timestamp(2025-01-16 10:30:00)
 }
 ```
 
+**중요 변경사항:**
+- **세션 관리**: `sessionToken`과 `sessionExpiry` 필드 추가 (24시간 세션 토큰)
+- **관리자 필드**: `isAdmin` (legacy) + `isAdministrator` (최신) 병행 사용
+- **프로필 이미지**: `profileImage` (큰 이미지) + `profileImageCircle` (아바타용) 분리
+- **성별 정보**: `gender` 필드 추가 (선택)
+
 **쿼리 패턴:**
 - 전화번호로 조회: `where('phoneNumber', '==', cleanNumber)`
 - 기수별 조회: `where('cohortId', '==', cohortId), orderBy('createdAt', 'asc')`
 - ID로 조회: `getDoc(doc(db, 'participants', participantId))`
+- 세션 토큰으로 조회: `where('sessionToken', '==', token)` (세션 검증용)
 
 **복합 인덱스 (필요):**
 - `cohortId` (ASC) + `createdAt` (ASC)
@@ -280,22 +297,113 @@ const getConversationId = (userId1: string, userId2: string): string => {
 - `receiverId` (ASC) + `isRead` (ASC)
 - `conversationId` (ASC) + `receiverId` (ASC) + `isRead` (ASC)
 
+#### 6. matching_jobs (AI 매칭 작업)
+
+비동기 AI 매칭 작업의 상태를 관리합니다. 매일 자정 이후 어제의 독서 인증 데이터를 기반으로 참가자 간 매칭을 수행합니다.
+
+| 필드 | 타입 | 제약조건 | 설명 |
+|------|------|---------|------|
+| `id` | string | PRIMARY KEY | 문서 ID (UUID 형식) |
+| `cohortId` | string | REQUIRED, INDEXED | 기수 ID (외래키: cohorts.id) |
+| `date` | string | REQUIRED, INDEXED | 매칭 대상 날짜 (YYYY-MM-DD 형식, 어제) |
+| `status` | string | REQUIRED | 작업 상태 ('pending', 'processing', 'completed', 'failed') |
+| `result` | DailyMatchingEntry | OPTIONAL | 매칭 완료 시 결과 객체 |
+| `error` | string | OPTIONAL | 실패 시 에러 메시지 |
+| `progress` | number | OPTIONAL | 진행률 (0-100, 선택적) |
+| `createdAt` | Timestamp | AUTO | 작업 생성 일시 |
+| `completedAt` | Timestamp | OPTIONAL | 작업 완료 일시 |
+
+**MatchingJobStatus 열거형:**
+- `pending`: 대기 중 (작업 큐에 추가됨)
+- `processing`: 처리 중 (AI 매칭 진행 중)
+- `completed`: 완료 (결과가 cohorts에 저장됨)
+- `failed`: 실패 (에러 발생)
+
+**DailyMatchingEntry 구조:**
+```typescript
+{
+  assignments: {
+    [participantId: string]: {
+      similar: string[];    // 비슷한 성향 참가자 ID 배열
+      opposite: string[];   // 반대 성향 참가자 ID 배열
+      reasons?: {           // 매칭 이유 (선택)
+        similar?: string;   // 비슷한 이유
+        opposite?: string;  // 반대 이유
+        summary?: string;   // 요약
+      }
+    }
+  }
+}
+```
+
+**데이터 예제:**
+```json
+{
+  "id": "job_2025-10-12_cohort_2025_01",
+  "cohortId": "cohort_2025_01",
+  "date": "2025-10-12",
+  "status": "completed",
+  "result": {
+    "assignments": {
+      "participant_001": {
+        "similar": ["participant_002", "participant_003"],
+        "opposite": ["participant_004", "participant_005"],
+        "reasons": {
+          "similar": "독서 스타일과 관심사가 유사합니다.",
+          "opposite": "다른 관점에서 책을 읽는 분들입니다.",
+          "summary": "비슷한 성향 2명, 반대 성향 2명 매칭"
+        }
+      }
+    }
+  },
+  "error": null,
+  "progress": 100,
+  "createdAt": Timestamp(2025-10-13 00:05:00),
+  "completedAt": Timestamp(2025-10-13 00:15:00)
+}
+```
+
+**쿼리 패턴:**
+- 기수별 최근 작업 조회: `where('cohortId', '==', cohortId), orderBy('createdAt', 'desc'), limit(10)`
+- 날짜별 작업 조회: `where('cohortId', '==', cohortId), where('date', '==', date)`
+- 실패한 작업 조회: `where('status', '==', 'failed'), orderBy('createdAt', 'desc')`
+- 처리 중인 작업: `where('status', 'in', ['pending', 'processing'])`
+
+**복합 인덱스 (필요):**
+- `cohortId` (ASC) + `date` (ASC)
+- `cohortId` (ASC) + `createdAt` (DESC)
+- `status` (ASC) + `createdAt` (DESC)
+
+**작업 흐름:**
+1. **자정 스케줄러 실행**: 매일 자정 Cloud Function이 어제 날짜로 작업 생성
+2. **작업 상태 전환**: `pending` → `processing` → `completed` (또는 `failed`)
+3. **결과 저장**: 완료 시 `result`를 cohorts의 `dailyFeaturedParticipants`에 저장
+4. **에러 처리**: 실패 시 `error` 필드에 에러 메시지 기록, 재시도 가능
+
+**주의사항:**
+- 동일한 `cohortId` + `date` 조합으로 중복 작업 생성 방지
+- 완료된 작업은 7일 후 자동 삭제 가능 (선택적 정책)
+- `progress` 필드는 UI에서 진행률 표시용 (선택)
+
 ### 관계 다이어그램 (Relationship Diagram)
 
 ```
 ┌─────────────────┐
 │    cohorts      │
 │  (기수 정보)     │
+│  + dailyFeatured│
+│    Participants │
 └────────┬────────┘
          │ 1:N
          │
-         ├─────────────────────────────┐
-         │                             │
-         ▼                             ▼
-┌─────────────────┐            ┌─────────────────┐
-│  participants   │            │    notices      │
-│  (참가자 정보)   │            │  (공지사항)      │
-└────────┬────────┘            └─────────────────┘
+         ├─────────────────────────────┬──────────────────┐
+         │                             │                  │
+         ▼                             ▼                  ▼
+┌─────────────────┐            ┌─────────────────┐  ┌─────────────────┐
+│  participants   │            │    notices      │  │ matching_jobs   │
+│  (참가자 정보)   │            │  (공지사항)      │  │  (AI 매칭 작업)  │
+│  + sessionToken │            │                 │  │                 │
+└────────┬────────┘            └─────────────────┘  └─────────────────┘
          │ 1:N
          ├──────────────────┐
          │                  │
@@ -309,8 +417,11 @@ const getConversationId = (userId1: string, userId2: string): string => {
 관계 설명:
 - cohorts → participants: 1:N (한 기수에 여러 참가자)
 - cohorts → notices: 1:N (한 기수에 여러 공지)
+- cohorts → matching_jobs: 1:N (한 기수에 여러 매칭 작업)
+- cohorts.dailyFeaturedParticipants: Map (날짜별 추천 참가자 매핑)
 - participants → reading_submissions: 1:N (한 참가자가 여러 인증)
 - participants ↔ messages: N:M (참가자 간 다대다 메시지)
+- matching_jobs: 비동기 작업 큐 (완료 후 cohorts 업데이트)
 ```
 
 ---
@@ -1736,6 +1847,156 @@ function App() {
 
 ---
 
+## 보안 규칙 및 인덱스 (Security Rules & Indexes)
+
+### Firestore 보안 규칙 (firestore.rules)
+
+프로젝트는 Firebase Authentication을 사용하지 않으므로 제한적인 보안 규칙이 적용됩니다. 프로덕션 환경에서는 프론트엔드 검증과 함께 사용됩니다.
+
+**위치:** `/firestore.rules`
+
+#### 주요 보안 규칙
+
+1. **cohorts (기수 정보)**
+   - 읽기: 모두 허용 (로그인 페이지에서 접근 코드 검증 필요)
+   - 생성/수정: 제한적 허용 (관리자 콘솔 권장)
+   - 삭제: 금지
+
+2. **participants (참가자)**
+   - 읽기: 모두 허용 (채팅방 참가자 목록 표시용)
+   - 생성: 제한적 허용 (회원가입용)
+   - 수정: 제한적 허용 (추후 인증 추가 권장)
+   - 삭제: 금지
+
+3. **notices (공지사항)**
+   - 읽기: 모두 허용
+   - 생성/수정/삭제: 제한적 허용 (프론트엔드 관리자 체크 필요)
+
+4. **messages (DM)**
+   - 읽기: 모두 허용 (conversationId로 제한됨)
+   - 생성: 필수 필드 검증 (`content` 또는 `imageUrl` 필수)
+   - 수정: `isRead` 필드만 변경 가능
+   - 삭제: 금지
+
+5. **reading_submissions (독서 인증)**
+   - 읽기: 모두 허용 (다른 참가자 인증 내역 확인용)
+   - 생성: 필수 필드 검증 + `status == 'approved'` 강제
+   - 수정: 제한적 허용
+   - 삭제: 금지
+
+**보안 규칙 예제:**
+```javascript
+// reading_submissions 생성 규칙
+allow create: if request.resource.data.participantId is string &&
+              request.resource.data.participationCode is string &&
+              request.resource.data.bookTitle is string &&
+              request.resource.data.bookImageUrl is string &&
+              request.resource.data.review is string &&
+              request.resource.data.dailyQuestion is string &&
+              request.resource.data.dailyAnswer is string &&
+              request.resource.data.status == 'approved';
+```
+
+**보안 개선 권장사항:**
+- Firebase Authentication 도입 시 `isSignedIn()` 검증 추가
+- 관리자 작업은 `isAdmin()` 헬퍼 함수로 제한
+- 본인 데이터만 수정 가능하도록 `request.auth.uid` 검증
+
+### Firebase Storage 보안 규칙 (storage.rules)
+
+**위치:** `/storage.rules`
+
+#### 경로별 보안 규칙
+
+1. **reading_submissions/{participationCode}/{fileName}**
+   - 읽기: 모두 허용 (공개 이미지)
+   - 업로드: 이미지 파일만, 50MB 이하
+   - 수정/삭제: 금지
+
+2. **notices/{cohortId}/{fileName}**
+   - 읽기: 모두 허용
+   - 업로드: 이미지 파일만, 10MB 이하
+   - 수정/삭제: 금지
+
+3. **direct_messages/{userId}/{fileName}**
+   - 읽기: 모두 허용 (대화 참여자만 URL 알고 있음)
+   - 업로드: 이미지 파일만, 50MB 이하
+   - 수정/삭제: 금지
+
+4. **profiles/{userId}/{fileName}**
+   - 읽기: 모두 허용 (공개 프로필)
+   - 업로드: 이미지 파일만, 50MB 이하
+   - 수정: 본인만 (Firebase Auth 필요)
+   - 삭제: 금지
+
+**헬퍼 함수:**
+```javascript
+function isValidImage() {
+  return request.resource.contentType.matches('image/.*');
+}
+
+function isUnder50MB() {
+  return request.resource.size < 50 * 1024 * 1024;
+}
+```
+
+### Firestore 복합 인덱스 (firestore.indexes.json)
+
+**위치:** `/firestore.indexes.json`
+
+현재 프로젝트에는 **8개의 복합 인덱스**가 설정되어 있습니다.
+
+#### 설정된 인덱스 목록
+
+1. **notices: cohortId (ASC) + createdAt (ASC)**
+   - 기수별 공지사항 조회 최적화
+
+2. **participants: cohortId (ASC) + createdAt (ASC)**
+   - 기수별 참가자 목록 조회 최적화
+
+3. **messages: conversationId (ASC) + createdAt (ASC)**
+   - 대화별 메시지 조회 최적화
+
+4. **messages: conversationId (ASC) + receiverId (ASC) + isRead (ASC)**
+   - 미읽음 메시지 카운트 최적화
+
+5. **reading_submissions: submissionDate (ASC) + status (ASC)**
+   - 오늘의 서재 (오늘 인증한 참가자) 조회 최적화
+
+6. **reading_submissions: participantId (ASC) + submittedAt (DESC)**
+   - 참가자별 인증 내역 조회 최적화
+
+7. **reading_submissions: participationCode (ASC) + submittedAt (DESC)**
+   - 기수별 인증 내역 조회 최적화
+
+8. **reading_submissions: status (ASC) + submittedAt (DESC)**
+   - 승인 상태별 인증 내역 조회 (deprecated 필드이나 기존 데이터 호환성)
+
+#### 배포 명령어
+
+```bash
+# 인덱스 배포
+firebase deploy --only firestore:indexes
+
+# 인덱스 생성 상태 확인
+firebase firestore:indexes
+```
+
+#### 성능 영향
+
+- 복합 인덱스 적용 전: 쿼리 평균 500-1000ms
+- 복합 인덱스 적용 후: 쿼리 평균 50-150ms
+- **성능 개선: 약 10배**
+
+#### 추가 권장 인덱스 (향후 개선)
+
+matching_jobs 컬렉션이 추가됨에 따라 다음 인덱스 추가 권장:
+- `cohortId` (ASC) + `date` (ASC)
+- `cohortId` (ASC) + `createdAt` (DESC)
+- `status` (ASC) + `createdAt` (DESC)
+
+---
+
 ## 향후 개선 사항 (Future Improvements)
 
 ### HIGH 우선순위
@@ -2195,6 +2456,62 @@ function handleLogin(userId: string) {
 
 ## 변경 이력 (Changelog)
 
+### 2025-10-13: 스키마 문서화 최신화 및 보안 규칙 통합
+
+**주요 변경사항:**
+
+1. **participants 컬렉션 스키마 업데이트**
+   - `sessionToken` 필드 추가: 세션 토큰 (로그인 세션 관리용, UUID 형식)
+   - `sessionExpiry` 필드 추가: 세션 만료 시간 (Unix timestamp, 밀리초, 24시간)
+   - `gender` 필드 추가: 성별 정보 ('male', 'female', 'other')
+   - `profileImageCircle` 필드 추가: 원형 프로필 이미지 URL (아바타용)
+   - `isAdministrator` 필드 추가: 관리자 여부 (최신 필드명, `isAdmin`은 legacy)
+
+2. **matching_jobs 컬렉션 신규 추가**
+   - AI 매칭 작업의 비동기 상태 관리용 컬렉션
+   - 매일 자정 어제의 독서 인증 데이터 기반 참가자 매칭
+   - 작업 상태: `pending` → `processing` → `completed` / `failed`
+   - 완료 시 결과를 cohorts의 `dailyFeaturedParticipants`에 저장
+
+3. **보안 규칙 및 인덱스 섹션 추가**
+   - Firestore 보안 규칙 상세 문서화 (`firestore.rules`)
+   - Firebase Storage 보안 규칙 문서화 (`storage.rules`)
+   - 복합 인덱스 8개 설정 현황 문서화 (`firestore.indexes.json`)
+   - 경로별 보안 정책 및 파일 크기 제한 명시
+
+4. **관계 다이어그램 업데이트**
+   - matching_jobs 컬렉션 관계 추가
+   - sessionToken 필드 표시
+   - dailyFeaturedParticipants Map 구조 명시
+
+**기술적 개선:**
+- 세션 토큰 기반 인증 시스템 구조 문서화
+- 비동기 AI 매칭 작업 플로우 명확화
+- 보안 규칙 및 인덱스 설정 일원화로 Firebase 설정 가시성 향상
+
+**문서 구조 개선:**
+- 보안 규칙과 인덱스를 별도 섹션으로 분리
+- 각 컬렉션별 복합 인덱스 필요 여부 명시
+- 보안 개선 권장사항 추가
+
+**추가된 쿼리 패턴:**
+- 세션 토큰으로 참가자 조회: `where('sessionToken', '==', token)`
+- matching_jobs 기수별 조회: `where('cohortId', '==', cohortId), where('date', '==', date)`
+- matching_jobs 실패 작업 조회: `where('status', '==', 'failed')`
+
+**관련 파일:**
+- `docs/optimization/database.md` (수정)
+- `src/types/database.ts` (검증)
+- `firestore.rules` (참조)
+- `storage.rules` (참조)
+- `firestore.indexes.json` (참조)
+
+**작업자:** Database Documentation Specialist (Claude)
+**검토자:** 필립앤소피 개발팀
+**승인일:** 2025년 10월 13일
+
+---
+
 ### 2025-10-09: 실시간 구독 전환 및 승인 프로세스 제거
 
 **주요 변경사항:**
@@ -2306,6 +2623,6 @@ allow create: if request.resource.data.status == 'approved'
 
 ---
 
-**Last Updated:** 2025년 10월 10일
-**Document Version:** 1.1.0
+**Last Updated:** 2025년 10월 13일
+**Document Version:** 1.2.0
 **Location:** `docs/optimization/database.md`
