@@ -85,12 +85,22 @@ export function NotificationPrompt() {
             tokenPrefix: token.substring(0, 20) + '...'
           });
 
-          // 3. 테스트 알림 전송
-          new Notification('필립앤소피', {
-            body: '알림이 활성화되었습니다 🎉',
-            icon: '/image/favicon.webp',
-            badge: '/image/favicon.webp',
-          });
+          // 3. 테스트 알림 전송 (최초 1회만)
+          const hasShownTestNotification = localStorage.getItem('notification-test-shown');
+
+          if (!hasShownTestNotification) {
+            new Notification('필립앤소피', {
+              body: '알림이 활성화되었습니다 🎉',
+              icon: '/image/favicon.webp',
+              badge: '/image/favicon.webp',
+            });
+
+            // 테스트 알림 표시 완료 플래그 저장
+            localStorage.setItem('notification-test-shown', 'true');
+            logger.info('First-time test notification sent');
+          } else {
+            logger.info('Test notification skipped (already shown before)');
+          }
         } else {
           logger.error('Failed to get FCM token');
         }
@@ -115,7 +125,7 @@ export function NotificationPrompt() {
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 animate-in slide-in-from-bottom-5 md:left-auto md:right-4 md:w-96">
+    <div className="fixed bottom-20 left-4 right-4 z-[9999] animate-in slide-in-from-bottom-5 md:left-auto md:right-4 md:w-96 pointer-events-auto">
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
@@ -127,18 +137,20 @@ export function NotificationPrompt() {
               새로운 메시지와 공지사항을 실시간으로 받아보세요
             </p>
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex gap-3">
               <button
+                type="button"
                 onClick={handleRequestPermission}
                 disabled={isInitializing}
-                className="flex-1 rounded-lg bg-black px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-lg bg-black px-6 py-3.5 text-base font-bold text-white transition-colors active:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[48px]"
               >
                 {isInitializing ? '설정 중...' : '허용'}
               </button>
               <button
+                type="button"
                 onClick={handleDismiss}
                 disabled={isInitializing}
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg border border-gray-300 px-6 py-3.5 text-base font-medium text-gray-700 transition-colors active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[48px]"
               >
                 나중에
               </button>
@@ -146,12 +158,13 @@ export function NotificationPrompt() {
           </div>
 
           <button
+            type="button"
             onClick={handleDismiss}
             disabled={isInitializing}
-            className="shrink-0 rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+            className="shrink-0 rounded-lg p-3 text-gray-400 transition-colors active:bg-gray-200 disabled:opacity-50 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="닫기"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
       </div>
