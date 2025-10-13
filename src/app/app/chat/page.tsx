@@ -136,31 +136,15 @@ function ChatPageContent() {
 
   // 최신 공지로 자동 스크롤 (페이지 로드 및 최초 로그인 시)
   useEffect(() => {
-    logger.debug('[Scroll Effect] Triggered', {
-      isLoading,
-      noticesCount: noticesData.length,
-      hasRef: !!latestNoticeRef.current
-    });
-
     if (!isLoading && noticesData.length > 0 && latestNoticeRef.current) {
-      // 최신 공지 요소의 부모 컨테이너(main) 찾기
-      const mainContainer = latestNoticeRef.current.closest('main');
-      if (mainContainer) {
-        // 최신 공지의 상단 위치 계산
-        const noticeTop = latestNoticeRef.current.offsetTop;
-        // 화면 높이의 1/3 지점에 공지 시작점 배치
-        const containerHeight = mainContainer.clientHeight;
-        const targetScrollTop = noticeTop - (containerHeight / 2.3);
+      // 최신 공지가 화면에 보이도록 스크롤
+      latestNoticeRef.current.scrollIntoView({
+        behavior: 'auto',
+        block: 'center',
+        inline: 'nearest'
+      });
 
-        // 즉시 스크롤 (애니메이션 없음)
-        mainContainer.scrollTop = targetScrollTop;
-
-        logger.info('[Scroll Effect] Scrolled to latest notice at 1/3 position', {
-          noticeTop,
-          containerHeight,
-          targetScrollTop
-        });
-      }
+      logger.info('[Scroll Effect] Scrolled to latest notice');
     }
   }, [isLoading, noticesData.length]);
 
