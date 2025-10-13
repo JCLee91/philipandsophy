@@ -82,7 +82,6 @@ export function NotificationPrompt() {
         if (token) {
           logger.info('Push notifications initialized successfully', {
             participantId,
-            tokenPrefix: token.substring(0, 20) + '...'
           });
 
           // 3. 테스트 알림 전송 (최초 1회만)

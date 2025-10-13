@@ -10,6 +10,7 @@ import PageTransition from '@/components/PageTransition';
 import HistoryWeekRow from '@/components/HistoryWeekRow';
 import ErrorState from '@/components/ErrorState';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
+import MatchingReasonBanner from '@/components/MatchingReasonBanner';
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useSession } from '@/hooks/use-session';
@@ -163,6 +164,23 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   const isFeatured = accessibleProfileIds.has(participantId);
 
+  // 매칭 이유 추출 (현재 보는 프로필이 similar인지 opposite인지 확인)
+  const matchingReason = useMemo(() => {
+    if (!viewerAssignment || !isFeatured) return null;
+
+    const isSimilar = viewerAssignment.similar?.includes(participantId);
+    const isOpposite = viewerAssignment.opposite?.includes(participantId);
+
+    if (isSimilar && viewerAssignment.reasons?.similar) {
+      return { text: viewerAssignment.reasons.similar, theme: theme };
+    }
+    if (isOpposite && viewerAssignment.reasons?.opposite) {
+      return { text: viewerAssignment.reasons.opposite, theme: theme };
+    }
+
+    return null;
+  }, [viewerAssignment, isFeatured, participantId, theme]);
+
   // 최종 접근 권한: 본인 OR 운영자 OR (오늘 인증 완료 AND 추천 4명 중 하나)
   const hasAccess = isSelf || isAdmin || (isVerifiedToday && isFeatured);
 
@@ -269,6 +287,15 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                     </p>
                   )}
                 </div>
+
+                {/* 매칭 이유 배너 (본인 프로필이 아니고 이유가 있을 때만 표시) */}
+                {!isSelf && matchingReason && (
+                  <MatchingReasonBanner
+                    reason={matchingReason.text}
+                    theme={matchingReason.theme}
+                    className="w-full mb-8"
+                  />
+                )}
 
                 {/* 최근 본 도서 */}
                 {latestSubmission && (
