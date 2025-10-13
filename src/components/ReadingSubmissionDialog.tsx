@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import {
   Dialog,
@@ -22,7 +22,8 @@ import Image from 'next/image';
 import BookSearchAutocomplete from '@/components/BookSearchAutocomplete';
 import type { NaverBook } from '@/lib/naver-book-api';
 import { logger } from '@/lib/logger';
-import { SUBMISSION_VALIDATION } from '@/constants/validation';
+import { SUBMISSION_VALIDATION, IMAGE_OPTIMIZATION } from '@/constants/validation';
+import { compressImageIfNeeded } from '@/lib/image-compression';
 import { format } from 'date-fns';
 import { getTodayString } from '@/lib/date-utils';
 import { validateImageFile } from '@/lib/image-compression';
@@ -67,6 +68,9 @@ export default function ReadingSubmissionDialog({
   const createSubmission = useCreateSubmission();
   const updateSubmission = useUpdateSubmission();
   const { data: allSubmissions = [] } = useSubmissionsByParticipant(participantId);
+
+  // Race Condition 방지: atomic flag
+  const isSubmittingRef = useRef(false);
 
   // 다이얼로그가 열릴 때 데이터 로드
   useEffect(() => {
@@ -167,10 +171,33 @@ export default function ReadingSubmissionDialog({
     let isActive = true;
 
     try {
-      // 2. 원본 이미지 그대로 사용 (압축 없음)
-      setBookImage(file);
+      let processedFile = file;
 
-      // 3. 이미지 미리보기 with cleanup
+      // 2. 스마트 압축: 10MB 이상만 압축 (일반 사진은 그대로)
+      if (file.size >= IMAGE_OPTIMIZATION.COMPRESSION_THRESHOLD) {
+        setUploadStep('이미지 최적화 중...');
+
+        try {
+          processedFile = await compressImageIfNeeded(file, IMAGE_OPTIMIZATION.TARGET_SIZE);
+
+          logger.info('이미지 압축 완료', {
+            original: (file.size / 1024 / 1024).toFixed(1) + 'MB',
+            compressed: (processedFile.size / 1024 / 1024).toFixed(1) + 'MB',
+            reduction: (((file.size - processedFile.size) / file.size) * 100).toFixed(0) + '%',
+          });
+        } catch (compressionError) {
+          // 압축 실패 시 원본 사용 (fallback)
+          logger.warn('압축 실패, 원본 사용:', compressionError);
+          processedFile = file;
+        }
+
+        setUploadStep(''); // 진행 상태 초기화
+      }
+
+      // 3. 파일 저장
+      setBookImage(processedFile);
+
+      // 4. 이미지 미리보기 with cleanup
       const reader = new FileReader();
 
       reader.onloadend = () => {
@@ -190,7 +217,7 @@ export default function ReadingSubmissionDialog({
         }
       };
 
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(processedFile);
 
       // Cleanup function
       return () => {
@@ -272,8 +299,9 @@ export default function ReadingSubmissionDialog({
   };
 
   const handleSubmit = async () => {
-    // Guard against double submission
-    if (uploading) return;
+    // ✅ Atomic check-and-set (Race Condition 방지)
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
     setUploading(true);
 
@@ -300,11 +328,17 @@ export default function ReadingSubmissionDialog({
       }
 
       // ========== 신규 제출 모드 ==========
-      setUploadStep('1/3'); // 1단계 시작
 
       const trimmedBookTitle = bookTitle.trim();
 
-      // 1. 책 정보 변경 감지 및 DB 업데이트
+      // 검증
+      if (!bookImage) {
+        throw new Error('책 사진을 선택해주세요');
+      }
+
+      // 1️⃣ 책 정보 업데이트 (빠름, 실패 시 조기 종료)
+      setUploadStep('책 정보 저장 중...');
+
       await updateParticipantBookInfo(
         participantId,
         trimmedBookTitle,
@@ -312,12 +346,8 @@ export default function ReadingSubmissionDialog({
         bookCoverUrl || undefined
       );
 
-      setUploadStep('2/3'); // 2단계 시작
-
-      // 2. 이미지 업로드 (원본 그대로)
-      if (!bookImage) {
-        throw new Error('책 사진을 선택해주세요');
-      }
+      // 2️⃣ 이미지 업로드 (느림, 하지만 DB는 이미 저장 완료)
+      setUploadStep('이미지 업로드 중...');
 
       let bookImageUrl: string;
       try {
@@ -338,9 +368,9 @@ export default function ReadingSubmissionDialog({
         throw uploadError; // Re-throw for generic handler
       }
 
-      setUploadStep('3/3'); // 3단계 시작
+      // 3️⃣ 제출 생성 (빠름)
+      setUploadStep('제출물 저장 중...');
 
-      // 3. 제출 생성
       await createSubmission.mutateAsync({
           participantId,
           participationCode,
@@ -388,6 +418,7 @@ export default function ReadingSubmissionDialog({
     } finally {
       setUploading(false);
       setUploadStep(''); // 진행 상태 초기화
+      isSubmittingRef.current = false; // ✅ Flag 해제
     }
   };
 
