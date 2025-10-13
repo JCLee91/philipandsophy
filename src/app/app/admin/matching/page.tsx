@@ -315,12 +315,12 @@ function MatchingPageContent() {
     }
   }, [sessionLoading, currentUser, cohortId, router, toast]);
 
-  // 기존 매칭 결과 로드 (submissionDate 기준)
+  // 기존 매칭 결과 로드 (오늘 날짜 기준 - Firestore에 저장된 키)
   const fetchMatchingResult = useCallback(async () => {
     if (!cohortId || !sessionToken || hasFetchedInitialResult) return;
     try {
       const response = await fetch(
-        `/api/admin/matching?cohortId=${cohortId}&date=${submissionDate}`,
+        `/api/admin/matching?cohortId=${cohortId}&date=${todayDate}`,
         {
           headers: {
             'Authorization': `Bearer ${sessionToken}`,
@@ -344,7 +344,7 @@ function MatchingPageContent() {
       logger.error('매칭 결과 로드 실패', error);
       setHasFetchedInitialResult(true);
     }
-  }, [cohortId, submissionDate, sessionToken, hasFetchedInitialResult]);
+  }, [cohortId, todayDate, sessionToken, hasFetchedInitialResult]);
 
   // ✅ 확정 결과가 localStorage에 없을 때만 API 호출
   useEffect(() => {
