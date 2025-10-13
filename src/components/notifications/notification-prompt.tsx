@@ -147,8 +147,8 @@ export function NotificationPrompt() {
           if (!hasShownTestNotification) {
             new Notification('필립앤소피', {
               body: '알림이 활성화되었습니다 🎉',
-              icon: '/image/favicon.webp',
-              badge: '/image/favicon.webp',
+              icon: '/image/app-icon.webp',
+              badge: '/image/badge-icon.webp',
             });
 
             // 테스트 알림 표시 완료 플래그 저장
