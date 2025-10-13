@@ -37,7 +37,19 @@ export default function NoticeWriteDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        onOpenChange(open);
+        // Radix UI Dialog가 닫힐 때 body 스타일 정리 (버그 해결)
+        if (!open) {
+          requestAnimationFrame(() => {
+            document.body.style.removeProperty('padding-right');
+            document.body.style.removeProperty('overflow');
+          });
+        }
+      }}
+    >
       <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
         <DialogHeader className="px-6 py-6 border-b">
           <DialogTitle>공지 작성</DialogTitle>

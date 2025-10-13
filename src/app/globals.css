@@ -231,8 +231,12 @@
 
 /* PWA Standalone 모드: 하단 여백 최소화 */
 @media (display-mode: standalone) {
+  :root {
+    --app-footer-padding: calc(3px + env(safe-area-inset-bottom, 0px));
+  }
+
   .app-footer {
-    padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: var(--app-footer-padding, calc(16px + env(safe-area-inset-bottom, 0px)));
   }
 }
 
