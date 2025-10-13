@@ -83,7 +83,7 @@ class ModalStateManager {
     });
 
     // 강제 reflow (브라우저가 CSS 미디어 쿼리 재계산)
-    document.body.offsetHeight;
+    void document.body.offsetHeight;
   }
 
   /**

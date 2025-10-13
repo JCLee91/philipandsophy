@@ -134,16 +134,33 @@ function ChatPageContent() {
     }
   }, [sessionLoading, currentUser, cohortId]);
 
-  // 최신 공지로 자동 스크롤 (페이지 로드 시)
+  // 최신 공지로 자동 스크롤 (페이지 로드 및 최초 로그인 시)
   useEffect(() => {
-    if (!isLoading && noticesData.length > 0 && latestNoticeRef.current) {
-      latestNoticeRef.current.scrollIntoView({
-        behavior: 'auto',
-        block: 'start',
-        inline: 'nearest'
-      });
+    logger.debug('[Scroll Effect] Triggered', {
+      isLoading,
+      noticesCount: noticesData.length,
+      hasRef: !!latestNoticeRef.current
+    });
 
-      logger.info('Scrolled to latest notice');
+    if (!isLoading && noticesData.length > 0 && latestNoticeRef.current) {
+      // 최신 공지 요소의 부모 컨테이너(main) 찾기
+      const mainContainer = latestNoticeRef.current.closest('main');
+      if (mainContainer) {
+        // 최신 공지의 상단 위치 계산
+        const noticeTop = latestNoticeRef.current.offsetTop;
+        // 화면 높이의 1/3 지점에 공지 시작점 배치
+        const containerHeight = mainContainer.clientHeight;
+        const targetScrollTop = noticeTop - (containerHeight / 3);
+
+        // 즉시 스크롤 (애니메이션 없음)
+        mainContainer.scrollTop = targetScrollTop;
+
+        logger.info('[Scroll Effect] Scrolled to latest notice at 1/3 position', {
+          noticeTop,
+          containerHeight,
+          targetScrollTop
+        });
+      }
     }
   }, [isLoading, noticesData.length]);
 
@@ -425,8 +442,8 @@ function ChatPageContent() {
                 </div>
 
                 {dateNotices.map((notice, noticeIndex) => {
-                  // 최신 공지 (첫 번째 그룹의 첫 번째 공지)에 ref 연결
-                  const isLatestNotice = isFirstGroup && noticeIndex === 0;
+                  // 최신 공지 (첫 번째 그룹의 마지막 공지)에 ref 연결
+                  const isLatestNotice = isFirstGroup && noticeIndex === dateNotices.length - 1;
 
                   return (
                     <div
