@@ -94,25 +94,20 @@ async function sendPushNotification(
   try {
     const message: admin.messaging.Message = {
       token,
-      notification: {
-        // title을 비워서 manifest.json의 short_name만 표시
-        // 이렇게 하면 "필립앤소피 from 필립앤소피" 중복 방지
-        body,
-      },
+      // notification 필드 제거 (FCM 자동 알림 방지)
+      // Service Worker의 onBackgroundMessage에서만 알림 표시
       data: {
         url,
         type,
-        // title을 data에 포함 (필요시 클릭 핸들러에서 사용 가능)
         title,
+        body, // body를 data에 포함하여 Service Worker로 전달
       },
       webpush: {
-        notification: {
-          icon: "/image/favicon.webp",
-          badge: "/image/favicon.webp",
-          requireInteraction: false,
-        },
         fcmOptions: {
           link: url,
+        },
+        headers: {
+          Urgency: "high",
         },
       },
     };

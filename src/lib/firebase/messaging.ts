@@ -326,9 +326,10 @@ function setupForegroundMessageHandler(messaging: Messaging): void {
 
     // Show browser notification
     // title을 비워서 manifest.json의 short_name이 자동으로 표시되도록 함
+    // body를 data 필드에서 읽음 (notification 필드는 사용하지 않음)
     const notificationOptions = {
-      body: payload.notification?.body || '새 알림이 도착했습니다',
-      icon: payload.notification?.icon || '/image/favicon.webp',
+      body: payload.data?.body || '새 알림이 도착했습니다',
+      icon: '/image/favicon.webp',
       badge: '/image/favicon.webp',
       tag: payload.data?.type || 'general',
       data: payload.data || {},

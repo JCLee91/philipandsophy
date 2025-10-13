@@ -28,11 +28,11 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-  // Extract notification data
+  // Extract notification data from data field (not notification field)
   // title 없이 body만 사용 (manifest.json의 short_name이 자동으로 표시됨)
   const notificationOptions = {
-    body: payload.notification?.body || '새 알림이 도착했습니다',
-    icon: payload.notification?.icon || '/image/favicon.webp',
+    body: payload.data?.body || '새 알림이 도착했습니다',
+    icon: '/image/favicon.webp',
     badge: '/image/favicon.webp',
     tag: payload.data?.type || 'general',
     data: payload.data || {},
