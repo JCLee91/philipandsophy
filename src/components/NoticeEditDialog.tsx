@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import UnifiedButton from '@/components/UnifiedButton';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface NoticeEditDialogProps {
   open: boolean;
@@ -21,6 +22,8 @@ export default function NoticeEditDialog({
   onSave,
   saving = false,
 }: NoticeEditDialogProps) {
+  useModalCleanup(open);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 flex flex-col gap-0">

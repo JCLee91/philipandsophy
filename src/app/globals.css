@@ -229,14 +229,17 @@
   padding-bottom: calc(16px + var(--app-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
-/* PWA Standalone 모드: 하단 여백 최소화 */
+/*
+ * PWA Standalone 모드: 하단 여백 최소화
+ *
+ * !important: Radix UI Dialog가 닫힐 때 CSS 미디어 쿼리 재적용 안 되는 버그 대응
+ * @see src/lib/modal-manager.ts for JavaScript cleanup logic
+ * TODO: Radix UI v2.x 업그레이드 후 !important 제거 가능 여부 확인
+ */
 @media (display-mode: standalone) {
-  :root {
-    --app-footer-padding: calc(3px + env(safe-area-inset-bottom, 0px));
-  }
-
   .app-footer {
-    padding-bottom: var(--app-footer-padding, calc(16px + env(safe-area-inset-bottom, 0px)));
+    /* 3px: iOS PWA에서 버튼과 화면 하단 사이 최소 탭 영역 확보 */
+    padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

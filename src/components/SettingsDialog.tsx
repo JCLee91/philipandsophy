@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react';
 import { NotificationToggle } from './NotificationToggle';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ interface SettingsDialogProps {
  * - 향후 추가 설정 항목
  */
 export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
+  useModalCleanup(isOpen);
+
   if (!isOpen) return null;
 
   return (

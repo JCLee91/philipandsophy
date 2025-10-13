@@ -83,6 +83,9 @@ function ChatPageContent() {
   // Race Condition 방지: 이미 네비게이션 중인지 추적
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // 최신 공지 요소 ref (스크롤 타겟)
+  const latestNoticeRef = useRef<HTMLDivElement>(null);
+
   // Firebase hooks for data fetching
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
@@ -131,6 +134,18 @@ function ChatPageContent() {
     }
   }, [sessionLoading, currentUser, cohortId]);
 
+  // 최신 공지로 자동 스크롤 (페이지 로드 시)
+  useEffect(() => {
+    if (!isLoading && noticesData.length > 0 && latestNoticeRef.current) {
+      latestNoticeRef.current.scrollIntoView({
+        behavior: 'auto',
+        block: 'start',
+        inline: 'nearest'
+      });
+
+      logger.info('Scrolled to latest notice');
+    }
+  }, [isLoading, noticesData.length]);
 
   // Callback hooks (must be before any conditional returns)
   const handleDMClick = useCallback((participant: Participant) => {
@@ -387,7 +402,7 @@ function ChatPageContent() {
           </div>
         )}
 
-        {/* 일반 공지 영역 - flex-col-reverse로 최신 공지가 위로 */}
+        {/* 일반 공지 영역 - flex-col-reverse로 최신 공지가 아래로 */}
         <main className="relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-20">
           {/* 일반 공지 영역 - 날짜별 그룹 */}
           {sortedGroupedNotices.map(([date, groupData], groupIndex) => {
@@ -409,24 +424,30 @@ function ChatPageContent() {
                   </div>
                 </div>
 
-                {dateNotices.map((notice, noticeIndex) => (
-                  <div
-                    key={notice.id}
-                    className="group transition-colors duration-normal hover:bg-muted/50"
-                  >
-                    <div className="container mx-auto max-w-3xl px-4 py-3">
-                      <NoticeItem
-                        notice={notice}
-                        isAdmin={isAdmin}
-                        onTogglePin={handleTogglePin}
-                        onEdit={handleEditNotice}
-                        onDelete={setDeleteConfirm}
-                        formatTime={formatTime}
-                        priority={hasNoPinnedNotices && isFirstGroup && noticeIndex === 0 && !!notice.imageUrl}
-                      />
+                {dateNotices.map((notice, noticeIndex) => {
+                  // 최신 공지 (첫 번째 그룹의 첫 번째 공지)에 ref 연결
+                  const isLatestNotice = isFirstGroup && noticeIndex === 0;
+
+                  return (
+                    <div
+                      key={notice.id}
+                      ref={isLatestNotice ? latestNoticeRef : null}
+                      className="group transition-colors duration-normal hover:bg-muted/50"
+                    >
+                      <div className="container mx-auto max-w-3xl px-4 py-3">
+                        <NoticeItem
+                          notice={notice}
+                          isAdmin={isAdmin}
+                          onTogglePin={handleTogglePin}
+                          onEdit={handleEditNotice}
+                          onDelete={setDeleteConfirm}
+                          formatTime={formatTime}
+                          priority={hasNoPinnedNotices && isLatestNotice && !!notice.imageUrl}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })}

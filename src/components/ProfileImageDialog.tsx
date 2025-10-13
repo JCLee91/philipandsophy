@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import type { Participant } from '@/types/database';
 import { UI_CONFIG } from '@/constants/migration';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface ProfileImageDialogProps {
   participant: Participant | null;
@@ -17,6 +18,8 @@ export default function ProfileImageDialog({
   open,
   onClose,
 }: ProfileImageDialogProps) {
+  useModalCleanup(open);
+
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const isMountedRef = useRef(true);

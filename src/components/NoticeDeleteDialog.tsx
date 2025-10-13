@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import UnifiedButton from '@/components/UnifiedButton';
 import type { Notice } from '@/types/database';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface NoticeDeleteDialogProps {
   open: boolean;
@@ -19,6 +20,8 @@ export default function NoticeDeleteDialog({
   onConfirm,
   deleting = false,
 }: NoticeDeleteDialogProps) {
+  useModalCleanup(open);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 flex flex-col gap-0">

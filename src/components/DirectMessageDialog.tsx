@@ -19,6 +19,7 @@ import DateDivider from '@/components/DateDivider';
 import MessageGroup from '@/components/MessageGroup';
 import { groupMessagesByDate } from '@/lib/message-grouping';
 import Image from 'next/image';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -35,6 +36,8 @@ export default function DirectMessageDialog({
   currentUser,
   otherUser,
 }: DirectMessageDialogProps) {
+  useModalCleanup(open);
+
   const [messageContent, setMessageContent] = useState('');
   const { imageFile, imagePreview, handleImageSelect, resetImage } = useImageUpload();
   const [uploading, setUploading] = useState(false);

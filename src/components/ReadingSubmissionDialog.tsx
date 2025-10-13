@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { getTodayString } from '@/lib/date-utils';
 import { validateImageFile } from '@/lib/image-compression';
 import type { ReadingSubmission } from '@/types/database';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface ReadingSubmissionDialogProps {
   open: boolean;
@@ -43,7 +44,8 @@ export default function ReadingSubmissionDialog({
   participationCode,
   existingSubmission,
 }: ReadingSubmissionDialogProps) {
-  
+  useModalCleanup(open);
+
   const isEditMode = !!existingSubmission;
 
   const [bookImage, setBookImage] = useState<File | null>(null);

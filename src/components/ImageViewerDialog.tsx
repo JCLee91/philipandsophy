@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface ImageViewerDialogProps {
   open: boolean;
@@ -24,6 +25,8 @@ export default function ImageViewerDialog({
   onOpenChange,
   imageUrl,
 }: ImageViewerDialogProps) {
+  useModalCleanup(open);
+
   const [imageError, setImageError] = useState(false);
 
   // Dialog가 열릴 때마다 에러 상태 리셋

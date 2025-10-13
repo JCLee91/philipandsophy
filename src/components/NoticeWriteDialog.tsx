@@ -6,6 +6,7 @@ import UnifiedButton from '@/components/UnifiedButton';
 import { Paperclip, X } from 'lucide-react';
 import Image from 'next/image';
 import { useImageUpload } from '@/hooks/use-image-upload';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface NoticeWriteDialogProps {
   open: boolean;
@@ -26,6 +27,9 @@ export default function NoticeWriteDialog({
 }: NoticeWriteDialogProps) {
   const { imageFile, imagePreview, handleImageSelect, resetImage } = useImageUpload();
 
+  // Radix UI Dialog body 스타일 정리 (Race Condition 방지)
+  useModalCleanup(open);
+
   const handleSubmit = async () => {
     await onSubmit(imageFile);
     resetImage();
@@ -37,19 +41,7 @@ export default function NoticeWriteDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(open) => {
-        onOpenChange(open);
-        // Radix UI Dialog가 닫힐 때 body 스타일 정리 (버그 해결)
-        if (!open) {
-          requestAnimationFrame(() => {
-            document.body.style.removeProperty('padding-right');
-            document.body.style.removeProperty('overflow');
-          });
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
         <DialogHeader className="px-6 py-6 border-b">
           <DialogTitle>공지 작성</DialogTitle>
