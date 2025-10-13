@@ -324,28 +324,10 @@ function setupForegroundMessageHandler(messaging: Messaging): void {
   onMessage(messaging, (payload) => {
     logger.info('Foreground message received', payload);
 
-    // Show browser notification
-    // body를 data 필드에서 읽음 (notification 필드는 사용하지 않음)
-    const notificationOptions = {
-      body: payload.data?.body || '새 알림이 도착했습니다',
-      icon: '/image/favicon.webp',
-      badge: '/image/favicon.webp',
-      tag: payload.data?.type || 'general',
-      data: payload.data || {},
-    };
-
-    // Show notification using Notification API
-    if (Notification.permission === 'granted') {
-      const notification = new Notification('필립앤소피', notificationOptions);
-
-      // Handle notification click
-      notification.onclick = (event) => {
-        event.preventDefault();
-        const url = payload.data?.url || '/app/chat';
-        window.open(url, '_blank');
-        notification.close();
-      };
-    }
+    // Foreground에서는 FCM notification이 자동으로 표시되지 않음
+    // 하지만 여기서 showNotification을 호출하면 "from 필립앤소피"가 붙음
+    // 따라서 foreground에서는 알림을 표시하지 않거나, UI 내에서 toast 등으로 처리
+    // 현재는 알림을 표시하지 않음 (백그라운드에서만 알림 표시)
   });
 }
 

@@ -94,15 +94,20 @@ async function sendPushNotification(
   try {
     const message: admin.messaging.Message = {
       token,
-      // notification 필드 제거 (FCM 자동 알림 방지)
-      // Service Worker의 onBackgroundMessage에서만 알림 표시
+      // notification 필드 사용 - FCM이 자동으로 알림 표시 ("from" 없음)
+      notification: {
+        title,
+        body,
+      },
       data: {
         url,
         type,
-        title,
-        body, // body를 data에 포함하여 Service Worker로 전달
       },
       webpush: {
+        notification: {
+          icon: "/image/favicon.webp",
+          badge: "/image/favicon.webp",
+        },
         fcmOptions: {
           link: url,
         },
@@ -182,8 +187,8 @@ export const onMessageCreated = onDocumentCreated(
     // Send push notification
     const success = await sendPushNotification(
       pushToken,
-      "필립앤소피",
-      `${senderName}: ${messagePreview}`,
+      senderName,
+      messagePreview,
       "/app/chat",
       "dm"
     );
