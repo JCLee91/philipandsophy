@@ -43,48 +43,38 @@ interface RawMatchingResponse {
 
 const DEFAULT_REASON_PLACEHOLDER = '사유가 제공되지 않았습니다.';
 
-function normalizeReasonValue(value: unknown): string | undefined {
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
-function normalizeReasons(reasons?: RawMatchingReasons | null): DailyMatchingReasons | undefined {
-  if (!reasons) return undefined;
-
-  const normalized: DailyMatchingReasons = {};
-  const similar = normalizeReasonValue(reasons.similar);
-  const opposite = normalizeReasonValue(reasons.opposite);
-  const summary = normalizeReasonValue(reasons.summary);
-
-  if (similar) {
-    normalized.similar = similar;
-  }
-  if (opposite) {
-    normalized.opposite = opposite;
-  }
-  if (summary) {
-    normalized.summary = summary;
-  }
-
-  return Object.keys(normalized).length > 0 ? normalized : undefined;
-}
-
-function ensureReasons(reasons?: DailyMatchingReasons | null): DailyMatchingReasons | undefined {
-  if (!reasons) {
+/**
+ * 매칭 이유 정규화 함수 (통합 버전)
+ * - null/undefined 처리
+ * - 문자열 trim 및 검증
+ * - placeholder 자동 주입
+ */
+function normalizeReasons(reasons?: unknown): DailyMatchingReasons {
+  // null/undefined는 placeholder 반환
+  if (!reasons || typeof reasons !== 'object') {
+    logger.warn('AI matching reasons missing or invalid, using placeholder', { reasons });
     return {
       similar: DEFAULT_REASON_PLACEHOLDER,
       opposite: DEFAULT_REASON_PLACEHOLDER,
     };
   }
 
-  return {
-    similar: reasons.similar ?? DEFAULT_REASON_PLACEHOLDER,
-    opposite: reasons.opposite ?? DEFAULT_REASON_PLACEHOLDER,
-    ...(reasons.summary ? { summary: reasons.summary } : {}),
+  const r = reasons as Record<string, unknown>;
+  const result: DailyMatchingReasons = {
+    similar: typeof r.similar === 'string' && r.similar.trim()
+      ? r.similar.trim()
+      : DEFAULT_REASON_PLACEHOLDER,
+    opposite: typeof r.opposite === 'string' && r.opposite.trim()
+      ? r.opposite.trim()
+      : DEFAULT_REASON_PLACEHOLDER,
   };
+
+  // summary는 선택적
+  if (typeof r.summary === 'string' && r.summary.trim()) {
+    result.summary = r.summary.trim();
+  }
+
+  return result;
 }
 
 function normalizeIds(
@@ -110,122 +100,41 @@ function normalizeIds(
 }
 
 /**
- * 다양성 검증 함수
- * 특정 인물이 과도하게 많은 추천을 받는지 확인
+ * 매칭 검증 함수 (단순화 버전)
+ * 치명적인 문제만 체크: 추천을 받지 못한 참가자가 있는지 확인
  */
-function validateDiversity(
+function validateMatching(
   matching: MatchingResult,
   participants: ParticipantAnswer[]
 ): void {
-  const participantMap = new Map(participants.map(p => [p.id, p]));
-  const recommendationCount = new Map<string, number>();
+  const recommendationCounts = new Map<string, number>();
 
   // 모든 추천 카운트
   for (const assignment of Object.values(matching.assignments)) {
-    for (const id of [...assignment.similar, ...assignment.opposite]) {
-      recommendationCount.set(id, (recommendationCount.get(id) || 0) + 1);
-    }
+    [...assignment.similar, ...assignment.opposite].forEach(id =>
+      recommendationCounts.set(id, (recommendationCounts.get(id) || 0) + 1)
+    );
   }
 
-  // 평균 및 최대 추천 수 계산
-  const counts = Array.from(recommendationCount.values());
-  const avgRecommendations = counts.reduce((a, b) => a + b, 0) / counts.length;
-  const maxRecommendations = Math.max(...counts);
+  // 추천을 받지 못한 참가자 찾기 (치명적 오류)
+  const unrecommended = participants.filter(p => !recommendationCounts.has(p.id));
 
-  // 과도한 추천을 받은 사람들 찾기 (평균의 2배 이상)
-  const overRecommended: string[] = [];
-  for (const [id, count] of recommendationCount.entries()) {
-    if (count > avgRecommendations * 2) {
-      const participant = participantMap.get(id);
-      overRecommended.push(`${participant?.name}(${count}회)`);
-    }
-  }
-
-  // 추천을 전혀 받지 못한 사람들 찾기
-  const notRecommended: string[] = [];
-  for (const participant of participants) {
-    if (!recommendationCount.has(participant.id)) {
-      notRecommended.push(participant.name);
-    }
-  }
-
-  // 로깅
-  logger.info('📊 다양성 분석 결과', {
-    totalParticipants: participants.length,
-    avgRecommendations: avgRecommendations.toFixed(1),
-    maxRecommendations,
-    overRecommendedCount: overRecommended.length,
-    notRecommendedCount: notRecommended.length,
-  });
-
-  if (overRecommended.length > 0) {
-    logger.warn(`⚠️ 과도한 추천을 받은 참가자 (평균의 2배 이상): ${overRecommended.join(', ')}`);
-  }
-
-  // 0번 추천받은 사람이 있으면 심각한 에러
-  if (notRecommended.length > 0) {
-    logger.error(`🚨 치명적 오류: 추천을 받지 못한 참가자 ${notRecommended.length}명 발견`);
-    logger.error(`⛔ 0번 추천받은 참가자: ${notRecommended.join(', ')}`);
-    logger.error(`💡 해결 방법: AI 매칭을 재실행하거나 관리자가 수동으로 추천을 추가해주세요.`);
-  }
-
-  if (overRecommended.length === 0 && notRecommended.length === 0) {
-    logger.info('✅ 추천 분산도 양호');
-  }
-}
-
-/**
- * 성별 균형 검증 함수
- * 각 참가자의 similar/opposite 추천이 1남 + 1녀 규칙을 따르는지 확인
- */
-function validateGenderBalance(
-  matching: MatchingResult,
-  participants: ParticipantAnswer[]
-): void {
-  const participantMap = new Map(participants.map(p => [p.id, p]));
-  const violations: string[] = [];
-
-  // 각 참가자별 assignments 검증
-  for (const [participantId, assignment] of Object.entries(matching.assignments)) {
-    const participant = participantMap.get(participantId);
-    if (!participant) continue;
-
-    const similarAssignments = assignment.similar
-      .map(id => participantMap.get(id))
-      .filter((p): p is ParticipantAnswer => p !== undefined);
-    const oppositeAssignments = assignment.opposite
-      .map(id => participantMap.get(id))
-      .filter((p): p is ParticipantAnswer => p !== undefined);
-
-    const similarGenders = similarAssignments.map(p => p.gender);
-    const oppositeGenders = oppositeAssignments.map(p => p.gender);
-
-    const hasBalancedSimilar =
-      similarGenders.includes('male') && similarGenders.includes('female');
-    const hasBalancedOpposite =
-      oppositeGenders.includes('male') && oppositeGenders.includes('female');
-
-    if (!hasBalancedSimilar) {
-      violations.push(
-        `${participant.name} - 비슷한 가치관: 성별 균형 위반 (${similarAssignments.map(p => `${p.name}(${p.gender})`).join(', ')})`
-      );
-    }
-    if (!hasBalancedOpposite) {
-      violations.push(
-        `${participant.name} - 상반된 가치관: 성별 균형 위반 (${oppositeAssignments.map(p => `${p.name}(${p.gender})`).join(', ')})`
-      );
-    }
-  }
-
-  // 위반 사항 로깅
-  if (violations.length > 0) {
-    logger.warn('⚠️ 성별 균형 규칙 위반 감지', {
-      violationCount: violations.length,
-      violations,
-      message: '관리자가 수동으로 조정이 필요합니다.',
+  if (unrecommended.length > 0) {
+    logger.error('🚨 치명적 오류: 추천을 받지 못한 참가자 발견', {
+      count: unrecommended.length,
+      names: unrecommended.map(p => p.name),
+      action: 'AI 매칭 재실행 필요',
     });
   } else {
-    logger.info('✅ 성별 균형 규칙 준수 확인');
+    const avgRecommendations = (
+      Array.from(recommendationCounts.values()).reduce((a, b) => a + b, 0) /
+      recommendationCounts.size
+    ).toFixed(1);
+
+    logger.info('✅ 매칭 검증 완료', {
+      totalParticipants: participants.length,
+      avgRecommendations,
+    });
   }
 }
 
@@ -395,7 +304,7 @@ JSON만 반환하세요.
 
       const similarIds = normalizeIds(entry.similar, validIds, participant.id);
       const oppositeIds = normalizeIds(entry.opposite, validIds, participant.id);
-      const reasons = ensureReasons(normalizeReasons(entry.reasons));
+      const reasons = normalizeReasons(entry.reasons);
 
       // 추천이 부족한 경우 경고 로그
       if (similarIds.length < 2) {
@@ -408,7 +317,7 @@ JSON만 반환하세요.
       assignments[participant.id] = {
         similar: similarIds.slice(0, 2),
         opposite: oppositeIds.slice(0, 2),
-        ...(reasons ? { reasons } : {}),
+        reasons,
       };
     }
 
@@ -422,11 +331,8 @@ JSON만 반환하세요.
     // AI 매칭 완료
     const matching = { assignments };
 
-    // 중복도 검증
-    validateDiversity(matching, participants);
-
-    // 성별 균형 규칙 검증
-    validateGenderBalance(matching, participants);
+    // 매칭 검증 (치명적 오류만 체크)
+    validateMatching(matching, participants);
 
     logger.info('✅ AI 매칭 완료 (수동 검토 대기)', {
       question,

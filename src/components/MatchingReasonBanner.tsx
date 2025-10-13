@@ -23,12 +23,19 @@ export default function MatchingReasonBanner({ reason, theme, className }: Match
   return (
     <div
       className={cn(
-        'rounded-2xl p-5 transition-all duration-300',
+        'rounded-2xl p-5',
+        // 애니메이션 (접근성: prefers-reduced-motion 지원)
+        'transition-[background-color,border-color,box-shadow]',
+        'duration-normal ease-smooth',
+        'motion-reduce:transition-none motion-reduce:duration-0',
+        // 테마별 색상
         isSimilar
           ? 'bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200'
           : 'bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200',
         className
       )}
+      role="region"
+      aria-label={isSimilar ? '비슷한 가치관 매칭 이유' : '다른 가치관 매칭 이유'}
     >
       <div className="flex items-start gap-3">
         {/* Icon */}
@@ -37,6 +44,7 @@ export default function MatchingReasonBanner({ reason, theme, className }: Match
             'flex-shrink-0 mt-0.5 p-2 rounded-full',
             isSimilar ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'
           )}
+          aria-hidden="true"
         >
           {isSimilar ? (
             <Sparkles className="w-4 h-4" />
@@ -53,7 +61,8 @@ export default function MatchingReasonBanner({ reason, theme, className }: Match
               isSimilar ? 'text-blue-900' : 'text-amber-900'
             )}
           >
-            {isSimilar ? '🤝 비슷한 점' : '🎯 다른 점'}
+            <span aria-hidden="true">{isSimilar ? '🤝 ' : '🎯 '}</span>
+            {isSimilar ? '비슷한 점' : '다른 점'}
           </h3>
           <p
             className={cn(

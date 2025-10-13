@@ -24,6 +24,7 @@ import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/pr
 import { getTodayString, getYesterdayString, filterSubmissionsByDate } from '@/lib/date-utils';
 import { normalizeMatchingData } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
+import { logger } from '@/lib/logger';
 
 interface ProfileBookContentProps {
   params: Promise<{ participantId: string }>;
@@ -171,15 +172,32 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     const isSimilar = viewerAssignment.similar?.includes(participantId);
     const isOpposite = viewerAssignment.opposite?.includes(participantId);
 
+    // Theme은 매칭 타입에서 직접 유도 (URL theme은 무시)
     if (isSimilar && viewerAssignment.reasons?.similar) {
-      return { text: viewerAssignment.reasons.similar, theme: theme };
+      return {
+        text: viewerAssignment.reasons.similar,
+        theme: 'similar' as ProfileTheme
+      };
     }
     if (isOpposite && viewerAssignment.reasons?.opposite) {
-      return { text: viewerAssignment.reasons.opposite, theme: theme };
+      return {
+        text: viewerAssignment.reasons.opposite,
+        theme: 'opposite' as ProfileTheme
+      };
+    }
+
+    // 경고 로깅: 데이터 불일치 감지
+    if (isSimilar || isOpposite) {
+      logger.warn('Matching reason missing despite being featured', {
+        participantId,
+        isSimilar,
+        isOpposite,
+        hasReasons: !!viewerAssignment.reasons,
+      });
     }
 
     return null;
-  }, [viewerAssignment, isFeatured, participantId, theme]);
+  }, [viewerAssignment, isFeatured, participantId]);
 
   // 최종 접근 권한: 본인 OR 운영자 OR (오늘 인증 완료 AND 추천 4명 중 하나)
   const hasAccess = isSelf || isAdmin || (isVerifiedToday && isFeatured);
