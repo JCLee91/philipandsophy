@@ -84,6 +84,20 @@ class ModalStateManager {
 
     // 강제 reflow (브라우저가 CSS 미디어 쿼리 재계산)
     void document.body.offsetHeight;
+
+    // iOS PWA: 모달 닫힌 후 뷰포트 변수 재계산
+    // visualViewport resize 이벤트가 발생하지 않아 AppViewportEffect가 업데이트 못하는 문제 해결
+    if (typeof window !== 'undefined') {
+      const viewport = window.visualViewport;
+      const height = viewport?.height ?? window.innerHeight;
+      const bottomInset = viewport
+        ? Math.max(window.innerHeight - (viewport.height + viewport.offsetTop), 0)
+        : 0;
+
+      const root = document.documentElement;
+      root.style.setProperty('--app-viewport-height', `${height}px`);
+      root.style.setProperty('--app-safe-area-bottom', `${bottomInset}px`);
+    }
   }
 
   /**
