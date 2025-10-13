@@ -184,8 +184,8 @@ export const onMessageCreated = onDocumentCreated(
     // Send push notification
     const success = await sendPushNotification(
       pushToken,
-      `${senderName}님의 메시지`,
-      messagePreview,
+      "필립앤소피",
+      `${senderName}: ${messagePreview}`,
       "/app/chat",
       "dm"
     );
@@ -245,8 +245,8 @@ export const onNoticeCreated = onDocumentCreated(
 
       const success = await sendPushNotification(
         pushToken,
-        "📢 새 공지사항",
-        noticePreview,
+        "필립앤소피",
+        `📢 ${noticePreview}`,
         "/app/chat",
         "notice"
       );
@@ -315,8 +315,8 @@ export const sendMatchingNotifications = onRequest(
 
         const success = await sendPushNotification(
           pushToken,
-          "📚 오늘의 프로필북이 도착했어요!",
-          "새로운 독서 친구들을 만나보세요",
+          "필립앤소피",
+          "📚 오늘의 프로필북이 도착했어요",
           "/app/chat/today-library",
           "matching"
         );
@@ -430,47 +430,8 @@ export const scheduledMatchingPreview = onSchedule(
 
       logger.info(`Preview saved to Firestore: ${previewRef.id}`);
 
-      // 4. 관리자들에게 푸시 알림 전송
-      const adminsSnapshot = await admin
-        .firestore()
-        .collection("participants")
-        .where("isAdministrator", "==", true)
-        .get();
-
-      if (adminsSnapshot.empty) {
-        logger.warn("No administrators found");
-        return;
-      }
-
-      const adminPushPromises = adminsSnapshot.docs.map(async (doc) => {
-        const adminId = doc.id;
-        const adminName = doc.data().name || "관리자";
-        const pushToken = doc.data().pushToken;
-
-        if (!pushToken) {
-          logger.info(`No push token for admin: ${adminName}`);
-          return false;
-        }
-
-        const success = await sendPushNotification(
-          pushToken,
-          "🤖 AI 매칭 분석 완료",
-          `${previewResult.totalParticipants}명의 답변을 분석했어요. 관리자 페이지에서 확인하세요!`,
-          "/app/admin/matching",
-          "matching_preview"
-        );
-
-        if (!success) {
-          await removeExpiredToken(adminId);
-        }
-
-        return success;
-      });
-
-      const adminResults = await Promise.all(adminPushPromises);
-      const adminNotificationsSent = adminResults.filter((r) => r === true).length;
-
-      logger.info(`✅ Scheduled matching preview completed: ${adminNotificationsSent}/${adminsSnapshot.size} admin notifications sent`);
+      // AI 매칭 완료 알림은 보내지 않음 (관리자가 직접 확인)
+      logger.info(`✅ Scheduled matching preview completed (no notifications sent)`);
     } catch (error) {
       logger.error("❌ Scheduled matching preview failed", error as Error);
       throw error; // Retry on failure

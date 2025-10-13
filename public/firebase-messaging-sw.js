@@ -31,7 +31,7 @@ messaging.onBackgroundMessage((payload) => {
   // Extract notification data
   const notificationTitle = payload.notification?.title || '필립앤소피';
   const notificationOptions = {
-    body: payload.notification?.body || '새로운 알림이 도착했습니다',
+    body: payload.notification?.body || '새 알림이 도착했습니다',
     icon: payload.notification?.icon || '/image/favicon.webp',
     badge: '/image/favicon.webp',
     tag: payload.data?.type || 'general',

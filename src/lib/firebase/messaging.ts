@@ -283,9 +283,9 @@ function setupForegroundMessageHandler(messaging: Messaging): void {
     logger.info('Foreground message received', payload);
 
     // Show browser notification
-    const notificationTitle = payload.notification?.title || 'D�d�<';
+    const notificationTitle = payload.notification?.title || '필립앤소피';
     const notificationOptions = {
-      body: payload.notification?.body || '�\� L�t �)����',
+      body: payload.notification?.body || '새 알림이 도착했습니다',
       icon: payload.notification?.icon || '/image/favicon.webp',
       badge: '/image/favicon.webp',
       tag: payload.data?.type || 'general',

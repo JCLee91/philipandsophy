@@ -2,14 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
+import { getMessaging } from 'firebase/messaging';
+import { getFirebaseApp } from '@/lib/firebase';
+import { initializePushNotifications } from '@/lib/firebase/messaging';
+import { logger } from '@/lib/logger';
 
 /**
  * 알림 권한 요청 프롬프트 컴포넌트
- * 사용자에게 브라우저 알림 권한을 요청합니다.
+ * 사용자에게 브라우저 알림 권한을 요청하고 FCM 토큰을 저장합니다.
  */
 export function NotificationPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [participantId, setParticipantId] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  // localStorage에서 participantId 가져오기
+  useEffect(() => {
+    const storedParticipantId = localStorage.getItem('participantId');
+    if (storedParticipantId) {
+      setParticipantId(storedParticipantId);
+      logger.info('Participant ID loaded from localStorage', { participantId: storedParticipantId });
+    }
+  }, []);
 
   useEffect(() => {
     console.log('[NotificationPrompt] Component mounted');
@@ -44,20 +59,48 @@ export function NotificationPrompt() {
   }, []);
 
   const handleRequestPermission = async () => {
+    if (!participantId) {
+      logger.error('Cannot initialize push notifications: participantId not found');
+      return;
+    }
+
     try {
+      setIsInitializing(true);
+
+      // 1. 브라우저 알림 권한 요청
       const result = await Notification.requestPermission();
       setPermission(result);
       setShowPrompt(false);
 
       if (result === 'granted') {
-        // 테스트 알림 전송
-        new Notification('필립앤소피', {
-          body: '알림이 활성화되었습니다! 🎉',
-          icon: '/favicon.webp',
-        });
+        logger.info('Notification permission granted, initializing FCM...');
+
+        // 2. Firebase Messaging 초기화 및 FCM 토큰 저장
+        const messaging = getMessaging(getFirebaseApp());
+        const token = await initializePushNotifications(messaging, participantId);
+
+        if (token) {
+          logger.info('Push notifications initialized successfully', {
+            participantId,
+            tokenPrefix: token.substring(0, 20) + '...'
+          });
+
+          // 3. 테스트 알림 전송
+          new Notification('필립앤소피', {
+            body: '알림이 활성화되었습니다 🎉',
+            icon: '/image/favicon.webp',
+            badge: '/image/favicon.webp',
+          });
+        } else {
+          logger.error('Failed to get FCM token');
+        }
+      } else {
+        logger.warn('Notification permission denied', { result });
       }
     } catch (error) {
-      console.error('알림 권한 요청 실패:', error);
+      logger.error('Error requesting notification permission', error);
+    } finally {
+      setIsInitializing(false);
     }
   };
 
@@ -73,28 +116,29 @@ export function NotificationPrompt() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 animate-in slide-in-from-bottom-5 md:left-auto md:right-4 md:w-96">
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
-            <Bell className="h-5 w-5 text-blue-600" />
-          </div>
-          
+      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h3 className="font-bold text-gray-900">알림 받기</h3>
-            <p className="mt-1 text-sm text-gray-600">
-              ⚠️ 중요 | 새로운 메시지, 공지사항, 프로필북 도착 소식 등을 실시간으로 받아보실 수 있습니다. 꼭 허용해주세요.
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-gray-900" />
+              <h3 className="font-bold text-gray-900">알림 허용</h3>
+            </div>
+            <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+              새로운 메시지와 공지사항을 실시간으로 받아보세요
             </p>
-            
-            <div className="mt-3 flex gap-2">
+
+            <div className="mt-4 flex gap-2">
               <button
                 onClick={handleRequestPermission}
-                className="flex-1 rounded-lg bg-black px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-gray-800"
+                disabled={isInitializing}
+                className="flex-1 rounded-lg bg-black px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                알림 받기
+                {isInitializing ? '설정 중...' : '허용'}
               </button>
               <button
                 onClick={handleDismiss}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50"
+                disabled={isInitializing}
+                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 나중에
               </button>
@@ -103,7 +147,8 @@ export function NotificationPrompt() {
 
           <button
             onClick={handleDismiss}
-            className="shrink-0 rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            disabled={isInitializing}
+            className="shrink-0 rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
             aria-label="닫기"
           >
             <X className="h-4 w-4" />
