@@ -59,14 +59,15 @@ function truncateToken(token: string): string {
 }
 
 /**
- * Helper: Get non-admin participants in cohort
+ * Helper: Get all participants in cohort (including admins)
  */
-async function getCohortParticipants(cohortId: string) {
+async function getCohortParticipants(
+  cohortId: string
+): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
   return admin
     .firestore()
     .collection("participants")
     .where("cohortId", "==", cohortId)
-    .where("isAdministrator", "==", false)
     .get();
 }
 
@@ -154,8 +155,16 @@ async function sendPushNotification(
     logger.info(`Push notification sent to token: ${truncateToken(token)}`);
     return true;
   } catch (error: any) {
-    if (error.code === "messaging/registration-token-not-registered") {
-      logger.warn(`Push token expired: ${truncateToken(token)}`);
+    // Handle expired or invalid token errors
+    const expiredTokenErrors = [
+      "messaging/registration-token-not-registered",
+      "messaging/invalid-registration-token",
+      "messaging/mismatched-credential",
+      "messaging/invalid-apns-credentials",
+    ];
+
+    if (expiredTokenErrors.includes(error.code)) {
+      logger.warn(`Push token invalid (${error.code}): ${truncateToken(token)}`);
       return false;
     }
 
@@ -261,7 +270,7 @@ export const onNoticeCreated = onDocumentCreated(
       return;
     }
 
-    // Get all participants in cohort (excluding admins)
+    // Get all participants in cohort (including admins)
     const participantsSnapshot = await getCohortParticipants(cohortId);
 
     if (participantsSnapshot.empty) {
@@ -329,7 +338,7 @@ export const sendMatchingNotifications = onRequest(
     }
 
     try {
-      // Get all participants in cohort (excluding admins)
+      // Get all participants in cohort (including admins)
       const participantsSnapshot = await getCohortParticipants(cohortId);
 
       if (participantsSnapshot.empty) {
