@@ -66,6 +66,7 @@ export function usePushNotifications(
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [cleanup, setCleanup] = useState<(() => void) | null>(null);
 
   /**
    * Request notification permission
@@ -98,7 +99,11 @@ export function usePushNotifications(
       const messaging = getMessaging(getFirebaseApp());
 
       // Initialize push notifications
-      await initializePushNotifications(messaging, participantId);
+      const initResult = await initializePushNotifications(messaging, participantId);
+
+      if (initResult) {
+        setCleanup(() => initResult.cleanup);
+      }
 
       // Auto-refresh token (iOS fix)
       await autoRefreshPushToken(messaging, participantId);
@@ -147,6 +152,18 @@ export function usePushNotifications(
 
     return () => clearInterval(interval);
   }, [enabled, isSupported, participantId, permission]);
+
+  /**
+   * Cleanup on unmount to prevent memory leaks
+   */
+  useEffect(() => {
+    return () => {
+      if (cleanup) {
+        cleanup();
+        logger.info('Push notification listener cleaned up');
+      }
+    };
+  }, [cleanup]);
 
   return {
     isSupported,

@@ -2,6 +2,7 @@ export const UI_CONSTANTS = {
   SCROLL_THRESHOLD: 50, // px - 스크롤 하단 감지 임계값
   DEBOUNCE_DELAY: 500, // ms
   CACHE_MAX_SIZE: 50,
+  NOTIFICATION_PROMPT_DELAY: 3000, // ms - 알림 프롬프트 표시 전 대기 시간
 } as const;
 
 /**

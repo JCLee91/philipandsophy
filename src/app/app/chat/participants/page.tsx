@@ -59,11 +59,7 @@ function ParticipantRow({
   if (isAdmin && participant.id !== currentUserId) {
     return (
       <div className="flex w-full items-center gap-2 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
-        <button
-          type="button"
-          onClick={() => onProfileClick(participant)}
-          className="flex flex-1 items-center gap-3 text-left"
-        >
+        <div className="flex flex-1 items-center gap-3">
           <div className="relative">
             <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
               <AvatarImage
@@ -86,7 +82,7 @@ function ParticipantRow({
             )}
           </div>
           <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
-        </button>
+        </div>
         <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
           <DropdownMenuTrigger asChild>
             <button
@@ -279,13 +275,6 @@ function ParticipantsPageContent() {
 
         <div className="border-t bg-white">
           <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-4 py-4">
-            <UnifiedButton
-              variant="outline"
-              onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
-              icon={<BookOpen className="h-5 w-5" />}
-            >
-              오늘의 서재 보기
-            </UnifiedButton>
             <UnifiedButton
               variant="destructive"
               onClick={logout}

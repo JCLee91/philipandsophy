@@ -23,15 +23,11 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 /**
- * Handle background messages (when app is not in focus)
+ * Background message handling
  *
- * NOTE: onBackgroundMessage를 제거하여 FCM 자동 알림만 사용
- * FCM의 notification 필드를 사용하면 "from 앱이름" 없이 깔끔하게 표시됨
- * Service Worker에서 showNotification()을 호출하면 "from" 텍스트가 추가됨
+ * FCM automatically displays notifications when using the 'notification' field.
+ * No manual handling needed - this prevents "from 앱이름" text from appearing.
  */
-// messaging.onBackgroundMessage((payload) => {
-//   // FCM이 자동으로 알림을 표시하므로 여기서는 처리하지 않음
-// });
 
 /**
  * Handle notification click events

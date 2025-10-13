@@ -229,11 +229,11 @@
   padding-bottom: calc(16px + var(--app-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
-/* iOS PWA Standalone 모드: 하단 여백 줄이기 */
+/* iOS PWA Standalone 모드: 하단 여백 최소화 */
 @supports (-webkit-touch-callout: none) {
   @media (display-mode: standalone) {
     .app-footer {
-      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px));
     }
   }
 }

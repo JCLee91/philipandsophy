@@ -4,18 +4,27 @@ import { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 import { getMessaging } from 'firebase/messaging';
 import { getFirebaseApp } from '@/lib/firebase';
-import { initializePushNotifications } from '@/lib/firebase/messaging';
+import { initializePushNotifications, getPushTokenFromFirestore } from '@/lib/firebase/messaging';
 import { logger } from '@/lib/logger';
+import { toast } from '@/hooks/use-toast';
+import { UI_CONSTANTS } from '@/constants/ui';
 
 /**
  * 알림 권한 요청 프롬프트 컴포넌트
  * 사용자에게 브라우저 알림 권한을 요청하고 FCM 토큰을 저장합니다.
+ *
+ * 수정 사항 (2025-10-13):
+ * - Firestore pushToken 확인하여 이미 허용된 사용자는 프롬프트 표시 안 함
+ * - participantId 로딩 상태 처리
+ * - 사용자 피드백 강화
  */
 export function NotificationPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [cleanup, setCleanup] = useState<(() => void) | null>(null);
+  const [isCheckingToken, setIsCheckingToken] = useState(true);
 
   // localStorage에서 participantId 가져오기
   useEffect(() => {
@@ -26,41 +35,88 @@ export function NotificationPrompt() {
     }
   }, []);
 
+  // Firestore에서 pushToken 확인 후 프롬프트 표시 여부 결정
   useEffect(() => {
-    console.log('[NotificationPrompt] Component mounted');
+    let cleanup: (() => void) | undefined;
 
-    // 브라우저가 알림을 지원하는지 확인
-    if (!('Notification' in window)) {
-      console.log('[NotificationPrompt] Notification API not supported');
-      return;
-    }
+    const checkAndShowPrompt = async () => {
+      logger.info('[NotificationPrompt] Component mounted');
 
-    console.log('[NotificationPrompt] Current permission:', Notification.permission);
+      // 브라우저가 알림을 지원하는지 확인
+      if (!('Notification' in window)) {
+        logger.info('[NotificationPrompt] Notification API not supported');
+        setIsCheckingToken(false);
+        return;
+      }
 
-    // 현재 알림 권한 상태 확인
-    setPermission(Notification.permission);
+      logger.info('[NotificationPrompt] Current permission:', Notification.permission);
 
-    // 권한이 아직 결정되지 않았고, 사용자가 이전에 거부하지 않았다면 프롬프트 표시
-    const hasDeclinedBefore = localStorage.getItem('notification-declined');
-    console.log('[NotificationPrompt] Has declined before:', hasDeclinedBefore);
+      // 현재 알림 권한 상태 확인
+      setPermission(Notification.permission);
 
-    if (Notification.permission === 'default' && !hasDeclinedBefore) {
-      console.log('[NotificationPrompt] Will show prompt in 3 seconds');
-      // 페이지 로드 후 3초 뒤에 프롬프트 표시
-      const timer = setTimeout(() => {
-        console.log('[NotificationPrompt] Showing prompt now');
-        setShowPrompt(true);
-      }, 3000);
+      // participantId가 없으면 대기
+      if (!participantId) {
+        logger.debug('[NotificationPrompt] Waiting for participantId...');
+        setIsCheckingToken(false);
+        return;
+      }
 
-      return () => clearTimeout(timer);
-    } else {
-      console.log('[NotificationPrompt] Will NOT show prompt - permission:', Notification.permission, 'hasDeclined:', hasDeclinedBefore);
-    }
-  }, []);
+      try {
+        // 1. Firestore에서 pushToken 확인 (디바이스 간 동기화)
+        const existingToken = await getPushTokenFromFirestore(participantId);
+
+        if (existingToken) {
+          logger.info('[NotificationPrompt] User already has push token, skipping prompt');
+          setIsCheckingToken(false);
+          return;
+        }
+
+        // 2. localStorage에서 거부 이력 확인 (디바이스별)
+        const hasDeclinedBefore = localStorage.getItem('notification-declined');
+        logger.debug('[NotificationPrompt] Has declined before:', hasDeclinedBefore);
+
+        // 3. 조건: permission === 'default' AND 거부 이력 없음 AND Firestore에 토큰 없음
+        if (Notification.permission === 'default' && !hasDeclinedBefore) {
+          logger.debug('[NotificationPrompt] Will show prompt after delay');
+          // 페이지 로드 후 일정 시간 뒤에 프롬프트 표시
+          const timer = setTimeout(() => {
+            logger.info('[NotificationPrompt] Showing prompt now');
+            setShowPrompt(true);
+            setIsCheckingToken(false);
+          }, UI_CONSTANTS.NOTIFICATION_PROMPT_DELAY);
+
+          cleanup = () => clearTimeout(timer);
+        } else {
+          logger.debug('[NotificationPrompt] Will NOT show prompt', {
+            permission: Notification.permission,
+            hasDeclined: hasDeclinedBefore,
+          });
+          setIsCheckingToken(false);
+        }
+      } catch (error) {
+        logger.error('[NotificationPrompt] Error checking push token', error);
+        setIsCheckingToken(false);
+      }
+    };
+
+    checkAndShowPrompt();
+
+    return () => {
+      cleanup?.();
+    };
+  }, [participantId]);
 
   const handleRequestPermission = async () => {
-    if (!participantId) {
+    // Capture participantId in closure to prevent race condition
+    const capturedParticipantId = participantId;
+
+    if (!capturedParticipantId) {
       logger.error('Cannot initialize push notifications: participantId not found');
+      toast({
+        variant: 'destructive',
+        title: '사용자 정보를 불러오는 중입니다',
+        description: '잠시 후 다시 시도해주세요.',
+      });
       return;
     }
 
@@ -75,13 +131,14 @@ export function NotificationPrompt() {
       if (result === 'granted') {
         logger.info('Notification permission granted, initializing FCM...');
 
-        // 2. Firebase Messaging 초기화 및 FCM 토큰 저장
+        // 2. Firebase Messaging 초기화 및 FCM 토큰 저장 (use captured value)
         const messaging = getMessaging(getFirebaseApp());
-        const token = await initializePushNotifications(messaging, participantId);
+        const initResult = await initializePushNotifications(messaging, capturedParticipantId);
 
-        if (token) {
+        if (initResult) {
+          setCleanup(() => initResult.cleanup);
           logger.info('Push notifications initialized successfully', {
-            participantId,
+            participantId: capturedParticipantId,
           });
 
           // 3. 테스트 알림 전송 (최초 1회만)
@@ -102,12 +159,24 @@ export function NotificationPrompt() {
           }
         } else {
           logger.error('Failed to get FCM token');
+          toast({
+            variant: 'destructive',
+            title: '알림 설정 실패',
+            description: '알림 토큰을 가져올 수 없습니다. 다시 시도해주세요.',
+          });
         }
-      } else {
+      } else if (result === 'denied') {
         logger.warn('Notification permission denied', { result });
+        // localStorage에 거부 이력 저장하여 다시 표시 안 함
+        localStorage.setItem('notification-declined', 'true');
       }
     } catch (error) {
       logger.error('Error requesting notification permission', error);
+      toast({
+        variant: 'destructive',
+        title: '알림 설정 오류',
+        description: '알림 설정 중 오류가 발생했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setIsInitializing(false);
     }
@@ -117,6 +186,15 @@ export function NotificationPrompt() {
     setShowPrompt(false);
     localStorage.setItem('notification-declined', 'true');
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [cleanup]);
 
   // 프롬프트를 표시하지 않는 경우
   if (!showPrompt || permission !== 'default') {
@@ -140,15 +218,15 @@ export function NotificationPrompt() {
               <button
                 type="button"
                 onClick={handleRequestPermission}
-                disabled={isInitializing}
+                disabled={isInitializing || !participantId || isCheckingToken}
                 className="flex-1 rounded-lg bg-black px-6 py-3.5 text-base font-bold text-white transition-colors active:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[48px]"
               >
-                {isInitializing ? '설정 중...' : '허용'}
+                {isCheckingToken ? '확인 중...' : isInitializing ? '설정 중...' : '허용'}
               </button>
               <button
                 type="button"
                 onClick={handleDismiss}
-                disabled={isInitializing}
+                disabled={isInitializing || isCheckingToken}
                 className="rounded-lg border border-gray-300 px-6 py-3.5 text-base font-medium text-gray-700 transition-colors active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[48px]"
               >
                 나중에
@@ -159,7 +237,7 @@ export function NotificationPrompt() {
           <button
             type="button"
             onClick={handleDismiss}
-            disabled={isInitializing}
+            disabled={isInitializing || isCheckingToken}
             className="shrink-0 rounded-lg p-3 text-gray-400 transition-colors active:bg-gray-200 disabled:opacity-50 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="닫기"
           >

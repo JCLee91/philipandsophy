@@ -30,6 +30,7 @@ export function NotificationToggle() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [showDeniedMessage, setShowDeniedMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cleanup, setCleanup] = useState<(() => void) | null>(null);
 
   // Check current notification status
   useEffect(() => {
@@ -41,6 +42,15 @@ export function NotificationToggle() {
       setPermission(Notification.permission);
     }
   }, [participantId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [cleanup]);
 
   /**
    * 알림 상태 확인
@@ -89,9 +99,10 @@ export function NotificationToggle() {
 
         // 2. FCM 토큰 획득 및 저장
         const messaging = getMessaging(getFirebaseApp());
-        const token = await initializePushNotifications(messaging, participantId);
+        const initResult = await initializePushNotifications(messaging, participantId);
 
-        if (token) {
+        if (initResult) {
+          setCleanup(() => initResult.cleanup);
           setIsEnabled(true);
           logger.info('Notifications enabled successfully');
         } else {
@@ -110,6 +121,7 @@ export function NotificationToggle() {
   /**
    * 알림 비활성화
    * - Firestore에서 pushToken 제거
+   * - Cleanup function 실행하여 메모리 누수 방지
    */
   const disableNotifications = async () => {
     if (!participantId) {
@@ -119,6 +131,12 @@ export function NotificationToggle() {
 
     try {
       setIsLoading(true);
+
+      // Cleanup listener to prevent memory leak
+      if (cleanup) {
+        cleanup();
+        setCleanup(null);
+      }
 
       // Firestore에서 pushToken 필드 삭제
       const participantRef = doc(getDb(), 'participants', participantId);

@@ -15,6 +15,12 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
 import { logger } from "./lib/logger";
+import {
+  NOTIFICATION_CONFIG,
+  NOTIFICATION_MESSAGES,
+  NOTIFICATION_ROUTES,
+  NOTIFICATION_TYPES,
+} from "./constants/notifications";
 
 // Global options for all functions
 setGlobalOptions({
@@ -35,6 +41,34 @@ const apiBaseUrlParam = defineString("API_BASE_URL", {
 
 // Initialize Firebase Admin
 admin.initializeApp();
+
+/**
+ * Helper: Truncate long text for notifications
+ */
+function truncateContent(content: string, maxLength = 100): string {
+  return content.length > maxLength
+    ? `${content.substring(0, maxLength)}...`
+    : content;
+}
+
+/**
+ * Helper: Safely truncate token for logging (security best practice)
+ */
+function truncateToken(token: string): string {
+  return `${token.substring(0, 20)}...`;
+}
+
+/**
+ * Helper: Get non-admin participants in cohort
+ */
+async function getCohortParticipants(cohortId: string) {
+  return admin
+    .firestore()
+    .collection("participants")
+    .where("cohortId", "==", cohortId)
+    .where("isAdministrator", "==", false)
+    .get();
+}
 
 /**
  * Helper: Get push token for a participant
@@ -94,7 +128,6 @@ async function sendPushNotification(
   try {
     const message: admin.messaging.Message = {
       token,
-      // notification 필드 사용 - FCM이 자동으로 알림 표시 ("from" 없음)
       notification: {
         title,
         body,
@@ -105,25 +138,24 @@ async function sendPushNotification(
       },
       webpush: {
         notification: {
-          icon: "/image/favicon.webp",
-          badge: "/image/favicon.webp",
+          icon: NOTIFICATION_CONFIG.ICON_PATH,
+          badge: NOTIFICATION_CONFIG.BADGE_PATH,
         },
         fcmOptions: {
           link: url,
         },
         headers: {
-          Urgency: "high",
+          Urgency: NOTIFICATION_CONFIG.URGENCY,
         },
       },
     };
 
     await admin.messaging().send(message);
-    logger.info(`Push notification sent successfully to token: ${token.substring(0, 20)}...`);
+    logger.info(`Push notification sent to token: ${truncateToken(token)}`);
     return true;
   } catch (error: any) {
-    // Handle expired token
     if (error.code === "messaging/registration-token-not-registered") {
-      logger.warn(`Push token expired: ${token.substring(0, 20)}...`);
+      logger.warn(`Push token expired: ${truncateToken(token)}`);
       return false;
     }
 
@@ -168,6 +200,12 @@ export const onMessageCreated = onDocumentCreated(
 
     const {senderId, receiverId, content} = messageData;
 
+    // Validate required fields
+    if (!senderId || !receiverId || !content) {
+      logger.error("Missing required fields in message data", {senderId, receiverId, hasContent: !!content});
+      return;
+    }
+
     // Get sender name
     const senderName = await getParticipantName(senderId);
 
@@ -180,17 +218,15 @@ export const onMessageCreated = onDocumentCreated(
     }
 
     // Truncate long messages
-    const messagePreview = content.length > 100 ?
-      `${content.substring(0, 100)}...` :
-      content;
+    const messagePreview = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
     // Send push notification
     const success = await sendPushNotification(
       pushToken,
       senderName,
       messagePreview,
-      "/app/chat",
-      "dm"
+      NOTIFICATION_ROUTES.CHAT,
+      NOTIFICATION_TYPES.DM
     );
 
     // Remove expired token if send failed
@@ -219,13 +255,14 @@ export const onNoticeCreated = onDocumentCreated(
 
     const {cohortId, content} = noticeData;
 
+    // Validate required fields
+    if (!cohortId || !content) {
+      logger.error("Missing required fields in notice data", {cohortId, hasContent: !!content});
+      return;
+    }
+
     // Get all participants in cohort (excluding admins)
-    const participantsSnapshot = await admin
-      .firestore()
-      .collection("participants")
-      .where("cohortId", "==", cohortId)
-      .where("isAdministrator", "==", false)
-      .get();
+    const participantsSnapshot = await getCohortParticipants(cohortId);
 
     if (participantsSnapshot.empty) {
       logger.info(`No participants found in cohort: ${cohortId}`);
@@ -233,9 +270,7 @@ export const onNoticeCreated = onDocumentCreated(
     }
 
     // Truncate long notice
-    const noticePreview = content.length > 100 ?
-      `${content.substring(0, 100)}...` :
-      content;
+    const noticePreview = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
     // Send push notification to all participants
     const pushPromises = participantsSnapshot.docs.map(async (doc) => {
@@ -248,10 +283,10 @@ export const onNoticeCreated = onDocumentCreated(
 
       const success = await sendPushNotification(
         pushToken,
-        "필립앤소피",
-        `📢 ${noticePreview}`,
-        "/app/chat",
-        "notice"
+        NOTIFICATION_CONFIG.BRAND_NAME,
+        NOTIFICATION_MESSAGES.NOTICE(noticePreview),
+        NOTIFICATION_ROUTES.CHAT,
+        NOTIFICATION_TYPES.NOTICE
       );
 
       // Remove expired token if send failed
@@ -295,12 +330,7 @@ export const sendMatchingNotifications = onRequest(
 
     try {
       // Get all participants in cohort (excluding admins)
-      const participantsSnapshot = await admin
-        .firestore()
-        .collection("participants")
-        .where("cohortId", "==", cohortId)
-        .where("isAdministrator", "==", false)
-        .get();
+      const participantsSnapshot = await getCohortParticipants(cohortId);
 
       if (participantsSnapshot.empty) {
         response.status(404).json({error: "No participants found"});
@@ -318,10 +348,10 @@ export const sendMatchingNotifications = onRequest(
 
         const success = await sendPushNotification(
           pushToken,
-          "필립앤소피",
-          "📚 오늘의 프로필북이 도착했어요",
-          "/app/chat/today-library",
-          "matching"
+          NOTIFICATION_CONFIG.BRAND_NAME,
+          NOTIFICATION_MESSAGES.MATCHING,
+          NOTIFICATION_ROUTES.TODAY_LIBRARY,
+          NOTIFICATION_TYPES.MATCHING
         );
 
         // Remove expired token if send failed
