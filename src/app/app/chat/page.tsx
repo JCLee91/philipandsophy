@@ -150,7 +150,7 @@ function ChatPageContent() {
         const noticeTop = latestNoticeRef.current.offsetTop;
         // 화면 높이의 1/3 지점에 공지 시작점 배치
         const containerHeight = mainContainer.clientHeight;
-        const targetScrollTop = noticeTop - (containerHeight / 3);
+        const targetScrollTop = noticeTop - (containerHeight / 2.3);
 
         // 즉시 스크롤 (애니메이션 없음)
         mainContainer.scrollTop = targetScrollTop;
