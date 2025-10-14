@@ -13,7 +13,7 @@
 
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { onRequest } from "firebase-functions/v2/https";
+import { onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { beforeUserCreated } from "firebase-functions/v2/identity";
 import { setGlobalOptions } from "firebase-functions/v2";
@@ -503,7 +503,7 @@ export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
   // 데이터 검증
   if (!user) {
     logger.error("beforeUserCreated: No user data");
-    throw new Error("사용자 데이터가 없습니다.");
+    throw new HttpsError("invalid-argument", "사용자 데이터가 없습니다.");
   }
 
   logger.info("beforeUserCreated triggered", {
@@ -518,7 +518,10 @@ export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
       uid: user.uid,
       providerData: user.providerData,
     });
-    throw new Error("이메일 또는 전화번호가 필요합니다.");
+    throw new HttpsError(
+      "invalid-argument",
+      "이메일 또는 전화번호가 필요합니다."
+    );
   }
 
   // 이메일 가입인 경우 - 도메인 검증
@@ -527,7 +530,10 @@ export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
 
     if (!emailDomain) {
       logger.error("Invalid email format", { email: user.email });
-      throw new Error("이메일 형식이 올바르지 않습니다.");
+      throw new HttpsError(
+        "invalid-argument",
+        "이메일 형식이 올바르지 않습니다."
+      );
     }
 
     // Type-safe domain check
@@ -540,9 +546,9 @@ export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
         allowedDomains: ALLOWED_DOMAINS_TEXT,
       });
 
-      throw new Error(
-        `${emailDomain} 도메인은 가입이 허용되지 않습니다. ` +
-        `허용 도메인: ${ALLOWED_DOMAINS_TEXT}`
+      throw new HttpsError(
+        "permission-denied",
+        `${emailDomain} 도메인은 가입이 허용되지 않습니다. 허용 도메인: ${ALLOWED_DOMAINS_TEXT}`
       );
     }
 
@@ -561,9 +567,9 @@ export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
         allowedCodes: ALLOWED_PHONE_COUNTRY_CODES.join(", "),
       });
 
-      throw new Error(
-        "허용되지 않은 국가의 전화번호입니다. " +
-        `허용 국가 코드: ${ALLOWED_PHONE_COUNTRY_CODES.join(", ")}`
+      throw new HttpsError(
+        "permission-denied",
+        `허용되지 않은 국가의 전화번호입니다. 허용 국가 코드: ${ALLOWED_PHONE_COUNTRY_CODES.join(", ")}`
       );
     }
 
