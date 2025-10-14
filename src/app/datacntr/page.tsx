@@ -9,6 +9,7 @@ import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
 import AlertPanel from '@/components/datacntr/common/AlertPanel';
 import ParticipantStatusChart from '@/components/datacntr/dashboard/ParticipantStatusChart';
+import InsightsPanel, { generateInsights } from '@/components/datacntr/common/InsightsPanel';
 import { Loader2, Users, BookOpen, MessageSquare, Bell, FolderKanban, FileText, BellRing } from 'lucide-react';
 
 export default function DataCenterPage() {
@@ -76,6 +77,19 @@ export default function DataCenterPage() {
       moderate: stats.moderateParticipants,
       dormant: stats.dormantParticipants,
     };
+  }, [stats]);
+
+  // AI 인사이트 생성
+  const insights = useMemo(() => {
+    if (!stats) return [];
+
+    return generateInsights({
+      totalParticipants: stats.totalParticipants,
+      activeParticipants: stats.activeParticipants,
+      dormantParticipants: stats.dormantParticipants,
+      weeklyParticipationRate: stats.weeklyParticipationRate,
+      pushEnabledCount: stats.pushEnabledCount,
+    });
   }, [stats]);
 
   // 로그인 체크 - 로그인 안 되어 있으면 로그인 페이지로
@@ -174,10 +188,13 @@ export default function DataCenterPage() {
           <ActivityChart data={activities ?? []} isLoading={activityLoading} />
         </div>
 
-        {/* 오른쪽 열: Alert + 상태 차트 (1/3 너비) */}
+        {/* 오른쪽 열: Alert + 인사이트 + 상태 차트 (1/3 너비) */}
         <div className="space-y-6">
           {/* 주의 필요 알림 */}
           <AlertPanel alerts={alerts} />
+
+          {/* AI 인사이트 */}
+          <InsightsPanel insights={insights} isLoading={statsLoading} />
 
           {/* 참가자 활동 상태 */}
           <ParticipantStatusChart data={participantStatusData} isLoading={statsLoading} />
