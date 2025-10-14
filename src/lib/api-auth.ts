@@ -234,8 +234,17 @@ export async function verifyAuthIdToken(idToken: string): Promise<{ email: strin
 
     const decodedToken = await auth.verifyIdToken(idToken);
 
+    // 이메일이 없으면 검증 실패 (Data Center는 이메일 필수)
+    if (!decodedToken.email) {
+      logger.warn('ID Token에 이메일 없음', {
+        uid: decodedToken.uid,
+        provider: decodedToken.firebase.sign_in_provider,
+      });
+      return null;
+    }
+
     return {
-      email: decodedToken.email || '',
+      email: decodedToken.email,
       uid: decodedToken.uid,
     };
   } catch (error) {
