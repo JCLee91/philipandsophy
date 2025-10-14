@@ -6,8 +6,7 @@
  * 허용된 이메일 도메인 (회원가입 제한)
  */
 export const ALLOWED_EMAIL_DOMAINS = [
-  'wheelslabs.com',      // 휠즈랩스 공식 도메인
-  'philipandsophy.com',  // 필립앤소피 공식 도메인
+  'wheelslabs.kr',       // 휠즈랩스 공식 도메인
 ] as const;
 
 /**
