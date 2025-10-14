@@ -32,6 +32,8 @@ import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { useDraftStorage, confirmCloseDialog } from '@/hooks/use-draft-storage';
 import { AlertBanner } from '@/components/AlertBanner';
 import { TextCounter } from '@/components/TextCounter';
+import { useReadingForm } from '@/hooks/use-reading-form';
+import { useSimpleImageUpload } from '@/hooks/use-simple-image-upload';
 
 interface ReadingSubmissionDialogProps {
   open: boolean;
@@ -52,20 +54,16 @@ export default function ReadingSubmissionDialog({
 
   const isEditMode = !!existingSubmission;
 
-  const [bookImage, setBookImage] = useState<File | null>(null);
-  const [bookImagePreview, setBookImagePreview] = useState<string>('');
-  const [bookTitle, setBookTitle] = useState('');
-  const [bookAuthor, setBookAuthor] = useState('');
-  const [bookCoverUrl, setBookCoverUrl] = useState('');
-  const [bookDescription, setBookDescription] = useState('');
-  const [review, setReview] = useState('');
-  const [dailyAnswer, setDailyAnswer] = useState('');
-  const [dailyQuestion, setDailyQuestion] = useState<DailyQuestionType | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [isAutoFilled, setIsAutoFilled] = useState(false);
-  const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
-  const [alreadySubmittedToday, setAlreadySubmittedToday] = useState(false);
-  const [uploadStep, setUploadStep] = useState<string>(''); // 업로드 진행 단계
+  // ✅ useReducer 기반 폼 상태 관리 (17개 useState → 1개 useReducer)
+  const form = useReadingForm();
+  const { state, setBookInfo, setReview, setDailyAnswer, setDailyQuestion, setUI, resetForm, restoreDraft } = form;
+
+  // ✅ 간소화된 이미지 업로드 (88줄 → 20줄)
+  const imageUpload = useSimpleImageUpload({
+    onUpload: (file, preview) => {
+      form.setImage(file, preview);
+    },
+  });
 
   const { toast } = useToast();
   const createSubmission = useCreateSubmission();
@@ -80,12 +78,12 @@ export default function ReadingSubmissionDialog({
   const { restore, clear } = useDraftStorage(
     draftKey,
     {
-      bookTitle,
-      bookAuthor,
-      bookCoverUrl,
-      bookDescription,
-      review,
-      dailyAnswer,
+      bookTitle: state.bookInfo.title,
+      bookAuthor: state.bookInfo.author,
+      bookCoverUrl: state.bookInfo.coverUrl,
+      bookDescription: state.bookInfo.description,
+      review: state.content.review,
+      dailyAnswer: state.content.dailyAnswer,
     },
     !isEditMode // 신규 제출 모드에서만 활성화
   );
@@ -95,15 +93,17 @@ export default function ReadingSubmissionDialog({
     if (open) {
       // 수정 모드: 기존 데이터 pre-fill
       if (isEditMode && existingSubmission) {
-        setBookTitle(existingSubmission.bookTitle || '');
-        setBookAuthor(existingSubmission.bookAuthor || '');
-        setBookCoverUrl(existingSubmission.bookCoverUrl || '');
-        setBookDescription(existingSubmission.bookDescription || '');
+        setBookInfo({
+          title: existingSubmission.bookTitle || '',
+          author: existingSubmission.bookAuthor || '',
+          coverUrl: existingSubmission.bookCoverUrl || '',
+          description: existingSubmission.bookDescription || '',
+        });
         setReview(existingSubmission.review || '');
         setDailyAnswer(existingSubmission.dailyAnswer || '');
-        setBookImagePreview(existingSubmission.bookImageUrl || '');
-        setIsAutoFilled(true);
-        
+        imageUpload.setImagePreview(existingSubmission.bookImageUrl || '');
+        form.setAutoFilled(true);
+
         // 기존 질문 로드
         if (existingSubmission.dailyQuestion) {
           setDailyQuestion({
@@ -111,11 +111,11 @@ export default function ReadingSubmissionDialog({
             category: '가치관 & 삶', // 기본 카테고리
           });
         }
-        
-        setAlreadySubmittedToday(false); // 수정 모드에서는 경고 표시 안 함
+
+        setUI({ alreadySubmittedToday: false }); // 수정 모드에서는 경고 표시 안 함
         return; // 수정 모드에서는 추가 로드 불필요
       }
-      
+
       // 신규 제출 모드: 기존 로직
       const question = getDailyQuestion();
       setDailyQuestion(question);
@@ -125,17 +125,23 @@ export default function ReadingSubmissionDialog({
       const todaySubmission = allSubmissions.find(
         (sub) => sub.submissionDate === today
       );
-      setAlreadySubmittedToday(!!todaySubmission);
+      setUI({ alreadySubmittedToday: !!todaySubmission });
 
       // 임시 저장된 내용 복원
       const draft = restore();
       if (draft) {
-        setBookTitle(draft.bookTitle || '');
-        setBookAuthor(draft.bookAuthor || '');
-        setBookCoverUrl(draft.bookCoverUrl || '');
-        setBookDescription(draft.bookDescription || '');
-        setReview(draft.review || '');
-        setDailyAnswer(draft.dailyAnswer || '');
+        restoreDraft({
+          bookInfo: {
+            title: draft.bookTitle || '',
+            author: draft.bookAuthor || '',
+            coverUrl: draft.bookCoverUrl || '',
+            description: draft.bookDescription || '',
+          },
+          content: {
+            review: draft.review || '',
+            dailyAnswer: draft.dailyAnswer || '',
+          },
+        });
 
         logger.info('임시 저장된 내용 복원됨');
         toast({
@@ -152,7 +158,7 @@ export default function ReadingSubmissionDialog({
 
       // 참가자의 현재 책 정보 로드 (제목 + 저자 + 표지)
       const loadCurrentBook = async () => {
-        setIsLoadingBookTitle(true);
+        setUI({ isLoadingBookTitle: true });
         try {
           const participant = await getParticipantById(participantId);
 
@@ -160,10 +166,12 @@ export default function ReadingSubmissionDialog({
           if (isCancelled) return;
 
           if (participant?.currentBookTitle) {
-            setBookTitle(participant.currentBookTitle);
-            setBookAuthor(participant.currentBookAuthor || '');
-            setBookCoverUrl(participant.currentBookCoverUrl || '');
-            setIsAutoFilled(true);
+            setBookInfo({
+              title: participant.currentBookTitle,
+              author: participant.currentBookAuthor || '',
+              coverUrl: participant.currentBookCoverUrl || '',
+            });
+            form.setAutoFilled(true);
           }
         } catch (error) {
           if (isCancelled) return;
@@ -176,7 +184,7 @@ export default function ReadingSubmissionDialog({
           });
         } finally {
           if (!isCancelled) {
-            setIsLoadingBookTitle(false);
+            setUI({ isLoadingBookTitle: false });
           }
         }
       };
@@ -188,107 +196,9 @@ export default function ReadingSubmissionDialog({
         isCancelled = true;
       };
     }
-  }, [open, participantId, allSubmissions, isEditMode, existingSubmission]); // 의존성 추가
+  }, [open, participantId, allSubmissions, isEditMode, existingSubmission, restore, toast, setBookInfo, setReview, setDailyAnswer, setDailyQuestion, setUI, imageUpload, form, restoreDraft]);
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // 1. 파일 유효성 검증 (50MB 기준)
-    const validation = validateImageFile(file, SUBMISSION_VALIDATION.MAX_IMAGE_SIZE / (1024 * 1024));
-    if (!validation.valid) {
-      toast({
-        title: '파일 검증 실패',
-        description: validation.error,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Cleanup flag for memory leak prevention
-    let isActive = true;
-
-    try {
-      let processedFile = file;
-
-      // 2. 스마트 압축: 10MB 이상만 압축 (일반 사진은 그대로)
-      if (file.size >= IMAGE_OPTIMIZATION.COMPRESSION_THRESHOLD) {
-        setUploadStep('이미지 최적화 중...');
-
-        try {
-          processedFile = await compressImageIfNeeded(file, IMAGE_OPTIMIZATION.TARGET_SIZE);
-
-          logger.info('이미지 압축 완료', {
-            original: (file.size / 1024 / 1024).toFixed(1) + 'MB',
-            compressed: (processedFile.size / 1024 / 1024).toFixed(1) + 'MB',
-            reduction: (((file.size - processedFile.size) / file.size) * 100).toFixed(0) + '%',
-          });
-        } catch (compressionError) {
-          // 압축 실패 시 원본 사용 (fallback)
-          logger.warn('압축 실패, 원본 사용:', compressionError);
-          processedFile = file;
-        }
-
-        setUploadStep(''); // 진행 상태 초기화
-      }
-
-      // 3. 파일 저장
-      setBookImage(processedFile);
-
-      // 4. 이미지 미리보기 with cleanup
-      const reader = new FileReader();
-
-      reader.onloadend = () => {
-        if (isActive) {
-          setBookImagePreview(reader.result as string);
-        }
-      };
-
-      reader.onerror = () => {
-        if (isActive) {
-          reader.abort();
-          toast({
-            title: '이미지 로드 실패',
-            description: '이미지를 불러올 수 없습니다.',
-            variant: 'destructive',
-          });
-        }
-      };
-
-      reader.readAsDataURL(processedFile);
-
-      // Cleanup function
-      return () => {
-        isActive = false;
-        // FileReader가 아직 실행 중이면 중단
-        if (reader.readyState === FileReader.LOADING) {
-          reader.abort();
-        }
-      };
-    } catch (error) {
-      if (!isActive) return;
-
-      logger.error('Image processing error:', error);
-      toast({
-        title: '이미지 처리 실패',
-        description: error instanceof Error ? error.message : '이미지를 처리할 수 없습니다. 다른 이미지를 시도해주세요.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setBookImage(null);
-    setBookImagePreview('');
-  };
-
-  // 책 메타데이터 초기화 헬퍼 함수
-  const resetBookMetadata = () => {
-    setBookAuthor('');
-    setBookCoverUrl('');
-    setBookDescription('');
-    setIsAutoFilled(false);
-  };
+  // ✅ 이미지 처리 로직은 useSimpleImageUpload로 이동 (88줄 → 0줄)
 
   // 책 정보 변경 확인 헬퍼 함수
   const confirmMetadataReset = (): boolean => {
@@ -300,42 +210,43 @@ export default function ReadingSubmissionDialog({
   const handleBookTitleChange = (value: string) => {
     // Early return: 빈 값
     if (value === '') {
-      setBookTitle(value);
+      setBookInfo({ title: value });
       return;
     }
 
     // Early return: 메타데이터 있고 사용자가 취소
-    const hasMetadata = bookAuthor && bookCoverUrl;
-    const isChanging = value !== bookTitle;
+    const hasMetadata = state.bookInfo.author && state.bookInfo.coverUrl;
+    const isChanging = value !== state.bookInfo.title;
 
     if (hasMetadata && isChanging && !confirmMetadataReset()) {
       return;
     }
 
     // 책 제목 업데이트 + 메타데이터 초기화
-    setBookTitle(value);
-    resetBookMetadata();
+    setBookInfo({ title: value });
+    form.resetBookMetadata();
   };
 
   const handleBookSelect = (book: NaverBook) => {
-    setBookTitle(book.title);
-    setBookAuthor(book.author);
-    setBookCoverUrl(book.image);
-    setBookDescription(book.description);
-    setIsAutoFilled(false);
+    setBookInfo({
+      title: book.title,
+      author: book.author,
+      coverUrl: book.image,
+      description: book.description,
+    });
+    form.setAutoFilled(false);
   };
 
   const handleClearTitle = (): boolean => {
     // Early return: 메타데이터 있고 사용자가 취소
-    const hasMetadata = bookAuthor || bookCoverUrl;
+    const hasMetadata = state.bookInfo.author || state.bookInfo.coverUrl;
 
     if (hasMetadata && !confirmMetadataReset()) {
       return false;
     }
 
     // 책 정보 전체 초기화
-    setBookTitle('');
-    resetBookMetadata();
+    setBookInfo({ title: '', author: '', coverUrl: '', description: '' });
     return true;
   };
 
@@ -344,18 +255,18 @@ export default function ReadingSubmissionDialog({
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
-    setUploading(true);
+    setUI({ uploading: true });
 
     try {
       // ========== 수정 모드 ==========
       if (isEditMode && existingSubmission) {
-        setUploadStep('수정 중...'); 
+        setUI({ uploadStep: '수정 중...' });
 
         await updateSubmission.mutateAsync({
           id: existingSubmission.id,
           data: {
-            review: review.trim(),
-            dailyAnswer: dailyAnswer.trim(),
+            review: state.content.review.trim(),
+            dailyAnswer: state.content.dailyAnswer.trim(),
           },
         });
 
@@ -364,7 +275,7 @@ export default function ReadingSubmissionDialog({
           description: '수정 내용이 저장되었습니다.',
         });
 
-        // 임시 저장 내용 삭제 (수정 모드에서는 원래 저장 안 하지만 혹시 모를 경우 대비)
+        // 임시 저장 내용 삭제
         clear();
 
         onOpenChange(false);
@@ -373,29 +284,29 @@ export default function ReadingSubmissionDialog({
 
       // ========== 신규 제출 모드 ==========
 
-      const trimmedBookTitle = bookTitle.trim();
+      const trimmedBookTitle = state.bookInfo.title.trim();
 
       // 검증
-      if (!bookImage) {
+      if (!state.image.file) {
         throw new Error('책 사진을 선택해주세요');
       }
 
       // 1️⃣ 책 정보 업데이트 (빠름, 실패 시 조기 종료)
-      setUploadStep('책 정보 저장 중...');
+      setUI({ uploadStep: '책 정보 저장 중...' });
 
       await updateParticipantBookInfo(
         participantId,
         trimmedBookTitle,
-        bookAuthor?.trim() || undefined,
-        bookCoverUrl || undefined
+        state.bookInfo.author?.trim() || undefined,
+        state.bookInfo.coverUrl || undefined
       );
 
       // 2️⃣ 이미지 업로드 (느림, 하지만 DB는 이미 저장 완료)
-      setUploadStep('이미지 업로드 중...');
+      setUI({ uploadStep: '이미지 업로드 중...' });
 
       let bookImageUrl: string;
       try {
-        bookImageUrl = await uploadReadingImage(bookImage, participationCode);
+        bookImageUrl = await uploadReadingImage(state.image.file, participationCode);
       } catch (uploadError) {
         // Firebase Storage specific error handling
         if (uploadError instanceof Error) {
@@ -413,19 +324,19 @@ export default function ReadingSubmissionDialog({
       }
 
       // 3️⃣ 제출 생성 (빠름)
-      setUploadStep('제출물 저장 중...');
+      setUI({ uploadStep: '제출물 저장 중...' });
 
       await createSubmission.mutateAsync({
           participantId,
           participationCode,
           bookTitle: trimmedBookTitle,
-          ...(bookAuthor.trim() && { bookAuthor: bookAuthor.trim() }),
-          ...(bookCoverUrl && { bookCoverUrl }),
-          ...(bookDescription.trim() && { bookDescription: bookDescription.trim() }),
+          ...(state.bookInfo.author.trim() && { bookAuthor: state.bookInfo.author.trim() }),
+          ...(state.bookInfo.coverUrl && { bookCoverUrl: state.bookInfo.coverUrl }),
+          ...(state.bookInfo.description.trim() && { bookDescription: state.bookInfo.description.trim() }),
           bookImageUrl,
-          review: review.trim(),
-          dailyQuestion: dailyQuestion?.question || '',
-          dailyAnswer: dailyAnswer.trim(),
+          review: state.content.review.trim(),
+          dailyQuestion: state.dailyQuestion?.question || '',
+          dailyAnswer: state.content.dailyAnswer.trim(),
           submittedAt: Timestamp.now(),
           status: 'approved', // status 필드는 유지 (DB 스키마 호환성)
         });
@@ -438,16 +349,9 @@ export default function ReadingSubmissionDialog({
       // 임시 저장 내용 삭제
       clear();
 
-      // 폼 초기화 (책 제목은 DB에 저장되어 다음번에 자동 로드됨)
-      setBookImage(null);
-      setBookImagePreview('');
-      setBookTitle('');
-      setBookAuthor('');
-      setBookCoverUrl('');
-      setBookDescription('');
-      setReview('');
-      setDailyAnswer('');
-      setIsAutoFilled(false);
+      // 폼 초기화
+      resetForm();
+      imageUpload.removeImage();
       onOpenChange(false);
     } catch (error) {
       logger.error('Submission error:', error);
@@ -463,8 +367,7 @@ export default function ReadingSubmissionDialog({
         variant: 'destructive',
       });
     } finally {
-      setUploading(false);
-      setUploadStep(''); // 진행 상태 초기화
+      setUI({ uploading: false, uploadStep: '' });
       isSubmittingRef.current = false; // ✅ Flag 해제
     }
   };
@@ -473,7 +376,10 @@ export default function ReadingSubmissionDialog({
   const handleDialogClose = (newOpen: boolean) => {
     // 닫으려고 할 때만 확인 (수정 모드나 제출 완료 후는 제외)
     if (!newOpen && !isEditMode) {
-      const hasContent = bookTitle.trim().length > 0 || review.trim().length > 0 || dailyAnswer.trim().length > 0;
+      const hasContent =
+        state.bookInfo.title.trim().length > 0 ||
+        state.content.review.trim().length > 0 ||
+        state.content.dailyAnswer.trim().length > 0;
       if (!confirmCloseDialog(hasContent)) {
         return; // 사용자가 취소하면 닫지 않음
       }
@@ -499,7 +405,7 @@ export default function ReadingSubmissionDialog({
         <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
 
         {/* 오늘 이미 제출한 경우 경고 표시 */}
-        {alreadySubmittedToday && (
+        {state.ui.alreadySubmittedToday && (
           <AlertBanner
             variant="warning"
             title="오늘은 이미 제출하셨습니다"
@@ -517,14 +423,14 @@ export default function ReadingSubmissionDialog({
               {isEditMode ? '책 사진은 수정할 수 없습니다.' : '오늘 읽은 책의 사진을 첨부해주세요.'}
             </p>
 
-            {!bookImagePreview ? (
+            {!imageUpload.preview ? (
               <div className="flex flex-col gap-2">
                 <UnifiedButton
                   type="button"
                   variant="outline"
                   className="w-full h-32 border-dashed"
                   onClick={() => document.getElementById('book-image-input')?.click()}
-                  disabled={uploading || alreadySubmittedToday || isEditMode}
+                  disabled={state.ui.uploading || state.ui.alreadySubmittedToday || isEditMode}
                 >
                   <div className="flex flex-col items-center gap-2">
                     <Upload className="h-8 w-8 text-muted-foreground" />

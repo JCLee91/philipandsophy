@@ -9,7 +9,7 @@ import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
 import AlertPanel from '@/components/datacntr/common/AlertPanel';
 import InsightsPanel from '@/components/datacntr/common/InsightsPanel';
-import { Loader2, Users, BookOpen, MessageSquare, Bell, FolderKanban, FileText, BellRing } from 'lucide-react';
+import { Loader2, Users, BookOpen, Bell, FolderKanban, FileText, BellRing } from 'lucide-react';
 
 export default function DataCenterPage() {
   const router = useRouter();
@@ -150,13 +150,6 @@ export default function DataCenterPage() {
               value={stats?.totalNotices ?? 0}
               icon={Bell}
               color="blue"
-              isLoading={statsLoading}
-            />
-            <MetricCard
-              title="메시지"
-              value={stats?.totalMessages ?? 0}
-              icon={MessageSquare}
-              color="gray"
               isLoading={statsLoading}
             />
           </div>

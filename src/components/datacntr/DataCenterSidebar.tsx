@@ -49,11 +49,6 @@ const navItems: NavItem[] = [
     icon: <Bell className="h-5 w-5" />,
   },
   {
-    href: '/datacntr/messages',
-    label: '메시지',
-    icon: <MessageSquare className="h-5 w-5" />,
-  },
-  {
     href: '/datacntr/settings',
     label: '설정',
     icon: <Settings className="h-5 w-5" />,
