@@ -20,6 +20,12 @@ export async function GET(request: NextRequest) {
       .orderBy('createdAt', 'desc')
       .get();
 
+    // 관리자 제외 필터링
+    const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !data.isAdmin && !data.isAdministrator;
+    });
+
     // 코호트 정보 맵 생성
     const cohortsSnapshot = await db.collection(COLLECTIONS.COHORTS).get();
     const cohortsMap = new Map();
@@ -27,9 +33,9 @@ export async function GET(request: NextRequest) {
       cohortsMap.set(doc.id, doc.data().name);
     });
 
-    // 각 참가자의 인증 횟수 및 코호트명 추가
+    // 각 참가자의 인증 횟수 및 코호트명 추가 (관리자 제외)
     const participantsWithStats = await Promise.all(
-      participantsSnapshot.docs.map(async (doc) => {
+      nonAdminParticipants.map(async (doc) => {
         const participantData = doc.data();
 
         // 해당 참가자의 인증 횟수 조회

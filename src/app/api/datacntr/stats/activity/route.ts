@@ -26,11 +26,22 @@ export async function GET(request: NextRequest) {
     startDate.setHours(0, 0, 0, 0);
 
     // 독서 인증 & 참가자 & 메시지 조회 (Admin SDK)
-    const [submissionsSnapshot, participantsSnapshot, messagesSnapshot] = await Promise.all([
+    const [submissionsSnapshot, participantsSnapshot, messagesSnapshot, allParticipantsSnapshot] = await Promise.all([
       db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get(),
       db.collection(COLLECTIONS.PARTICIPANTS).where('createdAt', '>=', startDate).get(),
       db.collection(COLLECTIONS.MESSAGES).where('createdAt', '>=', startDate).get(),
+      db.collection(COLLECTIONS.PARTICIPANTS).get(), // 관리자 필터링용
     ]);
+
+    // 관리자 ID 목록 생성
+    const adminIds = new Set(
+      allParticipantsSnapshot.docs
+        .filter((doc) => {
+          const data = doc.data();
+          return data.isAdmin || data.isAdministrator;
+        })
+        .map((doc) => doc.id)
+    );
 
     // 날짜별로 그룹화
     const activityMap = new Map<string, DailyActivity>();
@@ -47,10 +58,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 독서 인증 집계 (Admin SDK)
+    // 독서 인증 집계 (관리자 제외)
     submissionsSnapshot.forEach((doc) => {
       const data = doc.data();
-      // Admin SDK Timestamp는 _seconds 필드 가지고 있음
+      // 관리자 인증 제외
+      if (adminIds.has(data.participantId)) return;
+
       const submittedAt = data.submittedAt?.toDate ? data.submittedAt.toDate() : new Date(data.submittedAt._seconds * 1000);
       const date = format(submittedAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
@@ -59,9 +72,12 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 신규 참가자 집계 (Admin SDK)
+    // 신규 참가자 집계 (관리자 제외)
     participantsSnapshot.forEach((doc) => {
       const data = doc.data();
+      // 관리자 제외
+      if (data.isAdmin || data.isAdministrator) return;
+
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt._seconds * 1000);
       const date = format(createdAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
@@ -70,7 +86,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 메시지 집계 (Admin SDK)
+    // 메시지 집계 (모두 포함 - 관리자와의 대화도 중요)
     messagesSnapshot.forEach((doc) => {
       const data = doc.data();
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt._seconds * 1000);

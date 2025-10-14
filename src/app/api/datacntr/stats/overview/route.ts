@@ -29,11 +29,38 @@ export async function GET(request: NextRequest) {
       db.collection(COLLECTIONS.MESSAGES).get(),
     ]);
 
+    // 관리자 제외 필터링
+    const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !data.isAdmin && !data.isAdministrator;
+    });
+
+    // 관리자 ID 목록 생성
+    const adminIds = new Set(
+      participantsSnapshot.docs
+        .filter((doc) => {
+          const data = doc.data();
+          return data.isAdmin || data.isAdministrator;
+        })
+        .map((doc) => doc.id)
+    );
+
+    // 관리자의 인증 제외
+    const nonAdminSubmissions = submissionsSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !adminIds.has(data.participantId);
+    });
+
+    const nonAdminTodaySubmissions = todaySubmissionsSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !adminIds.has(data.participantId);
+    });
+
     const stats: OverviewStats = {
       totalCohorts: cohortsSnapshot.size,
-      totalParticipants: participantsSnapshot.size,
-      todaySubmissions: todaySubmissionsSnapshot.size,
-      totalSubmissions: submissionsSnapshot.size,
+      totalParticipants: nonAdminParticipants.length,
+      todaySubmissions: nonAdminTodaySubmissions.length,
+      totalSubmissions: nonAdminSubmissions.length,
       totalNotices: noticesSnapshot.size,
       totalMessages: messagesSnapshot.size,
     };

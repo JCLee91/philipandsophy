@@ -40,9 +40,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .where('cohortId', '==', cohortId)
       .get();
 
-    // 각 참가자의 인증 횟수 조회
+    // 관리자 제외 필터링
+    const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !data.isAdmin && !data.isAdministrator;
+    });
+
+    // 각 참가자의 인증 횟수 조회 (관리자 제외)
     const participantsWithStats = await Promise.all(
-      participantsSnapshot.docs.map(async (doc) => {
+      nonAdminParticipants.map(async (doc) => {
         const participantData = doc.data();
 
         // 해당 참가자의 인증 횟수 조회
