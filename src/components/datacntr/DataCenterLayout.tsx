@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import DataCenterSidebar from './DataCenterSidebar';
 import DataCenterHeader from './DataCenterHeader';
 
@@ -9,6 +10,15 @@ interface DataCenterLayoutProps {
 }
 
 export default function DataCenterLayout({ children }: DataCenterLayoutProps) {
+  const pathname = usePathname();
+
+  // 로그인 페이지에서는 사이드바/헤더 숨김
+  const isLoginPage = pathname === '/datacntr/login';
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* 사이드바 */}
