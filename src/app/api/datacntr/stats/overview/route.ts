@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuthToken } from '@/lib/api-auth';
-import { getDb } from '@/lib/firebase';
-import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import type { OverviewStats } from '@/types/datacntr';
@@ -14,21 +13,20 @@ export async function GET(request: NextRequest) {
       return error;
     }
 
-    const db = getDb();
+    const db = getAdminDb();
 
-    // 오늘 날짜 (KST)
+    // 오늘 날짜 (KST) - Admin SDK는 Timestamp 자동 처리
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayTimestamp = Timestamp.fromDate(today);
 
-    // 병렬로 통계 조회
+    // 병렬로 통계 조회 (Admin SDK)
     const [cohortsSnapshot, participantsSnapshot, submissionsSnapshot, todaySubmissionsSnapshot, noticesSnapshot, messagesSnapshot] = await Promise.all([
-      getDocs(collection(db, COLLECTIONS.COHORTS)),
-      getDocs(collection(db, COLLECTIONS.PARTICIPANTS)),
-      getDocs(collection(db, COLLECTIONS.READING_SUBMISSIONS)),
-      getDocs(query(collection(db, COLLECTIONS.READING_SUBMISSIONS), where('submittedAt', '>=', todayTimestamp))),
-      getDocs(collection(db, COLLECTIONS.NOTICES)),
-      getDocs(collection(db, COLLECTIONS.MESSAGES)),
+      db.collection(COLLECTIONS.COHORTS).get(),
+      db.collection(COLLECTIONS.PARTICIPANTS).get(),
+      db.collection(COLLECTIONS.READING_SUBMISSIONS).get(),
+      db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', today).get(),
+      db.collection(COLLECTIONS.NOTICES).get(),
+      db.collection(COLLECTIONS.MESSAGES).get(),
     ]);
 
     const stats: OverviewStats = {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuthToken } from '@/lib/api-auth';
-import { getDb } from '@/lib/firebase';
-import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import { format, subDays } from 'date-fns';
@@ -19,19 +18,18 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const days = parseInt(searchParams.get('days') || '7', 10);
 
-    const db = getDb();
+    const db = getAdminDb();
     const now = new Date();
 
     // 지난 N일 데이터 조회
     const startDate = subDays(now, days);
     startDate.setHours(0, 0, 0, 0);
-    const startTimestamp = Timestamp.fromDate(startDate);
 
-    // 독서 인증 & 참가자 & 메시지 조회
+    // 독서 인증 & 참가자 & 메시지 조회 (Admin SDK)
     const [submissionsSnapshot, participantsSnapshot, messagesSnapshot] = await Promise.all([
-      getDocs(query(collection(db, COLLECTIONS.READING_SUBMISSIONS), where('submittedAt', '>=', startTimestamp))),
-      getDocs(query(collection(db, COLLECTIONS.PARTICIPANTS), where('createdAt', '>=', startTimestamp))),
-      getDocs(query(collection(db, COLLECTIONS.MESSAGES), where('createdAt', '>=', startTimestamp))),
+      db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get(),
+      db.collection(COLLECTIONS.PARTICIPANTS).where('createdAt', '>=', startDate).get(),
+      db.collection(COLLECTIONS.MESSAGES).where('createdAt', '>=', startDate).get(),
     ]);
 
     // 날짜별로 그룹화
@@ -49,30 +47,34 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 독서 인증 집계
+    // 독서 인증 집계 (Admin SDK)
     submissionsSnapshot.forEach((doc) => {
       const data = doc.data();
-      const date = format(data.submittedAt.toDate(), 'yyyy-MM-dd');
+      // Admin SDK Timestamp는 _seconds 필드 가지고 있음
+      const submittedAt = data.submittedAt?.toDate ? data.submittedAt.toDate() : new Date(data.submittedAt._seconds * 1000);
+      const date = format(submittedAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
       if (activity) {
         activity.submissions += 1;
       }
     });
 
-    // 신규 참가자 집계
+    // 신규 참가자 집계 (Admin SDK)
     participantsSnapshot.forEach((doc) => {
       const data = doc.data();
-      const date = format(data.createdAt.toDate(), 'yyyy-MM-dd');
+      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt._seconds * 1000);
+      const date = format(createdAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
       if (activity) {
         activity.newParticipants += 1;
       }
     });
 
-    // 메시지 집계
+    // 메시지 집계 (Admin SDK)
     messagesSnapshot.forEach((doc) => {
       const data = doc.data();
-      const date = format(data.createdAt.toDate(), 'yyyy-MM-dd');
+      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt._seconds * 1000);
+      const date = format(createdAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
       if (activity) {
         activity.messages += 1;
