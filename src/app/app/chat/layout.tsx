@@ -2,25 +2,17 @@
 
 import { NotificationPrompt } from '@/components/notifications/notification-prompt';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
-import { useEffect, useState } from 'react';
+import { useSession } from '@/hooks/use-session';
 
 export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [participantId, setParticipantId] = useState<string | undefined>(undefined);
+  const { participantId, isLoading } = useSession();
 
-  // 로컬 스토리지에서 참가자 ID 가져오기
-  useEffect(() => {
-    const storedParticipantId = localStorage.getItem('participantId');
-    if (storedParticipantId) {
-      setParticipantId(storedParticipantId);
-    }
-  }, []);
-
-  // 푸시 알림 초기화
-  const { isSupported, permission } = usePushNotifications(participantId, true);
+  // 세션 로딩이 끝난 뒤에만 초기화 시도
+  usePushNotifications(participantId, !isLoading);
 
   return (
     <>

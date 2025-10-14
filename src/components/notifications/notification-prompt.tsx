@@ -8,6 +8,7 @@ import { initializePushNotifications, getPushTokenFromFirestore } from '@/lib/fi
 import { logger } from '@/lib/logger';
 import { toast } from '@/hooks/use-toast';
 import { UI_CONSTANTS } from '@/constants/ui';
+import { useSession } from '@/hooks/use-session';
 
 /**
  * 알림 권한 요청 프롬프트 컴포넌트
@@ -21,25 +22,22 @@ import { UI_CONSTANTS } from '@/constants/ui';
 export function NotificationPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
-  const [participantId, setParticipantId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const [cleanup, setCleanup] = useState<(() => void) | null>(null);
   const [isCheckingToken, setIsCheckingToken] = useState(true);
-
-  // localStorage에서 participantId 가져오기
-  useEffect(() => {
-    const storedParticipantId = localStorage.getItem('participantId');
-    if (storedParticipantId) {
-      setParticipantId(storedParticipantId);
-      logger.info('Participant ID loaded from localStorage', { participantId: storedParticipantId });
-    }
-  }, []);
+  const { participantId, isLoading: sessionLoading } = useSession();
 
   // Firestore에서 pushToken 확인 후 프롬프트 표시 여부 결정
   useEffect(() => {
-    let cleanup: (() => void) | undefined;
+    if (sessionLoading) {
+      setIsCheckingToken(true);
+      return;
+    }
+
+    let timerCleanup: (() => void) | undefined;
 
     const checkAndShowPrompt = async () => {
+      setIsCheckingToken(true);
       logger.info('[NotificationPrompt] Component mounted');
 
       // 브라우저가 알림을 지원하는지 확인
@@ -85,7 +83,7 @@ export function NotificationPrompt() {
             setIsCheckingToken(false);
           }, UI_CONSTANTS.NOTIFICATION_PROMPT_DELAY);
 
-          cleanup = () => clearTimeout(timer);
+          timerCleanup = () => clearTimeout(timer);
         } else {
           logger.debug('[NotificationPrompt] Will NOT show prompt', {
             permission: Notification.permission,
@@ -102,9 +100,9 @@ export function NotificationPrompt() {
     checkAndShowPrompt();
 
     return () => {
-      cleanup?.();
+      timerCleanup?.();
     };
-  }, [participantId]);
+  }, [participantId, sessionLoading]);
 
   const handleRequestPermission = async () => {
     // Capture participantId in closure to prevent race condition

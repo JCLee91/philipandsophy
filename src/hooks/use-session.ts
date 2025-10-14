@@ -11,12 +11,32 @@ import { SESSION_CONFIG } from '@/constants/session';
 const SESSION_STORAGE_KEY = SESSION_CONFIG.STORAGE_KEY;
 
 /**
+ * useSession 훅의 반환 타입
+ */
+export interface UseSessionReturn {
+  /** 현재 로그인한 사용자 정보 */
+  currentUser: Participant | null;
+  /** 세션 로딩 중 여부 */
+  isLoading: boolean;
+  /** 인증 여부 */
+  isAuthenticated: boolean;
+  /** 로그인 함수 (세션 토큰 저장) */
+  login: (token: string) => void;
+  /** 로그아웃 함수 */
+  logout: () => Promise<void>;
+  /** 세션 토큰 */
+  sessionToken: string | null;
+  /** 참가자 ID (currentUser?.id의 shortcut) */
+  participantId: string | undefined;
+}
+
+/**
  * 세션 관리 훅
  *
  * localStorage를 사용하여 세션 토큰 관리 (브라우저 닫아도 유지)
  * Firebase에서 참가자 정보 조회 및 세션 유효성 검증
  */
-export function useSession() {
+export function useSession(): UseSessionReturn {
   const [currentUser, setCurrentUser] = useState<Participant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionToken, setSessionTokenState] = useState<string | null>(null);
@@ -209,5 +229,6 @@ export function useSession() {
     login: setSessionToken,
     logout,
     sessionToken,
+    participantId: currentUser?.id,
   };
 }
