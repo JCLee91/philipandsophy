@@ -79,6 +79,8 @@ export function useSimpleImageUpload(options: UseSimpleImageUploadOptions = {}) 
         });
       } finally {
         setIsProcessing(false);
+        // 동일 파일 재선택을 허용하기 위해 input value 초기화
+        e.target.value = '';
       }
     },
     [maxSizeMB, onUpload, toast]

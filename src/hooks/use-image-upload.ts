@@ -19,6 +19,8 @@ export function useImageUpload() {
       };
       reader.readAsDataURL(file);
     }
+    // 동일 파일 재선택을 허용하기 위해 input value 초기화
+    e.target.value = '';
   };
 
   const resetImage = () => {

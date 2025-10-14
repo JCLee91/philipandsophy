@@ -417,7 +417,10 @@ export default function ReadingSubmissionDialog({
             isEditMode={isEditMode}
             disabled={state.ui.uploading || state.ui.alreadySubmittedToday}
             onImageSelect={imageUpload.handleImageSelect}
-            onImageRemove={imageUpload.removeImage}
+            onImageRemove={() => {
+              imageUpload.removeImage();  // UI 미리보기 제거
+              form.removeImage();          // 폼 state 제거
+            }}
           />
 
           {/* 2. 책 제목 (자동완성 컴포넌트로 교체) */}
