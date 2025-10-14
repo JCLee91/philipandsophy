@@ -3,18 +3,30 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { format } from 'date-fns';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TablePagination from '@/components/datacntr/table/TablePagination';
+import StatusBadge from '@/components/datacntr/common/StatusBadge';
+import { ENGAGEMENT_LABELS, ENGAGEMENT_EMOJIS } from '@/lib/datacntr/engagement';
 import type { Participant } from '@/types/database';
 
 interface ParticipantWithCohort extends Participant {
   cohortName: string;
   submissionCount: number;
+  engagementScore?: number;
+  engagementLevel?: 'high' | 'medium' | 'low';
+  activityStatus?: 'active' | 'moderate' | 'dormant';
+  hasPushToken?: boolean;
 }
+
+type FilterState = {
+  activityStatus: 'all' | 'active' | 'moderate' | 'dormant';
+  engagementLevel: 'all' | 'high' | 'medium' | 'low';
+  pushToken: 'all' | 'enabled' | 'disabled';
+};
 
 export default function ParticipantsPage() {
   const router = useRouter();
@@ -26,6 +38,12 @@ export default function ParticipantsPage() {
   const [sortKey, setSortKey] = useState<string>('');
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState<FilterState>({
+    activityStatus: 'all',
+    engagementLevel: 'all',
+    pushToken: 'all',
+  });
+  const [showFilters, setShowFilters] = useState(false);
   const itemsPerPage = 50;
 
   // 로그인 체크
@@ -65,10 +83,11 @@ export default function ParticipantsPage() {
     fetchParticipants();
   }, [user]);
 
-  // 검색 필터링
+  // 검색 및 필터링
   useEffect(() => {
     let filtered = [...participants];
 
+    // 텍스트 검색
     if (searchQuery) {
       filtered = filtered.filter(
         (p) =>
@@ -76,6 +95,25 @@ export default function ParticipantsPage() {
           p.phoneNumber.includes(searchQuery) ||
           p.cohortName.toLowerCase().includes(searchQuery.toLowerCase())
       );
+    }
+
+    // 활동 상태 필터
+    if (filters.activityStatus !== 'all') {
+      filtered = filtered.filter((p) => p.activityStatus === filters.activityStatus);
+    }
+
+    // 인게이지먼트 등급 필터
+    if (filters.engagementLevel !== 'all') {
+      filtered = filtered.filter((p) => p.engagementLevel === filters.engagementLevel);
+    }
+
+    // 푸시 알림 필터
+    if (filters.pushToken !== 'all') {
+      if (filters.pushToken === 'enabled') {
+        filtered = filtered.filter((p) => p.hasPushToken === true);
+      } else {
+        filtered = filtered.filter((p) => p.hasPushToken !== true);
+      }
     }
 
     // 정렬
@@ -97,7 +135,7 @@ export default function ParticipantsPage() {
 
     setFilteredParticipants(filtered);
     setCurrentPage(1); // 필터링 시 첫 페이지로
-  }, [searchQuery, sortKey, sortDirection, participants]);
+  }, [searchQuery, filters, sortKey, sortDirection, participants]);
 
   if (authLoading || isLoading) {
     return (
@@ -114,47 +152,58 @@ export default function ParticipantsPage() {
       key: 'name',
       header: '이름',
       sortable: true,
-      width: '12%',
+      width: '10%',
     },
     {
       key: 'cohortName',
       header: '코호트',
       sortable: true,
-      width: '8%',
+      width: '7%',
     },
     {
-      key: 'gender',
-      header: '성별',
+      key: 'engagementScore',
+      header: '인게이지먼트',
+      sortable: true,
       render: (p) => {
-        if (p.gender === 'male') return '남성';
-        if (p.gender === 'female') return '여성';
-        return '-';
+        if (!p.engagementScore || !p.engagementLevel) return '-';
+        const emoji = ENGAGEMENT_EMOJIS[p.engagementLevel];
+        const label = ENGAGEMENT_LABELS[p.engagementLevel];
+        return (
+          <span className="inline-flex items-center gap-1">
+            {emoji} {p.engagementScore}점
+            <span className="text-xs text-gray-500">({label})</span>
+          </span>
+        );
       },
-      width: '6%',
-    },
-    {
-      key: 'phoneNumber',
-      header: '전화번호',
       width: '12%',
     },
     {
-      key: 'occupation',
-      header: '직업',
-      render: (p) => p.occupation || '-',
-      width: '12%',
-    },
-    {
-      key: 'currentBookTitle',
-      header: '현재 읽는 책',
-      render: (p) => p.currentBookTitle || '-',
-      width: '18%',
+      key: 'activityStatus',
+      header: '활동',
+      sortable: true,
+      render: (p) => {
+        if (!p.activityStatus) return '-';
+        return <StatusBadge status={p.activityStatus} />;
+      },
+      width: '10%',
     },
     {
       key: 'submissionCount',
       header: '인증',
       sortable: true,
       render: (p) => `${p.submissionCount}회`,
-      width: '8%',
+      width: '7%',
+    },
+    {
+      key: 'phoneNumber',
+      header: '전화번호',
+      width: '11%',
+    },
+    {
+      key: 'currentBookTitle',
+      header: '현재 읽는 책',
+      render: (p) => p.currentBookTitle || '-',
+      width: '15%',
     },
     {
       key: 'pushToken',
@@ -163,14 +212,14 @@ export default function ParticipantsPage() {
       render: (p) => {
         if (p.pushToken) {
           return (
-            <span className="inline-flex items-center gap-1 text-green-600">
+            <span className="inline-flex items-center gap-1 text-green-600 text-sm">
               <CheckCircle className="h-4 w-4" />
               허용
             </span>
           );
         }
         return (
-          <span className="inline-flex items-center gap-1 text-gray-400">
+          <span className="inline-flex items-center gap-1 text-gray-400 text-sm">
             <XCircle className="h-4 w-4" />
             거부
           </span>
@@ -204,13 +253,124 @@ export default function ParticipantsPage() {
         <p className="text-gray-600 mt-2">전체 참가자 목록 및 활동 현황</p>
       </div>
 
-      {/* 검색 */}
-      <div className="mb-6">
-        <TableSearch
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="이름, 전화번호, 코호트로 검색..."
-        />
+      {/* 검색 및 필터 */}
+      <div className="mb-6 space-y-4">
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <TableSearch
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="이름, 전화번호, 코호트로 검색..."
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-semibold transition-colors ${
+              showFilters
+                ? 'bg-blue-50 border-blue-200 text-blue-700'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Filter className="h-4 w-4" />
+            필터
+            {(filters.activityStatus !== 'all' ||
+              filters.engagementLevel !== 'all' ||
+              filters.pushToken !== 'all') && (
+              <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
+                {[
+                  filters.activityStatus !== 'all',
+                  filters.engagementLevel !== 'all',
+                  filters.pushToken !== 'all',
+                ].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* 필터 패널 */}
+        {showFilters && (
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 활동 상태 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  활동 상태
+                </label>
+                <select
+                  value={filters.activityStatus}
+                  onChange={(e) =>
+                    setFilters({ ...filters, activityStatus: e.target.value as FilterState['activityStatus'] })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">전체</option>
+                  <option value="active">활성 (3일 이내)</option>
+                  <option value="moderate">보통 (4-7일)</option>
+                  <option value="dormant">휴면 (7일 이상)</option>
+                </select>
+              </div>
+
+              {/* 인게이지먼트 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  인게이지먼트
+                </label>
+                <select
+                  value={filters.engagementLevel}
+                  onChange={(e) =>
+                    setFilters({ ...filters, engagementLevel: e.target.value as FilterState['engagementLevel'] })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">전체</option>
+                  <option value="high">🟢 우수 (80-100점)</option>
+                  <option value="medium">🟡 보통 (50-79점)</option>
+                  <option value="low">🔴 저조 (0-49점)</option>
+                </select>
+              </div>
+
+              {/* 푸시 알림 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  푸시 알림
+                </label>
+                <select
+                  value={filters.pushToken}
+                  onChange={(e) =>
+                    setFilters({ ...filters, pushToken: e.target.value as FilterState['pushToken'] })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">전체</option>
+                  <option value="enabled">허용</option>
+                  <option value="disabled">거부</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 필터 초기화 */}
+            {(filters.activityStatus !== 'all' ||
+              filters.engagementLevel !== 'all' ||
+              filters.pushToken !== 'all') && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFilters({
+                      activityStatus: 'all',
+                      engagementLevel: 'all',
+                      pushToken: 'all',
+                    })
+                  }
+                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  필터 초기화
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 테이블 */}

@@ -7,6 +7,8 @@ import { Paperclip, X } from 'lucide-react';
 import Image from 'next/image';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
+import { useDraftStorage, confirmCloseDialog } from '@/hooks/use-draft-storage';
+import { useEffect } from 'react';
 
 interface NoticeWriteDialogProps {
   open: boolean;
@@ -30,18 +32,45 @@ export default function NoticeWriteDialog({
   // Radix UI Dialog body 스타일 정리 (Race Condition 방지)
   useModalCleanup(open);
 
+  // 임시 저장
+  const { restore, clear } = useDraftStorage(
+    'notice-draft',
+    { content },
+    true
+  );
+
+  // 다이얼로그 열릴 때 임시 저장 내용 복원
+  useEffect(() => {
+    if (open) {
+      const draft = restore();
+      if (draft?.content) {
+        onContentChange(draft.content);
+      }
+    }
+  }, [open]);
+
   const handleSubmit = async () => {
     await onSubmit(imageFile);
+    clear(); // 제출 성공 시 임시 저장 내용 삭제
     resetImage();
   };
 
-  const handleClose = () => {
-    onOpenChange(false);
-    resetImage();
+  const handleClose = (newOpen: boolean) => {
+    // 닫으려고 할 때만 확인
+    if (!newOpen) {
+      const hasContent = content.trim().length > 0;
+      if (!confirmCloseDialog(hasContent)) {
+        return; // 사용자가 취소하면 닫지 않음
+      }
+    }
+    onOpenChange(newOpen);
+    if (!newOpen) {
+      resetImage();
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg md:max-w-2xl p-0 flex flex-col gap-0">
         <DialogHeader className="px-6 py-6 border-b">
           <DialogTitle>공지 작성</DialogTitle>

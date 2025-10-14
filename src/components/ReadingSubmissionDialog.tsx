@@ -29,6 +29,7 @@ import { getTodayString } from '@/lib/date-utils';
 import { validateImageFile } from '@/lib/image-compression';
 import type { ReadingSubmission } from '@/types/database';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
+import { useDraftStorage, confirmCloseDialog } from '@/hooks/use-draft-storage';
 
 interface ReadingSubmissionDialogProps {
   open: boolean;
@@ -72,6 +73,21 @@ export default function ReadingSubmissionDialog({
   // Race Condition 방지: atomic flag
   const isSubmittingRef = useRef(false);
 
+  // 임시 저장 (수정 모드에서는 비활성화)
+  const draftKey = `reading-draft-${participantId}`;
+  const { restore, clear } = useDraftStorage(
+    draftKey,
+    {
+      bookTitle,
+      bookAuthor,
+      bookCoverUrl,
+      bookDescription,
+      review,
+      dailyAnswer,
+    },
+    !isEditMode // 신규 제출 모드에서만 활성화
+  );
+
   // 다이얼로그가 열릴 때 데이터 로드
   useEffect(() => {
     if (open) {
@@ -108,6 +124,26 @@ export default function ReadingSubmissionDialog({
         (sub) => sub.submissionDate === today
       );
       setAlreadySubmittedToday(!!todaySubmission);
+
+      // 임시 저장된 내용 복원
+      const draft = restore();
+      if (draft) {
+        setBookTitle(draft.bookTitle || '');
+        setBookAuthor(draft.bookAuthor || '');
+        setBookCoverUrl(draft.bookCoverUrl || '');
+        setBookDescription(draft.bookDescription || '');
+        setReview(draft.review || '');
+        setDailyAnswer(draft.dailyAnswer || '');
+
+        logger.info('임시 저장된 내용 복원됨');
+        toast({
+          title: '작성 중이던 내용을 불러왔습니다',
+          description: '이전에 작성하던 내용을 복원했습니다.',
+        });
+
+        // 복원 후에는 현재 책 정보를 불러오지 않음 (덮어쓰기 방지)
+        return;
+      }
 
       // Race condition 방지를 위한 cleanup flag
       let isCancelled = false;
@@ -323,6 +359,9 @@ export default function ReadingSubmissionDialog({
           description: '수정 내용이 저장되었습니다.',
         });
 
+        // 임시 저장 내용 삭제 (수정 모드에서는 원래 저장 안 하지만 혹시 모를 경우 대비)
+        clear();
+
         onOpenChange(false);
         return;
       }
@@ -391,6 +430,9 @@ export default function ReadingSubmissionDialog({
         description: '오늘의 서재에서 다른 멤버들의 프로필을 확인해보세요!',
       });
 
+      // 임시 저장 내용 삭제
+      clear();
+
       // 폼 초기화 (책 제목은 DB에 저장되어 다음번에 자동 로드됨)
       setBookImage(null);
       setBookImagePreview('');
@@ -422,8 +464,20 @@ export default function ReadingSubmissionDialog({
     }
   };
 
+  // 다이얼로그 닫기 handler (작성 중 확인)
+  const handleDialogClose = (newOpen: boolean) => {
+    // 닫으려고 할 때만 확인 (수정 모드나 제출 완료 후는 제외)
+    if (!newOpen && !isEditMode) {
+      const hasContent = bookTitle.trim() || review.trim() || dailyAnswer.trim();
+      if (!confirmCloseDialog(hasContent)) {
+        return; // 사용자가 취소하면 닫지 않음
+      }
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-2xl h-full sm:h-[90vh] flex flex-col gap-0 reading-dialog-ios-safe">
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl">
@@ -592,7 +646,7 @@ export default function ReadingSubmissionDialog({
         <DialogFooter className="gap-3 border-t pt-4 px-6 pb-6 flex-shrink-0">
           <UnifiedButton
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleDialogClose(false)}
             disabled={uploading}
             size="sm"
           >

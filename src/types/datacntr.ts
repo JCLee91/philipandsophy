@@ -52,6 +52,10 @@ export interface ParticipantRowData {
   submissionCount: number;
   currentBookTitle?: string;
   isActive: boolean; // 세션 활성 여부
+  engagementScore?: number; // 인게이지먼트 점수 (0-100)
+  engagementLevel?: 'high' | 'medium' | 'low'; // 인게이지먼트 등급
+  hasPushToken?: boolean; // 푸시 알림 허용 여부
+  activityStatus?: 'active' | 'moderate' | 'dormant'; // 활동 상태
 }
 
 // 인증 데이터 (카드용)
