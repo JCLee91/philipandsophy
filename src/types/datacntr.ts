@@ -10,6 +10,7 @@ export interface OverviewStats {
   totalSubmissions: number;
   totalNotices: number;
   totalMessages: number;
+  pushEnabledCount: number; // 푸시 알림 허용 인원
 }
 
 // 활동 지표 (일별)

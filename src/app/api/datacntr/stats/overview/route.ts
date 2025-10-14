@@ -56,6 +56,12 @@ export async function GET(request: NextRequest) {
       return !adminIds.has(data.participantId);
     });
 
+    // 푸시 알림 허용 인원 (관리자 제외)
+    const pushEnabledCount = nonAdminParticipants.filter((doc) => {
+      const data = doc.data();
+      return !!data.pushToken; // pushToken이 있으면 허용한 것
+    }).length;
+
     const stats: OverviewStats = {
       totalCohorts: cohortsSnapshot.size,
       totalParticipants: nonAdminParticipants.length,
@@ -63,6 +69,7 @@ export async function GET(request: NextRequest) {
       totalSubmissions: nonAdminSubmissions.length,
       totalNotices: noticesSnapshot.size,
       totalMessages: messagesSnapshot.size,
+      pushEnabledCount,
     };
 
     return NextResponse.json(stats);

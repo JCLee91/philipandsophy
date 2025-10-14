@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { format } from 'date-fns';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
@@ -114,13 +114,13 @@ export default function ParticipantsPage() {
       key: 'name',
       header: '이름',
       sortable: true,
-      width: '15%',
+      width: '12%',
     },
     {
       key: 'cohortName',
       header: '코호트',
       sortable: true,
-      width: '10%',
+      width: '8%',
     },
     {
       key: 'gender',
@@ -130,7 +130,7 @@ export default function ParticipantsPage() {
         if (p.gender === 'female') return '여성';
         return '-';
       },
-      width: '8%',
+      width: '6%',
     },
     {
       key: 'phoneNumber',
@@ -141,20 +141,42 @@ export default function ParticipantsPage() {
       key: 'occupation',
       header: '직업',
       render: (p) => p.occupation || '-',
-      width: '15%',
+      width: '12%',
     },
     {
       key: 'currentBookTitle',
       header: '현재 읽는 책',
       render: (p) => p.currentBookTitle || '-',
-      width: '20%',
+      width: '18%',
     },
     {
       key: 'submissionCount',
-      header: '인증 횟수',
+      header: '인증',
       sortable: true,
       render: (p) => `${p.submissionCount}회`,
-      width: '10%',
+      width: '8%',
+    },
+    {
+      key: 'pushToken',
+      header: '알림',
+      sortable: true,
+      render: (p) => {
+        if (p.pushToken) {
+          return (
+            <span className="inline-flex items-center gap-1 text-green-600">
+              <CheckCircle className="h-4 w-4" />
+              허용
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center gap-1 text-gray-400">
+            <XCircle className="h-4 w-4" />
+            거부
+          </span>
+        );
+      },
+      width: '8%',
     },
     {
       key: 'createdAt',
@@ -165,7 +187,7 @@ export default function ParticipantsPage() {
         if (!date) return '-';
         return format(date, 'yy.MM.dd');
       },
-      width: '10%',
+      width: '8%',
     },
   ];
 

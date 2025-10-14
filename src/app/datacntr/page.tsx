@@ -7,7 +7,7 @@ import { useDataCenterStats } from '@/hooks/datacntr/use-datacntr-stats';
 import { useActivityChart } from '@/hooks/datacntr/use-activity-chart';
 import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
-import { Loader2, Users, BookOpen, MessageSquare, Bell, FolderKanban, FileText } from 'lucide-react';
+import { Loader2, Users, BookOpen, MessageSquare, Bell, FolderKanban, FileText, BellRing } from 'lucide-react';
 
 export default function DataCenterPage() {
   const router = useRouter();
@@ -60,6 +60,13 @@ export default function DataCenterPage() {
           isLoading={statsLoading}
         />
         <MetricCard
+          title="푸시 알림 허용"
+          value={stats?.pushEnabledCount ?? 0}
+          icon={BellRing}
+          color="purple"
+          isLoading={statsLoading}
+        />
+        <MetricCard
           title="오늘 인증"
           value={stats?.todaySubmissions ?? 0}
           icon={BookOpen}
@@ -70,14 +77,14 @@ export default function DataCenterPage() {
           title="전체 인증"
           value={stats?.totalSubmissions ?? 0}
           icon={FileText}
-          color="purple"
+          color="pink"
           isLoading={statsLoading}
         />
         <MetricCard
           title="공지사항"
           value={stats?.totalNotices ?? 0}
           icon={Bell}
-          color="pink"
+          color="blue"
           isLoading={statsLoading}
         />
         <MetricCard

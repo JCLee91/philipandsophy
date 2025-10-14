@@ -94,6 +94,7 @@ export interface Participant {
   bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
   sessionToken?: string; // 세션 토큰 (로그인 세션 관리용)
   sessionExpiry?: number; // 세션 만료 시간 (Unix timestamp, 밀리초)
+  pushToken?: string; // 푸시 알림 토큰 (FCM)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
