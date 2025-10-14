@@ -4,6 +4,8 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import type { OverviewStats } from '@/types/datacntr';
+import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
+import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,6 +64,55 @@ export async function GET(request: NextRequest) {
       return !!data.pushToken; // pushToken이 있으면 허용한 것
     }).length;
 
+    // 참가자 활동 상태 분류 (3일 이내 / 4-7일 / 7일 이상)
+    const now = Date.now();
+    let activeParticipants = 0;
+    let moderateParticipants = 0;
+    let dormantParticipants = 0;
+
+    nonAdminParticipants.forEach((doc) => {
+      const data = doc.data();
+      const lastActivityAt = safeTimestampToDate(data.lastActivityAt);
+
+      if (!lastActivityAt) {
+        dormantParticipants++;
+        return;
+      }
+
+      const daysSinceActivity = Math.floor((now - lastActivityAt.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysSinceActivity <= ACTIVITY_THRESHOLDS.ACTIVE_DAYS) {
+        activeParticipants++;
+      } else if (daysSinceActivity <= ACTIVITY_THRESHOLDS.MODERATE_DAYS) {
+        moderateParticipants++;
+      } else {
+        dormantParticipants++;
+      }
+    });
+
+    // 주간 참여율 계산 (이번 주 인증 참가자 비율)
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // 이번 주 일요일
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekSubmissionsSnapshot = await db
+      .collection(COLLECTIONS.READING_SUBMISSIONS)
+      .where('submittedAt', '>=', weekStart)
+      .get();
+
+    // 이번 주 인증한 참가자 ID (관리자 제외, 중복 제거)
+    const weekParticipantIds = new Set<string>();
+    weekSubmissionsSnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (!adminIds.has(data.participantId)) {
+        weekParticipantIds.add(data.participantId);
+      }
+    });
+
+    const weeklyParticipationRate = nonAdminParticipants.length > 0
+      ? Math.round((weekParticipantIds.size / nonAdminParticipants.length) * 100)
+      : 0;
+
     const stats: OverviewStats = {
       totalCohorts: cohortsSnapshot.size,
       totalParticipants: nonAdminParticipants.length,
@@ -70,6 +121,10 @@ export async function GET(request: NextRequest) {
       totalNotices: noticesSnapshot.size,
       totalMessages: messagesSnapshot.size,
       pushEnabledCount,
+      activeParticipants,
+      moderateParticipants,
+      dormantParticipants,
+      weeklyParticipationRate,
     };
 
     return NextResponse.json(stats);

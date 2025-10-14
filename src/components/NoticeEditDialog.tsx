@@ -26,7 +26,7 @@ export default function NoticeEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
+      <DialogContent className="max-w-lg md:max-w-2xl p-0 flex flex-col gap-0">
         <DialogHeader className="px-6 py-6 border-b">
           <DialogTitle>공지 수정</DialogTitle>
           <DialogDescription>
@@ -37,7 +37,7 @@ export default function NoticeEditDialog({
           <Textarea
             value={content}
             onChange={(e) => onContentChange(e.target.value)}
-            className="min-h-[120px]"
+            className="min-h-[120px] md:min-h-[180px]"
             placeholder="공지 내용을 입력하세요..."
             autoFocus
           />

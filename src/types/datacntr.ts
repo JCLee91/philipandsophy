@@ -11,6 +11,12 @@ export interface OverviewStats {
   totalNotices: number;
   totalMessages: number;
   pushEnabledCount: number; // 푸시 알림 허용 인원
+  // 참가자 활동 상태
+  activeParticipants: number; // 3일 이내 활동
+  moderateParticipants: number; // 4-7일 활동
+  dormantParticipants: number; // 7일 이상 미활동
+  // 주간 참여율
+  weeklyParticipationRate: number; // 이번 주 인증 참가자 비율 (0-100)
 }
 
 // 활동 지표 (일별)

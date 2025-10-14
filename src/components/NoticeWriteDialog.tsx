@@ -42,7 +42,7 @@ export default function NoticeWriteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
+      <DialogContent className="max-w-lg md:max-w-2xl p-0 flex flex-col gap-0">
         <DialogHeader className="px-6 py-6 border-b">
           <DialogTitle>공지 작성</DialogTitle>
           <DialogDescription>
@@ -53,14 +53,14 @@ export default function NoticeWriteDialog({
           <Textarea
             value={content}
             onChange={(e) => onContentChange(e.target.value)}
-            className="min-h-[120px]"
+            className="min-h-[120px] md:min-h-[180px]"
             placeholder="공지 내용을 입력하세요..."
             autoFocus
           />
 
           {/* 이미지 미리보기 */}
           {imagePreview && (
-            <div className="relative w-full max-w-sm h-48 animate-in fade-in-0 duration-fast">
+            <div className="relative w-full max-w-sm md:max-w-md h-48 md:h-64 animate-in fade-in-0 duration-fast">
               <Image
                 src={imagePreview}
                 alt="첨부 이미지"
