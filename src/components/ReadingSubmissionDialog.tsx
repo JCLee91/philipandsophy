@@ -444,14 +444,14 @@ export default function ReadingSubmissionDialog({
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={handleImageChange}
-                  disabled={uploading || isEditMode}
+                  onChange={imageUpload.handleImageSelect}
+                  disabled={state.ui.uploading || isEditMode}
                 />
               </div>
             ) : (
               <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
                 <Image
-                  src={bookImagePreview}
+                  src={imageUpload.preview}
                   alt="책 사진"
                   fill
                   sizes="(max-width: 768px) 100vw, 600px"
@@ -464,8 +464,8 @@ export default function ReadingSubmissionDialog({
                     variant="destructive"
                     size="sm"
                     className="absolute top-2 right-2"
-                    onClick={handleRemoveImage}
-                    disabled={uploading}
+                    onClick={imageUpload.removeImage}
+                    disabled={state.ui.uploading}
                   >
                     <X className="h-4 w-4" />
                   </UnifiedButton>
@@ -476,21 +476,21 @@ export default function ReadingSubmissionDialog({
 
           {/* 2. 책 제목 (자동완성 컴포넌트로 교체) */}
           <BookSearchAutocomplete
-            value={bookTitle}
+            value={state.bookInfo.title}
             onChange={handleBookTitleChange}
             onBookSelect={handleBookSelect}
-            disabled={uploading || isLoadingBookTitle || isEditMode}
-            isAutoFilled={isAutoFilled}
+            disabled={state.ui.uploading || state.ui.isLoadingBookTitle || isEditMode}
+            isAutoFilled={state.ui.isAutoFilled}
             onClear={handleClearTitle}
             initialBook={
-              isAutoFilled && bookTitle
+              state.ui.isAutoFilled && state.bookInfo.title
                 ? {
-                    title: bookTitle,
-                    author: bookAuthor || '',
+                    title: state.bookInfo.title,
+                    author: state.bookInfo.author || '',
                     publisher: '',
                     isbn: '',
                     pubdate: '',
-                    image: bookCoverUrl || '',
+                    image: state.bookInfo.coverUrl || '',
                     link: '',
                     description: '',
                     discount: '',
@@ -509,14 +509,14 @@ export default function ReadingSubmissionDialog({
             </p>
             <Textarea
               id="review"
-              value={review}
+              value={state.content.review}
               onChange={(e) => setReview(e.target.value)}
               placeholder="예: 오늘은 주인공이 중요한 결정을 내리는 장면을 읽었어요. 용기 있는 선택이 인상 깊었습니다..."
               className="min-h-[120px] resize-none"
-              disabled={uploading}
+              disabled={state.ui.uploading}
             />
             <TextCounter
-              current={review.length}
+              current={state.content.review.length}
               min={SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
             />
           </div>
@@ -527,25 +527,25 @@ export default function ReadingSubmissionDialog({
               4. 오늘의 질문 (40자 이상) <span className="text-destructive">*</span>
             </Label>
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
-              {dailyQuestion && (
+              {state.dailyQuestion && (
                 <div className="space-y-1">
                   <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary mb-2">
-                    {dailyQuestion.category}
+                    {state.dailyQuestion.category}
                   </span>
-                  <p className="text-sm font-medium text-primary">{dailyQuestion.question}</p>
+                  <p className="text-sm font-medium text-primary">{state.dailyQuestion.question}</p>
                 </div>
               )}
             </div>
             <Textarea
               id="dailyAnswer"
-              value={dailyAnswer}
+              value={state.content.dailyAnswer}
               onChange={(e) => setDailyAnswer(e.target.value)}
               placeholder="질문에 대한 답변을 자유롭게 작성해주세요..."
               className="min-h-[100px] resize-none"
-              disabled={uploading}
+              disabled={state.ui.uploading}
             />
             <TextCounter
-              current={dailyAnswer.length}
+              current={state.content.dailyAnswer.length}
               min={SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
             />
           </div>
@@ -556,7 +556,7 @@ export default function ReadingSubmissionDialog({
           <UnifiedButton
             variant="outline"
             onClick={() => handleDialogClose(false)}
-            disabled={uploading}
+            disabled={state.ui.uploading}
             size="sm"
           >
             취소
@@ -566,22 +566,22 @@ export default function ReadingSubmissionDialog({
             disabled={
               isEditMode ? (
                 // 수정 모드: 리뷰와 답변만 검증
-                review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ||
-                dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+                state.content.review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ||
+                state.content.dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
               ) : (
                 // 신규 제출 모드: 모든 필드 검증
-                alreadySubmittedToday ||
-                !bookImage ||
-                !bookTitle.trim() ||
-                review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ||
-                dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+                state.ui.alreadySubmittedToday ||
+                !state.image.file ||
+                !state.bookInfo.title.trim() ||
+                state.content.review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ||
+                state.content.dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
               )
             }
-            loading={uploading}
-            loadingText={uploadStep || (isEditMode ? '수정 중...' : '제출 중...')}
+            loading={state.ui.uploading}
+            loadingText={state.ui.uploadStep || (isEditMode ? '수정 중...' : '제출 중...')}
             size="sm"
           >
-            {isEditMode ? '수정하기' : (alreadySubmittedToday ? '오늘 제출 완료' : '제출하기')}
+            {isEditMode ? '수정하기' : (state.ui.alreadySubmittedToday ? '오늘 제출 완료' : '제출하기')}
           </UnifiedButton>
         </DialogFooter>
       </DialogContent>
