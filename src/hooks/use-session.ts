@@ -6,8 +6,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getParticipantBySessionToken, clearSessionToken } from '@/lib/firebase';
 import { Participant } from '@/types/database';
 import { logger } from '@/lib/logger';
+import { SESSION_CONFIG } from '@/constants/session';
 
-const SESSION_STORAGE_KEY = 'pns-session';
+const SESSION_STORAGE_KEY = SESSION_CONFIG.STORAGE_KEY;
 
 /**
  * 세션 관리 훅
@@ -85,7 +86,7 @@ export function useSession() {
     }
   };
 
-  // 세션 검증 함수 (재사용 가능하도록 분리)
+  // 세션 검증 함수 (재시도 로직 포함)
   const validateSession = useCallback(async () => {
     // 1순위: 메모리 캐시된 sessionToken 사용 (localStorage보다 빠르고 안정적)
     const cachedToken = sessionToken;
@@ -99,31 +100,70 @@ export function useSession() {
       return;
     }
 
-    try {
-      // Firebase에서 세션 토큰으로 참가자 조회
-      const participant = await getParticipantBySessionToken(token);
+    // Exponential backoff 재시도 로직
+    const { MAX_RETRIES, INITIAL_RETRY_DELAY, BACKOFF_MULTIPLIER } = SESSION_CONFIG.RETRY_CONFIG;
 
-      if (participant) {
-        setCurrentUser(participant);
-        setSessionTokenState(token);
-      } else {
-        // 유효하지 않은 토큰 제거
-        removeSessionToken();
-        setCurrentUser(null);
-        setSessionTokenState(null);
+    let lastError: unknown = null;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        // Firebase에서 세션 토큰으로 참가자 조회
+        const participant = await getParticipantBySessionToken(token);
+
+        if (participant) {
+          setCurrentUser(participant);
+          setSessionTokenState(token);
+
+          // 재시도 성공 시 로그
+          if (attempt > 0) {
+            logger.info('세션 검증 재시도 성공', { attempt });
+          }
+
+          setIsLoading(false);
+          return;
+        } else {
+          // 유효하지 않은 토큰 (재시도 불필요)
+          removeSessionToken();
+          setCurrentUser(null);
+          setSessionTokenState(null);
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        lastError = error;
+
+        // 마지막 시도가 아니면 재시도
+        if (attempt < MAX_RETRIES) {
+          const delayMs = INITIAL_RETRY_DELAY * Math.pow(BACKOFF_MULTIPLIER, attempt);
+
+          logger.warn('세션 검증 실패, 재시도 예정', {
+            attempt: attempt + 1,
+            maxRetries: MAX_RETRIES + 1,
+            retryIn: `${delayMs / 1000}초`,
+            error: error instanceof Error ? error.message : String(error)
+          });
+
+          // Exponential backoff: 1초, 2초, 4초
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
       }
-    } catch (error) {
-      // 네트워크 에러나 Firebase 일시적 문제일 수 있으므로
-      // currentUser 상태는 유지하고 토큰만 보존
-      logger.error('세션 검증 실패 (상태 유지):', error);
-      // ✅ 개선: currentUser가 이미 있으면 유지 (네트워크 에러 대응)
-      if (!currentUser) {
-        setCurrentUser(null);
-      }
-      // removeSessionToken()을 호출하지 않음 → localStorage에 토큰 유지
-    } finally {
-      setIsLoading(false);
     }
+
+    // 모든 재시도 실패: 네트워크 에러로 판단
+    logger.error('세션 검증 모든 재시도 실패', {
+      attempts: MAX_RETRIES + 1,
+      lastError: lastError instanceof Error ? lastError.message : String(lastError)
+    });
+
+    // ✅ 개선: currentUser가 이미 있으면 유지 (네트워크 에러 대응)
+    // 초기 로드 시에만 로그아웃 처리
+    if (!currentUser) {
+      setCurrentUser(null);
+      setSessionTokenState(null);
+    }
+    // removeSessionToken()을 호출하지 않음 → localStorage에 토큰 유지
+
+    setIsLoading(false);
   }, [sessionToken, currentUser]);
 
   // 초기 세션 검증 (마운트 시)

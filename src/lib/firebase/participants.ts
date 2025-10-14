@@ -19,6 +19,7 @@ import {
 import { getDb } from './client';
 import { logger } from '@/lib/logger';
 import { Participant, BookHistoryEntry, COLLECTIONS } from '@/types/database';
+import { SESSION_CONFIG } from '@/constants/session';
 
 /**
  * Participant CRUD Operations
@@ -303,7 +304,7 @@ export async function createSessionToken(participantId: string): Promise<string>
   const sessionToken = crypto.randomUUID();
 
   // 세션 만료 시간: 24시간 후
-  const sessionExpiry = Date.now() + 24 * 60 * 60 * 1000;
+  const sessionExpiry = Date.now() + SESSION_CONFIG.SESSION_DURATION;
 
   await updateDoc(docRef, {
     sessionToken,
@@ -311,11 +312,19 @@ export async function createSessionToken(participantId: string): Promise<string>
     updatedAt: Timestamp.now(),
   });
 
+  logger.info('세션 토큰 생성', { participantId, expiresIn: '24시간' });
+
   return sessionToken;
 }
 
 /**
  * 세션 토큰으로 참가자 조회 및 검증
+ *
+ * 슬라이딩 윈도우 전략:
+ * - 세션이 유효하면 참가자 정보 반환
+ * - 남은 세션 시간이 12시간 미만이면 자동으로 24시간 연장
+ * - 유예 시간(5분) 내에서는 세션 유지 후 연장
+ * - 유예 시간 초과 시 세션 만료 처리
  *
  * @param sessionToken - 세션 토큰
  * @returns 유효한 참가자 정보 또는 null
@@ -335,28 +344,71 @@ export async function getParticipantBySessionToken(
     return null;
   }
 
-  const doc = querySnapshot.docs[0];
+  const docSnap = querySnapshot.docs[0];
   const participant = {
-    id: doc.id,
-    ...doc.data(),
+    id: docSnap.id,
+    ...docSnap.data(),
   } as Participant;
 
-  // 세션 만료 확인 (5분 유예 시간 포함)
-  if (participant.sessionExpiry && participant.sessionExpiry < Date.now()) {
-    // 시계 오차 및 네트워크 지연을 고려한 유예 시간
-    const GRACE_PERIOD_MS = 5 * 60 * 1000; // 5분
+  const now = Date.now();
+  const sessionExpiry = participant.sessionExpiry;
 
-    // 유예 시간이 지난 경우에만 토큰 제거
-    if (Date.now() - participant.sessionExpiry > GRACE_PERIOD_MS) {
+  // 세션 만료 확인
+  if (sessionExpiry && sessionExpiry < now) {
+    // 시계 오차 및 네트워크 지연을 고려한 유예 시간
+    const graceTimeRemaining = SESSION_CONFIG.GRACE_PERIOD - (now - sessionExpiry);
+
+    if (graceTimeRemaining <= 0) {
+      // 유예 시간 초과: 세션 만료
+      logger.info('세션 만료 (유예 시간 초과)', {
+        participantId: participant.id,
+        expiredAgo: Math.floor((now - sessionExpiry) / 1000 / 60) + '분'
+      });
       await clearSessionToken(participant.id);
       return null;
     }
 
-    // 유예 시간 내: 경고 로그만 출력하고 세션 유지
-    logger.warn('세션 만료 임박 (유예 시간 내)', {
+    // 유예 시간 내: 세션 유지하고 자동 연장
+    logger.warn('세션 만료 임박 (유예 시간 내), 자동 연장', {
       participantId: participant.id,
-      expiryDiff: Math.floor((Date.now() - participant.sessionExpiry) / 1000 / 60) + '분'
+      graceTimeRemaining: Math.floor(graceTimeRemaining / 1000) + '초'
     });
+
+    // 유예 시간 내에서는 무조건 연장
+    const newExpiry = now + SESSION_CONFIG.SESSION_DURATION;
+    await updateDoc(doc(db, COLLECTIONS.PARTICIPANTS, participant.id), {
+      sessionExpiry: newExpiry,
+      updatedAt: Timestamp.now(),
+    });
+
+    // 반환값의 sessionExpiry도 업데이트
+    participant.sessionExpiry = newExpiry;
+    return participant;
+  }
+
+  // 세션이 아직 유효한 경우: 자동 연장 임계값 체크
+  if (sessionExpiry) {
+    const timeUntilExpiry = sessionExpiry - now;
+
+    // 남은 세션 시간이 12시간 미만이면 자동 연장
+    if (timeUntilExpiry < SESSION_CONFIG.AUTO_EXTEND_THRESHOLD) {
+      const hoursRemaining = Math.floor(timeUntilExpiry / 1000 / 60 / 60);
+
+      logger.info('세션 자동 연장', {
+        participantId: participant.id,
+        hoursRemaining: hoursRemaining + '시간',
+        extendedTo: '24시간'
+      });
+
+      const newExpiry = now + SESSION_CONFIG.SESSION_DURATION;
+      await updateDoc(doc(db, COLLECTIONS.PARTICIPANTS, participant.id), {
+        sessionExpiry: newExpiry,
+        updatedAt: Timestamp.now(),
+      });
+
+      // 반환값의 sessionExpiry도 업데이트
+      participant.sessionExpiry = newExpiry;
+    }
   }
 
   return participant;

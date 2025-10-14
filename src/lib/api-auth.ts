@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { logger } from '@/lib/logger';
+import { SESSION_CONFIG } from '@/constants/session';
 import type { Participant } from '@/types/database';
 
 /**
@@ -53,31 +54,81 @@ async function getParticipantBySessionTokenServer(
       ...doc.data(),
     } as Participant;
 
-    // 세션 만료 확인
-    if (participant.sessionExpiry && participant.sessionExpiry < Date.now()) {
-      logger.info('세션 만료로 토큰 제거', {
-        participantId: participant.id,
-        expiry: new Date(participant.sessionExpiry).toISOString(),
-      });
+    const now = Date.now();
+    const sessionExpiry = participant.sessionExpiry;
 
-      // 만료된 세션 토큰 제거 (Fire-and-forget: 삭제 실패해도 null 반환)
-      // 토큰 삭제는 정리 작업일 뿐, 실패해도 사용자 접근은 차단되어야 함
-      db.collection('participants')
-        .doc(participant.id)
-        .update({
-          sessionToken: null,
-          sessionExpiry: null,
-        })
-        .catch((error) => {
-          // 삭제 실패는 경고만 (다음 로그인 시 자동으로 덮어씌워짐)
-          logger.warn('만료된 세션 토큰 제거 실패 (무시됨)', {
-            participantId: participant.id,
-            error: error.message
-          });
+    // 세션 만료 확인
+    if (sessionExpiry && sessionExpiry < now) {
+      // 시계 오차 및 네트워크 지연을 고려한 유예 시간
+      const graceTimeRemaining = SESSION_CONFIG.GRACE_PERIOD - (now - sessionExpiry);
+
+      if (graceTimeRemaining <= 0) {
+        // 유예 시간 초과: 세션 만료
+        logger.info('세션 만료 (유예 시간 초과)', {
+          participantId: participant.id,
+          expiredAgo: Math.floor((now - sessionExpiry) / 1000 / 60) + '분'
         });
 
-      // 토큰 삭제 완료를 기다리지 않고 즉시 null 반환
-      return null;
+        // 만료된 세션 토큰 제거 (Fire-and-forget)
+        db.collection('participants')
+          .doc(participant.id)
+          .update({
+            sessionToken: null,
+            sessionExpiry: null,
+          })
+          .catch((error) => {
+            logger.warn('만료된 세션 토큰 제거 실패 (무시됨)', {
+              participantId: participant.id,
+              error: error.message
+            });
+          });
+
+        return null;
+      }
+
+      // 유예 시간 내: 세션 유지하고 자동 연장
+      logger.warn('세션 만료 임박 (유예 시간 내), 자동 연장', {
+        participantId: participant.id,
+        graceTimeRemaining: Math.floor(graceTimeRemaining / 1000) + '초'
+      });
+
+      // 유예 시간 내에서는 무조건 연장
+      const newExpiry = now + SESSION_CONFIG.SESSION_DURATION;
+      await db.collection('participants')
+        .doc(participant.id)
+        .update({
+          sessionExpiry: newExpiry,
+        });
+
+      // 반환값의 sessionExpiry도 업데이트
+      participant.sessionExpiry = newExpiry;
+      return participant;
+    }
+
+    // 세션이 아직 유효한 경우: 자동 연장 임계값 체크
+    if (sessionExpiry) {
+      const timeUntilExpiry = sessionExpiry - now;
+
+      // 남은 세션 시간이 12시간 미만이면 자동 연장
+      if (timeUntilExpiry < SESSION_CONFIG.AUTO_EXTEND_THRESHOLD) {
+        const hoursRemaining = Math.floor(timeUntilExpiry / 1000 / 60 / 60);
+
+        logger.info('세션 자동 연장', {
+          participantId: participant.id,
+          hoursRemaining: hoursRemaining + '시간',
+          extendedTo: '24시간'
+        });
+
+        const newExpiry = now + SESSION_CONFIG.SESSION_DURATION;
+        await db.collection('participants')
+          .doc(participant.id)
+          .update({
+            sessionExpiry: newExpiry,
+          });
+
+        // 반환값의 sessionExpiry도 업데이트
+        participant.sessionExpiry = newExpiry;
+      }
     }
 
     return participant;
