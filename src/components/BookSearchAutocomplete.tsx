@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { searchNaverBooks, cleanBookData, type NaverBook } from '@/lib/naver-book-api';
-import { Loader2, Book, X } from 'lucide-react';
-import Image from 'next/image';
+import { Loader2, X } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { SEARCH_CONFIG } from '@/constants/search';
+import { BookCoverImage } from '@/components/BookCoverImage';
 
 interface BookSearchAutocompleteProps {
   value: string;
@@ -225,21 +225,11 @@ export default function BookSearchAutocomplete({
         <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
           <div className="flex items-start gap-3">
             {/* 책 표지 */}
-            {selectedBook.image ? (
-              <div className="relative w-12 h-16 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
-                <Image
-                  src={selectedBook.image}
-                  alt={selectedBook.title}
-                  fill
-                  sizes="48px"
-                  className="object-cover"
-                />
-              </div>
-            ) : (
-              <div className="w-12 h-16 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
-                <Book className="h-6 w-6 text-gray-400" />
-              </div>
-            )}
+            <BookCoverImage
+              src={selectedBook.image}
+              alt={selectedBook.title}
+              size="sm"
+            />
 
             {/* 책 정보 */}
             <div className="flex-1 min-w-0">
@@ -304,21 +294,11 @@ export default function BookSearchAutocomplete({
                 className="w-full flex items-start gap-3 p-3 hover:bg-gray-50 transition-colors text-left border-b last:border-b-0"
               >
                 {/* 책 표지 */}
-                {book.image ? (
-                  <div className="relative w-12 h-16 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
-                    <Image
-                      src={book.image}
-                      alt={book.title}
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-12 h-16 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
-                    <Book className="h-6 w-6 text-gray-400" />
-                  </div>
-                )}
+                <BookCoverImage
+                  src={book.image}
+                  alt={book.title}
+                  size="sm"
+                />
 
                 {/* 책 정보 */}
                 <div className="flex-1 min-w-0">

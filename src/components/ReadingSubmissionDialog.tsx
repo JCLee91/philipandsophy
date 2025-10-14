@@ -30,6 +30,8 @@ import { validateImageFile } from '@/lib/image-compression';
 import type { ReadingSubmission } from '@/types/database';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { useDraftStorage, confirmCloseDialog } from '@/hooks/use-draft-storage';
+import { AlertBanner } from '@/components/AlertBanner';
+import { TextCounter } from '@/components/TextCounter';
 
 interface ReadingSubmissionDialogProps {
   open: boolean;
@@ -272,8 +274,6 @@ export default function ReadingSubmissionDialog({
         description: error instanceof Error ? error.message : '이미지를 처리할 수 없습니다. 다른 이미지를 시도해주세요.',
         variant: 'destructive',
       });
-    } finally {
-      // No cleanup needed
     }
   };
 
@@ -282,29 +282,39 @@ export default function ReadingSubmissionDialog({
     setBookImagePreview('');
   };
 
+  // 책 메타데이터 초기화 헬퍼 함수
+  const resetBookMetadata = () => {
+    setBookAuthor('');
+    setBookCoverUrl('');
+    setBookDescription('');
+    setIsAutoFilled(false);
+  };
+
+  // 책 정보 변경 확인 헬퍼 함수
+  const confirmMetadataReset = (): boolean => {
+    return window.confirm(
+      '책 정보를 수정하면 저자와 표지가 초기화됩니다.\n계속하시겠습니까?'
+    );
+  };
+
   const handleBookTitleChange = (value: string) => {
-    // 빈 값으로 변경하는 경우는 X 버튼(handleClearTitle)에서 처리하므로 여기서는 확인 안 함
+    // Early return: 빈 값
     if (value === '') {
       setBookTitle(value);
       return;
     }
-    
-    // 기존 메타데이터가 있으면 경고 (수정하는 경우만)
-    if (bookAuthor && bookCoverUrl && value !== bookTitle) {
-      const confirmed = window.confirm(
-        '책 정보를 수정하면 저자와 표지가 초기화됩니다.\n계속하시겠습니까?'
-      );
-      if (!confirmed) {
-        return; // 취소하면 변경 안 함
-      }
+
+    // Early return: 메타데이터 있고 사용자가 취소
+    const hasMetadata = bookAuthor && bookCoverUrl;
+    const isChanging = value !== bookTitle;
+
+    if (hasMetadata && isChanging && !confirmMetadataReset()) {
+      return;
     }
 
+    // 책 제목 업데이트 + 메타데이터 초기화
     setBookTitle(value);
-    setIsAutoFilled(false);
-    // 사용자가 직접 입력하면 저자, 표지, 소개글 정보 초기화
-    setBookAuthor('');
-    setBookCoverUrl('');
-    setBookDescription('');
+    resetBookMetadata();
   };
 
   const handleBookSelect = (book: NaverBook) => {
@@ -316,22 +326,17 @@ export default function ReadingSubmissionDialog({
   };
 
   const handleClearTitle = (): boolean => {
-    // 기존 메타데이터가 있으면 경고
-    if (bookAuthor || bookCoverUrl) {
-      const confirmed = window.confirm(
-        '책 정보를 수정하면 저자와 표지가 초기화됩니다.\n계속하시겠습니까?'
-      );
-      if (!confirmed) {
-        return false; // 취소하면 false 반환
-      }
+    // Early return: 메타데이터 있고 사용자가 취소
+    const hasMetadata = bookAuthor || bookCoverUrl;
+
+    if (hasMetadata && !confirmMetadataReset()) {
+      return false;
     }
-    
+
+    // 책 정보 전체 초기화
     setBookTitle('');
-    setBookAuthor('');
-    setBookCoverUrl('');
-    setBookDescription('');
-    setIsAutoFilled(false);
-    return true; // 성공하면 true 반환
+    resetBookMetadata();
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -495,15 +500,11 @@ export default function ReadingSubmissionDialog({
 
         {/* 오늘 이미 제출한 경우 경고 표시 */}
         {alreadySubmittedToday && (
-          <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-destructive">오늘은 이미 제출하셨습니다</p>
-              <p className="text-sm text-destructive/80 mt-1">
-                독서 인증은 하루에 1회만 가능합니다. 내일 다시 시도해주세요.
-              </p>
-            </div>
-          </div>
+          <AlertBanner
+            variant="warning"
+            title="오늘은 이미 제출하셨습니다"
+            description="독서 인증은 하루에 1회만 가능합니다. 내일 다시 시도해주세요."
+          />
         )}
 
         <div className="space-y-6 pt-4">
@@ -608,9 +609,10 @@ export default function ReadingSubmissionDialog({
               className="min-h-[120px] resize-none"
               disabled={uploading}
             />
-            <div className={`text-xs text-right ${review.length >= SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ? 'text-muted-foreground' : 'text-destructive'}`}>
-              {review.length}/{SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
-            </div>
+            <TextCounter
+              current={review.length}
+              min={SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
+            />
           </div>
 
           {/* 4. 오늘의 질문 (번호 변경: 5 → 4) */}
@@ -636,9 +638,10 @@ export default function ReadingSubmissionDialog({
               className="min-h-[100px] resize-none"
               disabled={uploading}
             />
-            <div className={`text-xs text-right ${dailyAnswer.length >= SUBMISSION_VALIDATION.MIN_TEXT_LENGTH ? 'text-muted-foreground' : 'text-destructive'}`}>
-              {dailyAnswer.length}/{SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
-            </div>
+            <TextCounter
+              current={dailyAnswer.length}
+              min={SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
+            />
           </div>
         </div>
         </div>

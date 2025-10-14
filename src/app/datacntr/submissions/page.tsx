@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Calendar, User, BookOpen, BarChart3 } from 'lucide-react';
+import { Loader2, Calendar, User, BookOpen, BarChart3, MessageSquare } from 'lucide-react';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -96,7 +96,7 @@ export default function SubmissionsPage() {
     fetchAnalytics();
   }, [user]);
 
-  // 검색 필터링
+  // 검색 필터링 (가치관 답변 포함)
   useEffect(() => {
     if (!searchQuery) {
       setFilteredSubmissions(submissions);
@@ -107,7 +107,9 @@ export default function SubmissionsPage() {
       (s) =>
         s.participantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.bookTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.cohortName.toLowerCase().includes(searchQuery.toLowerCase())
+        s.cohortName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.dailyAnswer && s.dailyAnswer.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (s.review && s.review.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     setFilteredSubmissions(filtered);
@@ -172,7 +174,7 @@ export default function SubmissionsPage() {
         <TableSearch
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="참가자 이름, 책 제목으로 검색..."
+          placeholder="참가자, 책 제목, 리뷰, 가치관 답변으로 검색..."
         />
       </div>
 
@@ -224,6 +226,25 @@ export default function SubmissionsPage() {
                 <div className="pt-2 border-t border-gray-100">
                   <p className="text-sm text-gray-700 line-clamp-3">{submission.review}</p>
                 </div>
+
+                {/* 가치관 질문 & 답변 */}
+                {submission.dailyQuestion && submission.dailyAnswer && (
+                  <div className="pt-3 border-t border-gray-100">
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <MessageSquare className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-primary mb-1.5">
+                            {submission.dailyQuestion}
+                          </p>
+                          <p className="text-sm text-gray-700 line-clamp-2">
+                            {submission.dailyAnswer}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* 날짜 */}
                 <div className="flex items-center gap-2 text-xs text-gray-500">
