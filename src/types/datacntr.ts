@@ -22,9 +22,10 @@ export interface OverviewStats {
 // 활동 지표 (일별)
 export interface DailyActivity {
   date: string; // YYYY-MM-DD
-  submissions: number;
-  newParticipants: number;
-  messages: number;
+  pushEnabled: number; // 푸시 알림 허용 수
+  submissions: number; // 독서 인증 횟수
+  avgReviewLength: number; // 리뷰 평균 글자수
+  avgAnswerLength: number; // 가치관 답변 평균 글자수
 }
 
 // 코호트 통계

@@ -25,12 +25,10 @@ export async function GET(request: NextRequest) {
     const startDate = subDays(now, days);
     startDate.setHours(0, 0, 0, 0);
 
-    // 독서 인증 & 참가자 & 메시지 조회 (Admin SDK)
-    const [submissionsSnapshot, participantsSnapshot, messagesSnapshot, allParticipantsSnapshot] = await Promise.all([
+    // 독서 인증 & 전체 참가자 조회 (Admin SDK)
+    const [submissionsSnapshot, allParticipantsSnapshot] = await Promise.all([
       db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get(),
-      db.collection(COLLECTIONS.PARTICIPANTS).where('createdAt', '>=', startDate).get(),
-      db.collection(COLLECTIONS.MESSAGES).where('createdAt', '>=', startDate).get(),
-      db.collection(COLLECTIONS.PARTICIPANTS).get(), // 관리자 필터링용
+      db.collection(COLLECTIONS.PARTICIPANTS).get(), // 푸시 허용 수 계산용
     ]);
 
     // 관리자 ID 목록 생성
@@ -44,17 +42,39 @@ export async function GET(request: NextRequest) {
     );
 
     // 날짜별로 그룹화
-    const activityMap = new Map<string, DailyActivity>();
+    const activityMap = new Map<string, {
+      date: string;
+      pushEnabled: number;
+      submissions: number;
+      totalReviewLength: number;
+      totalAnswerLength: number;
+      submissionCount: number;
+    }>();
 
     // 날짜 초기화 (최근 N일)
     for (let i = 0; i < days; i++) {
       const date = subDays(now, i);
       const dateStr = format(date, 'yyyy-MM-dd');
+
+      // 그날까지 푸시 허용한 참가자 수 (누적)
+      const pushEnabledCount = allParticipantsSnapshot.docs.filter((doc) => {
+        const data = doc.data();
+        // 관리자 제외
+        if (data.isAdmin || data.isAdministrator) return false;
+        // 푸시 토큰 있음
+        if (!data.pushToken) return false;
+        // 그날까지 가입한 참가자
+        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt._seconds * 1000);
+        return createdAt <= date;
+      }).length;
+
       activityMap.set(dateStr, {
         date: dateStr,
+        pushEnabled: pushEnabledCount,
         submissions: 0,
-        newParticipants: 0,
-        messages: 0,
+        totalReviewLength: 0,
+        totalAnswerLength: 0,
+        submissionCount: 0,
       });
     }
 
@@ -67,38 +87,35 @@ export async function GET(request: NextRequest) {
       const submittedAt = data.submittedAt?.toDate ? data.submittedAt.toDate() : new Date(data.submittedAt._seconds * 1000);
       const date = format(submittedAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
+
       if (activity) {
         activity.submissions += 1;
+        activity.submissionCount += 1;
+
+        // 리뷰 길이 집계
+        const review = data.review || '';
+        activity.totalReviewLength += review.length;
+
+        // 가치관 답변 길이 집계
+        const dailyAnswer = data.dailyAnswer || '';
+        activity.totalAnswerLength += dailyAnswer.length;
       }
     });
 
-    // 신규 참가자 집계 (관리자 제외)
-    participantsSnapshot.forEach((doc) => {
-      const data = doc.data();
-      // 관리자 제외
-      if (data.isAdmin || data.isAdministrator) return;
-
-      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt._seconds * 1000);
-      const date = format(createdAt, 'yyyy-MM-dd');
-      const activity = activityMap.get(date);
-      if (activity) {
-        activity.newParticipants += 1;
-      }
-    });
-
-    // 메시지 집계 (모두 포함 - 관리자와의 대화도 중요)
-    messagesSnapshot.forEach((doc) => {
-      const data = doc.data();
-      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt._seconds * 1000);
-      const date = format(createdAt, 'yyyy-MM-dd');
-      const activity = activityMap.get(date);
-      if (activity) {
-        activity.messages += 1;
-      }
-    });
-
-    // 배열로 변환 (최신순 정렬)
-    const activities = Array.from(activityMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    // 배열로 변환 및 평균 계산
+    const activities: DailyActivity[] = Array.from(activityMap.values())
+      .map((activity) => ({
+        date: activity.date,
+        pushEnabled: activity.pushEnabled,
+        submissions: activity.submissions,
+        avgReviewLength: activity.submissionCount > 0
+          ? Math.round(activity.totalReviewLength / activity.submissionCount)
+          : 0,
+        avgAnswerLength: activity.submissionCount > 0
+          ? Math.round(activity.totalAnswerLength / activity.submissionCount)
+          : 0,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     return NextResponse.json(activities);
   } catch (error) {
