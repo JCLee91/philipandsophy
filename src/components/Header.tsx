@@ -30,7 +30,7 @@ export default function Header({
           <button
             type="button"
             onClick={onSettingsClick}
-            className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+            className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-95"
             aria-label="설정"
           >
             <Settings className="h-5 w-5" />
@@ -48,7 +48,7 @@ export default function Header({
             <button
               type="button"
               onClick={onWriteClick}
-              className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+              className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-95"
               aria-label="공지 작성"
             >
               <PenSquare className="h-5 w-5" />
@@ -57,7 +57,7 @@ export default function Header({
             <button
               type="button"
               onClick={onMessageAdminClick}
-              className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+              className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-95"
               aria-label="운영자에게 메시지"
             >
               <Mail className="h-5 w-5" />
@@ -71,7 +71,7 @@ export default function Header({
           <button
             type="button"
             onClick={onParticipantsClick}
-            className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+            className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-95"
             aria-label="참가자 목록"
           >
             <Users className="h-5 w-5" />

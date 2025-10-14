@@ -110,14 +110,36 @@ export default function ParticipantsPage() {
         const aValue = a[sortKey as keyof ParticipantWithCohort];
         const bValue = b[sortKey as keyof ParticipantWithCohort];
 
+        // Null 처리
         if (aValue === undefined || aValue === null) return 1;
         if (bValue === undefined || bValue === null) return -1;
 
-        if (sortDirection === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
+        // Timestamp 타입 처리 (createdAt)
+        if (sortKey === 'createdAt') {
+          const aDate = safeTimestampToDate(aValue);
+          const bDate = safeTimestampToDate(bValue);
+
+          if (!aDate) return 1;
+          if (!bDate) return -1;
+
+          const aTime = aDate.getTime();
+          const bTime = bDate.getTime();
+
+          return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
         }
+
+        // 숫자 타입 처리 (submissionCount)
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+
+        // 문자열 타입 처리 (name, cohortName 등)
+        const aStr = String(aValue).toLowerCase();
+        const bStr = String(bValue).toLowerCase();
+
+        return sortDirection === 'asc'
+          ? aStr.localeCompare(bStr, 'ko')
+          : bStr.localeCompare(aStr, 'ko');
       });
     }
 

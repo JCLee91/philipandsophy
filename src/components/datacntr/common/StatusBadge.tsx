@@ -1,8 +1,7 @@
 'use client';
 
 import { Circle } from 'lucide-react';
-
-type Status = 'active' | 'moderate' | 'dormant';
+import type { ParticipantStatus as Status } from '@/lib/datacntr/status';
 
 interface StatusBadgeProps {
   status: Status;
@@ -45,15 +44,4 @@ export default function StatusBadge({ status, label }: StatusBadgeProps) {
       {displayLabel}
     </span>
   );
-}
-
-/**
- * 참가자 활동 상태 계산
- * @param lastActivityDays - 마지막 활동으로부터 경과 일수
- * @returns Status
- */
-export function getParticipantStatus(lastActivityDays: number): Status {
-  if (lastActivityDays <= 3) return 'active';
-  if (lastActivityDays <= 7) return 'moderate';
-  return 'dormant';
 }

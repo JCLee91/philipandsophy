@@ -191,7 +191,9 @@ export default function ReadingSubmissionDialog({
         isCancelled = true;
       };
     }
-  }, [open, participantId, allSubmissions, isEditMode, existingSubmission, restore, toast, setBookInfo, setReview, setDailyAnswer, setDailyQuestion, setUI, imageUpload, form, restoreDraft]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, participantId, allSubmissions, isEditMode, existingSubmission, restore, toast, setBookInfo, setReview, setDailyAnswer, setDailyQuestion, setUI, form, restoreDraft]);
+  // Note: imageUpload는 의존성에서 제외 (effect 내부에서만 호출, 트리거 조건 아님)
 
   // ✅ 이미지 처리 로직은 useSimpleImageUpload로 이동 (88줄 → 0줄)
 

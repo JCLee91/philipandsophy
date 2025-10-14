@@ -5,7 +5,8 @@ import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { calculateEngagementScore, getEngagementLevel, getWeeksPassed } from '@/lib/datacntr/engagement';
-import { getParticipantStatus } from '@/components/datacntr/common/StatusBadge';
+import { sanitizeParticipantForClient } from '@/lib/datacntr/sanitize';
+import { getParticipantStatus } from '@/lib/datacntr/status';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 
 export async function GET(request: NextRequest) {
@@ -77,8 +78,7 @@ export async function GET(request: NextRequest) {
         }
 
         return {
-          id: doc.id,
-          ...participantData,
+          ...sanitizeParticipantForClient({ id: doc.id, ...participantData }),
           cohortName,
           submissionCount,
           engagementScore,

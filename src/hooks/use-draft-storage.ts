@@ -53,7 +53,23 @@ export function useDraftStorage<T extends Record<string, any>>(
           localStorage.removeItem(key);
         }
       } catch (error) {
-        logger.error('Draft save failed', error);
+        // QuotaExceededError 처리
+        if (error instanceof Error && error.name === 'QuotaExceededError') {
+          logger.warn('localStorage quota exceeded, clearing old drafts');
+          // 오래된 draft 삭제 시도
+          try {
+            const keysToRemove = Object.keys(localStorage).filter(k => k.includes('-draft-'));
+            keysToRemove.forEach(k => {
+              if (k !== key) localStorage.removeItem(k);
+            });
+            // 재시도
+            localStorage.setItem(key, JSON.stringify(data));
+          } catch (retryError) {
+            logger.error('Draft save failed after cleanup', retryError);
+          }
+        } else {
+          logger.error('Draft save failed', error);
+        }
       }
     }, 1000);
 

@@ -3,6 +3,7 @@ import { requireAuthToken } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
+import { sanitizeParticipantForClient } from '@/lib/datacntr/sanitize';
 
 interface RouteParams {
   params: Promise<{ cohortId: string }>;
@@ -58,8 +59,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           .get();
 
         return {
-          id: doc.id,
-          ...participantData,
+          ...sanitizeParticipantForClient({ id: doc.id, ...participantData }),
           submissionCount: submissionsSnapshot.size,
         };
       })
