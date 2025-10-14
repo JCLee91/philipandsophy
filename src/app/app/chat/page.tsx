@@ -10,6 +10,7 @@ import { APP_CONSTANTS } from '@/constants/app';
 import { uploadNoticeImage } from '@/lib/firebase/storage';
 import { Notice, Participant } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
+import { AUTH_TIMING } from '@/constants/auth';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
@@ -198,8 +199,8 @@ function ChatPageContent() {
       requestAnimationFrame(() => {
         router.push(appRoutes.participants(cohortId));
 
-        // 500ms 후 다시 활성화 (navigation 완료 시간)
-        setTimeout(() => setIsNavigating(false), 500);
+        // Navigation 완료 후 다시 활성화
+        setTimeout(() => setIsNavigating(false), AUTH_TIMING.NAVIGATION_COOLDOWN);
       });
       return;
     }
@@ -208,8 +209,11 @@ function ChatPageContent() {
     setParticipantsOpen(true);
   }, [isIosStandalone, cohortId, router, isNavigating]);
 
-  // 로딩 중: 스켈레톤 UI 표시
-  if (sessionLoading || cohortLoading) {
+  // 로딩 중 또는 인증 실패 (리다이렉트 전): 스켈레톤 UI 표시
+  // sessionLoading: Firebase Auth 상태 확인 중
+  // cohortLoading: Cohort 데이터 로딩 중
+  // !currentUser || !cohort || !cohortId: 인증 실패 (useEffect가 리다이렉트 처리 중)
+  if (sessionLoading || cohortLoading || !currentUser || !cohort || !cohortId) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
@@ -219,11 +223,6 @@ function ChatPageContent() {
         </div>
       </PageTransition>
     );
-  }
-
-  // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리됨)
-  if (!currentUser || !cohort || !cohortId) {
-    return null;
   }
 
   const handleWriteNotice = async (imageFile: File | null) => {
@@ -247,8 +246,8 @@ function ChatPageContent() {
 
       setNewNoticeContent('');
       setWriteDialogOpen(false);
-      // 공지 작성 후: 부드럽게 스크롤
-      scrollToBottom(undefined, { behavior: 'smooth', delay: 100 });
+      // 공지 작성 후: 부드럽게 스크롤 (DOM 렌더링 대기)
+      scrollToBottom(undefined, { behavior: 'smooth', delay: AUTH_TIMING.SCROLL_DELAY });
     } catch (error) {
       logger.error('공지 작성 실패:', error);
     } finally {

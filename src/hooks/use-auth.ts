@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { getAuthInstance, getParticipantByFirebaseUid, signOut as firebaseSignOut } from '@/lib/firebase';
@@ -13,13 +13,16 @@ import { logger } from '@/lib/logger';
  * onAuthStateChanged를 사용하여 자동 세션 감지 및 복구
  * - 60일 자동 세션 유지 (Firebase Refresh Token)
  * - PWA 앱 전환, 뒤로가기, 배포 시에도 세션 유지
- * - 네트워크 에러 시에도 로컬 상태 보존
+ * - Race condition 방지 (useRef로 현재 user 추적)
  */
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<Participant | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  // Race condition 방지: 현재 Firebase User를 ref로 추적
+  const currentFirebaseUserRef = useRef<User | null>(null);
 
   // Firebase Auth 상태 변화 구독
   useEffect(() => {
@@ -33,6 +36,8 @@ export function useAuth() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       logger.debug('Firebase Auth 상태 변화', { uid: user?.uid, hasUser: !!user });
 
+      // Ref 업데이트 (stale closure 방지)
+      currentFirebaseUserRef.current = user;
       setFirebaseUser(user);
 
       if (!user) {
@@ -46,6 +51,15 @@ export function useAuth() {
       try {
         const participant = await getParticipantByFirebaseUid(user.uid);
 
+        // Race condition 체크: 비동기 작업 완료 시점에 user가 변경되었는지 확인
+        if (currentFirebaseUserRef.current?.uid !== user.uid) {
+          logger.warn('Auth state changed during participant fetch, ignoring result', {
+            fetchedUid: user.uid,
+            currentUid: currentFirebaseUserRef.current?.uid,
+          });
+          return;
+        }
+
         if (participant) {
           setCurrentUser(participant);
           logger.debug('참가자 정보 로드 완료', { participantId: participant.id });
@@ -58,7 +72,16 @@ export function useAuth() {
           await firebaseSignOut();
         }
       } catch (error) {
-        // 네트워크 에러: 명확하게 null 설정 (stale closure 방지)
+        // Race condition 체크
+        if (currentFirebaseUserRef.current?.uid !== user.uid) {
+          logger.warn('Auth state changed during error handling, ignoring', {
+            fetchedUid: user.uid,
+            currentUid: currentFirebaseUserRef.current?.uid,
+          });
+          return;
+        }
+
+        // 네트워크 에러: 명확하게 null 설정
         logger.error('참가자 정보 조회 실패:', error);
         setCurrentUser(null);
       } finally {

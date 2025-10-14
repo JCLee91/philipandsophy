@@ -91,3 +91,15 @@ export const STORAGE_KEYS = {
   /** 마지막 로그인 전화번호 */
   LAST_PHONE: 'pns-last-phone',
 } as const;
+
+/**
+ * 인증 관련 타이밍 상수 (밀리초)
+ */
+export const AUTH_TIMING = {
+  /** reCAPTCHA 초기화 지연 시간 (Firebase 초기화 대기) */
+  RECAPTCHA_INIT_DELAY: 100,
+  /** 네비게이션 후 재활성화 시간 (iOS PWA 전환 대기) */
+  NAVIGATION_COOLDOWN: 500,
+  /** 공지 스크롤 지연 시간 (DOM 렌더링 대기) */
+  SCROLL_DELAY: 100,
+} as const;

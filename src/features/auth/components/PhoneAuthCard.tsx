@@ -16,7 +16,7 @@ import { initRecaptcha, sendSmsVerification, confirmSmsCode } from '@/lib/fireba
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 import { logger } from '@/lib/logger';
 import { appRoutes } from '@/lib/navigation';
-import { PHONE_VALIDATION, AUTH_ERROR_MESSAGES, STORAGE_KEYS } from '@/constants/auth';
+import { PHONE_VALIDATION, AUTH_ERROR_MESSAGES, STORAGE_KEYS, AUTH_TIMING } from '@/constants/auth';
 
 const LAST_PHONE_KEY = STORAGE_KEYS.LAST_PHONE;
 
@@ -55,24 +55,39 @@ export default function PhoneAuthCard() {
       return;
     }
 
+    let isMounted = true; // Cleanup guard
+
     // Firebase 초기화를 기다림 (약간의 지연)
     const timer = setTimeout(() => {
+      if (!isMounted) return; // Component unmounted during timeout
+
       try {
         recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
         logger.debug('reCAPTCHA 초기화 완료');
       } catch (error) {
         logger.error('reCAPTCHA 초기화 실패:', error);
-        setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
+        if (isMounted) {
+          setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
+        }
       }
-    }, 100);
+    }, AUTH_TIMING.RECAPTCHA_INIT_DELAY);
 
-    // Cleanup
+    // Cleanup: 모든 edge case 처리
     return () => {
+      isMounted = false;
       clearTimeout(timer);
+
+      // RecaptchaVerifier cleanup with error handling
       if (recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current.clear();
-        recaptchaVerifierRef.current = null;
-        logger.debug('reCAPTCHA cleanup 완료');
+        try {
+          recaptchaVerifierRef.current.clear();
+          logger.debug('reCAPTCHA cleanup 완료');
+        } catch (error) {
+          // Cleanup 실패는 로그만 (non-blocking)
+          logger.warn('reCAPTCHA cleanup 실패 (무시됨):', error);
+        } finally {
+          recaptchaVerifierRef.current = null;
+        }
       }
     };
   }, []);
@@ -214,25 +229,15 @@ export default function PhoneAuthCard() {
         participant = await getParticipantByPhoneNumber(cleanNumber);
 
         if (participant) {
-          // 보안 체크: 이미 다른 firebaseUid와 연결되어 있는지 확인
-          if (participant.firebaseUid && participant.firebaseUid !== userCredential.user.uid) {
-            // 전화번호 재사용 공격 방지
-            logger.warn('전화번호 재사용 감지', {
-              phoneNumber: cleanNumber,
-              existingFirebaseUid: participant.firebaseUid,
-              attemptedFirebaseUid: userCredential.user.uid,
-            });
-            setError(AUTH_ERROR_MESSAGES.PHONE_ALREADY_LINKED);
-            setIsSubmitting(false);
-            return;
-          }
-
-          // 안전: firebaseUid가 없는 경우에만 연결 (첫 로그인)
-          if (!participant.firebaseUid) {
+          // Firebase UID 연결 또는 업데이트
+          // Firebase Auth는 동일 전화번호로 새 계정 생성 시 자동으로 기존 계정 재사용
+          // 따라서 항상 현재 Firebase UID로 업데이트 (안전함)
+          if (participant.firebaseUid !== userCredential.user.uid) {
             await linkFirebaseUid(participant.id, userCredential.user.uid);
-            logger.info('Firebase UID 첫 연결 완료', {
+            logger.info('Firebase UID 연결/업데이트 완료', {
               participantId: participant.id,
-              firebaseUid: userCredential.user.uid,
+              oldFirebaseUid: participant.firebaseUid || 'none',
+              newFirebaseUid: userCredential.user.uid,
             });
           }
         }
@@ -251,6 +256,10 @@ export default function PhoneAuthCard() {
     } catch (error: any) {
       logger.error('인증 코드 확인 실패:', error);
       setError(error.message || AUTH_ERROR_MESSAGES.AUTH_FAILED);
+
+      // 보안: 인증 실패 시 confirmationResult 초기화 (brute force 방지)
+      confirmationResultRef.current = null;
+      setVerificationCode(''); // 입력 필드도 초기화
     } finally {
       setIsSubmitting(false);
     }
