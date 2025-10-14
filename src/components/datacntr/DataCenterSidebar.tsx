@@ -10,7 +10,6 @@ import {
   Bell,
   Settings,
   FolderKanban,
-  ArrowLeft,
   Menu,
   X
 } from 'lucide-react';
@@ -126,18 +125,6 @@ export default function DataCenterSidebar() {
             </Link>
           ))}
         </nav>
-
-        {/* 하단: 웹앱으로 돌아가기 */}
-        <div className="p-4 border-t border-gray-200">
-          <Link
-            href="/app/chat"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>웹앱으로 돌아가기</span>
-          </Link>
-        </div>
       </aside>
     </>
   );
