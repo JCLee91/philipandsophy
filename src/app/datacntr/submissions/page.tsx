@@ -3,12 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Calendar, User, BookOpen } from 'lucide-react';
+import { Loader2, Calendar, User, BookOpen, BarChart3 } from 'lucide-react';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import TableSearch from '@/components/datacntr/table/TableSearch';
+import TimeDistributionChart from '@/components/datacntr/dashboard/TimeDistributionChart';
+import BookDiversityPanel from '@/components/datacntr/dashboard/BookDiversityPanel';
+import ReviewQualityPanel from '@/components/datacntr/dashboard/ReviewQualityPanel';
 import type { ReadingSubmission } from '@/types/database';
+import type { SubmissionAnalytics } from '@/types/datacntr';
 
 interface SubmissionWithParticipant extends ReadingSubmission {
   participantName: string;
@@ -20,8 +24,11 @@ export default function SubmissionsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [submissions, setSubmissions] = useState<SubmissionWithParticipant[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<SubmissionWithParticipant[]>([]);
+  const [analytics, setAnalytics] = useState<SubmissionAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAnalytics, setShowAnalytics] = useState(true);
 
   // 로그인 체크
   useEffect(() => {
@@ -60,6 +67,35 @@ export default function SubmissionsPage() {
     fetchSubmissions();
   }, [user]);
 
+  // 분석 데이터 로드
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchAnalytics = async () => {
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch('/api/datacntr/stats/submissions', {
+          headers: {
+            'Authorization': `Bearer ${idToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('독서 인증 분석 조회 실패');
+        }
+
+        const data = await response.json();
+        setAnalytics(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [user]);
+
   // 검색 필터링
   useEffect(() => {
     if (!searchQuery) {
@@ -89,10 +125,47 @@ export default function SubmissionsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">독서 인증 관리</h1>
-        <p className="text-gray-600 mt-2">전체 독서 인증 내역</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">독서 인증 관리</h1>
+          <p className="text-gray-600 mt-2">전체 독서 인증 내역 및 분석</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAnalytics(!showAnalytics)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors font-semibold text-gray-700"
+        >
+          <BarChart3 className="h-4 w-4" />
+          {showAnalytics ? '분석 숨기기' : '분석 보기'}
+        </button>
       </div>
+
+      {/* 분석 섹션 */}
+      {showAnalytics && analytics && (
+        <div className="mb-8 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 시간대별 분포 차트 */}
+            <div className="lg:col-span-2">
+              <TimeDistributionChart
+                data={analytics.timeDistribution}
+                isLoading={analyticsLoading}
+              />
+            </div>
+
+            {/* 책 다양성 */}
+            <BookDiversityPanel
+              data={analytics.bookDiversity}
+              isLoading={analyticsLoading}
+            />
+
+            {/* 리뷰 품질 */}
+            <ReviewQualityPanel
+              data={analytics.reviewQuality}
+              isLoading={analyticsLoading}
+            />
+          </div>
+        </div>
+      )}
 
       {/* 검색 */}
       <div className="mb-6">

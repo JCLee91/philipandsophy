@@ -105,3 +105,26 @@ export interface ExportRequest {
   type: 'participants' | 'submissions';
   filter?: ParticipantFilter | SubmissionFilter;
 }
+
+// 독서 인증 분석 통계
+export interface SubmissionAnalytics {
+  timeDistribution: Array<{
+    timeRange: string;
+    count: number;
+    percentage: number;
+  }>;
+  bookDiversity: {
+    totalSubmissions: number;
+    uniqueBookCount: number;
+    averageDuplication: number;
+    topBooks: Array<{
+      title: string;
+      count: number;
+    }>;
+  };
+  reviewQuality: {
+    averageReviewLength: number;
+    longReviewPercentage: number;
+    coverImagePercentage: number;
+  };
+}

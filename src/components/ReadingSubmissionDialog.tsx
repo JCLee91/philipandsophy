@@ -468,7 +468,7 @@ export default function ReadingSubmissionDialog({
   const handleDialogClose = (newOpen: boolean) => {
     // 닫으려고 할 때만 확인 (수정 모드나 제출 완료 후는 제외)
     if (!newOpen && !isEditMode) {
-      const hasContent = bookTitle.trim() || review.trim() || dailyAnswer.trim();
+      const hasContent = bookTitle.trim().length > 0 || review.trim().length > 0 || dailyAnswer.trim().length > 0;
       if (!confirmCloseDialog(hasContent)) {
         return; // 사용자가 취소하면 닫지 않음
       }
