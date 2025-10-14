@@ -11,6 +11,7 @@ export {
   getDb,
   getStorageInstance,
   getFirebaseApp,
+  getFirebaseAuth,
 } from './client';
 
 // Cohort operations

@@ -220,3 +220,89 @@ export async function requireAdmin(
 
   return { user, error: null };
 }
+
+/**
+ * Firebase Auth ID Token 검증 (Data Center용)
+ *
+ * @param idToken - Firebase Auth ID Token
+ * @returns 검증된 사용자 정보 또는 null
+ */
+export async function verifyAuthIdToken(idToken: string): Promise<{ email: string; uid: string } | null> {
+  try {
+    const { getAdminAuth } = await import('@/lib/firebase/admin');
+    const auth = getAdminAuth();
+
+    const decodedToken = await auth.verifyIdToken(idToken);
+
+    return {
+      email: decodedToken.email || '',
+      uid: decodedToken.uid,
+    };
+  } catch (error) {
+    logger.error('ID Token 검증 실패:', error);
+    return null;
+  }
+}
+
+/**
+ * Data Center API 요청 인증 검증
+ *
+ * Firebase Auth ID Token을 검증하고 이메일 도메인을 체크합니다
+ */
+export async function requireAuthToken(
+  request: NextRequest
+): Promise<{ email: string; uid: string; error: null } | { email: null; uid: null; error: NextResponse }> {
+  const authHeader = request.headers.get('authorization');
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return {
+      email: null,
+      uid: null,
+      error: NextResponse.json(
+        { error: '인증 토큰이 필요합니다' },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const idToken = authHeader.substring(7);
+  const user = await verifyAuthIdToken(idToken);
+
+  if (!user) {
+    return {
+      email: null,
+      uid: null,
+      error: NextResponse.json(
+        { error: '유효하지 않은 인증 토큰입니다' },
+        { status: 401 }
+      ),
+    };
+  }
+
+  // 이메일 도메인 검증 (보안 강화)
+  const { validateEmailDomain, ALLOWED_DOMAINS_TEXT } = await import('@/constants/auth');
+
+  if (!validateEmailDomain(user.email)) {
+    const emailDomain = user.email.split('@')[1];
+
+    logger.warn('API 접근 차단 - 허용되지 않은 도메인', {
+      email: user.email,
+      domain: emailDomain,
+      uid: user.uid,
+    });
+
+    return {
+      email: null,
+      uid: null,
+      error: NextResponse.json(
+        {
+          error: `${emailDomain} 도메인은 접근이 허용되지 않습니다`,
+          allowedDomains: ALLOWED_DOMAINS_TEXT,
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { ...user, error: null };
+}
