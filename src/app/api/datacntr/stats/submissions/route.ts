@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
       '00-06': 0, // 자정~새벽
     };
 
-    // 2. 책 정보 수집 (중복 제거용)
-    const bookTitles = new Map<string, number>(); // bookTitle -> count
+    // 2. 책 정보 수집 (읽은 사람 수 기준)
+    const bookReaders = new Map<string, Set<string>>(); // bookTitle -> Set<participantId>
 
     // 3. 리뷰 품질 데이터
     let totalReviewLength = 0;
@@ -73,10 +73,13 @@ export async function GET(request: NextRequest) {
         else timeDistribution['00-06']++;
       }
 
-      // 책 제목 수집
-      if (data.bookTitle) {
+      // 책별 읽은 사람 수집 (같은 사람이 여러 번 인증해도 1명으로)
+      if (data.bookTitle && data.participantId) {
         const title = data.bookTitle.trim();
-        bookTitles.set(title, (bookTitles.get(title) || 0) + 1);
+        if (!bookReaders.has(title)) {
+          bookReaders.set(title, new Set());
+        }
+        bookReaders.get(title)!.add(data.participantId);
       }
 
       // 리뷰 품질
@@ -102,14 +105,25 @@ export async function GET(request: NextRequest) {
     }));
 
     // 책 다양성 지표
-    const uniqueBookCount = bookTitles.size;
-    const averageDuplication = totalSubmissions > 0 ? Number((totalSubmissions / uniqueBookCount).toFixed(1)) : 0;
+    const uniqueBookCount = bookReaders.size;
 
-    // 인기 책 Top 5
-    const topBooks = Array.from(bookTitles.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([title, count]) => ({ title, count }));
+    // 평균 중복도 = 책당 평균 읽은 사람 수
+    const totalReaders = Array.from(bookReaders.values()).reduce(
+      (sum, readers) => sum + readers.size,
+      0
+    );
+    const averageDuplication = uniqueBookCount > 0
+      ? Number((totalReaders / uniqueBookCount).toFixed(1))
+      : 0;
+
+    // 인기 책 Top 5 (읽은 사람 수 기준)
+    const topBooks = Array.from(bookReaders.entries())
+      .map(([title, readers]) => ({
+        title,
+        count: readers.size // 읽은 사람 수
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
 
     // 리뷰 품질 지표
     const averageReviewLength = totalSubmissions > 0 ? Math.round(totalReviewLength / totalSubmissions) : 0;
