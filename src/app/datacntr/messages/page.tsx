@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, MessageSquare, CheckCheck, Clock } from 'lucide-react';
+import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { DirectMessage } from '@/types/database';
@@ -104,9 +105,7 @@ export default function MessagesPage() {
       {/* 메시지 리스트 */}
       <div className="space-y-4">
         {messages.map((message) => {
-          const createdDate = message.createdAt.toDate
-            ? message.createdAt.toDate()
-            : new Date((message.createdAt as any).seconds * 1000);
+          const createdDate = safeTimestampToDate(message.createdAt);
 
           return (
             <div
@@ -130,7 +129,7 @@ export default function MessagesPage() {
                     <Clock className="h-4 w-4 text-orange-500" />
                   )}
                   <span className="text-xs text-gray-500">
-                    {format(createdDate, 'M월 d일 HH:mm', { locale: ko })}
+                    {createdDate ? format(createdDate, 'M월 d일 HH:mm', { locale: ko }) : '-'}
                   </span>
                 </div>
               </div>

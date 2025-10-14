@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { format } from 'date-fns';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
 import TableSearch from '@/components/datacntr/table/TableSearch';
@@ -160,8 +161,8 @@ export default function ParticipantsPage() {
       header: '가입일',
       sortable: true,
       render: (p) => {
-        if (!p.createdAt) return '-';
-        const date = p.createdAt.toDate ? p.createdAt.toDate() : new Date((p.createdAt as any).seconds * 1000);
+        const date = safeTimestampToDate(p.createdAt);
+        if (!date) return '-';
         return format(date, 'yy.MM.dd');
       },
       width: '10%',

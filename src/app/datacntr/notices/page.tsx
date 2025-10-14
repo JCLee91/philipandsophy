@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Bell, Pin, Calendar, User } from 'lucide-react';
+import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { Notice } from '@/types/database';
@@ -117,9 +118,7 @@ export default function NoticesPage() {
       {/* 공지사항 리스트 */}
       <div className="space-y-4">
         {notices.map((notice) => {
-          const createdDate = notice.createdAt.toDate
-            ? notice.createdAt.toDate()
-            : new Date((notice.createdAt as any).seconds * 1000);
+          const createdDate = safeTimestampToDate(notice.createdAt);
 
           return (
             <div
@@ -142,7 +141,7 @@ export default function NoticesPage() {
                     </span>
                   )}
                   <span className="text-xs text-gray-500">
-                    {format(createdDate, 'M월 d일 HH:mm', { locale: ko })}
+                    {createdDate ? format(createdDate, 'M월 d일 HH:mm', { locale: ko }) : '-'}
                   </span>
                 </div>
               </div>
