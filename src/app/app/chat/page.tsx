@@ -91,6 +91,18 @@ function ChatPageContent() {
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
   const isAdmin = currentUser?.isAdmin || false;
 
+  // 디버깅: 로딩 상태 로그
+  useEffect(() => {
+    logger.info('[ChatPage] 로딩 상태', {
+      sessionLoading,
+      cohortLoading,
+      hasCurrentUser: !!currentUser,
+      hasCohort: !!cohort,
+      hasCohortId: !!cohortId,
+      currentUserId,
+    });
+  }, [sessionLoading, cohortLoading, currentUser, cohort, cohortId, currentUserId]);
+
   // 오늘 제출 여부 확인
   const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);
   const todaySubmission = submissions.find(
