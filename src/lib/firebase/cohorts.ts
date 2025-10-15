@@ -21,6 +21,7 @@ import {
 import { getDb } from './client';
 import type { Cohort, DailyMatchingEntry } from '@/types/database';
 import { COLLECTIONS } from '@/types/database';
+import { logger } from '@/lib/logger';
 
 /**
  * Create a new cohort
