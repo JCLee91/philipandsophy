@@ -95,6 +95,8 @@ export interface Participant {
   sessionToken?: string; // 세션 토큰 (로그인 세션 관리용) - DEPRECATED: Firebase Auth 마이그레이션 후 제거 예정
   sessionExpiry?: number; // 세션 만료 시간 (Unix timestamp, 밀리초) - DEPRECATED: Firebase Auth 마이그레이션 후 제거 예정
   firebaseUid?: string; // Firebase Auth UID (Phone Auth 연동용)
+  pushToken?: string; // 푸시 알림 토큰 (FCM)
+  lastActivityAt?: Timestamp; // 마지막 활동 시간 (데이터센터용)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }

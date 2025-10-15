@@ -10,6 +10,7 @@ docs/
 ├── optimization/       # 성능 최적화 문서
 ├── design/             # 디자인 시스템 및 가이드
 ├── architecture/       # 아키텍처 및 기획 문서
+├── implementation/     # 구현 가이드 및 로드맵
 └── troubleshooting/    # 플랫폼별 버그 및 문제 해결
 ```
 
@@ -122,6 +123,24 @@ docs/
 
 ---
 
+## 🚧 구현 가이드
+
+새로운 기능을 구현하거나 대규모 작업을 진행할 때:
+
+### [Data Center 구현 가이드](./implementation/datacenter-implementation-guide.md) ✨ NEW
+**최종 업데이트**: 2025-10-14
+**예상 기간**: 7-11일
+**주요 내용**:
+- 📊 Data Center 대시보드 전체 구현 로드맵
+- 📋 Phase별 상세 체크리스트 (4단계)
+- 🎯 Phase 1: 기반 구조 (레이아웃, 권한, 네비게이션)
+- 📈 Phase 2: 개요 대시보드 (통계, 그래프)
+- 🗂️ Phase 3: 데이터 관리 (코호트, 참가자, 인증)
+- 💬 Phase 4: 메시지 & 설정
+- ✅ 테스트 체크리스트 및 배포 전 점검
+
+---
+
 ## 🐛 문제 해결
 
 플랫폼별 버그 및 이슈 해결 가이드:
@@ -141,7 +160,8 @@ docs/
 
 ### 자주 찾는 문서
 - **Firebase 설정**: [setup/firebase.md](./setup/firebase.md)
-- **날짜 로직 설계**: [architecture/date-logic.md](./architecture/date-logic.md) ✨ NEW
+- **Data Center 구현**: [implementation/datacenter-implementation-guide.md](./implementation/datacenter-implementation-guide.md) ✨ NEW
+- **날짜 로직 설계**: [architecture/date-logic.md](./architecture/date-logic.md)
 - **기술 요구사항 (TRD)**: [architecture/trd.md](./architecture/trd.md)
 - **제품 요구사항 (PRD)**: [architecture/prd.md](./architecture/prd.md)
 - **정보 구조 (IA)**: [architecture/ia.md](./architecture/ia.md)
@@ -183,5 +203,5 @@ docs/
 
 ---
 
-**마지막 업데이트**: 2025-10-13
+**마지막 업데이트**: 2025-10-14
 **프로젝트 버전**: V1.0 (프로덕션 배포 완료)

@@ -4,6 +4,7 @@ Allow: /
 # Block private pages - 비밀 페이지 차단
 Disallow: /app/
 Disallow: /program/
+Disallow: /datacntr/
 
 # Sitemap location
 Sitemap: https://www.philipandsophy.kr/sitemap.xml

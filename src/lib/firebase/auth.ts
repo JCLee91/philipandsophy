@@ -191,3 +191,6 @@ export function formatPhoneNumberToE164(phoneNumber: string): string {
 
   return `${PHONE_VALIDATION.COUNTRY_CODE}${cleanNumber.slice(1)}`;
 }
+
+// Re-export from config
+export { getAuthInstance } from './config';

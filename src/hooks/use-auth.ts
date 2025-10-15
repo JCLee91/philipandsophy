@@ -47,9 +47,9 @@ export function useAuth() {
         return;
       }
 
-      // Firebase 로그인 상태 → Firestore에서 참가자 정보 조회
+      // Firebase 로그인 상태 → Firestore에서 참가자 정보 조회 (retry with exponential backoff)
       try {
-        const participant = await getParticipantByFirebaseUid(user.uid);
+        let participant = await getParticipantByFirebaseUid(user.uid);
 
         // Race condition 체크: 비동기 작업 완료 시점에 user가 변경되었는지 확인
         if (currentFirebaseUserRef.current?.uid !== user.uid) {
@@ -60,12 +60,47 @@ export function useAuth() {
           return;
         }
 
+        // 🔄 Retry logic: Firestore 전파 지연 대응 (최대 3회 재시도, 총 7초)
+        if (!participant) {
+          logger.warn('참가자 정보 없음, 재시도 시작', { uid: user.uid });
+          const retryDelays = [1000, 2000, 4000]; // 1초 → 2초 → 4초 (exponential backoff)
+
+          for (let attempt = 0; attempt < retryDelays.length; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
+
+            // Race condition 체크 (재시도 중 로그아웃 감지)
+            if (currentFirebaseUserRef.current?.uid !== user.uid) {
+              logger.warn('Auth state changed during retry, aborting', {
+                attempt: attempt + 1,
+                fetchedUid: user.uid,
+                currentUid: currentFirebaseUserRef.current?.uid,
+              });
+              return;
+            }
+
+            participant = await getParticipantByFirebaseUid(user.uid);
+
+            if (participant) {
+              logger.info('참가자 정보 로드 성공 (재시도)', {
+                attempt: attempt + 1,
+                participantId: participant.id,
+              });
+              break;
+            } else {
+              logger.warn('재시도 실패', {
+                attempt: attempt + 1,
+                remainingAttempts: retryDelays.length - attempt - 1,
+              });
+            }
+          }
+        }
+
         if (participant) {
           setCurrentUser(participant);
           logger.debug('참가자 정보 로드 완료', { participantId: participant.id });
         } else {
-          // Firebase에는 로그인되어 있지만 Firestore에 참가자 정보가 없는 경우
-          logger.warn('Firebase UID와 연결된 참가자 없음', { uid: user.uid });
+          // 재시도 후에도 참가자 정보 없음 → 로그아웃
+          logger.error('재시도 후에도 Firebase UID와 연결된 참가자 없음', { uid: user.uid });
           setCurrentUser(null);
 
           // Firebase 로그아웃 (동기화 문제 방지)

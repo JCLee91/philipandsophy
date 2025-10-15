@@ -40,7 +40,9 @@
     "check:admin-fields": "tsx src/scripts/check-admin-fields.ts",
     "fix:admin-fields": "tsx src/scripts/fix-admin-fields.ts",
     "debug:participants-cohort": "tsx src/scripts/debug-participants-by-cohort.ts",
-    "check:push-notifications": "tsx src/scripts/check-push-notifications.ts"
+    "check:push-notifications": "tsx src/scripts/check-push-notifications.ts",
+    "migrate:firebase-auth": "tsx src/scripts/migrate-users-to-firebase-phone-auth.ts",
+    "verify:firebase-auth": "tsx src/scripts/verify-firebase-uid-linking.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",
@@ -68,6 +70,7 @@
     "openai": "^6.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^3.2.1",
     "sharp": "^0.34.4",
     "zod": "^3",
     "zustand": "^4"

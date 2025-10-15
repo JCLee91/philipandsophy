@@ -1,8 +1,37 @@
 /**
- * Firebase Phone Authentication Constants
+ * Firebase Authentication 상수
  *
- * 전화번호 검증, 인증 코드 형식, 에러 메시지 등 인증 관련 상수
+ * - 데이터센터: 이메일 인증 (wheelslabs.kr 도메인만)
+ * - 웹앱: 전화번호 인증 (한국 휴대폰 번호만)
  */
+
+// ========================================
+// 데이터센터 인증 (Email)
+// ========================================
+
+/**
+ * 허용된 이메일 도메인 (회원가입 제한)
+ */
+export const ALLOWED_EMAIL_DOMAINS = [
+  'wheelslabs.kr', // 휠즈랩스 공식 도메인
+] as const;
+
+/**
+ * 이메일 도메인 검증
+ */
+export function validateEmailDomain(email: string): boolean {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return ALLOWED_EMAIL_DOMAINS.includes(domain as any);
+}
+
+/**
+ * 허용된 도메인 표시 문자열
+ */
+export const ALLOWED_DOMAINS_TEXT = ALLOWED_EMAIL_DOMAINS.join(', ');
+
+// ========================================
+// 웹앱 인증 (Phone Number)
+// ========================================
 
 /**
  * 전화번호 검증 규칙
@@ -17,6 +46,13 @@ export const PHONE_VALIDATION = {
   /** SMS 인증 코드 길이 */
   VERIFICATION_CODE_LENGTH: 6,
 } as const;
+
+/**
+ * 전화번호 국가 코드 검증
+ */
+export function validatePhoneCountryCode(phoneNumber: string): boolean {
+  return phoneNumber.startsWith(PHONE_VALIDATION.COUNTRY_CODE);
+}
 
 /**
  * 인증 에러 메시지
@@ -57,7 +93,8 @@ export const AUTH_ERROR_MESSAGES = {
   PHONE_ALREADY_LINKED: '이 전화번호는 이미 다른 계정과 연결되어 있습니다. 관리자에게 문의해주세요.',
 
   // Firebase 앱 초기화
-  FIREBASE_NOT_INITIALIZED: 'Firebase app must be initialized before accessing Auth. Call initializeFirebase() in your app providers first.',
+  FIREBASE_NOT_INITIALIZED:
+    'Firebase app must be initialized before accessing Auth. Call initializeFirebase() in your app providers first.',
 } as const;
 
 /**

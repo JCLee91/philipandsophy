@@ -8,6 +8,7 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { CARD_STYLES } from '@/constants/ui';
 import { logger } from '@/lib/logger';
+import { getAdminHeaders } from '@/lib/auth-utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-count';
 import { useTodaySubmissionCount } from '@/hooks/use-today-submission-count';
@@ -319,8 +320,15 @@ function MatchingPageContent() {
   const fetchMatchingResult = useCallback(async () => {
     if (!cohortId || hasFetchedInitialResult) return;
     try {
+      const headers = await getAdminHeaders();
+      if (!headers) {
+        logger.error('인증 실패: ID Token을 가져올 수 없습니다.');
+        return;
+      }
+
       const response = await fetch(
-        `/api/admin/matching?cohortId=${cohortId}&date=${todayDate}`
+        `/api/admin/matching?cohortId=${cohortId}&date=${todayDate}`,
+        { headers }
       );
 
       // ℹ️ 404는 정상 응답 - 아직 매칭을 실행하지 않았을 때
@@ -374,11 +382,14 @@ function MatchingPageContent() {
     }
 
     try {
+      const headers = await getAdminHeaders();
+      if (!headers) {
+        throw new Error('인증 실패: 로그인 상태를 확인해주세요.');
+      }
+
       const response = await fetch('/api/admin/matching/preview', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ cohortId }),
       });
 
@@ -447,11 +458,14 @@ function MatchingPageContent() {
     setError(null);
 
     try {
+      const headers = await getAdminHeaders();
+      if (!headers) {
+        throw new Error('인증 실패: 로그인 상태를 확인해주세요.');
+      }
+
       const response = await fetch('/api/admin/matching/confirm', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           cohortId,
           matching: previewResult.matching,

@@ -11,20 +11,16 @@ export {
   getDb,
   getStorageInstance,
   getFirebaseApp,
+  getFirebaseAuth,
 } from './client';
 
-// Auth instance
-export { getAuthInstance } from './config';
-
-// Auth operations
+// Phone Authentication
 export {
   initRecaptcha,
   sendSmsVerification,
   confirmSmsCode,
-  signInWithPhoneCredential,
+  getAuthInstance,
   signOut,
-  formatPhoneNumberForDisplay,
-  formatPhoneNumberToE164,
 } from './auth';
 
 // Cohort operations
@@ -43,14 +39,15 @@ export {
   createParticipant,
   getParticipantById,
   getParticipantByPhoneNumber,
-  getParticipantByFirebaseUid,
-  linkFirebaseUid,
   getParticipantsByCohort,
   getAllParticipants,
   updateParticipant,
   updateParticipantBookInfo,
   deleteParticipant,
   searchParticipants,
+  // Firebase Auth 관련
+  getParticipantByFirebaseUid,
+  linkFirebaseUid,
 } from './participants';
 
 // Submission operations

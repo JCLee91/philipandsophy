@@ -8,18 +8,20 @@ import {
   persistentMultipleTabManager,
 } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 import { logger } from '@/lib/logger';
 
 /**
  * Firebase Client Setup
- * Initializes Firebase app and provides Firestore and Storage instances
+ * Initializes Firebase app and provides Firestore, Storage, and Auth instances
  * Uses Firebase v12+ persistent cache API (not deprecated enableIndexedDbPersistence)
  */
 
 let app: FirebaseApp;
 let db: Firestore;
 let storage: FirebaseStorage;
+let auth: Auth;
 let initialized = false;
 
 /**
@@ -28,7 +30,7 @@ let initialized = false;
  */
 export function initializeFirebase() {
   if (initialized) {
-    return { app, db, storage };
+    return { app, db, storage, auth };
   }
 
   if (!getApps().length) {
@@ -47,9 +49,10 @@ export function initializeFirebase() {
   logger.info('Firestore initialized with persistent cache and multi-tab sync');
 
   storage = getStorage(app);
+  auth = getAuth(app);
   initialized = true;
 
-  return { app, db, storage };
+  return { app, db, storage, auth };
 }
 
 /**
@@ -88,4 +91,14 @@ export function getFirebaseApp(): FirebaseApp {
     initializeFirebase();
   }
   return app;
+}
+
+/**
+ * Get Firebase Auth instance
+ */
+export function getFirebaseAuth(): Auth {
+  if (!auth) {
+    initializeFirebase();
+  }
+  return auth;
 }
