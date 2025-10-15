@@ -1,9 +1,36 @@
 /**
- * 매일 자정에 실행되어 다음날의 프로필북 매칭을 생성하는 스크립트
+ * ⚠️ DEPRECATED: 이 스크립트는 더 이상 사용하지 않습니다.
  *
- * 실행 방법:
- * npm run generate:matching
+ * 문제점:
+ * - 관리자 UI의 "최종 확정" 단계를 우회하고 Firestore에 직접 저장
+ * - Human-in-the-loop 검토 프로세스를 무시
+ * - 매칭 결과가 UI에 "전달 완료"로 표시되어 혼란 유발
+ *
+ * 새로운 방법:
+ * 1. 관리자 UI에서 "매칭 시작하기" 클릭 → AI 분석
+ * 2. 결과 검토 후 "최종 확인 및 적용" 클릭 → Firestore 저장
+ *
+ * 자동화가 필요한 경우:
+ * - /api/admin/matching/preview (POST) - AI 분석만 수행
+ * - /api/admin/matching/confirm (POST) - Firestore 저장
+ *
+ * 기존 데이터 삭제:
+ * npm run delete:matching [날짜]
+ *
+ * @deprecated 2025-10-15
  */
+
+console.error('❌ DEPRECATED: 이 스크립트는 더 이상 사용되지 않습니다.');
+console.error('');
+console.error('새로운 매칭 플로우를 사용하세요:');
+console.error('  1. 관리자 UI → "매칭 시작하기" → AI 분석');
+console.error('  2. 결과 검토 → "최종 확인 및 적용" → Firestore 저장');
+console.error('');
+console.error('자세한 내용: src/scripts/generate-daily-matching.ts 주석 참조');
+process.exit(1);
+
+// 아래 코드는 실행되지 않습니다 (process.exit(1) 때문에)
+// 코드는 참고용으로 남겨둡니다.
 
 import * as dotenv from 'dotenv';
 import * as admin from 'firebase-admin';
