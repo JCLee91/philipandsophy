@@ -222,8 +222,17 @@ function ChatPageContent() {
   }
 
   // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리됨)
+  // Firebase Auth 로그인 직후 onAuthStateChanged 대기 중일 수 있으므로 로딩 표시
   if (!currentUser || !cohort || !cohortId) {
-    return null;
+    return (
+      <PageTransition>
+        <div className="app-shell flex flex-col overflow-hidden">
+          <HeaderSkeleton />
+          <NoticeListSkeleton />
+          <FooterActionsSkeleton />
+        </div>
+      </PageTransition>
+    );
   }
 
   const handleWriteNotice = async (imageFile: File | null) => {
