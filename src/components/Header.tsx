@@ -2,7 +2,7 @@
 
 import { Users, PenSquare, Mail, Settings } from 'lucide-react';
 import { useTotalUnreadCount } from '@/hooks/use-messages';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 
 interface HeaderProps {
   onParticipantsClick?: () => void;
@@ -19,7 +19,7 @@ export default function Header({
   onSettingsClick,
   isAdmin
 }: HeaderProps) {
-  const { currentUser } = useSession();
+  const { currentUser } = useAuth();
   const { data: unreadCount = 0 } = useTotalUnreadCount(currentUser?.id || '');
 
   return (

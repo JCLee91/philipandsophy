@@ -8,7 +8,7 @@ import { initializePushNotifications, getPushTokenFromFirestore } from '@/lib/fi
 import { logger } from '@/lib/logger';
 import { toast } from '@/hooks/use-toast';
 import { UI_CONSTANTS } from '@/constants/ui';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 
 /**
  * 알림 권한 요청 프롬프트 컴포넌트
@@ -25,7 +25,8 @@ export function NotificationPrompt() {
   const [isInitializing, setIsInitializing] = useState(false);
   const [cleanup, setCleanup] = useState<(() => void) | null>(null);
   const [isCheckingToken, setIsCheckingToken] = useState(true);
-  const { participantId, isLoading: sessionLoading } = useSession();
+  const { currentUser, isLoading: sessionLoading } = useAuth();
+  const participantId = currentUser?.id;
 
   // Firestore에서 pushToken 확인 후 프롬프트 표시 여부 결정
   useEffect(() => {

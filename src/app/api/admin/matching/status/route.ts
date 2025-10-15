@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { getTodayString } from '@/lib/date-utils';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { logger } from '@/lib/logger';
 
@@ -10,8 +10,8 @@ import { logger } from '@/lib/logger';
  * 특정 날짜의 제출 현황 조회
  */
 export async function GET(request: NextRequest) {
-  // 관리자 권한 검증
-  const { error: authError } = await requireAdmin(request);
+  // 관리자 권한 검증 (Firebase Phone Auth)
+  const { error: authError } = await requireWebAppAdmin(request);
   if (authError) {
     return authError;
   }

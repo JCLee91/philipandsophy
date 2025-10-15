@@ -4,7 +4,7 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getYesterdayString, getTodayString } from '@/lib/date-utils';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
 import type { SubmissionData, ParticipantData } from '@/types/database';
@@ -14,8 +14,8 @@ import type { SubmissionData, ParticipantData } from '@/types/database';
  * AI 매칭 실행 (프리뷰 모드 - Firebase 저장하지 않음)
  */
 export async function POST(request: NextRequest) {
-  // 관리자 권한 검증
-  const { user, error } = await requireAdmin(request);
+  // 관리자 권한 검증 (Firebase Phone Auth)
+  const { user, error } = await requireWebAppAdmin(request);
   if (error) {
     return error;
   }

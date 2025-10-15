@@ -4,7 +4,7 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getTodayString, getYesterdayString } from '@/lib/date-utils';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
 import type { SubmissionData, ParticipantData } from '@/types/database';
@@ -14,8 +14,8 @@ import type { SubmissionData, ParticipantData } from '@/types/database';
  * AI 매칭 실행 API
  */
 export async function POST(request: NextRequest) {
-  // 관리자 권한 검증
-  const { user, error } = await requireAdmin(request);
+  // 관리자 권한 검증 (Firebase Phone Auth)
+  const { user, error } = await requireWebAppAdmin(request);
   if (error) {
     return error;
   }
@@ -224,8 +224,8 @@ export async function POST(request: NextRequest) {
  * 특정 날짜의 매칭 결과 조회
  */
 export async function GET(request: NextRequest) {
-  // 관리자 권한 검증
-  const { error: authError } = await requireAdmin(request);
+  // 관리자 권한 검증 (Firebase Phone Auth)
+  const { error: authError } = await requireWebAppAdmin(request);
   if (authError) {
     return authError;
   }

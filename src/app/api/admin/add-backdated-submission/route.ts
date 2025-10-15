@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import * as admin from 'firebase-admin';
 
@@ -9,8 +9,8 @@ import * as admin from 'firebase-admin';
  * 과거 날짜로 제출 데이터 추가 (관리자 전용)
  */
 export async function POST(request: NextRequest) {
-  // 관리자 권한 검증
-  const { error: authError } = await requireAdmin(request);
+  // 관리자 권한 검증 (Firebase Phone Auth)
+  const { error: authError } = await requireWebAppAdmin(request);
   if (authError) {
     return authError;
   }

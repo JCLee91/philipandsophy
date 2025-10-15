@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { ALLOWED_EMAIL_DOMAINS, ALLOWED_PHONE_COUNTRY_CODES } from '@/constants/auth';
+import { ALLOWED_EMAIL_DOMAINS, PHONE_VALIDATION } from '@/constants/auth';
 import { Loader2, Shield, Mail, Phone, User } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -82,19 +82,16 @@ export default function SettingsPage() {
             허용된 전화번호 국가 코드
           </h2>
           <div className="space-y-2">
-            {ALLOWED_PHONE_COUNTRY_CODES.map((code) => (
-              <div
-                key={code}
-                className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg"
-              >
-                <Shield className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-semibold text-green-900">{code}</span>
-                <span className="text-xs text-gray-600">(한국)</span>
-              </div>
-            ))}
+            <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg">
+              <Shield className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-semibold text-green-900">
+                {PHONE_VALIDATION.COUNTRY_CODE}
+              </span>
+              <span className="text-xs text-gray-600">(한국)</span>
+            </div>
           </div>
           <p className="text-xs text-gray-500 mt-3">
-            위 국가 코드의 전화번호만 회원가입이 가능합니다.
+            한국 전화번호만 웹앱 회원가입이 가능합니다.
           </p>
         </div>
 

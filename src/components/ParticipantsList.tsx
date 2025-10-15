@@ -19,7 +19,7 @@ import { User, MessageSquare, Check, BookOpen, LogOut, MoreHorizontal } from 'lu
 import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 
 import type { Participant } from '@/types/database';
 
@@ -169,7 +169,7 @@ export default function ParticipantsList({
   onProfileBookClick,
 }: ParticipantsListProps) {
   const { data: verifiedIds } = useVerifiedToday();
-  const { logout, currentUser } = useSession();
+  const { logout, currentUser } = useAuth();
 
   // 본인을 맨 위로 정렬
   const sortedParticipants = [...participants].sort((a, b) => {

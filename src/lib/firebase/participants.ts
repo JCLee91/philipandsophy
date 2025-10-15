@@ -429,3 +429,75 @@ export async function clearSessionToken(participantId: string): Promise<void> {
     updatedAt: Timestamp.now(),
   });
 }
+
+/**
+ * Firebase UID로 Participant 조회
+ *
+ * @param firebaseUid - Firebase Auth UID
+ * @returns Participant 또는 null
+ *
+ * @example
+ * ```tsx
+ * const participant = await getParticipantByFirebaseUid('xyz789firebase');
+ * if (participant) {
+ *   console.log('참가자:', participant.name);
+ * }
+ * ```
+ */
+export async function getParticipantByFirebaseUid(
+  firebaseUid: string
+): Promise<Participant | null> {
+  const db = getDb();
+  const q = query(
+    collection(db, COLLECTIONS.PARTICIPANTS),
+    where('firebaseUid', '==', firebaseUid)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    logger.debug('Firebase UID로 참가자 없음', { firebaseUid });
+    return null;
+  }
+
+  const docSnap = querySnapshot.docs[0];
+  const participant = {
+    id: docSnap.id,
+    ...docSnap.data(),
+  } as Participant;
+
+  logger.debug('Firebase UID로 참가자 조회 완료', {
+    firebaseUid,
+    participantId: participant.id,
+  });
+
+  return participant;
+}
+
+/**
+ * Participant에 Firebase UID 연결
+ *
+ * @param participantId - Participant 문서 ID
+ * @param firebaseUid - Firebase Auth UID
+ *
+ * @example
+ * ```tsx
+ * // 로그인 후 Firebase UID 연결
+ * const userCredential = await confirmSmsCode(confirmationResult, '123456');
+ * await linkFirebaseUid(participant.id, userCredential.user.uid);
+ * ```
+ */
+export async function linkFirebaseUid(
+  participantId: string,
+  firebaseUid: string
+): Promise<void> {
+  const db = getDb();
+  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
+
+  await updateDoc(docRef, {
+    firebaseUid,
+    updatedAt: Timestamp.now(),
+  });
+
+  logger.info('Firebase UID 연결 완료', { participantId, firebaseUid });
+}

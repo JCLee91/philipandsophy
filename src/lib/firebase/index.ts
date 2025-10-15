@@ -14,6 +14,15 @@ export {
   getFirebaseAuth,
 } from './client';
 
+// Phone Authentication
+export {
+  initRecaptcha,
+  sendSmsVerification,
+  confirmSmsCode,
+  getAuthInstance,
+  signOut,
+} from './auth';
+
 // Cohort operations
 export {
   createCohort,
@@ -39,6 +48,9 @@ export {
   createSessionToken,
   getParticipantBySessionToken,
   clearSessionToken,
+  // Firebase Auth 관련
+  getParticipantByFirebaseUid,
+  linkFirebaseUid,
 } from './participants';
 
 // Submission operations

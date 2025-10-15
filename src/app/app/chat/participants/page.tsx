@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UnifiedButton from '@/components/UnifiedButton';
 import { Check, MessageSquare, User, BookOpen, LogOut, MoreHorizontal } from 'lucide-react';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
@@ -140,7 +140,7 @@ function ParticipantsPageContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
 
-  const { currentUser, isLoading: sessionLoading, logout } = useSession();
+  const { currentUser, isLoading: sessionLoading, logout } = useAuth();
   const currentUserId = currentUser?.id || '';
   const isAdmin = currentUser?.isAdmin === true;
 

@@ -8,7 +8,7 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { CARD_STYLES } from '@/constants/ui';
 import { logger } from '@/lib/logger';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-count';
 import { useTodaySubmissionCount } from '@/hooks/use-today-submission-count';
 import PageTransition from '@/components/PageTransition';
@@ -33,7 +33,7 @@ function MatchingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
-  const { currentUser, isLoading: sessionLoading, sessionToken } = useSession();
+  const { currentUser, isLoading: sessionLoading, firebaseUser } = useAuth();
   const { toast } = useToast();
   const { data: cohortParticipants = [], isLoading: participantsLoading, isFromCache } = useParticipantsByCohortRealtime(cohortId || undefined);
 
@@ -317,13 +317,17 @@ function MatchingPageContent() {
 
   // 기존 매칭 결과 로드 (오늘 날짜 기준 - Firestore에 저장된 키)
   const fetchMatchingResult = useCallback(async () => {
-    if (!cohortId || !sessionToken || hasFetchedInitialResult) return;
+    if (!cohortId || !firebaseUser || hasFetchedInitialResult) return;
+
     try {
+      // Firebase ID Token 가져오기
+      const idToken = await firebaseUser.getIdToken();
+
       const response = await fetch(
         `/api/admin/matching?cohortId=${cohortId}&date=${todayDate}`,
         {
           headers: {
-            'Authorization': `Bearer ${sessionToken}`,
+            'Authorization': `Bearer ${idToken}`,
           },
         }
       );
@@ -344,7 +348,7 @@ function MatchingPageContent() {
       logger.error('매칭 결과 로드 실패', error);
       setHasFetchedInitialResult(true);
     }
-  }, [cohortId, todayDate, sessionToken, hasFetchedInitialResult]);
+  }, [cohortId, todayDate, firebaseUser, hasFetchedInitialResult]);
 
   // ✅ 확정 결과가 localStorage에 없을 때만 API 호출
   useEffect(() => {
@@ -365,7 +369,7 @@ function MatchingPageContent() {
     // Race condition 방지: 이미 처리중이면 중복 실행 차단
     if (isProcessing) return;
 
-    if (!cohortId || !sessionToken) return;
+    if (!cohortId || !firebaseUser) return;
 
     setIsProcessing(true);
     setError(null);
@@ -379,11 +383,14 @@ function MatchingPageContent() {
     }
 
     try {
+      // Firebase ID Token 가져오기
+      const idToken = await firebaseUser.getIdToken();
+
       const response = await fetch('/api/admin/matching/preview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
+          'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({ cohortId }),
       });
@@ -447,17 +454,20 @@ function MatchingPageContent() {
 
   // 2단계: 매칭 결과 최종 확인 및 저장
   const handleConfirmMatching = async () => {
-    if (!cohortId || !sessionToken || !previewResult) return;
+    if (!cohortId || !firebaseUser || !previewResult) return;
 
     setIsProcessing(true);
     setError(null);
 
     try {
+      // Firebase ID Token 가져오기
+      const idToken = await firebaseUser.getIdToken();
+
       const response = await fetch('/api/admin/matching/confirm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
+          'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           cohortId,

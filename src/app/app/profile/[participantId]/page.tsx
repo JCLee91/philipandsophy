@@ -13,7 +13,7 @@ import ProfileImageDialog from '@/components/ProfileImageDialog';
 // import MatchingReasonBanner from '@/components/MatchingReasonBanner'; // 논의 중인 기능
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { getInitials, formatShortDate } from '@/lib/utils';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
@@ -43,7 +43,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const matchingDate = searchParams.get('matchingDate');
 
   // 세션 기반 인증 (URL에서 userId 제거)
-  const { currentUser, isLoading: sessionLoading } = useSession();
+  const { currentUser, isLoading: sessionLoading } = useAuth();
   const currentUserId = currentUser?.id;
 
   // 테마 결정 (similar: 비슷한 가치관 파란색, opposite: 반대 가치관 노란색)

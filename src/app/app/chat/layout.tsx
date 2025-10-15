@@ -2,14 +2,15 @@
 
 import { NotificationPrompt } from '@/components/notifications/notification-prompt';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { participantId, isLoading } = useSession();
+  const { currentUser, isLoading } = useAuth();
+  const participantId = currentUser?.id;
 
   // 세션 로딩이 끝난 뒤에만 초기화 시도
   usePushNotifications(participantId, !isLoading);

@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { logger } from '@/lib/logger';
 import { SESSION_CONFIG } from '@/constants/session';
 import type { Participant } from '@/types/database';
+import { COLLECTIONS } from '@/types/database';
 
 /**
  * API 요청에서 세션 토큰 추출
@@ -314,4 +315,140 @@ export async function requireAuthToken(
   }
 
   return { ...user, error: null };
+}
+
+/**
+ * 웹앱 API 요청 인증 검증 (Firebase Phone Auth)
+ *
+ * Authorization: Bearer {idToken} 헤더에서 Firebase ID Token을 추출하고 검증합니다.
+ * 검증 성공 시 Firebase UID로 Firestore participants를 조회하여 반환합니다.
+ *
+ * @param request - NextRequest
+ * @returns 인증된 Participant 또는 에러
+ */
+export async function requireWebAppAuth(
+  request: NextRequest
+): Promise<{ user: Participant; error: null } | { user: null; error: NextResponse }> {
+  const authHeader = request.headers.get('authorization');
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: '인증 토큰이 필요합니다.' },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const idToken = authHeader.substring(7);
+
+  try {
+    // Firebase Admin SDK로 ID Token 검증
+    const { getAdminAuth } = await import('@/lib/firebase/admin');
+    const auth = getAdminAuth();
+    const decodedToken = await auth.verifyIdToken(idToken);
+
+    logger.debug('ID Token 검증 완료 (웹앱)', { uid: decodedToken.uid });
+
+    // UID로 Firestore participants 조회
+    const db = getAdminDb();
+    const snapshot = await db
+      .collection(COLLECTIONS.PARTICIPANTS)
+      .where('firebaseUid', '==', decodedToken.uid)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) {
+      logger.warn('Firebase UID와 연결된 Participant 없음', {
+        uid: decodedToken.uid,
+        phoneNumber: decodedToken.phone_number,
+      });
+      return {
+        user: null,
+        error: NextResponse.json(
+          {
+            error: '등록되지 않은 사용자입니다.',
+            code: 'PARTICIPANT_NOT_FOUND',
+          },
+          { status: 404 }
+        ),
+      };
+    }
+
+    const participant = {
+      id: snapshot.docs[0].id,
+      ...snapshot.docs[0].data(),
+    } as Participant;
+
+    logger.debug('Participant 조회 완료', { participantId: participant.id });
+    return { user: participant, error: null };
+  } catch (error: any) {
+    logger.error('Firebase ID Token 검증 실패 (웹앱):', error);
+
+    // ID Token 만료 여부 체크
+    if (error.code === 'auth/id-token-expired') {
+      return {
+        user: null,
+        error: NextResponse.json(
+          {
+            error: 'ID Token이 만료되었습니다.',
+            code: 'TOKEN_EXPIRED',
+            message: '다시 로그인해주세요.',
+          },
+          {
+            status: 401,
+            headers: {
+              'WWW-Authenticate': 'Bearer realm="PnS Member Portal"',
+              'X-Token-Status': 'expired',
+            },
+          }
+        ),
+      };
+    }
+
+    return {
+      user: null,
+      error: NextResponse.json(
+        {
+          error: '유효하지 않은 인증 토큰입니다.',
+          code: 'INVALID_TOKEN',
+        },
+        { status: 401 }
+      ),
+    };
+  }
+}
+
+/**
+ * 웹앱 관리자 권한 검증
+ *
+ * requireWebAppAuth()로 인증 확인 후 관리자 권한을 추가로 체크합니다.
+ *
+ * @param request - NextRequest
+ * @returns 인증된 관리자 Participant 또는 에러
+ */
+export async function requireWebAppAdmin(
+  request: NextRequest
+): Promise<{ user: Participant; error: null } | { user: null; error: NextResponse }> {
+  const { user, error } = await requireWebAppAuth(request);
+
+  if (error) {
+    return { user: null, error };
+  }
+
+  // 관리자 권한 체크
+  if (!user?.isAdmin && !user?.isAdministrator) {
+    logger.warn('관리자 권한 없음', { participantId: user?.id, name: user?.name });
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: '관리자 권한이 필요합니다.', code: 'FORBIDDEN' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  logger.debug('관리자 권한 확인 완료', { participantId: user.id });
+  return { user, error: null };
 }
