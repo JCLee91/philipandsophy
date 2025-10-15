@@ -66,6 +66,7 @@ export function useAuth() {
             fetchedUid: user.uid,
             currentUid: currentFirebaseUserRef.current?.uid,
           });
+          setIsLoading(false); // Race condition 시에도 로딩 상태 해제
           return;
         }
 
@@ -88,6 +89,7 @@ export function useAuth() {
             fetchedUid: user.uid,
             currentUid: currentFirebaseUserRef.current?.uid,
           });
+          setIsLoading(false); // Race condition 시에도 로딩 상태 해제
           return;
         }
 
@@ -101,7 +103,13 @@ export function useAuth() {
     });
 
     // Cleanup: 컴포넌트 언마운트 시 구독 해제
-    return () => unsubscribe();
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        logger.warn('[useAuth] onAuthStateChanged unsubscribe 실패 (무시됨):', error);
+      }
+    };
   }, []); // 빈 의존성 배열: Firebase가 자동으로 모든 상태 변화 감지
 
   // 로그아웃

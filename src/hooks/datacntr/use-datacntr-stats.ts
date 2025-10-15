@@ -15,8 +15,8 @@ export function useDataCenterStats() {
         throw new Error('로그인이 필요합니다');
       }
 
-      // Firebase Auth ID Token 가져오기
-      const idToken = await user.getIdToken();
+      // Firebase Auth ID Token 가져오기 (forceRefresh: true로 항상 유효한 토큰 보장)
+      const idToken = await user.getIdToken(true);
 
       const response = await fetch('/api/datacntr/stats/overview', {
         headers: {

@@ -280,17 +280,6 @@ export async function updateParticipantBookInfo(
 }
 
 /**
- * @deprecated Use updateParticipantBookInfo instead
- * 하위 호환성을 위해 유지
- */
-export async function updateParticipantBookTitle(
-  participantId: string,
-  newBookTitle: string
-): Promise<void> {
-  return updateParticipantBookInfo(participantId, newBookTitle);
-}
-
-/**
  * 세션 토큰 생성 및 저장
  *
  * @param participantId - 참가자 ID
@@ -447,38 +436,49 @@ export async function clearSessionToken(participantId: string): Promise<void> {
 export async function getParticipantByFirebaseUid(
   firebaseUid: string
 ): Promise<Participant | null> {
-  const db = getDb();
-  const q = query(
-    collection(db, COLLECTIONS.PARTICIPANTS),
-    where('firebaseUid', '==', firebaseUid)
-  );
+  try {
+    const db = getDb();
+    const q = query(
+      collection(db, COLLECTIONS.PARTICIPANTS),
+      where('firebaseUid', '==', firebaseUid)
+    );
 
-  logger.info('[getParticipantByFirebaseUid] Firestore 쿼리 시작', { firebaseUid });
-  const querySnapshot = await getDocs(q);
-  logger.info('[getParticipantByFirebaseUid] Firestore 쿼리 완료', {
-    firebaseUid,
-    empty: querySnapshot.empty,
-    size: querySnapshot.size
-  });
+    logger.info('[getParticipantByFirebaseUid] Firestore 쿼리 시작', { firebaseUid });
+    const querySnapshot = await getDocs(q);
+    logger.info('[getParticipantByFirebaseUid] Firestore 쿼리 완료', {
+      firebaseUid,
+      empty: querySnapshot.empty,
+      size: querySnapshot.size
+    });
 
-  if (querySnapshot.empty) {
-    logger.warn('[getParticipantByFirebaseUid] Firebase UID로 참가자 없음', { firebaseUid });
-    return null;
+    if (querySnapshot.empty) {
+      logger.warn('[getParticipantByFirebaseUid] Firebase UID로 참가자 없음', { firebaseUid });
+      return null;
+    }
+
+    const docSnap = querySnapshot.docs[0];
+    const participant = {
+      id: docSnap.id,
+      ...docSnap.data(),
+    } as Participant;
+
+    logger.info('[getParticipantByFirebaseUid] Firebase UID로 참가자 조회 완료', {
+      firebaseUid,
+      participantId: participant.id,
+      name: participant.name,
+    });
+
+    return participant;
+  } catch (error: any) {
+    // Firestore 에러 처리
+    if (error.code === 'permission-denied') {
+      logger.error('[getParticipantByFirebaseUid] Firestore 권한 거부', { firebaseUid, error });
+      throw new Error('참가자 정보 조회 권한이 없습니다.');
+    }
+
+    logger.error('[getParticipantByFirebaseUid] Firestore 조회 실패', { firebaseUid, error });
+    throw error;
   }
-
-  const docSnap = querySnapshot.docs[0];
-  const participant = {
-    id: docSnap.id,
-    ...docSnap.data(),
-  } as Participant;
-
-  logger.info('[getParticipantByFirebaseUid] Firebase UID로 참가자 조회 완료', {
-    firebaseUid,
-    participantId: participant.id,
-    name: participant.name,
-  });
-
-  return participant;
 }
 
 /**
@@ -498,6 +498,18 @@ export async function linkFirebaseUid(
   participantId: string,
   firebaseUid: string
 ): Promise<void> {
+  // 중복 체크: 다른 participant가 이미 이 firebaseUid를 사용하는지 확인
+  const existingParticipant = await getParticipantByFirebaseUid(firebaseUid);
+
+  if (existingParticipant && existingParticipant.id !== participantId) {
+    logger.error('[linkFirebaseUid] Firebase UID 중복 감지', {
+      participantId,
+      existingParticipantId: existingParticipant.id,
+      firebaseUid,
+    });
+    throw new Error('이 전화번호는 이미 다른 계정과 연결되어 있습니다.');
+  }
+
   const db = getDb();
   const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
 

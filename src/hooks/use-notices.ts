@@ -140,7 +140,8 @@ export function useDeleteNotice() {
         throw new Error('로그인이 필요합니다. 다시 로그인해 주세요.');
       }
 
-      const idToken = await user.getIdToken();
+      // forceRefresh: true로 항상 유효한 토큰 보장
+      const idToken = await user.getIdToken(true);
 
       const response = await fetch(`/api/notices/${id}`, {
         method: 'DELETE',
