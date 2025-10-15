@@ -34,7 +34,7 @@ export function useAuth() {
     // - 로그인/로그아웃 시
     // - 다른 탭에서 세션 변경 시
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      logger.debug('Firebase Auth 상태 변화', { uid: user?.uid, hasUser: !!user });
+      logger.info('[useAuth] Firebase Auth 상태 변화', { uid: user?.uid, hasUser: !!user });
 
       // Ref 업데이트 (stale closure 방지)
       currentFirebaseUserRef.current = user;
@@ -42,18 +42,27 @@ export function useAuth() {
 
       if (!user) {
         // 로그아웃 상태
+        logger.info('[useAuth] 로그아웃 상태 감지');
         setCurrentUser(null);
         setIsLoading(false);
         return;
       }
 
       // Firebase 로그인 상태 → Firestore에서 참가자 정보 조회
+      logger.info('[useAuth] Firestore에서 참가자 조회 시작', { uid: user.uid });
+
       try {
         const participant = await getParticipantByFirebaseUid(user.uid);
 
+        logger.info('[useAuth] Firestore 조회 완료', {
+          uid: user.uid,
+          found: !!participant,
+          participantId: participant?.id
+        });
+
         // Race condition 체크: 비동기 작업 완료 시점에 user가 변경되었는지 확인
         if (currentFirebaseUserRef.current?.uid !== user.uid) {
-          logger.warn('Auth state changed during participant fetch, ignoring result', {
+          logger.warn('[useAuth] Auth state changed during participant fetch, ignoring result', {
             fetchedUid: user.uid,
             currentUid: currentFirebaseUserRef.current?.uid,
           });
@@ -62,19 +71,20 @@ export function useAuth() {
 
         if (participant) {
           setCurrentUser(participant);
-          logger.debug('참가자 정보 로드 완료', { participantId: participant.id });
+          logger.info('[useAuth] 참가자 정보 로드 완료', { participantId: participant.id, name: participant.name });
         } else {
           // Firebase에는 로그인되어 있지만 Firestore에 참가자 정보가 없는 경우
-          logger.warn('Firebase UID와 연결된 참가자 없음', { uid: user.uid });
+          logger.warn('[useAuth] Firebase UID와 연결된 참가자 없음', { uid: user.uid });
           setCurrentUser(null);
 
           // Firebase 로그아웃 (동기화 문제 방지)
+          logger.info('[useAuth] 동기화 문제로 Firebase 로그아웃 실행');
           await firebaseSignOut();
         }
       } catch (error) {
         // Race condition 체크
         if (currentFirebaseUserRef.current?.uid !== user.uid) {
-          logger.warn('Auth state changed during error handling, ignoring', {
+          logger.warn('[useAuth] Auth state changed during error handling, ignoring', {
             fetchedUid: user.uid,
             currentUid: currentFirebaseUserRef.current?.uid,
           });
@@ -82,9 +92,10 @@ export function useAuth() {
         }
 
         // 네트워크 에러: 명확하게 null 설정
-        logger.error('참가자 정보 조회 실패:', error);
+        logger.error('[useAuth] 참가자 정보 조회 실패:', error);
         setCurrentUser(null);
       } finally {
+        logger.info('[useAuth] isLoading = false 설정');
         setIsLoading(false);
       }
     });

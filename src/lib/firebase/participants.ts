@@ -453,10 +453,16 @@ export async function getParticipantByFirebaseUid(
     where('firebaseUid', '==', firebaseUid)
   );
 
+  logger.info('[getParticipantByFirebaseUid] Firestore 쿼리 시작', { firebaseUid });
   const querySnapshot = await getDocs(q);
+  logger.info('[getParticipantByFirebaseUid] Firestore 쿼리 완료', {
+    firebaseUid,
+    empty: querySnapshot.empty,
+    size: querySnapshot.size
+  });
 
   if (querySnapshot.empty) {
-    logger.debug('Firebase UID로 참가자 없음', { firebaseUid });
+    logger.warn('[getParticipantByFirebaseUid] Firebase UID로 참가자 없음', { firebaseUid });
     return null;
   }
 
@@ -466,9 +472,10 @@ export async function getParticipantByFirebaseUid(
     ...docSnap.data(),
   } as Participant;
 
-  logger.debug('Firebase UID로 참가자 조회 완료', {
+  logger.info('[getParticipantByFirebaseUid] Firebase UID로 참가자 조회 완료', {
     firebaseUid,
     participantId: participant.id,
+    name: participant.name,
   });
 
   return participant;

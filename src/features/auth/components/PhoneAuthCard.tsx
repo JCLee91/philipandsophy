@@ -219,37 +219,58 @@ export default function PhoneAuthCard() {
       // Firestore에서 participant 조회
       // 1순위: firebaseUid로 조회 (이미 연결된 계정)
       // 2순위: 전화번호로 조회 후 firebaseUid 연결 (첫 로그인)
+      logger.info('[PhoneAuthCard] Participant 조회 시작', { uid: userCredential.user.uid });
+
       const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid } = await import('@/lib/firebase');
 
       let participant = await getParticipantByFirebaseUid(userCredential.user.uid);
+      logger.info('[PhoneAuthCard] firebaseUid 조회 결과', { found: !!participant });
 
       if (!participant) {
         // firebaseUid가 없는 경우 → 전화번호로 조회
         const cleanNumber = phoneNumber.replace(/-/g, '');
+        logger.info('[PhoneAuthCard] 전화번호로 재조회 시작', { phoneNumber: cleanNumber });
+
         participant = await getParticipantByPhoneNumber(cleanNumber);
+        logger.info('[PhoneAuthCard] 전화번호 조회 결과', { found: !!participant });
 
         if (participant) {
           // Firebase UID 연결 또는 업데이트
           // Firebase Auth는 동일 전화번호로 새 계정 생성 시 자동으로 기존 계정 재사용
           // 따라서 항상 현재 Firebase UID로 업데이트 (안전함)
           if (participant.firebaseUid !== userCredential.user.uid) {
-            await linkFirebaseUid(participant.id, userCredential.user.uid);
-            logger.info('Firebase UID 연결/업데이트 완료', {
+            logger.info('[PhoneAuthCard] Firebase UID 연결 시작', {
               participantId: participant.id,
               oldFirebaseUid: participant.firebaseUid || 'none',
               newFirebaseUid: userCredential.user.uid,
+            });
+
+            await linkFirebaseUid(participant.id, userCredential.user.uid);
+
+            logger.info('[PhoneAuthCard] Firebase UID 연결/업데이트 완료', {
+              participantId: participant.id,
+              firebaseUid: userCredential.user.uid,
+            });
+          } else {
+            logger.info('[PhoneAuthCard] Firebase UID 이미 연결됨', {
+              participantId: participant.id,
+              firebaseUid: participant.firebaseUid,
             });
           }
         }
       }
 
       if (!participant) {
+        logger.error('[PhoneAuthCard] 참가자를 찾을 수 없음');
         setError(AUTH_ERROR_MESSAGES.PARTICIPANT_NOT_FOUND);
         setIsSubmitting(false);
         return;
       }
 
-      logger.info('참가자 조회 성공', { participantId: participant.id });
+      logger.info('[PhoneAuthCard] 참가자 조회 성공, 채팅 페이지로 이동', {
+        participantId: participant.id,
+        cohortId: participant.cohortId,
+      });
 
       // 채팅 페이지로 이동 (Firebase Auth가 자동으로 세션 관리)
       router.replace(appRoutes.chat(participant.cohortId));
