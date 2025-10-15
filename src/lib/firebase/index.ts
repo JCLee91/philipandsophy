@@ -45,9 +45,6 @@ export {
   updateParticipantBookInfo,
   deleteParticipant,
   searchParticipants,
-  createSessionToken,
-  getParticipantBySessionToken,
-  clearSessionToken,
   // Firebase Auth 관련
   getParticipantByFirebaseUid,
   linkFirebaseUid,
