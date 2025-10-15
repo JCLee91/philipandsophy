@@ -46,12 +46,20 @@ export const useActiveCohorts = () => {
 
 /**
  * Get cohort by ID
+ *
+ * enabled 조건 제거: React Query가 자동으로 id 변화를 추적하고 쿼리를 실행합니다.
+ * id가 없으면 queryFn에서 에러를 발생시켜 React Query의 error 상태로 처리합니다.
  */
 export const useCohort = (id?: string) => {
   return useQuery({
     queryKey: cohortKeys.detail(id || ''),
-    queryFn: () => getCohortById(id!),
-    enabled: !!id,
+    queryFn: () => {
+      if (!id) {
+        throw new Error('[useCohort] Cohort ID is required');
+      }
+      return getCohortById(id);
+    },
+    // enabled 조건 제거: id가 있으면 자동으로 쿼리 실행
   });
 };
 

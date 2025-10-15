@@ -221,7 +221,8 @@ function ChatPageContent() {
   }, [isIosStandalone, cohortId, router, isNavigating]);
 
   // 로딩 중: 스켈레톤 UI 표시
-  if (sessionLoading || cohortLoading) {
+  if (sessionLoading) {
+    logger.info('[ChatPage] 세션 로딩 중');
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
@@ -233,9 +234,26 @@ function ChatPageContent() {
     );
   }
 
-  // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리됨)
-  // Firebase Auth 로그인 직후 onAuthStateChanged 대기 중일 수 있으므로 로딩 표시
-  if (!currentUser || !cohort || !cohortId) {
+  // 세션 로드 완료 but currentUser 없음 → 리다이렉트
+  if (!currentUser || !cohortId) {
+    logger.info('[ChatPage] 세션 또는 cohortId 없음, 리다이렉트 대기', {
+      hasUser: !!currentUser,
+      cohortId
+    });
+    return (
+      <PageTransition>
+        <div className="app-shell flex flex-col overflow-hidden">
+          <HeaderSkeleton />
+          <NoticeListSkeleton />
+          <FooterActionsSkeleton />
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // cohort 데이터 로딩 중 (cohortId가 있지만 cohort가 아직 없음)
+  if (cohortLoading || !cohort) {
+    logger.info('[ChatPage] Cohort 데이터 로딩 중', { cohortId, cohortLoading, hasCohort: !!cohort });
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
