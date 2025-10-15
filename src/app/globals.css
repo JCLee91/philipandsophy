@@ -128,20 +128,24 @@
     @apply border-border;
   }
 
-  /* PWA 네이티브 앱 경험 최적화 */
+  /* 기본 HTML 설정 - 모든 페이지 공통 */
   html {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+  }
+
+  /* PWA Safe Area 패딩 - 웹앱(/app)에서만 적용 */
+  html[data-app="true"] {
     /* iOS Safe Area 대응 - 좌우와 하단만 패딩 (상단은 sticky 헤더에서 처리) */
     padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     /* Pull-to-refresh 방지 및 overscroll bounce 제거 */
     overscroll-behavior: none;
   }
 
-  /* iOS 11.2 이전 버전 호환성 - constant() 함수 폴백 */
+  /* iOS 11.2 이전 버전 호환성 - constant() 함수 폴백 (웹앱만) */
   @supports (padding-top: constant(safe-area-inset-top)) {
-    html {
+    html[data-app="true"] {
       padding: 0 constant(safe-area-inset-right) constant(safe-area-inset-bottom) constant(safe-area-inset-left);
     }
   }
