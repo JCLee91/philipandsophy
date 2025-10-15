@@ -74,14 +74,31 @@ export const createCohortWithId = async (
 export const getCohortById = async (id: string): Promise<Cohort | null> => {
   const db = getDb();
   const cohortRef = doc(db, COLLECTIONS.COHORTS, id);
+
+  logger.info('[getCohortById] Firestore 쿼리 시작', { cohortId: id });
   const snapshot = await getDoc(cohortRef);
+  logger.info('[getCohortById] Firestore 쿼리 완료', {
+    cohortId: id,
+    exists: snapshot.exists()
+  });
 
-  if (!snapshot.exists()) return null;
+  if (!snapshot.exists()) {
+    logger.warn('[getCohortById] Cohort 문서가 존재하지 않음', { cohortId: id });
+    return null;
+  }
 
-  return {
+  const cohortData = {
     id: snapshot.id,
     ...snapshot.data(),
   } as Cohort;
+
+  logger.info('[getCohortById] Cohort 조회 완료', {
+    cohortId: id,
+    name: cohortData.name,
+    isActive: cohortData.isActive
+  });
+
+  return cohortData;
 };
 
 /**
