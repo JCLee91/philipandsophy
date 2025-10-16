@@ -44,9 +44,8 @@ service cloud.firestore {
       // 1) 최초 firebaseUid 연결 (null → auth.uid)
       // 2) 기존 소유자만 허용 필드 변경
       allow update: if isSignedIn() && (
-        // 케이스 1: 최초 firebaseUid 설정 (첫 로그인)
-        (resource.data.firebaseUid == null &&
-         request.resource.data.firebaseUid == request.auth.uid &&
+        // 간소화: 로그인한 사용자는 언제든 자신의 UID로 연결 가능
+        (request.resource.data.firebaseUid == request.auth.uid &&
          request.resource.data.diff(resource.data).affectedKeys()
            .hasOnly(['firebaseUid', 'updatedAt'])) ||
 

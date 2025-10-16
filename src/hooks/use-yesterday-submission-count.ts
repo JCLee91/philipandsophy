@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { getYesterdayString } from '@/lib/date-utils';
-import { getDailyQuestionText } from '@/constants/daily-questions';
 import { logger } from '@/lib/logger';
 
 /**
@@ -29,7 +28,6 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
     }
 
     const yesterday = getYesterdayString();
-    const question = getDailyQuestionText(yesterday);
 
     setIsLoading(true);
     setError(null);
@@ -38,8 +36,7 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
     const db = getDb();
     const q = query(
       collection(db, 'reading_submissions'),
-      where('submissionDate', '==', yesterday),
-      where('dailyQuestion', '==', question)
+      where('submissionDate', '==', yesterday)
     );
 
     const unsubscribe = onSnapshot(

@@ -316,7 +316,7 @@ function MatchingPageContent() {
         return;
       }
     }
-  }, [sessionLoading, currentUser, cohortId, router, toast]);
+  }, [sessionLoading, currentUser, cohortId, router, toast, isAdminMode]);
 
   // 기존 매칭 결과 로드 (오늘 날짜 기준 - Firestore에 저장된 키)
   const fetchMatchingResult = useCallback(async () => {
