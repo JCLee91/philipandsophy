@@ -100,7 +100,6 @@ export function useAuth() {
           logger.info('✅ 참가자 정보 로드 완료', {
             participantId: participant.id,
             participantName: participant.name,
-            isAdmin: participant.isAdmin,
             isAdministrator: participant.isAdministrator,
             firebaseUid: user.uid,
           });
