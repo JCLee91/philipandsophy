@@ -11,6 +11,8 @@ docs/
 ├── design/             # 디자인 시스템 및 가이드
 ├── architecture/       # 아키텍처 및 기획 문서
 ├── implementation/     # 구현 가이드 및 로드맵
+├── database/           # 데이터베이스 스키마 및 쿼리 문서 ✨ NEW
+├── migration/          # 데이터 마이그레이션 기록
 └── troubleshooting/    # 플랫폼별 버그 및 문제 해결
 ```
 
@@ -22,6 +24,42 @@ docs/
 
 1. **[Firebase 설정](./setup/firebase.md)** - Firebase 프로젝트 생성 및 연동
 2. **[Admin SDK 설정](./setup/admin-sdk.md)** - Firebase Admin SDK 구성 (서버 사이드)
+
+---
+
+## 🗄️ 데이터베이스
+
+프로젝트의 Firestore 데이터베이스 구조와 사용법:
+
+### [Firestore 스키마 문서](./database/schema.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
+**주요 내용**:
+- 📊 전체 데이터베이스 구조 (6개 메인 컬렉션)
+- 🔍 상세 스키마 및 필드 설명
+- 📐 관계도 (ERD) 및 인덱스 전략
+- 🔒 Firebase 보안 규칙 상세
+- 💻 코드 예시 및 타입 정의
+- 📝 쿼리 패턴 및 사용 예제
+
+### [쿼리 패턴 가이드](./database/query-patterns.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
+**주요 내용**:
+- 🔍 기본 쿼리 패턴 (조회, 필터링, 정렬)
+- ⚡ 실시간 구독 패턴 (onSnapshot)
+- 🎯 React Query 통합 전략
+- 📈 성능 최적화 패턴 (캐싱, 클라이언트 필터링)
+- 🔄 트랜잭션 패턴 (원자적 읽기-수정-쓰기)
+- 📄 페이지네이션 패턴 (Cursor 기반)
+
+### [데이터베이스 Best Practices](./database/best-practices.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
+**주요 내용**:
+- 📐 데이터 모델링 원칙 (플랫 구조, 비정규화)
+- ⚡ 쿼리 최적화 전략 (인덱스, limit, 실시간 구독)
+- 🔒 보안 규칙 모범 사례 (최소 권한, Custom Claims)
+- 🐛 에러 처리 패턴 (try-catch, 재시도 로직)
+- 💰 비용 최적화 (읽기 횟수 최소화, 캐싱)
+- 🛠️ 개발 워크플로우 (Emulator, 시드 데이터, 마이그레이션)
 
 ---
 
@@ -55,6 +93,20 @@ docs/
 
 일관된 UI/UX를 위한 디자인 가이드:
 
+### [디자인 시스템 - 종합판](./design/design-system.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
+**주요 내용**:
+- 🎨 디자인 원칙 (Glassmorphism 랜딩, Minimalism 멤버 포털, Professional 데이터 센터)
+- 🌈 색상 시스템 (Primary/Secondary/Semantic 색상, 그라데이션)
+- 📝 타이포그래피 (Pretendard Variable 폰트, 크기 스케일, 한글 고려사항)
+- 🧩 컴포넌트 라이브러리 (Shadcn UI + 커스텀 컴포넌트)
+- 📐 레이아웃 시스템 (그리드, 간격 스케일, 반응형 브레이크포인트)
+- 🎯 디자인 토큰 (색상, 간격, 타이포그래피, 그림자, Border Radius, 트랜지션)
+- 🔘 통일된 버튼 시스템 (FooterActions 기반 Primary/Secondary)
+- ♿ 접근성 가이드 (WCAG 2.1 AA 준수, 키보드 내비게이션, 스크린 리더)
+- 📱 반응형 패턴 (Mobile-First, 브레이크포인트 전략)
+- ✨ Shimmer 애니메이션 시스템 (로딩 상태 통일)
+
 ### [버튼 디자인 시스템](./design/button-system.md)
 **최종 업데이트**: 2025-10-13
 **주요 내용**:
@@ -82,25 +134,47 @@ docs/
 
 프로젝트의 구조와 설계를 이해하려면:
 
-### [제품 요구사항 문서 (PRD)](./architecture/prd.md)
-**최종 업데이트**: 2025-10-13
+### [제품 요구사항 문서 (PRD) - 종합판](./architecture/prd-comprehensive.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
 **주요 내용**:
-- ✅ V1.0 프로덕션 배포 완료 기준
-- ✅ 프로젝트 비전 및 목표
-- ✅ 핵심 기능 명세 (랜딩/웹앱/매칭/인증)
-- ✅ 사용자 스토리 (참가자/운영자/지원자)
-- ✅ 기술 스택 및 데이터베이스 구조
+- 📋 프로젝트 배경 및 문제 정의 (참가자/운영자/지원자 Pain Points)
+- 🎯 제품 비전 및 목표 (단기/중기/장기)
+- 👥 대상 사용자 페르소나 (전문직 종사자 25-40세)
+- ✨ 핵심 기능 상세 명세 (랜딩/인증/공지/독서 인증/AI 매칭/프로필북/데이터 센터)
+- 📊 성공 지표 (정량/정성/비즈니스 지표)
+- 📝 사용자 스토리 (15+ 스토리, 인수 기준 포함)
+- 🛠️ 기술 스택 및 제약사항 (성능/확장성/보안/접근성)
+- 🚫 비범위 (V1.0 제외 기능 및 완전 제외 기능)
+- 📅 일정 및 마일스톤 (V1.0 완료, V2.0/V3.0 로드맵)
+- ⚠️ 리스크 관리 (기술/운영/사용성/비즈니스 리스크)
+- ❓ FAQ (10개 주요 질문과 답변)
 
-### [기술 요구사항 문서 (TRD)](./architecture/trd.md)
-**최종 업데이트**: 2025-10-13
+### [기술 요구사항 문서 (TRD) - 종합판](./architecture/trd-comprehensive.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
 **주요 내용**:
-- 🏗️ 시스템 아키텍처 (서버리스)
-- 🔧 기술 스택 상세 (Next.js 15, Firebase, APIs)
-- 📊 Firebase Firestore 스키마 (5개 컬렉션)
-- 🔒 보안 및 인증 시스템
-- ⚡ 성능 최적화 전략
-- 📱 PWA 및 모바일 최적화
-- 🚀 배포 및 CI/CD
+- 🏗️ 시스템 아키텍처 (Next.js 15 + Firebase 서버리스)
+- 🔧 기술 스택 상세 (React 19, TypeScript 5, Tailwind CSS 3.4)
+- 📊 Firebase 통합 (Firestore 6개 컬렉션, Storage, Custom Claims)
+- 🔒 보안 아키텍처 (4-layer: Input → API → Security Rules → Encryption)
+- ⚡ 성능 최적화 (React Query 3단계 캐싱 전략, 69.5% 읽기 감소)
+- 📱 PWA 및 모바일 최적화 (iOS Safe Area, position:fixed 버그 수정)
+- 🚀 배포 전략 (Vercel CI/CD, Preview/Production 환경)
+- 🧪 테스트 전략 (TDD 원칙, 70% Unit / 20% Integration / 10% E2E)
+- 📡 외부 API 통합 (Naver Book Search, OpenAI GPT)
+- 📈 확장성 설계 (수평/수직 확장, Firebase Quota 관리)
+
+### [시스템 아키텍처 문서](./architecture/system-architecture.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
+**주요 내용**:
+- 🗺️ 전체 시스템 아키텍처 (3개 섹션: 랜딩/멤버 포털/데이터 센터)
+- 🛤️ 라우팅 전략 (Next.js 15 App Router, 동적 라우트, 리다이렉트)
+- 🔄 상태 관리 (React Query, Firebase onSnapshot, Zustand, Context API)
+- 🔐 인증/권한 시스템 (4자리 코드, Firebase Phone Auth, Custom Claims)
+- 📊 데이터 흐름 다이어그램 (독서 인증, 공지사항, AI 매칭 플로우)
+- 📁 파일 조직 구조 (src/ 디렉토리 상세 설명)
+- 🔗 모듈 의존성 (Circular Dependency 방지 전략)
+- 🛡️ 보안 아키텍처 (입력 검증, API 검증, Security Rules, 암호화)
+- 📈 확장성 고려사항 (수평/수직 확장 전략)
 
 ### [정보 구조 (IA)](./architecture/ia.md)
 **최종 업데이트**: 2025-10-13
@@ -111,7 +185,7 @@ docs/
 - ✅ 컴포넌트 계층 구조
 - ✅ SEO 및 접근성
 
-### [날짜 로직 설계 (Date Logic)](./architecture/date-logic.md) ✨ NEW
+### [날짜 로직 설계 (Date Logic)](./architecture/date-logic.md)
 **최종 업데이트**: 2025-10-13
 **주요 내용**:
 - 📅 3가지 날짜 개념 명확화 (제출/매칭/질문)
@@ -123,11 +197,63 @@ docs/
 
 ---
 
+## 🔌 API 문서
+
+모든 API 및 Firebase 작업 레퍼런스:
+
+### [API 레퍼런스 - 종합판](./api/api-reference.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
+**주요 내용**:
+- 🔥 Firebase Client SDK 작업 (70+ 함수)
+  - `cohorts.ts`: 15+ 함수 (createCohort, updateDailyFeaturedParticipants 등)
+  - `participants.ts`: 12+ 함수 (createParticipant, updateParticipantBookInfo 등)
+  - `submissions.ts`: 10+ 함수 + 실시간 구독 (subscribeParticipantSubmissions 등)
+  - `notices.ts`: 8+ 함수 (createNotice, toggleNoticePin 등)
+  - `messages.ts`: 12+ 함수 (createMessage, markConversationAsRead 등)
+  - `storage.ts`: 9+ 함수 (uploadReadingImage, uploadDMImage 등)
+  - `auth.ts`: Phone Auth 함수 (sendSmsVerification, confirmSmsCode 등)
+- 🌐 외부 API
+  - Naver Book Search API (searchNaverBooks, cleanBookData)
+  - OpenAI API (AI 매칭 플로우, 프롬프트 구조, 요청/응답 예시)
+- 🛣️ Next.js API 라우트
+  - `/api/search-books` (GET) - Naver API 프록시
+  - `/api/admin/matching` (POST) - AI 매칭 실행
+  - `/api/admin/matching/preview` (GET) - 매칭 미리보기
+  - `/api/admin/matching/confirm` (POST) - 매칭 확정
+- 🚨 에러 처리 및 Rate Limiting (Firebase, Phone Auth, 외부 API)
+- 💻 모든 함수의 TypeScript 시그니처 및 사용 예시
+
+---
+
+## 🛠️ 개발 가이드
+
+개발 환경 설정 및 워크플로우:
+
+### [개발 환경 설정 및 워크플로우](./development/setup-guide.md) ✨ NEW
+**최종 업데이트**: 2025-10-16
+**주요 내용**:
+- 📋 필수 요구사항 (Node.js v18+, npm, Git, Firebase CLI)
+- 🚀 초기 설정 (5단계 가이드: Clone → Install → Env → Firebase → Run)
+- 🔑 환경 변수 (.env.local 템플릿 및 검증 스크립트)
+- 🔥 Firebase 설정 (7단계: 프로젝트 생성, Firestore, Storage, Auth, Rules, Service Account)
+- 💻 개발 워크플로우 (npm scripts, Hot Reload, Turbopack)
+- 📜 Scripts 문서화 (20+ npm 스크립트 상세 설명)
+  - Data seeding: `seed:cohorts`, `seed:admin`, `seed:all`
+  - Data cleanup: `cleanup:dummy`, `reset:user-submissions`
+  - Utilities: `convert:webp`, `verify:schema`
+- 🌿 Git 워크플로우 (브랜치 전략, Conventional Commits, PR 프로세스)
+- 🧪 테스트 (TDD 전략, Jest + React Testing Library 권장 설정)
+- 🚀 배포 (Vercel 5단계 가이드, 환경 변수, Production 체크리스트)
+- 🐛 트러블슈팅 (Firebase 연결, iOS PWA, TypeScript 에러, Next.js 15 params)
+- ✅ 개발 Best Practices (코드 스타일, 에러 처리, 성능 최적화)
+
+---
+
 ## 🚧 구현 가이드
 
 새로운 기능을 구현하거나 대규모 작업을 진행할 때:
 
-### [Data Center 구현 가이드](./implementation/datacenter-implementation-guide.md) ✨ NEW
+### [Data Center 구현 가이드](./implementation/datacenter-implementation-guide.md)
 **최종 업데이트**: 2025-10-14
 **예상 기간**: 7-11일
 **주요 내용**:
@@ -159,25 +285,65 @@ docs/
 ## 🔍 빠른 참조
 
 ### 자주 찾는 문서
-- **Firebase 설정**: [setup/firebase.md](./setup/firebase.md)
-- **Data Center 구현**: [implementation/datacenter-implementation-guide.md](./implementation/datacenter-implementation-guide.md) ✨ NEW
-- **날짜 로직 설계**: [architecture/date-logic.md](./architecture/date-logic.md)
-- **기술 요구사항 (TRD)**: [architecture/trd.md](./architecture/trd.md)
-- **제품 요구사항 (PRD)**: [architecture/prd.md](./architecture/prd.md)
+
+#### 기획 및 아키텍처
+- **제품 요구사항 (PRD)**: [architecture/prd-comprehensive.md](./architecture/prd-comprehensive.md) ✨ NEW
+- **기술 요구사항 (TRD)**: [architecture/trd-comprehensive.md](./architecture/trd-comprehensive.md) ✨ NEW
+- **시스템 아키텍처**: [architecture/system-architecture.md](./architecture/system-architecture.md) ✨ NEW
 - **정보 구조 (IA)**: [architecture/ia.md](./architecture/ia.md)
-- **성능 최적화**: [optimization/performance.md](./optimization/performance.md)
-- **DB 쿼리 패턴**: [optimization/database.md](./optimization/database.md)
+- **날짜 로직 설계**: [architecture/date-logic.md](./architecture/date-logic.md)
+
+#### 개발 환경 및 API
+- **개발 환경 설정**: [development/setup-guide.md](./development/setup-guide.md) ✨ NEW
+- **Firebase 설정**: [setup/firebase.md](./setup/firebase.md)
+- **API 레퍼런스**: [api/api-reference.md](./api/api-reference.md) ✨ NEW
+
+#### 데이터베이스
+- **Firestore 스키마**: [database/schema.md](./database/schema.md) ✨ NEW
+- **쿼리 패턴 가이드**: [database/query-patterns.md](./database/query-patterns.md) ✨ NEW
+- **DB Best Practices**: [database/best-practices.md](./database/best-practices.md) ✨ NEW
+- **DB 쿼리 최적화**: [optimization/database.md](./optimization/database.md)
+
+#### 디자인 시스템
+- **디자인 시스템 종합**: [design/design-system.md](./design/design-system.md) ✨ NEW
 - **버튼 시스템**: [design/button-system.md](./design/button-system.md)
-- **디자인 시스템**: [design/ui-guide.md](./design/ui-guide.md)
+- **UI 디자인 가이드**: [design/ui-guide.md](./design/ui-guide.md)
+
+#### 성능 및 최적화
+- **성능 최적화 가이드**: [optimization/performance.md](./optimization/performance.md)
+
+#### 구현 가이드
+- **Data Center 구현**: [implementation/datacenter-implementation-guide.md](./implementation/datacenter-implementation-guide.md)
+
+#### 문제 해결
 - **iOS PWA 버그**: [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
 
-### 문제 해결
+### 문제 해결 가이드
+
+#### 개발 환경
+- 프로젝트 초기 설정 → [development/setup-guide.md](./development/setup-guide.md) ✨ NEW
 - Firebase 연결 문제 → [setup/firebase.md](./setup/firebase.md)
-- 날짜 관련 버그 → [architecture/date-logic.md](./architecture/date-logic.md) ✨ NEW
-- 성능 이슈 → [optimization/performance.md](./optimization/performance.md)
+- 환경 변수 설정 → [development/setup-guide.md](./development/setup-guide.md#환경-변수) ✨ NEW
+
+#### 데이터베이스
+- 스키마 확인 → [database/schema.md](./database/schema.md) ✨ NEW
+- 쿼리 성능 개선 → [database/query-patterns.md](./database/query-patterns.md) ✨ NEW
+- DB 사용 모범 사례 → [database/best-practices.md](./database/best-practices.md) ✨ NEW
 - 쿼리 최적화 → [optimization/database.md](./optimization/database.md)
+
+#### API 및 함수
+- Firebase 함수 사용법 → [api/api-reference.md](./api/api-reference.md) ✨ NEW
+- Naver Book API → [api/api-reference.md#naver-book-search-api](./api/api-reference.md) ✨ NEW
+- OpenAI API → [api/api-reference.md#openai-api](./api/api-reference.md) ✨ NEW
+
+#### 디자인 및 UI
 - 버튼 스타일링 → [design/button-system.md](./design/button-system.md)
-- UI 일관성 → [design/ui-guide.md](./design/ui-guide.md)
+- UI 일관성 → [design/design-system.md](./design/design-system.md) ✨ NEW
+- 반응형 디자인 → [design/design-system.md#레이아웃-시스템](./design/design-system.md) ✨ NEW
+
+#### 기타
+- 날짜 관련 버그 → [architecture/date-logic.md](./architecture/date-logic.md)
+- 성능 이슈 → [optimization/performance.md](./optimization/performance.md)
 - iOS PWA 스크롤 문제 → [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
 
 ---
@@ -203,5 +369,6 @@ docs/
 
 ---
 
-**마지막 업데이트**: 2025-10-14
+**마지막 업데이트**: 2025-10-16
 **프로젝트 버전**: V1.0 (프로덕션 배포 완료)
+**문서 상태**: ✅ 종합 문서화 완료 (PRD, TRD, System Architecture, API Reference, Setup Guide, Database Docs, Design System)

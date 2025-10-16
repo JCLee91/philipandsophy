@@ -2,8 +2,11 @@
 
 import { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import DataCenterSidebar from './DataCenterSidebar';
 import DataCenterHeader from './DataCenterHeader';
+import AccessDenied from './AccessDenied';
+import { Loader2 } from 'lucide-react';
 
 interface DataCenterLayoutProps {
   children: ReactNode;
@@ -11,12 +14,27 @@ interface DataCenterLayoutProps {
 
 export default function DataCenterLayout({ children }: DataCenterLayoutProps) {
   const pathname = usePathname();
+  const { user, isAdministrator, isLoading } = useAuth();
 
   // 로그인 페이지에서는 사이드바/헤더 숨김
   const isLoginPage = pathname === '/datacntr/login';
 
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  // 로딩 중
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  // 로그인 안 됨 또는 관리자 아님 → 접근 거부
+  if (!user || !isAdministrator) {
+    return <AccessDenied />;
   }
 
   return (

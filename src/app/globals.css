@@ -38,6 +38,7 @@
   :root {
     /* 필립앤소피 브랜드 컬러 팔레트 */
     --app-viewport-height: 100vh;
+    --app-real-height: 100vh; /* JavaScript로 업데이트됨 */
     --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
     --background: 0 0% 100%;
     --foreground: 222 47% 5%;
@@ -234,6 +235,20 @@
   max-height: var(--app-viewport-height, 100vh);
 }
 
+/* iOS PWA 모달/다이얼로그 높이 수정 */
+@supports (height: 100svh) {
+  .app-shell {
+    min-height: 100svh;
+    max-height: 100svh;
+  }
+
+  /* iOS PWA에서 실제 높이 사용 */
+  .ios-pwa .app-shell {
+    min-height: var(--app-real-height, 100svh);
+    max-height: var(--app-real-height, 100svh);
+  }
+}
+
 .app-footer {
   padding-top: 16px;
   padding-bottom: calc(16px + var(--app-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
@@ -250,6 +265,16 @@
   .app-footer {
     /* 3px: iOS PWA에서 버튼과 화면 하단 사이 최소 탭 영역 확보 */
     padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* iOS PWA 다이얼로그/모달 전용 스타일 */
+  .ios-pwa {
+    /* 고정 safe area 사용 (iPhone X 이상) */
+    --ios-safe-bottom: 34px;
+  }
+
+  .ios-pwa .app-footer {
+    padding-bottom: calc(16px + var(--ios-safe-bottom, env(safe-area-inset-bottom, 0px))) !important;
   }
 }
 

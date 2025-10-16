@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UnifiedButton from '@/components/UnifiedButton';
 import { Check, MessageSquare, User, BookOpen, LogOut, MoreHorizontal } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
@@ -141,9 +141,9 @@ function ParticipantsPageContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
 
-  const { currentUser, isLoading: sessionLoading, logout } = useAuth();
-  const currentUserId = currentUser?.id || '';
-  const isAdmin = currentUser?.isAdministrator === true;
+  const { participant, isLoading: sessionLoading, logout } = useAuth();
+  const currentUserId = participant?.id || '';
+  const isAdmin = participant?.isAdministrator === true;
 
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
   const { data: verifiedIds } = useVerifiedToday();
@@ -192,20 +192,20 @@ function ParticipantsPageContent() {
     // 이미 리다이렉트한 경우 중복 방지
     if (hasRedirectedRef.current) return;
 
-    if (!currentUser || !cohortId) {
+    if (!participant || !cohortId) {
       hasRedirectedRef.current = true;
       setIsRedirecting(true);
       logger.warn('ParticipantsPage: 세션 또는 cohortId 없음, /app으로 리다이렉트');
       router.replace('/app');
     }
-  }, [sessionLoading, currentUser, cohortId]);
+  }, [sessionLoading, participant, cohortId]);
 
   // 리다이렉트 중에는 빈 화면 (깜빡임 방지)
   if (isRedirecting) {
     return null;
   }
 
-  if (sessionLoading || participantsLoading || !currentUser || !cohortId) {
+  if (sessionLoading || participantsLoading || !participant || !cohortId) {
     return <LoadingSpinner message="참가자 목록을 불러오는 중입니다" />;
   }
 
@@ -290,7 +290,7 @@ function ParticipantsPageContent() {
           open={dmDialogOpen}
           onOpenChange={setDmDialogOpen}
           currentUserId={currentUserId}
-          currentUser={currentUser}
+          currentUser={participant}
           otherUser={dmTarget}
         />
 

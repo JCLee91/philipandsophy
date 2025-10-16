@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 import { APP_CONSTANTS } from '@/constants/app';
 
@@ -17,32 +17,22 @@ interface ViewModeContextType {
 const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
 
 export function ViewModeProvider({ children }: { children: ReactNode }) {
-  const { currentUser, isLoading } = useAuth();
+  const { participant, isLoading } = useAuth();
   const [viewMode, setViewModeState] = useState<ViewMode>('participant');
 
   // 관리자 권한이 있는지 확인
-  const canSwitchMode = !isLoading && currentUser?.isAdministrator === true;
+  const canSwitchMode = !isLoading && participant?.isAdministrator === true;
 
+  // 🔍 프로덕션 디버깅: 강제 로그 출력
   useEffect(() => {
-    logger.debug('[ViewModeContext] canSwitchMode evaluation', {
+    console.log('🔍 [ViewModeContext] canSwitchMode evaluation', {
       isLoading,
-      userId: currentUser?.id,
-      isAdministrator: currentUser?.isAdministrator,
+      userId: participant?.id,
+      userName: participant?.name,
+      isAdministrator: participant?.isAdministrator,
       computedCanSwitchMode: canSwitchMode,
     });
-  }, [isLoading, currentUser?.id, currentUser?.isAdministrator, canSwitchMode]);
-
-  // 디버깅: 권한 체크 로그
-  useEffect(() => {
-    if (!isLoading && currentUser) {
-      logger.debug('ViewMode 권한 체크:', {
-        userId: currentUser.id,
-        userName: currentUser.name,
-        isAdministrator: currentUser.isAdministrator,
-        canSwitchMode,
-      });
-    }
-  }, [isLoading, currentUser, canSwitchMode]);
+  }, [isLoading, participant?.id, participant?.name, participant?.isAdministrator, canSwitchMode]);
 
   // 컴포넌트 마운트 시 localStorage에서 모드 복원
   useEffect(() => {

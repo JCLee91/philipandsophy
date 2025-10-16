@@ -2,7 +2,7 @@
 
 import { Users, PenSquare, Mail, Settings } from 'lucide-react';
 import { useTotalUnreadCount } from '@/hooks/use-messages';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
   onParticipantsClick?: () => void;
@@ -19,8 +19,8 @@ export default function Header({
   onSettingsClick,
   isAdmin
 }: HeaderProps) {
-  const { currentUser } = useAuth();
-  const { data: unreadCount = 0 } = useTotalUnreadCount(currentUser?.id || '');
+  const { participant } = useAuth();
+  const { data: unreadCount = 0 } = useTotalUnreadCount(participant?.id || '');
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-area-header">

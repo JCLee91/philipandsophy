@@ -11,7 +11,7 @@ import UnifiedButton from '@/components/UnifiedButton';
 import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -31,8 +31,8 @@ function TodayLibraryContent() {
   const cohortId = searchParams.get('cohort');
 
   // Firebase Auth 기반 인증
-  const { currentUser, isLoading: sessionLoading } = useAuth();
-  const currentUserId = currentUser?.id;
+  const { participant, isLoading: sessionLoading } = useAuth();
+  const currentUserId = participant?.id;
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { toast } = useToast();
@@ -118,7 +118,7 @@ function TodayLibraryContent() {
   // 세션 및 cohort 검증
   useEffect(() => {
     if (!sessionLoading && !cohortLoading) {
-      if (!currentUser) {
+      if (!participant) {
         toast({
           title: '로그인이 필요합니다',
           description: '접근 코드를 입력해주세요',
@@ -144,7 +144,7 @@ function TodayLibraryContent() {
         return;
       }
     }
-  }, [sessionLoading, cohortLoading, currentUser, cohortId, cohort, router, toast]);
+  }, [sessionLoading, cohortLoading, participant, cohortId, cohort, router, toast]);
 
   // 로딩 상태 - 스켈레톤 UI 표시
   if (sessionLoading || cohortLoading || participantsLoading) {
@@ -198,7 +198,7 @@ function TodayLibraryContent() {
   // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리 중)
   // cohortLoading이 끝나지 않았으면 위의 스켈레톤 UI가 표시됨
   // 여기 도달 시점에는 검증 완료 상태이므로 안전하게 null 반환
-  if (!currentUser || !cohort || !cohortId) {
+  if (!participant || !cohort || !cohortId) {
     return null;
   }
 

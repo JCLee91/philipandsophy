@@ -14,7 +14,7 @@ import { AUTH_TIMING } from '@/constants/auth';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useIsIosStandalone } from '@/hooks/use-standalone-ios';
 import { useIsAdminMode } from '@/contexts/ViewModeContext';
 import { useSubmissionsByParticipant } from '@/hooks/use-submissions';
@@ -64,8 +64,8 @@ function ChatPageContent() {
   const cohortId = searchParams.get('cohort');
 
   // Firebase Auth 기반 인증
-  const { currentUser, isLoading: sessionLoading } = useAuth();
-  const currentUserId = currentUser?.id;
+  const { participant, isLoading: sessionLoading } = useAuth();
+  const currentUserId = participant?.id;
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [writeDialogOpen, setWriteDialogOpen] = useState(false);
@@ -124,7 +124,7 @@ function ChatPageContent() {
   // 세션 및 cohort 검증
   useEffect(() => {
     if (!sessionLoading) {
-      if (!currentUser) {
+      if (!participant) {
         // 세션 없음 → 로그인 페이지로
         router.replace('/app');
         return;
@@ -136,7 +136,7 @@ function ChatPageContent() {
         return;
       }
     }
-  }, [sessionLoading, currentUser, cohortId]);
+  }, [sessionLoading, participant, cohortId]);
 
   // 최신 공지로 자동 스크롤 (페이지 로드 및 최초 로그인 시)
   useEffect(() => {
@@ -215,8 +215,8 @@ function ChatPageContent() {
   // 로딩 중 또는 인증 실패 (리다이렉트 전): 스켈레톤 UI 표시
   // sessionLoading: Firebase Auth 상태 확인 중
   // cohortLoading: Cohort 데이터 로딩 중
-  // !currentUser || !cohort || !cohortId: 인증 실패 (useEffect가 리다이렉트 처리 중)
-  if (sessionLoading || cohortLoading || !currentUser || !cohort || !cohortId) {
+  // !participant || !cohort || !cohortId: 인증 실패 (useEffect가 리다이렉트 처리 중)
+  if (sessionLoading || cohortLoading || !participant || !cohort || !cohortId) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
@@ -360,7 +360,7 @@ function ChatPageContent() {
           open={dmDialogOpen}
           onOpenChange={setDmDialogOpen}
           currentUserId={currentUserId || ''}
-          currentUser={currentUser}
+          currentUser={participant}
           otherUser={dmTarget}
         />
         <ReadingSubmissionDialog

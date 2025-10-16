@@ -2,11 +2,14 @@
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { initializeFirebase, getFirebaseAuth } from '@/lib/firebase';
+import { initializeFirebase, getFirebaseAuth, getParticipantByFirebaseUid } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
+import { Participant } from '@/types/database';
 
 interface AuthContextType {
   user: User | null;
+  participant: Participant | null;
+  isAdministrator: boolean;
   isLoading: boolean;
   logout: () => Promise<void>;
 }
@@ -15,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [participant, setParticipant] = useState<Participant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const mountedRef = useRef(true);
 
@@ -33,16 +37,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!mountedRef.current) return;
 
         // Auth 리스너 등록
-        unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-          if (mountedRef.current) {
-            setUser(currentUser);
-            setIsLoading(false);
+        unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+          if (!mountedRef.current) return;
 
-            if (currentUser) {
-              logger.info('Auth state: 로그인됨', { email: currentUser.email });
-            } else {
-              logger.info('Auth state: 로그아웃됨');
-            }
+          setUser(currentUser);
+
+          // 로그인된 경우 participant 정보 가져오기 (재시도 포함)
+          if (currentUser) {
+            let retryCount = 0;
+            const MAX_RETRIES = 3;
+            const RETRY_DELAY = 1000; // 1초
+
+            const fetchParticipantWithRetry = async (): Promise<void> => {
+              try {
+                const participantData = await getParticipantByFirebaseUid(currentUser.uid);
+
+                // null 체크: participant가 없으면 에러로 처리
+                if (!participantData) {
+                  throw new Error('Participant not found for Firebase UID: ' + currentUser.uid);
+                }
+
+                if (mountedRef.current) {
+                  setParticipant(participantData);
+                  logger.info('Auth state: 로그인됨', {
+                    uid: currentUser.uid,
+                    name: participantData.name,
+                    isAdministrator: participantData.isAdministrator,
+                  });
+                }
+              } catch (error) {
+                logger.error(`Participant 조회 실패 (시도 ${retryCount + 1}/${MAX_RETRIES}):`, error);
+
+                if (retryCount < MAX_RETRIES - 1) {
+                  retryCount++;
+                  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retryCount));
+                  return fetchParticipantWithRetry();
+                } else {
+                  // 최종 실패 시 로그아웃 처리
+                  logger.error('Participant 조회 최종 실패, 로그아웃 처리');
+                  if (mountedRef.current) {
+                    setParticipant(null);
+                    // Firebase 로그아웃
+                    await auth.signOut();
+                  }
+                }
+              }
+            };
+
+            await fetchParticipantWithRetry();
+          } else {
+            setParticipant(null);
+            logger.info('Auth state: 로그아웃됨');
+          }
+
+          if (mountedRef.current) {
+            setIsLoading(false);
           }
         });
       } catch (error) {
@@ -65,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const auth = getFirebaseAuth();
       await signOut(auth);
+      setParticipant(null);
       logger.info('로그아웃 성공');
     } catch (error) {
       logger.error('로그아웃 실패:', error);
@@ -72,8 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const isAdministrator = participant?.isAdministrator === true;
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, logout }}>
+    <AuthContext.Provider value={{ user, participant, isAdministrator, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );

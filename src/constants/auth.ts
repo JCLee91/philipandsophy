@@ -97,19 +97,6 @@ export const AUTH_ERROR_MESSAGES = {
     'Firebase app must be initialized before accessing Auth. Call initializeFirebase() in your app providers first.',
 } as const;
 
-/**
- * Firebase 에러 코드 매핑
- * Firebase SDK 에러 코드를 사용자 친화적인 메시지로 변환
- */
-export const FIREBASE_ERROR_CODE_MAP: Record<string, string> = {
-  'auth/invalid-phone-number': AUTH_ERROR_MESSAGES.INVALID_PHONE_SHORT,
-  'auth/too-many-requests': AUTH_ERROR_MESSAGES.TOO_MANY_REQUESTS,
-  'auth/captcha-check-failed': AUTH_ERROR_MESSAGES.CAPTCHA_FAILED,
-  'auth/quota-exceeded': AUTH_ERROR_MESSAGES.QUOTA_EXCEEDED,
-  'auth/network-request-failed': AUTH_ERROR_MESSAGES.NETWORK_FAILED,
-  'auth/invalid-verification-code': AUTH_ERROR_MESSAGES.INVALID_CODE,
-  'auth/code-expired': AUTH_ERROR_MESSAGES.CODE_EXPIRED,
-};
 
 /**
  * reCAPTCHA 설정

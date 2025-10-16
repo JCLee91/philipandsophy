@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { getTodayString } from '@/lib/date-utils';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { MatchingSchema } from '@/types/schemas';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -13,7 +13,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
  */
 export async function POST(request: NextRequest) {
   // 관리자 권한 검증
-  const { user, error } = await requireAdmin(request);
+  const { user, error } = await requireWebAppAdmin(request);
   if (error) {
     return error;
   }

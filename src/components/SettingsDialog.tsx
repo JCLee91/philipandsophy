@@ -22,7 +22,13 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
   useModalCleanup(isOpen);
   const { viewMode, canSwitchMode, toggleViewMode } = useViewMode();
 
+  // 🔍 프로덕션 디버깅: 강제 로그 출력
   useEffect(() => {
+    console.log('🔍 [SettingsDialog] state snapshot', {
+      isOpen,
+      canSwitchMode,
+      viewMode,
+    });
     logger.debug('[SettingsDialog] state snapshot', {
       isOpen,
       canSwitchMode,

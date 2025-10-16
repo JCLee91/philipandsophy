@@ -1,40 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import { useDataCenterStats } from '@/hooks/datacntr/use-datacntr-stats';
 import { useActivityChart } from '@/hooks/datacntr/use-activity-chart';
 import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
-import { Loader2, Users, BookOpen, Bell, FolderKanban, FileText, BellRing } from 'lucide-react';
+import { Users, BookOpen, Bell, FolderKanban, FileText, BellRing } from 'lucide-react';
 
 export default function DataCenterPage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
   const { data: stats, isLoading: statsLoading } = useDataCenterStats();
   const { data: activities, isLoading: activityLoading } = useActivityChart(7);
-
-  // 로그인 체크 - 로그인 안 되어 있으면 로그인 페이지로
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/datacntr/login');
-    }
-  }, [authLoading, user, router]);
-
-  // 인증 확인 중
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
-  // 로그인 안 되어 있으면 리다이렉트됨
-  if (!user) {
-    return null;
-  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

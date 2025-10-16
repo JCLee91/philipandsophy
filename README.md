@@ -300,27 +300,43 @@ firebase deploy          # Firebase 배포
 
 ## 📚 프로젝트 문서
 
-### 🚀 시작하기
+### 📖 종합 문서 (Complete Documentation)
+- **[문서 인덱스](./docs/README.md)** - 📑 전체 문서 네비게이션 및 빠른 참조
+
+### 🚀 시작하기 (Getting Started)
 - **[CLAUDE.md](./CLAUDE.md)** - 프로젝트 개발 가이드 (AI 어시스턴트용, 필독)
-- **[문서 인덱스](./docs/README.md)** - 전체 문서 네비게이션
-- **[Firebase 설정](./docs/setup/firebase.md)** - Firebase 초기 설정 및 스키마
+- **[개발 환경 설정](./docs/development/setup-guide.md)** ✨ NEW - 초기 설정부터 배포까지 완벽 가이드
+- **[Firebase 설정](./docs/setup/firebase.md)** - Firebase 프로젝트 생성 및 연동
 - **[Admin SDK 설정](./docs/setup/admin-sdk.md)** - Firebase Admin SDK 구성
 
-### ⚡ 성능 최적화
-- **[성능 최적화 가이드](./docs/optimization/performance.md)** - 3단계 최적화 전략 (캐시/Prefetch/Splitting)
-- **[데이터베이스 최적화](./docs/optimization/database.md)** - Firebase 스키마/쿼리/구독 최적화
-
-### 🎨 디자인 시스템
-- **[UI 디자인 가이드](./docs/design/ui-guide.md)** - 컴포넌트 및 shimmer 애니메이션 시스템
-- **[버튼 디자인 시스템](./docs/design/button-system.md)** - 통일된 버튼 스타일 가이드
-- **[애니메이션 가이드](./docs/design/animation.md)** - Framer Motion 및 트랜지션 패턴
-
-### 🏗️ 아키텍처
-- **[제품 요구사항 문서 (PRD)](./docs/architecture/prd.md)** - 기능 명세 및 요구사항
+### 🏗️ 기획 및 아키텍처 (Planning & Architecture)
+- **[PRD 종합판](./docs/architecture/prd-comprehensive.md)** ✨ NEW - 제품 요구사항 완벽 문서 (70+ 페이지)
+- **[TRD 종합판](./docs/architecture/trd-comprehensive.md)** ✨ NEW - 기술 요구사항 완벽 문서
+- **[시스템 아키텍처](./docs/architecture/system-architecture.md)** ✨ NEW - 전체 시스템 구조 및 데이터 흐름
 - **[정보 구조 (IA)](./docs/architecture/ia.md)** - 앱 구조 및 사용자 여정
 
-### 🐛 문제 해결
-- **[iOS PWA 스크롤 버그](./docs/troubleshooting/ios-pwa-scroll.md)** - iOS PWA 스크롤 이슈 해결
+### 🗄️ 데이터베이스 (Database)
+- **[Firestore 스키마](./docs/database/schema.md)** ✨ NEW - 6개 컬렉션 완벽 문서화
+- **[쿼리 패턴 가이드](./docs/database/query-patterns.md)** ✨ NEW - React Query 통합 및 실시간 구독
+- **[DB Best Practices](./docs/database/best-practices.md)** ✨ NEW - 모범 사례 및 비용 최적화
+
+### 🔌 API 문서 (API Documentation)
+- **[API 레퍼런스](./docs/api/api-reference.md)** ✨ NEW - Firebase 70+ 함수 및 외부 API 완벽 레퍼런스
+
+### 🎨 디자인 시스템 (Design System)
+- **[디자인 시스템 종합](./docs/design/design-system.md)** ✨ NEW - 색상, 타이포그래피, 컴포넌트 완벽 가이드
+- **[버튼 시스템](./docs/design/button-system.md)** - 통일된 버튼 스타일 가이드
+- **[UI 디자인 가이드](./docs/design/ui-guide.md)** - Shimmer 애니메이션 시스템
+
+### ⚡ 성능 최적화 (Performance)
+- **[성능 최적화 가이드](./docs/optimization/performance.md)** - React Query 3단계 캐싱 (69.5% 읽기 감소)
+- **[데이터베이스 최적화](./docs/optimization/database.md)** - Firebase 쿼리 및 구독 최적화
+
+### 🚧 구현 가이드 (Implementation)
+- **[Data Center 구현](./docs/implementation/datacenter-implementation-guide.md)** - 관리자 대시보드 구현 로드맵
+
+### 🐛 문제 해결 (Troubleshooting)
+- **[iOS PWA 스크롤 버그](./docs/troubleshooting/ios-pwa-scroll.md)** - iOS PWA position:fixed 버그 해결
 
 ## 🔒 보안 주의사항
 
@@ -349,7 +365,8 @@ firebase deploy          # Firebase 배포
 ---
 
 **프로젝트 버전**: V1.0
-**최종 업데이트**: 2025-10-11
+**최종 업데이트**: 2025-10-16
 **배포 상태**: ✅ 프로덕션 배포 완료 (Vercel)
+**문서 상태**: ✅ 종합 문서화 완료 (7개 신규 문서 추가)
 
 Built with ❤️ using [EasyNext](https://github.com/easynext/easynext)

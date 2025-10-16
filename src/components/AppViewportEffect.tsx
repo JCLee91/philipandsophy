@@ -4,33 +4,76 @@ import { useEffect } from 'react';
 
 function updateViewportVariables() {
   const viewport = typeof window !== 'undefined' ? window.visualViewport : null;
-  const height = viewport?.height ?? window.innerHeight;
-  const bottomInset = viewport
-    ? Math.max(window.innerHeight - (viewport.height + viewport.offsetTop), 0)
-    : 0;
+
+  // iOS PWA 감지
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+  const isIOSPWA = isIOS && isPWA;
+
+  // 실제 높이 계산 (iOS PWA에서 더 정확)
+  const height = window.innerHeight;
+
+  // iOS PWA에서는 safe-area-inset-bottom을 CSS env()로 처리
+  const bottomInset = isIOSPWA
+    ? 0 // CSS env()로 처리하도록 위임
+    : viewport
+      ? Math.max(window.innerHeight - (viewport.height + viewport.offsetTop), 0)
+      : 0;
 
   const root = document.documentElement;
-  root.style.setProperty('--app-viewport-height', `${height}px`);
-  root.style.setProperty('--app-safe-area-bottom', `${bottomInset}px`);
+
+  // 실제 높이 저장 (100vh 대신 사용)
+  root.style.setProperty('--app-real-height', `${height}px`);
+  root.style.setProperty('--app-viewport-height', `${viewport?.height ?? height}px`);
+
+  // iOS PWA에서는 CSS env() 사용, 아니면 계산값 사용
+  if (isIOSPWA) {
+    root.style.setProperty('--app-safe-area-bottom', 'env(safe-area-inset-bottom, 0px)');
+  } else {
+    root.style.setProperty('--app-safe-area-bottom', `${bottomInset}px`);
+  }
+
+  // iOS PWA 클래스 추가
+  if (isIOSPWA) {
+    document.documentElement.classList.add('ios-pwa');
+  }
 }
 
 export default function AppViewportEffect() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const handleResize = () => updateViewportVariables();
+    const handleResize = () => {
+      updateViewportVariables();
+
+      // iOS PWA에서 다이얼로그 관련 버그 수정을 위한 추가 처리
+      const isIOSPWA = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+                       window.matchMedia('(display-mode: standalone)').matches;
+
+      if (isIOSPWA) {
+        // 미세한 딜레이 후 재계산 (iOS 렌더링 버그 대응)
+        requestAnimationFrame(() => {
+          updateViewportVariables();
+        });
+      }
+    };
 
     updateViewportVariables();
 
+    // 모든 가능한 이벤트에 리스너 추가
     const viewport = window.visualViewport;
     viewport?.addEventListener('resize', handleResize);
     viewport?.addEventListener('scroll', handleResize);
+    window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
+    window.addEventListener('scroll', handleResize);
 
     return () => {
       viewport?.removeEventListener('resize', handleResize);
       viewport?.removeEventListener('scroll', handleResize);
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
+      window.removeEventListener('scroll', handleResize);
     };
   }, []);
 

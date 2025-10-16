@@ -9,7 +9,7 @@ import { MATCHING_CONFIG } from '@/constants/matching';
 import { CARD_STYLES } from '@/constants/ui';
 import { logger } from '@/lib/logger';
 import { getAdminHeaders } from '@/lib/auth-utils';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdminMode } from '@/contexts/ViewModeContext';
 import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-count';
 import { useTodaySubmissionCount } from '@/hooks/use-today-submission-count';
@@ -35,7 +35,7 @@ function MatchingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
-  const { currentUser, isLoading: sessionLoading } = useAuth();
+  const { participant, isLoading: sessionLoading } = useAuth();
   const isAdminMode = useIsAdminMode();
   const { toast } = useToast();
   const { data: cohortParticipants = [], isLoading: participantsLoading, isFromCache } = useParticipantsByCohortRealtime(cohortId || undefined);
@@ -297,7 +297,7 @@ function MatchingPageContent() {
   // 권한 체크
   useEffect(() => {
     if (!sessionLoading) {
-      if (!currentUser) {
+      if (!participant) {
         router.replace('/app');
         return;
       }
@@ -316,7 +316,7 @@ function MatchingPageContent() {
         return;
       }
     }
-  }, [sessionLoading, currentUser, cohortId, router, toast, isAdminMode]);
+  }, [sessionLoading, participant, cohortId, router, toast, isAdminMode]);
 
   // 기존 매칭 결과 로드 (오늘 날짜 기준 - Firestore에 저장된 키)
   const fetchMatchingResult = useCallback(async () => {

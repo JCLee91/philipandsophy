@@ -13,7 +13,7 @@ import {
 import { doc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase/client';
 import { logger } from '@/lib/logger';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * 알림 토글 컴포넌트
@@ -22,8 +22,8 @@ import { useAuth } from '@/hooks/use-auth';
  * - 브라우저 권한 상태 처리
  */
 export function NotificationToggle() {
-  const { currentUser } = useAuth();
-  const participantId = currentUser?.id;
+  const { participant } = useAuth();
+  const participantId = participant?.id;
 
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

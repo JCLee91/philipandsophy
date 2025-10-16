@@ -23,10 +23,9 @@ import BookSearchAutocomplete from '@/components/BookSearchAutocomplete';
 import type { NaverBook } from '@/lib/naver-book-api';
 import { logger } from '@/lib/logger';
 import { SUBMISSION_VALIDATION, IMAGE_OPTIMIZATION } from '@/constants/validation';
-import { compressImageIfNeeded } from '@/lib/image-compression';
 import { format } from 'date-fns';
 import { getTodayString } from '@/lib/date-utils';
-import { validateImageFile } from '@/lib/image-compression';
+import { validateImageFile, compressImageIfNeeded } from '@/lib/image-validation';
 import type { ReadingSubmission } from '@/types/database';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
@@ -46,6 +45,32 @@ export default function ReadingSubmissionDialog({
   existingSubmission,
 }: ReadingSubmissionDialogProps) {
   useModalCleanup(open);
+
+  // iOS PWA에서 다이얼로그 닫을 때 강제 리렌더링
+  const handleDialogChange = (newOpen: boolean) => {
+    onOpenChange(newOpen);
+
+    // iOS PWA에서 다이얼로그 닫을 때 렌더링 버그 수정
+    if (!newOpen && window.matchMedia('(display-mode: standalone)').matches) {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      if (isIOS) {
+        setTimeout(() => {
+          // 1. 스크롤 위치 미세 조정으로 리렌더링 유도
+          window.scrollBy(0, 1);
+          window.scrollBy(0, -1);
+
+          // 2. body 강제 리플로우
+          document.body.style.display = 'none';
+          document.body.offsetHeight; // 리플로우 트리거
+          document.body.style.display = '';
+
+          // 3. viewport 재계산 이벤트 발생
+          window.dispatchEvent(new Event('resize'));
+        }, 100);
+      }
+    }
+  };
 
   const isEditMode = !!existingSubmission;
 
@@ -68,9 +93,6 @@ export default function ReadingSubmissionDialog({
   const createSubmission = useCreateSubmission();
   const updateSubmission = useUpdateSubmission();
   const { data: allSubmissions = [] } = useSubmissionsByParticipant(participantId);
-
-  // Race Condition 방지: atomic flag
-  const isSubmittingRef = useRef(false);
 
   // 다이얼로그가 열릴 때 데이터 로드
   useEffect(() => {
@@ -109,17 +131,11 @@ export default function ReadingSubmissionDialog({
       );
       setAlreadySubmittedToday(!!todaySubmission);
 
-      // Race condition 방지를 위한 cleanup flag
-      let isCancelled = false;
-
-      // 참가자의 현재 책 정보 로드 (제목 + 저자 + 표지)
+      // 참가자의 현재 책 정보 로드
       const loadCurrentBook = async () => {
         setIsLoadingBookTitle(true);
         try {
           const participant = await getParticipantById(participantId);
-
-          // 컴포넌트가 언마운트되었는지 확인
-          if (isCancelled) return;
 
           if (participant?.currentBookTitle) {
             setBookTitle(participant.currentBookTitle);
@@ -128,8 +144,6 @@ export default function ReadingSubmissionDialog({
             setIsAutoFilled(true);
           }
         } catch (error) {
-          if (isCancelled) return;
-
           logger.error('Failed to load current book info:', error);
           toast({
             title: '책 정보 로드 실패',
@@ -137,18 +151,11 @@ export default function ReadingSubmissionDialog({
             variant: 'destructive',
           });
         } finally {
-          if (!isCancelled) {
-            setIsLoadingBookTitle(false);
-          }
+          setIsLoadingBookTitle(false);
         }
       };
 
       loadCurrentBook();
-
-      // Cleanup: 컴포넌트 언마운트 시 flag 설정
-      return () => {
-        isCancelled = true;
-      };
     }
   }, [open, participantId, allSubmissions, isEditMode, existingSubmission]); // 의존성 추가
 
@@ -167,77 +174,42 @@ export default function ReadingSubmissionDialog({
       return;
     }
 
-    // Cleanup flag for memory leak prevention
-    let isActive = true;
-
     try {
-      let processedFile = file;
-
-      // 2. 스마트 압축: 10MB 이상만 압축 (일반 사진은 그대로)
-      if (file.size >= IMAGE_OPTIMIZATION.COMPRESSION_THRESHOLD) {
-        setUploadStep('이미지 최적화 중...');
-
-        try {
-          processedFile = await compressImageIfNeeded(file, IMAGE_OPTIMIZATION.TARGET_SIZE);
-
-          logger.info('이미지 압축 완료', {
-            original: (file.size / 1024 / 1024).toFixed(1) + 'MB',
-            compressed: (processedFile.size / 1024 / 1024).toFixed(1) + 'MB',
-            reduction: (((file.size - processedFile.size) / file.size) * 100).toFixed(0) + '%',
-          });
-        } catch (compressionError) {
-          // 압축 실패 시 원본 사용 (fallback)
-          logger.warn('압축 실패, 원본 사용:', compressionError);
-          processedFile = file;
-        }
-
-        setUploadStep(''); // 진행 상태 초기화
-      }
-
-      // 3. 파일 저장
+      // 10MB 이상이면 자동 압축
+      const processedFile = await compressImageIfNeeded(file);
       setBookImage(processedFile);
 
-      // 4. 이미지 미리보기 with cleanup
+      // 압축 로그 (10MB 이상일 때만)
+      if (file.size >= 10 * 1024 * 1024) {
+        logger.info('이미지 압축 완료', {
+          original: (file.size / 1024 / 1024).toFixed(1) + 'MB',
+          compressed: (processedFile.size / 1024 / 1024).toFixed(1) + 'MB',
+        });
+      }
+
+      // 이미지 미리보기
       const reader = new FileReader();
 
       reader.onloadend = () => {
-        if (isActive) {
-          setBookImagePreview(reader.result as string);
-        }
+        setBookImagePreview(reader.result as string);
       };
 
       reader.onerror = () => {
-        if (isActive) {
-          reader.abort();
-          toast({
-            title: '이미지 로드 실패',
-            description: '이미지를 불러올 수 없습니다.',
-            variant: 'destructive',
-          });
-        }
+        toast({
+          title: '이미지 로드 실패',
+          description: '이미지를 불러올 수 없습니다.',
+          variant: 'destructive',
+        });
       };
 
       reader.readAsDataURL(processedFile);
-
-      // Cleanup function
-      return () => {
-        isActive = false;
-        // FileReader가 아직 실행 중이면 중단
-        if (reader.readyState === FileReader.LOADING) {
-          reader.abort();
-        }
-      };
     } catch (error) {
-      if (!isActive) return;
-
       logger.error('Image processing error:', error);
       toast({
         title: '이미지 처리 실패',
         description: error instanceof Error ? error.message : '이미지를 처리할 수 없습니다. 다른 이미지를 시도해주세요.',
         variant: 'destructive',
       });
-    } finally {
-      // No cleanup needed
     }
   };
 
@@ -299,10 +271,6 @@ export default function ReadingSubmissionDialog({
   };
 
   const handleSubmit = async () => {
-    // ✅ Atomic check-and-set (Race Condition 방지)
-    if (isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-
     setUploading(true);
 
     try {
@@ -418,12 +386,11 @@ export default function ReadingSubmissionDialog({
     } finally {
       setUploading(false);
       setUploadStep(''); // 진행 상태 초기화
-      isSubmittingRef.current = false; // ✅ Flag 해제
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="max-w-2xl h-full sm:h-[90vh] flex flex-col gap-0 reading-dialog-ios-safe">
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl">
@@ -639,9 +606,9 @@ export default function ReadingSubmissionDialog({
             left: 0 !important;
             right: 0 !important;
 
-            /* 높이를 safe area만큼 감소 */
-            height: var(--dialog-height) !important;
-            max-height: var(--dialog-height) !important;
+            /* iOS PWA에서 100svh 사용 */
+            height: 100svh !important;
+            max-height: 100svh !important;
 
             /* 모바일 전체화면 스타일 (!important 불필요) */
             margin: 0;

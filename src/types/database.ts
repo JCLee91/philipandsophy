@@ -179,24 +179,3 @@ export interface MatchingJob {
   completedAt: Timestamp | null;
 }
 
-/**
- * 타입 가드 함수들
- */
-export function isParticipant(data: any): data is Participant {
-  return (
-    data &&
-    typeof data.id === 'string' &&
-    typeof data.cohortId === 'string' &&
-    typeof data.name === 'string' &&
-    typeof data.phoneNumber === 'string'
-  );
-}
-
-export function isReadingSubmission(data: any): data is ReadingSubmission {
-  return (
-    data &&
-    typeof data.participantId === 'string' &&
-    typeof data.participationCode === 'string' &&
-    ['pending', 'approved', 'rejected'].includes(data.status)
-  );
-}

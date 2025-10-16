@@ -235,17 +235,3 @@ export async function requireWebAppAdmin(
   return { user, error: null };
 }
 
-/**
- * 관리자 권한 검증 (Admin API용 - 별칭)
- *
- * requireWebAppAdmin과 동일한 함수입니다.
- * Admin API 라우트에서 사용하기 위한 별칭입니다.
- *
- * @param request - NextRequest
- * @returns 인증된 관리자 Participant 또는 에러
- */
-export async function requireAdmin(
-  request: NextRequest
-): Promise<{ user: Participant; error: null } | { user: null; error: NextResponse }> {
-  return requireWebAppAdmin(request);
-}

@@ -4,7 +4,7 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getTodayString, getYesterdayString } from '@/lib/date-utils';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
 import type { SubmissionData, ParticipantData } from '@/types/database';
@@ -15,7 +15,7 @@ import type { SubmissionData, ParticipantData } from '@/types/database';
  */
 export async function POST(request: NextRequest) {
   // 관리자 권한 검증
-  const { user, error } = await requireAdmin(request);
+  const { user, error } = await requireWebAppAdmin(request);
   if (error) {
     return error;
   }
@@ -143,37 +143,31 @@ export async function POST(request: NextRequest) {
     // 5. AI 매칭 수행 (검증 없음 - 관리자가 수동으로 검토/조정)
     const matching = await matchParticipantsByAI(yesterdayQuestion, participantAnswers);
 
-    // 7. Cohort 문서에 매칭 결과 저장 (Transaction으로 race condition 방지)
+    // 7. Cohort 문서에 매칭 결과 저장
     const cohortRef = db.collection('cohorts').doc(cohortId);
 
-    try {
-      await db.runTransaction(async (transaction) => {
-        const cohortDoc = await transaction.get(cohortRef);
-
-        if (!cohortDoc.exists) {
-          throw new Error('Cohort를 찾을 수 없습니다.');
-        }
-
-        const cohortData = cohortDoc.data();
-        const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
-
-        // 오늘 날짜 키로 매칭 결과 저장 (참가자들이 "오늘의 서재"에서 확인)
-        dailyFeaturedParticipants[today] = matching;
-
-        transaction.update(cohortRef, {
-          dailyFeaturedParticipants,
-          updatedAt: admin.firestore.Timestamp.now(),
-        });
-      });
-    } catch (transactionError) {
-      if (transactionError instanceof Error && transactionError.message === 'Cohort를 찾을 수 없습니다.') {
-        return NextResponse.json(
-          { error: 'Cohort를 찾을 수 없습니다.' },
-          { status: 404 }
-        );
-      }
-      throw transactionError; // 다른 에러는 외부 catch로 전파
+    // Cohort 존재 여부 먼저 확인
+    const cohortDoc = await cohortRef.get();
+    if (!cohortDoc.exists) {
+      return NextResponse.json(
+        { error: 'Cohort를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
     }
+
+    // Transaction으로 race condition 방지
+    await db.runTransaction(async (transaction) => {
+      const cohortData = cohortDoc.data();
+      const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
+
+      // 오늘 날짜 키로 매칭 결과 저장 (참가자들이 "오늘의 서재"에서 확인)
+      dailyFeaturedParticipants[today] = matching;
+
+      transaction.update(cohortRef, {
+        dailyFeaturedParticipants,
+        updatedAt: admin.firestore.Timestamp.now(),
+      });
+    });
 
     // 전체 코호트 참가자 ID 목록 (제출 여부 구분용)
     const allCohortParticipantsSnapshot = await db
@@ -225,7 +219,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   // 관리자 권한 검증
-  const { error: authError } = await requireAdmin(request);
+  const { error: authError } = await requireWebAppAdmin(request);
   if (authError) {
     return authError;
   }

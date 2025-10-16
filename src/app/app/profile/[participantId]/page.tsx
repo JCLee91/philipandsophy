@@ -13,7 +13,7 @@ import ProfileImageDialog from '@/components/ProfileImageDialog';
 // import MatchingReasonBanner from '@/components/MatchingReasonBanner'; // 논의 중인 기능
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { getInitials, formatShortDate } from '@/lib/utils';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
@@ -43,8 +43,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const matchingDate = searchParams.get('matchingDate');
 
   // Firebase Auth 기반 인증
-  const { currentUser, isLoading: sessionLoading } = useAuth();
-  const currentUserId = currentUser?.id;
+  const { participant: currentParticipant, isLoading: sessionLoading } = useAuth();
+  const currentUserId = currentParticipant?.id;
 
   // 테마 결정 (similar: 비슷한 가치관 파란색, opposite: 반대 가치관 노란색)
   const theme = (searchParams.get('theme') as ProfileTheme) || DEFAULT_THEME;
@@ -100,11 +100,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
-    if (!sessionLoading && !currentUser && !hasRedirectedRef.current) {
+    if (!sessionLoading && !currentParticipant && !hasRedirectedRef.current) {
       hasRedirectedRef.current = true;
       router.replace('/app');
     }
-  }, [sessionLoading, currentUser, router]);
+  }, [sessionLoading, currentParticipant, router]);
 
   // 14일치 날짜 배열 생성 (2025년 10월 11일부터 14일간)
   const startDate = new Date(2025, 9, 11); // 2025년 10월 11일 (월은 0부터 시작)

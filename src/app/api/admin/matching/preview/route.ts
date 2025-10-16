@@ -4,7 +4,7 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
 import { getYesterdayString, getTodayString } from '@/lib/date-utils';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
 import type { SubmissionData, ParticipantData } from '@/types/database';
@@ -15,7 +15,7 @@ import type { SubmissionData, ParticipantData } from '@/types/database';
  */
 export async function POST(request: NextRequest) {
   // 관리자 권한 검증
-  const { user, error } = await requireAdmin(request);
+  const { user, error } = await requireWebAppAdmin(request);
   if (error) {
     return error;
   }

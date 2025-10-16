@@ -14,7 +14,6 @@ import { logger } from '@/lib/logger';
 import {
   PHONE_VALIDATION,
   AUTH_ERROR_MESSAGES,
-  FIREBASE_ERROR_CODE_MAP,
   RECAPTCHA_CONFIG,
 } from '@/constants/auth';
 import { phoneFormatUtils } from '@/constants/phone-format';
@@ -75,12 +74,7 @@ export async function sendSmsVerification(
     return confirmationResult;
   } catch (error: any) {
     logger.error('SMS 전송 실패:', error);
-
-    // Firebase 에러 코드를 사용자 친화적인 메시지로 변환
-    const userMessage = FIREBASE_ERROR_CODE_MAP[error.code] ||
-      `${AUTH_ERROR_MESSAGES.SMS_SEND_FAILED} (오류: ${error.code || 'UNKNOWN'})`;
-
-    throw new Error(userMessage);
+    throw new Error(AUTH_ERROR_MESSAGES.SMS_SEND_FAILED);
   }
 }
 
@@ -109,12 +103,7 @@ export async function confirmSmsCode(
     return userCredential;
   } catch (error: any) {
     logger.error('인증 코드 확인 실패:', error);
-
-    // Firebase 에러 코드를 사용자 친화적인 메시지로 변환
-    const userMessage = FIREBASE_ERROR_CODE_MAP[error.code] ||
-      AUTH_ERROR_MESSAGES.AUTH_FAILED;
-
-    throw new Error(userMessage);
+    throw new Error(AUTH_ERROR_MESSAGES.AUTH_FAILED);
   }
 }
 
@@ -139,11 +128,7 @@ export async function signInWithPhoneCredential(
     return userCredential;
   } catch (error: any) {
     logger.error('전화번호 로그인 실패:', error);
-
-    const userMessage = FIREBASE_ERROR_CODE_MAP[error.code] ||
-      AUTH_ERROR_MESSAGES.AUTH_FAILED;
-
-    throw new Error(userMessage);
+    throw new Error(AUTH_ERROR_MESSAGES.AUTH_FAILED);
   }
 }
 
@@ -162,9 +147,3 @@ export async function signOut(): Promise<void> {
   }
 }
 
-/**
- * 전화번호 형식 변환 유틸리티
- * @deprecated phoneFormatUtils 사용 권장
- */
-export const formatPhoneNumberForDisplay = phoneFormatUtils.toDisplay;
-export const formatPhoneNumberToE164 = phoneFormatUtils.toE164;
