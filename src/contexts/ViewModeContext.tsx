@@ -23,6 +23,15 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
   // 관리자 권한이 있는지 확인
   const canSwitchMode = !isLoading && currentUser?.isAdministrator === true;
 
+  useEffect(() => {
+    logger.debug('[ViewModeContext] canSwitchMode evaluation', {
+      isLoading,
+      userId: currentUser?.id,
+      isAdministrator: currentUser?.isAdministrator,
+      computedCanSwitchMode: canSwitchMode,
+    });
+  }, [isLoading, currentUser?.id, currentUser?.isAdministrator, canSwitchMode]);
+
   // 디버깅: 권한 체크 로그
   useEffect(() => {
     if (!isLoading && currentUser) {
@@ -45,24 +54,30 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
     if (savedMode && canSwitchMode) {
       // 관리자이고 저장된 모드가 있으면 복원
       setViewModeState(savedMode);
-      logger.debug('View mode 복원:', { mode: savedMode });
+      logger.debug('[ViewModeContext] saved mode restored', { mode: savedMode });
     } else if (!canSwitchMode) {
       // 관리자가 아니면 항상 참가자 모드
       setViewModeState('participant');
       localStorage.removeItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE);
+      logger.debug('[ViewModeContext] forced participant mode (insufficient permission)');
+    } else {
+      logger.debug('[ViewModeContext] using default participant mode');
     }
   }, [canSwitchMode, isLoading]);
 
   // 모드 설정 함수
   const setViewMode = (mode: ViewMode) => {
     if (!canSwitchMode && mode === 'admin') {
-      logger.warn('관리자 권한이 없어 모드 전환 불가');
+      logger.warn('[ViewModeContext] 관리자 권한이 없어 모드 전환 불가', {
+        requestedMode: mode,
+        canSwitchMode,
+      });
       return;
     }
 
     setViewModeState(mode);
     localStorage.setItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE, mode);
-    logger.info('View mode 변경:', { mode });
+    logger.info('[ViewModeContext] view mode 변경', { mode });
   };
 
   // 모드 토글 함수

@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import { X, Shield, User } from 'lucide-react';
 import { NotificationToggle } from './NotificationToggle';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { useViewMode } from '@/contexts/ViewModeContext';
+import { logger } from '@/lib/logger';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -19,6 +21,14 @@ interface SettingsDialogProps {
 export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
   useModalCleanup(isOpen);
   const { viewMode, canSwitchMode, toggleViewMode } = useViewMode();
+
+  useEffect(() => {
+    logger.debug('[SettingsDialog] state snapshot', {
+      isOpen,
+      canSwitchMode,
+      viewMode,
+    });
+  }, [isOpen, canSwitchMode, viewMode]);
 
   if (!isOpen) return null;
 

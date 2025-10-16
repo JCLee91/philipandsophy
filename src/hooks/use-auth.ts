@@ -97,7 +97,13 @@ export function useAuth() {
 
         if (participant) {
           setCurrentUser(participant);
-          logger.debug('참가자 정보 로드 완료', { participantId: participant.id });
+          logger.info('✅ 참가자 정보 로드 완료', {
+            participantId: participant.id,
+            participantName: participant.name,
+            isAdmin: participant.isAdmin,
+            isAdministrator: participant.isAdministrator,
+            firebaseUid: user.uid,
+          });
         } else {
           // 재시도 후에도 참가자 정보 없음 → 로그아웃
           logger.error('재시도 후에도 Firebase UID와 연결된 참가자 없음', { uid: user.uid });
