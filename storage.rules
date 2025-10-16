@@ -3,10 +3,10 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // ============================================
-    // 프로덕션 모드 - Storage 보안 규칙
+    // MVP Storage 보안 규칙
     // ============================================
-    // Firebase Phone Authentication 기반 보안 규칙
-    // 2025-10-16 업데이트: 인증 기반 접근 제어 강화
+    // Custom Claims 기반 간결한 규칙
+    // 관리자 설정: Firebase Functions에서 request.auth.token.admin = true 설정 필요
     // ============================================
 
     // Helper Functions
@@ -14,10 +14,8 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    // 관리자 확인: 임시 비활성화
-    // TODO: Firebase Admin SDK로 custom claims 설정 필요
-    function isAdmin() {
-      return false;  // 임시: 관리자 기능 비활성화
+    function isAdminClaim() {
+      return isSignedIn() && request.auth.token.admin == true;
     }
 
     function isValidImage() {
@@ -33,77 +31,46 @@ service firebase.storage {
     }
 
     // ============================================
-    // 독서 인증 이미지 (Reading Submissions)
+    // 독서 인증 이미지
     // ============================================
     match /reading_submissions/{participationCode}/{fileName} {
-      // 읽기: 로그인한 사용자만 (독서 인증 확인용)
       allow read: if isSignedIn();
-
-      // 업로드: 로그인한 사용자만 + 이미지 파일만, 50MB 이하
       allow create: if isSignedIn() && isValidImage() && isUnder50MB();
-
-      // 수정/삭제: 금지
       allow update, delete: if false;
     }
 
     // ============================================
-    // 공지사항 이미지 (Notices)
+    // 공지사항 이미지
     // ============================================
     match /notices/{cohortId}/{fileName} {
-      // 읽기: 로그인한 사용자만
       allow read: if isSignedIn();
-
-      // 업로드: 로그인한 사용자만 + 이미지 파일만, 10MB 이하
-      // TODO: Firebase Admin SDK로 custom claims 설정 후 관리자만 허용
-      allow create: if isSignedIn() && isValidImage() && isUnder10MB();
-
-      // 수정: 로그인한 사용자만
-      allow update: if isSignedIn() && isValidImage() && isUnder10MB();
-
-      // 삭제: 로그인한 사용자만
-      allow delete: if isSignedIn();
+      allow create, update: if isAdminClaim() && isValidImage() && isUnder10MB();
+      allow delete: if isAdminClaim();
     }
 
     // ============================================
-    // 다이렉트 메시지 이미지 (Direct Messages)
+    // 다이렉트 메시지 이미지
     // ============================================
     match /direct_messages/{userId}/{fileName} {
-      // 읽기: 로그인한 사용자만 (대화 참여자가 URL 공유)
       allow read: if isSignedIn();
-
-      // 업로드: 로그인한 사용자만 + 이미지 파일만, 50MB 이하
-      // 참고: userId는 participantId이므로 firebaseUid 확인 필요
       allow create: if isSignedIn() && isValidImage() && isUnder50MB();
-
-      // 수정/삭제: 금지
       allow update, delete: if false;
     }
 
     // ============================================
-    // 프로필 이미지 (Profiles)
+    // 프로필 이미지
     // ============================================
     match /profiles/{userId}/{fileName} {
-      // 읽기: 로그인한 사용자만 (프로필 사진)
       allow read: if isSignedIn();
-
-      // 업로드: 로그인한 사용자만 + 이미지 파일만, 50MB 이하
-      // 참고: userId는 participantId이므로 firebaseUid 확인 필요
-      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
-
-      // 수정: 로그인한 사용자만
-      allow update: if isSignedIn() && isValidImage() && isUnder50MB();
-
-      // 삭제: 로그인한 사용자만
+      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
       allow delete: if isSignedIn();
     }
 
     // ============================================
-    // 기타 경로: 모두 차단
+    // 기타 경로: 차단
     // ============================================
     match /{allPaths=**} {
       allow read, write: if false;
     }
   }
 }
-
-

@@ -3,10 +3,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ============================================
-    // 프로덕션 모드 - 보안 규칙 적용
+    // MVP 보안 규칙
     // ============================================
-    // Firebase Phone Authentication 기반 보안 규칙
-    // 2025-10-16 업데이트: 인증 기반 접근 제어 강화
+    // Custom Claims 기반 간결한 규칙
+    // 관리자 설정: Firebase Functions에서 request.auth.token.admin = true 설정 필요
     // ============================================
 
     // Helper Functions
@@ -14,50 +14,50 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // 관리자 확인: firebaseUid로 participant 찾기
-    // 주의: request.auth.uid는 Firebase Auth UID이고,
-    // participant 문서 ID와는 다름
-    function isAdmin() {
-      // 모든 participant를 순회할 수 없으므로,
-      // 클라이언트에서 관리자 확인 후 특별한 custom claim 사용 권장
-      // 임시: 특정 Firebase UID를 하드코딩 (보안상 권장하지 않음)
-      // TODO: Firebase Admin SDK로 custom claims 설정 필요
-      return isSignedIn() && false;  // 임시: 관리자 기능 비활성화
+    // 관리자 확인: Custom Claims 사용
+    function isAdminClaim() {
+      return isSignedIn() && request.auth.token.admin == true;
     }
 
-    // participant 문서에서 firebaseUid 확인
-    function hasFirebaseUid(participantId, uid) {
+    // 주어진 participantId가 현재 사용자의 것인지 확인
+    function isOwnParticipant(participantId) {
       return exists(/databases/$(database)/documents/participants/$(participantId)) &&
-             get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == uid;
+             get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == request.auth.uid;
     }
 
     // ============================================
     // 기수 정보 (Cohorts)
     // ============================================
     match /cohorts/{cohortId} {
-      // 읽기: 모두 허용 (로그인 전 접근 코드 검증용)
-      allow read: if true;
-
-      // 쓰기: 로그인한 사용자만 (임시: 관리자 확인 불가)
-      allow create, update: if isSignedIn();
-      allow delete: if false; // 삭제 금지
+      allow read: if true;              // MVP: 공개 (접근 코드 검증용)
+      allow write: if isAdminClaim();   // 관리자만
     }
 
     // ============================================
     // 참가자 정보 (Participants)
     // ============================================
     match /participants/{participantId} {
-      // 읽기: 로그인한 사용자만 (채팅방 참가자 목록)
       allow read: if isSignedIn();
+      allow create: if false;           // 시스템에서만 생성
 
-      // 생성: Firebase 시스템에서만 (Phone Auth 후 자동 생성)
-      allow create: if false;
+      // 업데이트: 2가지 케이스 허용
+      // 1) 최초 firebaseUid 연결 (null → auth.uid)
+      // 2) 기존 소유자만 허용 필드 변경
+      allow update: if isSignedIn() && (
+        // 케이스 1: 최초 firebaseUid 설정 (첫 로그인)
+        (resource.data.firebaseUid == null &&
+         request.resource.data.firebaseUid == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['firebaseUid', 'updatedAt'])) ||
 
-      // 수정: 본인 정보만 (firebaseUid로 확인)
-      allow update: if isSignedIn() &&
-        resource.data.firebaseUid == request.auth.uid;
+        // 케이스 2: 기존 소유자의 프로필 업데이트
+        (resource.data.firebaseUid == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['name', 'profileImage', 'profileImageCircle', 'profileBookUrl',
+                    'occupation', 'bio', 'currentBookTitle', 'currentBookAuthor',
+                    'currentBookCoverUrl', 'bookHistory', 'pushToken', 'lastActivityAt', 'updatedAt']))
+      );
 
-      // 삭제: 금지
       allow delete: if false;
     }
 
@@ -65,16 +65,8 @@ service cloud.firestore {
     // 공지사항 (Notices)
     // ============================================
     match /notices/{noticeId} {
-      // 읽기: 로그인한 사용자만
       allow read: if isSignedIn();
-
-      // 생성/수정: 로그인한 사용자만 (임시: 관리자 확인 불가)
-      // TODO: Firebase Admin SDK로 custom claims 설정 후 관리자만 허용
-      allow create, update: if isSignedIn();
-
-      // 삭제: 작성자 본인만 (author 필드 확인)
-      allow delete: if isSignedIn() &&
-                      hasFirebaseUid(resource.data.author, request.auth.uid);
+      allow write: if isAdminClaim();   // 관리자만
     }
 
     // ============================================
@@ -82,30 +74,25 @@ service cloud.firestore {
     // ============================================
     match /messages/{messageId} {
       // 읽기: 발신자 또는 수신자만
-      // senderId/receiverId는 participant 문서 ID
       allow read: if isSignedIn() && (
-        hasFirebaseUid(resource.data.senderId, request.auth.uid) ||
-        hasFirebaseUid(resource.data.receiverId, request.auth.uid)
+        isOwnParticipant(resource.data.senderId) ||
+        isOwnParticipant(resource.data.receiverId)
       );
 
-      // 생성: 로그인한 사용자만 + 필수 필드 검증
-      // 프론트엔드에서 올바른 senderId 전달 책임
+      // 생성: 본인의 participantId만 senderId로 사용
       allow create: if isSignedIn() &&
-                      request.resource.data.senderId is string &&
-                      request.resource.data.receiverId is string &&
-                      request.resource.data.conversationId is string &&
-                      ((request.resource.data.content is string &&
-                        request.resource.data.content.size() > 0) ||
-                       (request.resource.data.imageUrl is string &&
-                        request.resource.data.imageUrl.size() > 0));
+        isOwnParticipant(request.resource.data.senderId) &&
+        request.resource.data.senderId is string &&
+        request.resource.data.receiverId is string &&
+        request.resource.data.conversationId is string &&
+        ((request.resource.data.content is string && request.resource.data.content.size() > 0) ||
+         (request.resource.data.imageUrl is string && request.resource.data.imageUrl.size() > 0));
 
-      // 수정: isRead 상태만 변경 가능 (수신자만)
+      // 수정: 수신자만 isRead 변경 가능
       allow update: if isSignedIn() &&
-                      hasFirebaseUid(resource.data.receiverId, request.auth.uid) &&
-                      request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['isRead']);
+        isOwnParticipant(resource.data.receiverId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
 
-      // 삭제: 금지 (메시지는 삭제하지 않음)
       allow delete: if false;
     }
 
@@ -113,32 +100,31 @@ service cloud.firestore {
     // 독서 인증 자료 (Reading Submissions)
     // ============================================
     match /reading_submissions/{submissionId} {
-      // 읽기: 로그인한 사용자만
       allow read: if isSignedIn();
 
-      // 생성: 로그인한 사용자만 + 필수 필드 검증
-      // 참고: participantId는 Firestore document ID이므로 직접 비교 불가
-      // 프론트엔드에서 올바른 participantId 전달 책임
+      // 생성: 본인의 participantId만 사용
       allow create: if isSignedIn() &&
-                      request.resource.data.participantId is string &&
-                      request.resource.data.participationCode is string &&
-                      request.resource.data.bookTitle is string &&
-                      request.resource.data.bookImageUrl is string &&
-                      request.resource.data.review is string &&
-                      request.resource.data.dailyQuestion is string &&
-                      request.resource.data.dailyAnswer is string &&
-                      request.resource.data.status == 'approved';
+        isOwnParticipant(request.resource.data.participantId) &&
+        request.resource.data.participantId is string &&
+        request.resource.data.participationCode is string &&
+        request.resource.data.bookTitle is string &&
+        request.resource.data.bookImageUrl is string &&
+        request.resource.data.review is string &&
+        request.resource.data.dailyQuestion is string &&
+        request.resource.data.dailyAnswer is string &&
+        request.resource.data.status == 'approved';
 
-      // 수정: 본인이 작성한 것만
-      // participantId로 participant 문서를 조회하여 firebaseUid 확인
-      allow update: if isSignedIn() &&
-        exists(/databases/$(database)/documents/participants/$(resource.data.participantId)) &&
-        get(/databases/$(database)/documents/participants/$(resource.data.participantId)).data.firebaseUid == request.auth.uid;
+      // 수정/삭제: 본인이 작성한 것만
+      allow update, delete: if isSignedIn() &&
+        isOwnParticipant(resource.data.participantId);
+    }
 
-      // 삭제: 본인이 작성한 것만
-      allow delete: if isSignedIn() &&
-        exists(/databases/$(database)/documents/participants/$(resource.data.participantId)) &&
-        get(/databases/$(database)/documents/participants/$(resource.data.participantId)).data.firebaseUid == request.auth.uid;
+    // ============================================
+    // 사용자 메타데이터 (Users) - 향후 구현용
+    // ============================================
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update, delete: if false;
     }
   }
 }

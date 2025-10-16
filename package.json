@@ -44,7 +44,10 @@
     "debug:participants-cohort": "tsx src/scripts/debug-participants-by-cohort.ts",
     "check:push-notifications": "tsx src/scripts/check-push-notifications.ts",
     "migrate:firebase-auth": "tsx src/scripts/migrate-users-to-firebase-phone-auth.ts",
-    "verify:firebase-auth": "tsx src/scripts/verify-firebase-uid-linking.ts"
+    "verify:firebase-auth": "tsx src/scripts/verify-firebase-uid-linking.ts",
+    "set:admin-claims": "tsx scripts/set-admin-claims.ts",
+    "verify:admin-claims": "tsx scripts/verify-admin-claims.ts",
+    "verify:firebaseuid": "tsx scripts/verify-firebaseuid-linking.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",
