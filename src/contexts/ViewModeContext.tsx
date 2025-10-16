@@ -23,6 +23,18 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
   // 관리자 권한이 있는지 확인
   const canSwitchMode = !isLoading && currentUser?.isAdministrator === true;
 
+  // 디버깅: 권한 체크 로그
+  useEffect(() => {
+    if (!isLoading && currentUser) {
+      logger.debug('ViewMode 권한 체크:', {
+        userId: currentUser.id,
+        userName: currentUser.name,
+        isAdministrator: currentUser.isAdministrator,
+        canSwitchMode,
+      });
+    }
+  }, [isLoading, currentUser, canSwitchMode]);
+
   // 컴포넌트 마운트 시 localStorage에서 모드 복원
   useEffect(() => {
     if (isLoading) return;
