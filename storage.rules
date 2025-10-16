@@ -5,16 +5,28 @@ service firebase.storage {
     // ============================================
     // 프로덕션 모드 - Storage 보안 규칙
     // ============================================
-    
+    // Firebase Phone Authentication 기반 보안 규칙
+    // 2025-10-16 업데이트: 인증 기반 접근 제어 강화
+    // ============================================
+
     // Helper Functions
     function isSignedIn() {
       return request.auth != null;
     }
-    
+
+    function isAdmin() {
+      return isSignedIn() &&
+             firestore.get(/databases/(default)/documents/participants/$(request.auth.uid)).data.isAdministrator == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
     function isValidImage() {
       return request.resource.contentType.matches('image/.*');
     }
-    
+
     function isUnder50MB() {
       return request.resource.size < 50 * 1024 * 1024;
     }
@@ -22,68 +34,69 @@ service firebase.storage {
     function isUnder10MB() {
       return request.resource.size < 10 * 1024 * 1024;
     }
-    
+
     // ============================================
     // 독서 인증 이미지 (Reading Submissions)
     // ============================================
     match /reading_submissions/{participationCode}/{fileName} {
-      // 읽기: 모두 허용 (공개 이미지)
-      allow read: if true;
-      
-      // 업로드: 이미지 파일만, 50MB 이하
-      allow create: if isValidImage() && isUnder50MB();
-      
+      // 읽기: 로그인한 사용자만 (독서 인증 확인용)
+      allow read: if isSignedIn();
+
+      // 업로드: 로그인한 사용자만 + 이미지 파일만, 50MB 이하
+      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
+
       // 수정/삭제: 금지
       allow update, delete: if false;
     }
-    
+
     // ============================================
     // 공지사항 이미지 (Notices)
     // ============================================
     match /notices/{cohortId}/{fileName} {
-      // 읽기: 모두 허용 (공개 이미지)
-      allow read: if true;
-      
-      // 업로드: 이미지 파일만, 10MB 이하
-      // TODO: 관리자만 업로드 가능하도록 제한 권장
-      allow create: if isValidImage() && isUnder10MB();
-      
-      // 수정/삭제: 금지
-      allow update, delete: if false;
+      // 읽기: 로그인한 사용자만
+      allow read: if isSignedIn();
+
+      // 업로드: 관리자만 + 이미지 파일만, 10MB 이하
+      allow create: if isAdmin() && isValidImage() && isUnder10MB();
+
+      // 수정: 관리자만
+      allow update: if isAdmin() && isValidImage() && isUnder10MB();
+
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
     }
-    
+
     // ============================================
     // 다이렉트 메시지 이미지 (Direct Messages)
     // ============================================
     match /direct_messages/{userId}/{fileName} {
-      // 읽기: 모두 허용 (대화 참여자만 URL 알고 있음)
-      allow read: if true;
-      
-      // 업로드: 이미지 파일만, 50MB 이하
-      allow create: if isValidImage() && isUnder50MB();
-      
+      // 읽기: 로그인한 사용자만 (대화 참여자가 URL 공유)
+      allow read: if isSignedIn();
+
+      // 업로드: 본인 폴더에만 + 이미지 파일만, 50MB 이하
+      allow create: if isOwner(userId) && isValidImage() && isUnder50MB();
+
       // 수정/삭제: 금지
       allow update, delete: if false;
     }
-    
+
     // ============================================
     // 프로필 이미지 (Profiles)
     // ============================================
     match /profiles/{userId}/{fileName} {
-      // 읽기: 모두 허용 (공개 프로필)
-      allow read: if true;
-      
-      // 업로드: 이미지 파일만, 50MB 이하
-      allow create: if isValidImage() && isUnder50MB();
-      
-      // 수정: 본인만 (Firebase Auth 필요)
-      // 임시: 허용
-      allow update: if isValidImage() && isUnder50MB();
-      
-      // 삭제: 금지
-      allow delete: if false;
+      // 읽기: 로그인한 사용자만 (프로필 사진)
+      allow read: if isSignedIn();
+
+      // 업로드: 본인 프로필만 + 이미지 파일만, 50MB 이하
+      allow create: if isOwner(userId) && isValidImage() && isUnder50MB();
+
+      // 수정: 본인만
+      allow update: if isOwner(userId) && isValidImage() && isUnder50MB();
+
+      // 삭제: 본인만
+      allow delete: if isOwner(userId);
     }
-    
+
     // ============================================
     // 기타 경로: 모두 차단
     // ============================================

@@ -5,8 +5,8 @@ service cloud.firestore {
     // ============================================
     // 프로덕션 모드 - 보안 규칙 적용
     // ============================================
-    // 주의: Firebase Authentication 미사용으로
-    // 일부 제한적 보안만 적용 가능
+    // Firebase Phone Authentication 기반 보안 규칙
+    // 2025-10-16 업데이트: 인증 기반 접근 제어 강화
     // ============================================
 
     // Helper Functions
@@ -15,21 +15,28 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && 
+      return isSignedIn() &&
              exists(/databases/$(database)/documents/participants/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/participants/$(request.auth.uid)).data.isAdmin == true;
+             get(/databases/$(database)/documents/participants/$(request.auth.uid)).data.isAdministrator == true;
+    }
+
+    function isOwner(participantId) {
+      return isSignedIn() && request.auth.uid == participantId;
+    }
+
+    function getParticipant() {
+      return get(/databases/$(database)/documents/participants/$(request.auth.uid)).data;
     }
 
     // ============================================
     // 기수 정보 (Cohorts)
     // ============================================
     match /cohorts/{cohortId} {
-      // 읽기: 모두 허용 (로그인 페이지에서 접근 코드 검증 필요)
+      // 읽기: 모두 허용 (로그인 전 접근 코드 검증용)
       allow read: if true;
-      
-      // 쓰기: 제한적 허용 (프로덕션에서는 관리자 콘솔에서만 수정 권장)
-      // 임시: 개발 편의를 위해 허용하되, 나중에 isAdmin()으로 변경
-      allow create, update: if true;
+
+      // 쓰기: 관리자만 허용
+      allow create, update: if isAdmin();
       allow delete: if false; // 삭제 금지
     }
 
@@ -37,16 +44,15 @@ service cloud.firestore {
     // 참가자 정보 (Participants)
     // ============================================
     match /participants/{participantId} {
-      // 읽기: 모두 허용 (채팅방 참가자 목록 표시용)
-      allow read: if true;
-      
-      // 생성: 제한적 허용 (회원가입용)
-      allow create: if true;
-      
-      // 수정: 본인 정보만 (Firebase Auth 없이는 제한적)
-      // 임시: 허용하되 추후 인증 추가 권장
-      allow update: if true;
-      
+      // 읽기: 로그인한 사용자만 (채팅방 참가자 목록)
+      allow read: if isSignedIn();
+
+      // 생성: Firebase 시스템에서만 (Phone Auth 후 자동 생성)
+      allow create: if false;
+
+      // 수정: 본인 정보만 또는 관리자
+      allow update: if isOwner(participantId) || isAdmin();
+
       // 삭제: 금지
       allow delete: if false;
     }
@@ -55,36 +61,40 @@ service cloud.firestore {
     // 공지사항 (Notices)
     // ============================================
     match /notices/{noticeId} {
-      // 읽기: 모두 허용
-      allow read: if true;
+      // 읽기: 로그인한 사용자만
+      allow read: if isSignedIn();
 
-      // 생성/수정/삭제: 제한적 허용 (프론트엔드에서 관리자 체크 필요)
-      // TODO: isAdmin() 함수로 변경 권장
-      allow create, update, delete: if true;
+      // 생성/수정/삭제: 관리자만
+      allow create, update, delete: if isAdmin();
     }
 
     // ============================================
     // 다이렉트 메시지 (Messages)
     // ============================================
     match /messages/{messageId} {
-      // 읽기: 발신자 또는 수신자만 (제한적 보안)
-      // Firebase Auth 없이는 완벽한 검증 불가
-      allow read: if true;
-      
-      // 생성: 제한적 허용
-      // 필수: content 필드 존재 확인
-      allow create: if request.resource.data.senderId is string &&
+      // 읽기: 발신자, 수신자, 또는 관리자만
+      allow read: if isSignedIn() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid ||
+        isAdmin()
+      );
+
+      // 생성: 로그인한 사용자만 + 필수 필드 검증
+      allow create: if isSignedIn() &&
+                      request.resource.data.senderId == request.auth.uid &&
                       request.resource.data.receiverId is string &&
                       request.resource.data.conversationId is string &&
                       ((request.resource.data.content is string &&
                         request.resource.data.content.size() > 0) ||
                        (request.resource.data.imageUrl is string &&
                         request.resource.data.imageUrl.size() > 0));
-      
-      // 수정: isRead 상태만 변경 가능
-      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+
+      // 수정: isRead 상태만 변경 가능 (수신자만)
+      allow update: if isSignedIn() &&
+                      resource.data.receiverId == request.auth.uid &&
+                      request.resource.data.diff(resource.data).affectedKeys()
                       .hasOnly(['isRead']);
-      
+
       // 삭제: 금지 (메시지는 삭제하지 않음)
       allow delete: if false;
     }
@@ -93,11 +103,12 @@ service cloud.firestore {
     // 독서 인증 자료 (Reading Submissions)
     // ============================================
     match /reading_submissions/{submissionId} {
-      // 읽기: 모두 허용 (다른 참가자 인증 내역 확인용)
-      allow read: if true;
-      
-      // 생성: 필수 필드 검증
-      allow create: if request.resource.data.participantId is string &&
+      // 읽기: 로그인한 사용자만
+      allow read: if isSignedIn();
+
+      // 생성: 로그인한 사용자만 + 필수 필드 검증 + 본인 것만
+      allow create: if isSignedIn() &&
+                      request.resource.data.participantId == request.auth.uid &&
                       request.resource.data.participationCode is string &&
                       request.resource.data.bookTitle is string &&
                       request.resource.data.bookImageUrl is string &&
@@ -105,13 +116,15 @@ service cloud.firestore {
                       request.resource.data.dailyQuestion is string &&
                       request.resource.data.dailyAnswer is string &&
                       request.resource.data.status == 'approved';
-      
-      // 수정: 제한적 허용 (status 변경은 관리자만 권장)
-      // TODO: 본인 작성 글만 수정 가능하도록 제한
-      allow update: if true;
 
-      // 삭제: 금지
-      allow delete: if false;
+      // 수정: 본인이 작성한 것만 또는 관리자
+      allow update: if isSignedIn() && (
+        resource.data.participantId == request.auth.uid ||
+        isAdmin()
+      );
+
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
     }
   }
 }
