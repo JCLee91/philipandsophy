@@ -6,7 +6,7 @@ import { BookOpen } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { scrollToBottom, formatDate, formatTime } from '@/lib/utils';
 import { getTodayString } from '@/lib/date-utils';
-import { APP_CONSTANTS } from '@/constants/app';
+import { APP_CONSTANTS, SYSTEM_IDS } from '@/constants/app';
 import { uploadNoticeImage } from '@/lib/firebase/storage';
 import { Notice, Participant } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
@@ -16,6 +16,7 @@ import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
 import { useAuth } from '@/hooks/use-auth';
 import { useIsIosStandalone } from '@/hooks/use-standalone-ios';
+import { useIsAdminMode } from '@/contexts/ViewModeContext';
 import { useSubmissionsByParticipant } from '@/hooks/use-submissions';
 import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
 import Header from '@/components/Header';
@@ -90,7 +91,9 @@ function ChatPageContent() {
   // Firebase hooks for data fetching
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
-  const isAdmin = currentUser?.isAdmin || false;
+
+  // 관리자 모드 확인 (ViewModeContext가 DB의 isAdministrator와 UI 모드 상태를 모두 고려)
+  const isAdmin = useIsAdminMode();
 
   // 오늘 제출 여부 확인
   const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);
@@ -163,7 +166,7 @@ function ChatPageContent() {
       name: APP_CONSTANTS.ADMIN_NAME,
       phoneNumber: '01000000001',
       profileImage: '/favicon.webp',
-      isAdmin: true,
+      isAdministrator: true,
       createdAt: new Date() as any,
       updatedAt: new Date() as any,
     };
@@ -344,7 +347,7 @@ function ChatPageContent() {
         />
 
         <ParticipantsList
-          participants={participants.filter((p) => !p.isAdmin)}
+          participants={participants.filter((p) => p.id !== SYSTEM_IDS.ADMIN)}
           currentUserId={currentUserId || ''}
           open={participantsOpen}
           onOpenChange={setParticipantsOpen}
@@ -456,7 +459,7 @@ function ChatPageContent() {
       {/* 하단 네비게이션 바 */}
       <FooterActions>
         {isAdmin ? (
-          /* 관리자용 버튼 */
+          /* 관리자 모드일 때 버튼 */
           <UnifiedButton
             variant="primary"
             onClick={() => router.push(`/app/admin/matching?cohort=${cohortId}`)}
@@ -466,7 +469,7 @@ function ChatPageContent() {
             매칭 관리
           </UnifiedButton>
         ) : (
-          /* 일반 사용자용 버튼 */
+          /* 참가자 모드일 때 버튼 */
           <div className="grid grid-cols-2 gap-2">
             {/* 독서 인증하기 버튼 */}
             <UnifiedButton

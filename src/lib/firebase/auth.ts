@@ -9,7 +9,7 @@ import {
   UserCredential,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { getAuthInstance } from './config';
+import { getFirebaseAuth } from './client';
 import { logger } from '@/lib/logger';
 import {
   PHONE_VALIDATION,
@@ -17,6 +17,7 @@ import {
   FIREBASE_ERROR_CODE_MAP,
   RECAPTCHA_CONFIG,
 } from '@/constants/auth';
+import { phoneFormatUtils } from '@/constants/phone-format';
 
 /**
  * Firebase Phone Authentication Utilities
@@ -33,7 +34,7 @@ export function initRecaptcha(
   containerId: string = RECAPTCHA_CONFIG.CONTAINER_ID,
   size: 'invisible' | 'normal' = RECAPTCHA_CONFIG.DEFAULT_SIZE
 ): RecaptchaVerifier {
-  const auth = getAuthInstance();
+  const auth = getFirebaseAuth();
 
   return new RecaptchaVerifier(auth, containerId, {
     size,
@@ -57,10 +58,10 @@ export async function sendSmsVerification(
   phoneNumber: string,
   recaptchaVerifier: RecaptchaVerifier
 ): Promise<ConfirmationResult> {
-  const auth = getAuthInstance();
+  const auth = getFirebaseAuth();
 
   // 기존 유틸리티 함수로 E.164 변환 (DRY)
-  const e164Number = formatPhoneNumberToE164(phoneNumber);
+  const e164Number = phoneFormatUtils.toE164(phoneNumber);
 
   logger.debug('SMS 전송 시도:', { phoneNumber: e164Number });
 
@@ -128,7 +129,7 @@ export async function signInWithPhoneCredential(
   verificationId: string,
   verificationCode: string
 ): Promise<UserCredential> {
-  const auth = getAuthInstance();
+  const auth = getFirebaseAuth();
 
   const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
 
@@ -150,7 +151,7 @@ export async function signInWithPhoneCredential(
  * 로그아웃
  */
 export async function signOut(): Promise<void> {
-  const auth = getAuthInstance();
+  const auth = getFirebaseAuth();
 
   try {
     await firebaseSignOut(auth);
@@ -163,34 +164,7 @@ export async function signOut(): Promise<void> {
 
 /**
  * 전화번호 형식 변환 유틸리티
+ * @deprecated phoneFormatUtils 사용 권장
  */
-export function formatPhoneNumberForDisplay(e164Number: string): string {
-  // +821012345678 → 010-1234-5678
-  if (!e164Number.startsWith('+82')) {
-    return e164Number;
-  }
-
-  const withoutPrefix = '0' + e164Number.slice(3);
-  if (withoutPrefix.length !== 11) {
-    return e164Number;
-  }
-
-  return `${withoutPrefix.slice(0, 3)}-${withoutPrefix.slice(3, 7)}-${withoutPrefix.slice(7, 11)}`;
-}
-
-export function formatPhoneNumberToE164(phoneNumber: string): string {
-  // 010-1234-5678 → +821012345678
-  const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
-
-  if (
-    !cleanNumber.startsWith(PHONE_VALIDATION.KOREAN_PREFIX) ||
-    cleanNumber.length !== PHONE_VALIDATION.PHONE_LENGTH
-  ) {
-    throw new Error(AUTH_ERROR_MESSAGES.INVALID_PHONE_SHORT);
-  }
-
-  return `${PHONE_VALIDATION.COUNTRY_CODE}${cleanNumber.slice(1)}`;
-}
-
-// Re-export from config
-export { getAuthInstance } from './config';
+export const formatPhoneNumberForDisplay = phoneFormatUtils.toDisplay;
+export const formatPhoneNumberToE164 = phoneFormatUtils.toE164;

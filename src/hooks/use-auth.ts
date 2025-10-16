@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { getAuthInstance, getParticipantByFirebaseUid, signOut as firebaseSignOut } from '@/lib/firebase';
+import { getFirebaseAuth, getParticipantByFirebaseUid, signOut as firebaseSignOut } from '@/lib/firebase';
 import { Participant } from '@/types/database';
 import { logger } from '@/lib/logger';
 
@@ -26,7 +26,7 @@ export function useAuth() {
 
   // Firebase Auth 상태 변화 구독
   useEffect(() => {
-    const auth = getAuthInstance();
+    const auth = getFirebaseAuth();
 
     // onAuthStateChanged: Firebase가 자동으로 세션 상태 감지
     // - 페이지 로드 시

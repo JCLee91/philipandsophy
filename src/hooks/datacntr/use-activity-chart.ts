@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { DATACNTR_QUERY_CONFIG } from '@/constants/datacntr';
+import { fetchWithTokenRefresh } from '@/lib/auth-utils';
 import type { DailyActivity } from '@/types/datacntr';
 
 export function useActivityChart(days: number = DATACNTR_QUERY_CONFIG.DEFAULT_ACTIVITY_DAYS) {
@@ -15,14 +16,7 @@ export function useActivityChart(days: number = DATACNTR_QUERY_CONFIG.DEFAULT_AC
         throw new Error('로그인이 필요합니다');
       }
 
-      // Firebase Auth ID Token 가져오기 (forceRefresh: true로 항상 유효한 토큰 보장)
-      const idToken = await user.getIdToken(true);
-
-      const response = await fetch(`/api/datacntr/stats/activity?days=${days}`, {
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-        },
-      });
+      const response = await fetchWithTokenRefresh(`/api/datacntr/stats/activity?days=${days}`);
 
       if (!response.ok) {
         throw new Error('활동 지표 조회 실패');

@@ -1,14 +1,13 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { initializeFirebase } from '@/lib/firebase';
+import { User, onAuthStateChanged, signOut } from 'firebase/auth';
+import { initializeFirebase, getFirebaseAuth } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -26,7 +25,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const setupAuth = async () => {
       try {
         // Firebase 초기화 완료 대기
-        const { auth } = initializeFirebase();
+        initializeFirebase();
+        // 통합된 Auth 인스턴스 사용
+        const auth = getFirebaseAuth();
 
         // 컴포넌트가 언마운트되었으면 중단
         if (!mountedRef.current) return;
@@ -60,20 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
-    try {
-      const { auth } = initializeFirebase();
-      await signInWithEmailAndPassword(auth, email, password);
-      logger.info('로그인 성공', { email });
-    } catch (error) {
-      logger.error('로그인 실패:', error);
-      throw error;
-    }
-  };
-
   const logout = async () => {
     try {
-      const { auth } = initializeFirebase();
+      const auth = getFirebaseAuth();
       await signOut(auth);
       logger.info('로그아웃 성공');
     } catch (error) {
@@ -83,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getFirebaseAuth } from '@/lib/firebase';
 import { validateEmailDomain, ALLOWED_DOMAINS_TEXT } from '@/constants/auth';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 export default function DataCenterLoginPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, login } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState('');
@@ -37,7 +40,9 @@ export default function DataCenterLoginPage() {
     setIsLoggingIn(true);
 
     try {
-      await login(email, password);
+      const auth = getFirebaseAuth();
+      await signInWithEmailAndPassword(auth, email, password);
+      logger.info('로그인 성공', { email });
 
       toast({
         title: '로그인 성공',

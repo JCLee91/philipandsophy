@@ -220,7 +220,7 @@ export async function requireWebAppAdmin(
   }
 
   // 관리자 권한 체크
-  if (!user?.isAdmin && !user?.isAdministrator) {
+  if (!user?.isAdministrator) {
     logger.warn('관리자 권한 없음', { participantId: user?.id, name: user?.name });
     return {
       user: null,

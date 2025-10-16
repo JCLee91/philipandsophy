@@ -10,6 +10,7 @@ import { CARD_STYLES } from '@/constants/ui';
 import { logger } from '@/lib/logger';
 import { getAdminHeaders } from '@/lib/auth-utils';
 import { useAuth } from '@/hooks/use-auth';
+import { useIsAdminMode } from '@/contexts/ViewModeContext';
 import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-count';
 import { useTodaySubmissionCount } from '@/hooks/use-today-submission-count';
 import PageTransition from '@/components/PageTransition';
@@ -35,6 +36,7 @@ function MatchingPageContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
   const { currentUser, isLoading: sessionLoading } = useAuth();
+  const isAdminMode = useIsAdminMode();
   const { toast } = useToast();
   const { data: cohortParticipants = [], isLoading: participantsLoading, isFromCache } = useParticipantsByCohortRealtime(cohortId || undefined);
 
@@ -243,7 +245,7 @@ function MatchingPageContent() {
     return cohortParticipants
       .filter((participant) => {
         // 관리자 제외
-        if (participant.isAdmin || participant.isAdministrator) return false;
+        if (participant.isAdministrator) return false;
 
         // 매칭 결과가 있는 참가자만 포함 (어제 제출한 사람만)
         const assignment = currentResult.matching.assignments?.[participant.id];
@@ -299,11 +301,11 @@ function MatchingPageContent() {
         router.replace('/app');
         return;
       }
-      // 🔒 isAdmin + isAdministrator 이중 체크 (필드명 호환성)
-      if (!currentUser.isAdmin && !currentUser.isAdministrator) {
+      // 🔒 관리자 모드 체크
+      if (!isAdminMode) {
         toast({
           title: '접근 권한 없음',
-          description: '관리자만 접근할 수 있는 페이지입니다.',
+          description: '관리자 모드에서만 접근할 수 있는 페이지입니다.',
           variant: 'destructive',
         });
         router.replace(`/app/chat?cohort=${cohortId}`);
@@ -556,8 +558,8 @@ function MatchingPageContent() {
     );
   }
 
-  // 권한 없음
-  if ((!currentUser?.isAdmin && !currentUser?.isAdministrator) || !cohortId) {
+  // 관리자 모드가 아니거나 cohortId가 없으면 접근 불가
+  if (!isAdminMode || !cohortId) {
     return null;
   }
 

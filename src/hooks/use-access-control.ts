@@ -43,7 +43,7 @@ export function useAccessControl(): AccessControlResult {
 
   const userId = currentUser?.id;
   const isVerified = verifiedIds?.has(userId || '') ?? false;
-  const isAdmin = currentUser?.isAdmin === true || currentUser?.isAdministrator === true;
+  const isAdmin = currentUser?.isAdministrator === true;
   const isLocked = !isAdmin && !isVerified;
 
   const isSelf = (targetId: string) => userId === targetId;

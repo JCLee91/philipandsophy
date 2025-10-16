@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       });
 
       // 관리자 ID 수집
-      if (data.isAdmin || data.isAdministrator) {
+      if (data.isAdministrator) {
         adminIds.add(doc.id);
       }
     });

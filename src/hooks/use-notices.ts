@@ -131,10 +131,22 @@ export function useDeleteNotice() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Firebase Auth ID Token 가져오기
+      const { getFirebaseAuth } = await import('@/lib/firebase');
+      const auth = getFirebaseAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      const idToken = await user.getIdToken();
+
       const response = await fetch(`/api/notices/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
         },
       });
 

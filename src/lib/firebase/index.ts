@@ -19,7 +19,6 @@ export {
   initRecaptcha,
   sendSmsVerification,
   confirmSmsCode,
-  getAuthInstance,
   signOut,
 } from './auth';
 

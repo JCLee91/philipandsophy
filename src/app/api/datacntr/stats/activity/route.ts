@@ -3,7 +3,8 @@ import { requireAuthToken } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
-import { format, subDays } from 'date-fns';
+import { format, subDays, endOfDay } from 'date-fns';
+import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import type { DailyActivity } from '@/types/datacntr';
 
 export async function GET(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
       allParticipantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isAdmin || data.isAdministrator;
+          return data.isAdministrator === true;
         })
         .map((doc) => doc.id)
     );
@@ -55,17 +56,19 @@ export async function GET(request: NextRequest) {
     for (let i = 0; i < days; i++) {
       const date = subDays(now, i);
       const dateStr = format(date, 'yyyy-MM-dd');
+      // 그날의 마지막 시각 (23:59:59)까지 포함
+      const endOfDayDate = endOfDay(date);
 
       // 그날까지 푸시 허용한 참가자 수 (누적)
       const pushEnabledCount = allParticipantsSnapshot.docs.filter((doc) => {
         const data = doc.data();
         // 관리자 제외
-        if (data.isAdmin || data.isAdministrator) return false;
+        if (data.isAdministrator) return false;
         // 푸시 토큰 있음
         if (!data.pushToken) return false;
-        // 그날까지 가입한 참가자
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt._seconds * 1000);
-        return createdAt <= date;
+        // 그날까지 가입한 참가자 (그날 늦게 가입한 사용자도 포함)
+        const createdAt = safeTimestampToDate(data.createdAt);
+        return createdAt <= endOfDayDate;
       }).length;
 
       activityMap.set(dateStr, {
@@ -84,7 +87,7 @@ export async function GET(request: NextRequest) {
       // 관리자 인증 제외
       if (adminIds.has(data.participantId)) return;
 
-      const submittedAt = data.submittedAt?.toDate ? data.submittedAt.toDate() : new Date(data.submittedAt._seconds * 1000);
+      const submittedAt = safeTimestampToDate(data.submittedAt);
       const date = format(submittedAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
 

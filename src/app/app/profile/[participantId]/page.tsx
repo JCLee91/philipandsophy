@@ -146,7 +146,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const yesterdayMatchingDate = getYesterdayString();
 
   // 오늘의 추천 참가자 목록 (개별 매칭 기반)
-  // 임시: 오늘 날짜로 못 찾으면 어제 날짜도 확인 (날짜 키 혼란 대응)
+  // 오늘 매칭이 없으면 어제 매칭 데이터 사용 (매칭 생성 시간차 대응)
   const rawMatching = cohort?.dailyFeaturedParticipants?.[todayMatchingDate]
     || cohort?.dailyFeaturedParticipants?.[yesterdayMatchingDate];
   const todayMatching = useMemo(

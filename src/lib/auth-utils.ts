@@ -1,5 +1,6 @@
-import { getAuthInstance } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
+import { signOut } from 'firebase/auth';
 
 /**
  * Firebase ID Token을 가져옵니다.
@@ -8,7 +9,7 @@ import { logger } from '@/lib/logger';
  */
 export async function getFirebaseIdToken(): Promise<string | null> {
   try {
-    const auth = getAuthInstance();
+    const auth = getFirebaseAuth();
 
     // Firebase Auth 초기화 완료 대기 (새로고침 직후 race condition 방지)
     await auth.authStateReady();
@@ -51,4 +52,57 @@ export async function getAdminHeaders(
     'Authorization': `Bearer ${idToken}`,
     ...additionalHeaders,
   };
+}
+
+/**
+ * API 요청을 수행하고 토큰 만료 시 자동으로 재로그인 안내
+ *
+ * @param url - 요청 URL
+ * @param options - fetch options
+ * @returns Response 또는 null (재로그인 필요)
+ */
+export async function fetchWithTokenRefresh(
+  url: string,
+  options?: RequestInit
+): Promise<Response> {
+  const headers = await getAdminHeaders(options?.headers as Record<string, string>);
+
+  if (!headers) {
+    // 토큰이 없으면 로그인 페이지로 이동
+    if (typeof window !== 'undefined') {
+      window.location.href = '/datacntr/login';
+    }
+    throw new Error('인증이 필요합니다.');
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  // 토큰 만료 체크
+  if (response.status === 401) {
+    const data = await response.json();
+
+    if (data.code === 'TOKEN_EXPIRED') {
+      logger.warn('Token expired, signing out and redirecting to login');
+
+      // 로그아웃하고 로그인 페이지로 이동
+      try {
+        const auth = getFirebaseAuth();
+        await signOut(auth);
+      } catch (error) {
+        logger.error('Sign out failed:', error);
+      }
+
+      if (typeof window !== 'undefined') {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        window.location.href = '/datacntr/login';
+      }
+
+      throw new Error('세션이 만료되었습니다.');
+    }
+  }
+
+  return response;
 }

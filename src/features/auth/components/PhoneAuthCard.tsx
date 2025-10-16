@@ -17,6 +17,7 @@ import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 import { logger } from '@/lib/logger';
 import { appRoutes } from '@/lib/navigation';
 import { PHONE_VALIDATION, AUTH_ERROR_MESSAGES, STORAGE_KEYS, AUTH_TIMING } from '@/constants/auth';
+import { phoneFormatUtils } from '@/constants/phone-format';
 
 const LAST_PHONE_KEY = STORAGE_KEYS.LAST_PHONE;
 
@@ -39,7 +40,7 @@ export default function PhoneAuthCard() {
     try {
       const lastPhone = localStorage.getItem(LAST_PHONE_KEY);
       if (lastPhone) {
-        const formatted = formatPhoneNumber(lastPhone);
+        const formatted = phoneFormatUtils.formatAsTyping(lastPhone);
         setPhoneNumber(formatted);
       }
     } catch (error) {
@@ -92,22 +93,9 @@ export default function PhoneAuthCard() {
     };
   }, []);
 
-  // 전화번호 포맷팅
-  const formatPhoneNumber = (value: string) => {
-    const numbers = value.replace(/[^\d]/g, '');
-
-    if (numbers.length <= 3) {
-      return numbers;
-    } else if (numbers.length <= 7) {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
-    } else {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
-    }
-  };
-
   // 전화번호 입력 핸들러
   const handlePhoneChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
+    const formatted = phoneFormatUtils.formatAsTyping(e.target.value);
     setPhoneNumber(formatted);
     setError('');
   };
@@ -142,7 +130,7 @@ export default function PhoneAuthCard() {
     const numbers = pastedText.replace(/[^\d]/g, '');
 
     if (step === 'phone' && numbers.length > 0) {
-      const formatted = formatPhoneNumber(numbers);
+      const formatted = phoneFormatUtils.formatAsTyping(numbers);
       setPhoneNumber(formatted);
     } else if (step === 'code' && numbers.length > 0) {
       setVerificationCode(numbers.slice(0, 6));

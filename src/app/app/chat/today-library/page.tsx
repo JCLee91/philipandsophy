@@ -47,7 +47,7 @@ function TodayLibraryContent() {
 
   // 오늘의 매칭 결과 (matchingDate 키로 조회, 없으면 submissionDate로 fallback)
   // 어제 제출분으로 오늘 매칭을 실행했기 때문에 matchingDate(오늘) 키로 저장됨
-  // 임시: 오늘 날짜로 못 찾으면 어제 날짜도 확인 (날짜 키 혼란 대응)
+  // 매칭 생성 시간차로 인해 어제 키로도 확인 필요
   const rawMatching = cohort?.dailyFeaturedParticipants?.[matchingDate]
     || cohort?.dailyFeaturedParticipants?.[submissionDate];
   const todayMatching = useMemo(() => {
