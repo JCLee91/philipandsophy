@@ -41,7 +41,7 @@ export default function MessageGroup({
 }: MessageGroupProps) {
   const isMine = senderId === currentUserId;
   const isFromAdminTeam = otherUser.id === 'admin-team';
-  const displayName = otherUser.isAdmin ? APP_CONSTANTS.ADMIN_NAME : getFirstName(otherUser.name);
+  const displayName = otherUser.isAdministrator ? APP_CONSTANTS.ADMIN_NAME : getFirstName(otherUser.name);
 
   // 아바타 이미지 URL
   const avatarSrc = isMine

@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from './use-session';
+import { useAuth } from './use-auth';
 import { useVerifiedToday } from '@/stores/verified-today';
 
 /**
@@ -38,12 +38,12 @@ export interface AccessControlResult {
  * const canEdit = isSelf(participantId) || isAdmin;
  */
 export function useAccessControl(): AccessControlResult {
-  const { currentUser } = useSession();
+  const { currentUser } = useAuth();
   const { data: verifiedIds } = useVerifiedToday();
 
   const userId = currentUser?.id;
   const isVerified = verifiedIds?.has(userId || '') ?? false;
-  const isAdmin = currentUser?.isAdmin === true || currentUser?.isAdministrator === true;
+  const isAdmin = currentUser?.isAdministrator === true;
   const isLocked = !isAdmin && !isVerified;
 
   const isSelf = (targetId: string) => userId === targetId;

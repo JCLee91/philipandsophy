@@ -8,7 +8,9 @@ import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { CARD_STYLES } from '@/constants/ui';
 import { logger } from '@/lib/logger';
-import { useSession } from '@/hooks/use-session';
+import { getAdminHeaders } from '@/lib/auth-utils';
+import { useAuth } from '@/hooks/use-auth';
+import { useIsAdminMode } from '@/contexts/ViewModeContext';
 import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-count';
 import { useTodaySubmissionCount } from '@/hooks/use-today-submission-count';
 import PageTransition from '@/components/PageTransition';
@@ -33,7 +35,8 @@ function MatchingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
-  const { currentUser, isLoading: sessionLoading, sessionToken } = useSession();
+  const { currentUser, isLoading: sessionLoading } = useAuth();
+  const isAdminMode = useIsAdminMode();
   const { toast } = useToast();
   const { data: cohortParticipants = [], isLoading: participantsLoading, isFromCache } = useParticipantsByCohortRealtime(cohortId || undefined);
 
@@ -242,7 +245,7 @@ function MatchingPageContent() {
     return cohortParticipants
       .filter((participant) => {
         // 관리자 제외
-        if (participant.isAdmin || participant.isAdministrator) return false;
+        if (participant.isAdministrator) return false;
 
         // 매칭 결과가 있는 참가자만 포함 (어제 제출한 사람만)
         const assignment = currentResult.matching.assignments?.[participant.id];
@@ -298,11 +301,11 @@ function MatchingPageContent() {
         router.replace('/app');
         return;
       }
-      // 🔒 isAdmin + isAdministrator 이중 체크 (필드명 호환성)
-      if (!currentUser.isAdmin && !currentUser.isAdministrator) {
+      // 🔒 관리자 모드 체크
+      if (!isAdminMode) {
         toast({
           title: '접근 권한 없음',
-          description: '관리자만 접근할 수 있는 페이지입니다.',
+          description: '관리자 모드에서만 접근할 수 있는 페이지입니다.',
           variant: 'destructive',
         });
         router.replace(`/app/chat?cohort=${cohortId}`);
@@ -317,15 +320,17 @@ function MatchingPageContent() {
 
   // 기존 매칭 결과 로드 (오늘 날짜 기준 - Firestore에 저장된 키)
   const fetchMatchingResult = useCallback(async () => {
-    if (!cohortId || !sessionToken || hasFetchedInitialResult) return;
+    if (!cohortId || hasFetchedInitialResult) return;
     try {
+      const headers = await getAdminHeaders();
+      if (!headers) {
+        logger.error('인증 실패: ID Token을 가져올 수 없습니다.');
+        return;
+      }
+
       const response = await fetch(
         `/api/admin/matching?cohortId=${cohortId}&date=${todayDate}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${sessionToken}`,
-          },
-        }
+        { headers }
       );
 
       // ℹ️ 404는 정상 응답 - 아직 매칭을 실행하지 않았을 때
@@ -344,7 +349,7 @@ function MatchingPageContent() {
       logger.error('매칭 결과 로드 실패', error);
       setHasFetchedInitialResult(true);
     }
-  }, [cohortId, todayDate, sessionToken, hasFetchedInitialResult]);
+  }, [cohortId, todayDate, hasFetchedInitialResult]);
 
   // ✅ 확정 결과가 localStorage에 없을 때만 API 호출
   useEffect(() => {
@@ -365,7 +370,7 @@ function MatchingPageContent() {
     // Race condition 방지: 이미 처리중이면 중복 실행 차단
     if (isProcessing) return;
 
-    if (!cohortId || !sessionToken) return;
+    if (!cohortId) return;
 
     setIsProcessing(true);
     setError(null);
@@ -379,12 +384,14 @@ function MatchingPageContent() {
     }
 
     try {
+      const headers = await getAdminHeaders();
+      if (!headers) {
+        throw new Error('인증 실패: 로그인 상태를 확인해주세요.');
+      }
+
       const response = await fetch('/api/admin/matching/preview', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
+        headers,
         body: JSON.stringify({ cohortId }),
       });
 
@@ -447,18 +454,20 @@ function MatchingPageContent() {
 
   // 2단계: 매칭 결과 최종 확인 및 저장
   const handleConfirmMatching = async () => {
-    if (!cohortId || !sessionToken || !previewResult) return;
+    if (!cohortId || !previewResult) return;
 
     setIsProcessing(true);
     setError(null);
 
     try {
+      const headers = await getAdminHeaders();
+      if (!headers) {
+        throw new Error('인증 실패: 로그인 상태를 확인해주세요.');
+      }
+
       const response = await fetch('/api/admin/matching/confirm', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
+        headers,
         body: JSON.stringify({
           cohortId,
           matching: previewResult.matching,
@@ -549,8 +558,8 @@ function MatchingPageContent() {
     );
   }
 
-  // 권한 없음
-  if ((!currentUser?.isAdmin && !currentUser?.isAdministrator) || !cohortId) {
+  // 관리자 모드가 아니거나 cohortId가 없으면 접근 불가
+  if (!isAdminMode || !cohortId) {
     return null;
   }
 

@@ -19,7 +19,6 @@ import {
 import { getDb } from './client';
 import { logger } from '@/lib/logger';
 import { Participant, BookHistoryEntry, COLLECTIONS } from '@/types/database';
-import { SESSION_CONFIG } from '@/constants/session';
 
 /**
  * Participant CRUD Operations
@@ -88,6 +87,51 @@ export async function getParticipantByPhoneNumber(
     id: doc.id,
     ...doc.data(),
   } as Participant;
+}
+
+/**
+ * 참가자 조회 (Firebase UID로)
+ *
+ * Firebase Phone Auth로 로그인한 사용자의 UID로 참가자 조회
+ */
+export async function getParticipantByFirebaseUid(
+  firebaseUid: string
+): Promise<Participant | null> {
+  const db = getDb();
+  const q = query(
+    collection(db, COLLECTIONS.PARTICIPANTS),
+    where('firebaseUid', '==', firebaseUid)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return null;
+  }
+
+  const doc = querySnapshot.docs[0];
+  return {
+    id: doc.id,
+    ...doc.data(),
+  } as Participant;
+}
+
+/**
+ * 참가자에 Firebase UID 연결
+ *
+ * 기존 참가자 계정을 Firebase Auth와 연결
+ */
+export async function linkFirebaseUid(
+  participantId: string,
+  firebaseUid: string
+): Promise<void> {
+  const db = getDb();
+  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
+
+  await updateDoc(docRef, {
+    firebaseUid,
+    updatedAt: Timestamp.now(),
+  });
 }
 
 /**
@@ -288,144 +332,4 @@ export async function updateParticipantBookTitle(
   newBookTitle: string
 ): Promise<void> {
   return updateParticipantBookInfo(participantId, newBookTitle);
-}
-
-/**
- * 세션 토큰 생성 및 저장
- *
- * @param participantId - 참가자 ID
- * @returns 생성된 세션 토큰
- */
-export async function createSessionToken(participantId: string): Promise<string> {
-  const db = getDb();
-  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
-
-  // 세션 토큰 생성 (UUID 형식)
-  const sessionToken = crypto.randomUUID();
-
-  // 세션 만료 시간: 24시간 후
-  const sessionExpiry = Date.now() + SESSION_CONFIG.SESSION_DURATION;
-
-  await updateDoc(docRef, {
-    sessionToken,
-    sessionExpiry,
-    updatedAt: Timestamp.now(),
-  });
-
-  logger.info('세션 토큰 생성', { participantId, expiresIn: '24시간' });
-
-  return sessionToken;
-}
-
-/**
- * 세션 토큰으로 참가자 조회 및 검증
- *
- * 슬라이딩 윈도우 전략:
- * - 세션이 유효하면 참가자 정보 반환
- * - 남은 세션 시간이 12시간 미만이면 자동으로 24시간 연장
- * - 유예 시간(5분) 내에서는 세션 유지 후 연장
- * - 유예 시간 초과 시 세션 만료 처리
- *
- * @param sessionToken - 세션 토큰
- * @returns 유효한 참가자 정보 또는 null
- */
-export async function getParticipantBySessionToken(
-  sessionToken: string
-): Promise<Participant | null> {
-  const db = getDb();
-  const q = query(
-    collection(db, COLLECTIONS.PARTICIPANTS),
-    where('sessionToken', '==', sessionToken)
-  );
-
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
-    return null;
-  }
-
-  const docSnap = querySnapshot.docs[0];
-  const participant = {
-    id: docSnap.id,
-    ...docSnap.data(),
-  } as Participant;
-
-  const now = Date.now();
-  const sessionExpiry = participant.sessionExpiry;
-
-  // 세션 만료 확인
-  if (sessionExpiry && sessionExpiry < now) {
-    // 시계 오차 및 네트워크 지연을 고려한 유예 시간
-    const graceTimeRemaining = SESSION_CONFIG.GRACE_PERIOD - (now - sessionExpiry);
-
-    if (graceTimeRemaining <= 0) {
-      // 유예 시간 초과: 세션 만료
-      logger.info('세션 만료 (유예 시간 초과)', {
-        participantId: participant.id,
-        expiredAgo: Math.floor((now - sessionExpiry) / 1000 / 60) + '분'
-      });
-      await clearSessionToken(participant.id);
-      return null;
-    }
-
-    // 유예 시간 내: 세션 유지하고 자동 연장
-    logger.warn('세션 만료 임박 (유예 시간 내), 자동 연장', {
-      participantId: participant.id,
-      graceTimeRemaining: Math.floor(graceTimeRemaining / 1000) + '초'
-    });
-
-    // 유예 시간 내에서는 무조건 연장
-    const newExpiry = now + SESSION_CONFIG.SESSION_DURATION;
-    await updateDoc(doc(db, COLLECTIONS.PARTICIPANTS, participant.id), {
-      sessionExpiry: newExpiry,
-      updatedAt: Timestamp.now(),
-    });
-
-    // 반환값의 sessionExpiry도 업데이트
-    participant.sessionExpiry = newExpiry;
-    return participant;
-  }
-
-  // 세션이 아직 유효한 경우: 자동 연장 임계값 체크
-  if (sessionExpiry) {
-    const timeUntilExpiry = sessionExpiry - now;
-
-    // 남은 세션 시간이 12시간 미만이면 자동 연장
-    if (timeUntilExpiry < SESSION_CONFIG.AUTO_EXTEND_THRESHOLD) {
-      const hoursRemaining = Math.floor(timeUntilExpiry / 1000 / 60 / 60);
-
-      logger.info('세션 자동 연장', {
-        participantId: participant.id,
-        hoursRemaining: hoursRemaining + '시간',
-        extendedTo: '24시간'
-      });
-
-      const newExpiry = now + SESSION_CONFIG.SESSION_DURATION;
-      await updateDoc(doc(db, COLLECTIONS.PARTICIPANTS, participant.id), {
-        sessionExpiry: newExpiry,
-        updatedAt: Timestamp.now(),
-      });
-
-      // 반환값의 sessionExpiry도 업데이트
-      participant.sessionExpiry = newExpiry;
-    }
-  }
-
-  return participant;
-}
-
-/**
- * 세션 토큰 제거 (로그아웃)
- *
- * @param participantId - 참가자 ID
- */
-export async function clearSessionToken(participantId: string): Promise<void> {
-  const db = getDb();
-  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
-
-  await updateDoc(docRef, {
-    sessionToken: deleteField(),
-    sessionExpiry: deleteField(),
-    updatedAt: Timestamp.now(),
-  });
 }

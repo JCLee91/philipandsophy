@@ -13,7 +13,7 @@ import ProfileImageDialog from '@/components/ProfileImageDialog';
 // import MatchingReasonBanner from '@/components/MatchingReasonBanner'; // 논의 중인 기능
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { getInitials, formatShortDate } from '@/lib/utils';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
@@ -42,8 +42,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // today-library에서 submissionDate(어제)를 matchingDate 파라미터로 전달함
   const matchingDate = searchParams.get('matchingDate');
 
-  // 세션 기반 인증 (URL에서 userId 제거)
-  const { currentUser, isLoading: sessionLoading } = useSession();
+  // Firebase Auth 기반 인증
+  const { currentUser, isLoading: sessionLoading } = useAuth();
   const currentUserId = currentUser?.id;
 
   // 테마 결정 (similar: 비슷한 가치관 파란색, opposite: 반대 가치관 노란색)
@@ -146,7 +146,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const yesterdayMatchingDate = getYesterdayString();
 
   // 오늘의 추천 참가자 목록 (개별 매칭 기반)
-  // 임시: 오늘 날짜로 못 찾으면 어제 날짜도 확인 (날짜 키 혼란 대응)
+  // 오늘 매칭이 없으면 어제 매칭 데이터 사용 (매칭 생성 시간차 대응)
   const rawMatching = cohort?.dailyFeaturedParticipants?.[todayMatchingDate]
     || cohort?.dailyFeaturedParticipants?.[yesterdayMatchingDate];
   const todayMatching = useMemo(

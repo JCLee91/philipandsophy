@@ -50,7 +50,7 @@ export default function DirectMessageDialog({
 
   // 항상 참가자와 admin 간의 대화 (참가자 ID 기준)
   const conversationId = otherUser
-    ? currentUser?.isAdmin
+    ? currentUser?.isAdministrator
       ? getConversationId(otherUser.id)  // 관리자가 볼 때: 참가자 ID 사용
       : getConversationId(currentUserId)  // 참가자가 볼 때: 자신의 ID 사용
     : '';
@@ -97,7 +97,7 @@ export default function DirectMessageDialog({
       return;
     }
 
-    const userId = currentUser.isAdmin ? 'admin' : currentUserId;
+    const userId = currentUser.isAdministrator ? 'admin' : currentUserId;
     const hasUnread = messages.some((message) => !message.isRead && message.receiverId === userId);
 
     if (hasUnread) {
@@ -152,7 +152,7 @@ export default function DirectMessageDialog({
       await sendMessageMutation.mutateAsync({
         conversationId,
         senderId: currentUserId,
-        receiverId: currentUser.isAdmin ? otherUser.id : 'admin',  // 관리자가 보낼 때: 참가자에게, 참가자가 보낼 때: admin에게
+        receiverId: currentUser.isAdministrator ? otherUser.id : 'admin',  // 관리자가 보낼 때: 참가자에게, 참가자가 보낼 때: admin에게
         content: messageContent,
         imageUrl,
       });
@@ -181,8 +181,8 @@ export default function DirectMessageDialog({
   if (!otherUser) return null;
 
   // 참가자가 볼 때는 항상 "필립앤소피", 관리자가 볼 때는 참가자 이름
-  const displayName = currentUser?.isAdmin ? otherUser.name : APP_CONSTANTS.ADMIN_NAME;
-  const profileImageUrl = currentUser?.isAdmin
+  const displayName = currentUser?.isAdministrator ? otherUser.name : APP_CONSTANTS.ADMIN_NAME;
+  const profileImageUrl = currentUser?.isAdministrator
     ? (otherUser.profileImageCircle || otherUser.profileImage)
     : '/favicon.webp';
 
@@ -195,7 +195,7 @@ export default function DirectMessageDialog({
             <Avatar className="h-10 w-10">
               <AvatarImage src={profileImageUrl} alt={displayName} />
               <AvatarFallback>
-                {otherUser.isAdmin ? 'P&S' : displayName[0]}
+                {otherUser.isAdministrator ? 'P&S' : displayName[0]}
               </AvatarFallback>
             </Avatar>
             <div>

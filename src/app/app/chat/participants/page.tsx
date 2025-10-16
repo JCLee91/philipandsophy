@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UnifiedButton from '@/components/UnifiedButton';
 import { Check, MessageSquare, User, BookOpen, LogOut, MoreHorizontal } from 'lucide-react';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
@@ -24,6 +24,7 @@ import { getConversationId } from '@/lib/firebase/messages';
 import { appRoutes } from '@/lib/navigation';
 import { getInitials, getFirstName } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+import { SYSTEM_IDS } from '@/constants/app';
 import type { Participant } from '@/types/database';
 
 function ParticipantRow({
@@ -140,9 +141,9 @@ function ParticipantsPageContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
 
-  const { currentUser, isLoading: sessionLoading, logout } = useSession();
+  const { currentUser, isLoading: sessionLoading, logout } = useAuth();
   const currentUserId = currentUser?.id || '';
-  const isAdmin = currentUser?.isAdmin === true;
+  const isAdmin = currentUser?.isAdministrator === true;
 
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
   const { data: verifiedIds } = useVerifiedToday();
@@ -152,10 +153,10 @@ function ParticipantsPageContent() {
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  // 참가자 정렬: 관리자 제외, 현재 사용자 최상단, 나머지는 원래 순서
+  // 참가자 정렬: admin 계정 제외, 현재 사용자 최상단, 나머지는 원래 순서
   const sortedParticipants = useMemo(() => {
     return [...participants]
-      .filter((p) => !p.isAdmin) // 관리자 제외
+      .filter((p) => p.id !== SYSTEM_IDS.ADMIN) // admin 계정만 제외
       .sort((a, b) => {
         // 현재 사용자를 맨 위로
         if (a.id === currentUserId) return -1;

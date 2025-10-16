@@ -6,15 +6,17 @@ import { BookOpen } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { scrollToBottom, formatDate, formatTime } from '@/lib/utils';
 import { getTodayString } from '@/lib/date-utils';
-import { APP_CONSTANTS } from '@/constants/app';
+import { APP_CONSTANTS, SYSTEM_IDS } from '@/constants/app';
 import { uploadNoticeImage } from '@/lib/firebase/storage';
 import { Notice, Participant } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
+import { AUTH_TIMING } from '@/constants/auth';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
-import { useSession } from '@/hooks/use-session';
+import { useAuth } from '@/hooks/use-auth';
 import { useIsIosStandalone } from '@/hooks/use-standalone-ios';
+import { useIsAdminMode } from '@/contexts/ViewModeContext';
 import { useSubmissionsByParticipant } from '@/hooks/use-submissions';
 import { HeaderSkeleton, NoticeListSkeleton, FooterActionsSkeleton } from '@/components/ChatPageSkeleton';
 import Header from '@/components/Header';
@@ -61,8 +63,8 @@ function ChatPageContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
 
-  // 세션 기반 인증 (URL에서 userId 제거)
-  const { currentUser, isLoading: sessionLoading, sessionToken } = useSession();
+  // Firebase Auth 기반 인증
+  const { currentUser, isLoading: sessionLoading } = useAuth();
   const currentUserId = currentUser?.id;
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
@@ -89,7 +91,9 @@ function ChatPageContent() {
   // Firebase hooks for data fetching
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
-  const isAdmin = currentUser?.isAdmin || false;
+
+  // 관리자 모드 확인 (ViewModeContext가 DB의 isAdministrator와 UI 모드 상태를 모두 고려)
+  const isAdmin = useIsAdminMode();
 
   // 오늘 제출 여부 확인
   const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);
@@ -103,7 +107,7 @@ function ChatPageContent() {
   const createNoticeMutation = useCreateNotice();
   const updateNoticeMutation = useUpdateNotice();
   const togglePinMutation = useToggleNoticePin();
-  const deleteNoticeMutation = useDeleteNotice(sessionToken);
+  const deleteNoticeMutation = useDeleteNotice();
 
   // localStorage에서 접힌 공지 목록 로드 (클라이언트 전용, SSR 호환)
   useEffect(() => {
@@ -162,7 +166,7 @@ function ChatPageContent() {
       name: APP_CONSTANTS.ADMIN_NAME,
       phoneNumber: '01000000001',
       profileImage: '/favicon.webp',
-      isAdmin: true,
+      isAdministrator: true,
       createdAt: new Date() as any,
       updatedAt: new Date() as any,
     };
@@ -198,8 +202,8 @@ function ChatPageContent() {
       requestAnimationFrame(() => {
         router.push(appRoutes.participants(cohortId));
 
-        // 500ms 후 다시 활성화 (navigation 완료 시간)
-        setTimeout(() => setIsNavigating(false), 500);
+        // Navigation 완료 후 다시 활성화
+        setTimeout(() => setIsNavigating(false), AUTH_TIMING.NAVIGATION_COOLDOWN);
       });
       return;
     }
@@ -208,8 +212,11 @@ function ChatPageContent() {
     setParticipantsOpen(true);
   }, [isIosStandalone, cohortId, router, isNavigating]);
 
-  // 로딩 중: 스켈레톤 UI 표시
-  if (sessionLoading || cohortLoading) {
+  // 로딩 중 또는 인증 실패 (리다이렉트 전): 스켈레톤 UI 표시
+  // sessionLoading: Firebase Auth 상태 확인 중
+  // cohortLoading: Cohort 데이터 로딩 중
+  // !currentUser || !cohort || !cohortId: 인증 실패 (useEffect가 리다이렉트 처리 중)
+  if (sessionLoading || cohortLoading || !currentUser || !cohort || !cohortId) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
@@ -219,11 +226,6 @@ function ChatPageContent() {
         </div>
       </PageTransition>
     );
-  }
-
-  // 세션 or cohort 없음 (useEffect에서 리다이렉트 처리됨)
-  if (!currentUser || !cohort || !cohortId) {
-    return null;
   }
 
   const handleWriteNotice = async (imageFile: File | null) => {
@@ -247,8 +249,8 @@ function ChatPageContent() {
 
       setNewNoticeContent('');
       setWriteDialogOpen(false);
-      // 공지 작성 후: 부드럽게 스크롤
-      scrollToBottom(undefined, { behavior: 'smooth', delay: 100 });
+      // 공지 작성 후: 부드럽게 스크롤 (DOM 렌더링 대기)
+      scrollToBottom(undefined, { behavior: 'smooth', delay: AUTH_TIMING.SCROLL_DELAY });
     } catch (error) {
       logger.error('공지 작성 실패:', error);
     } finally {
@@ -345,7 +347,7 @@ function ChatPageContent() {
         />
 
         <ParticipantsList
-          participants={participants.filter((p) => !p.isAdmin)}
+          participants={participants.filter((p) => p.id !== SYSTEM_IDS.ADMIN)}
           currentUserId={currentUserId || ''}
           open={participantsOpen}
           onOpenChange={setParticipantsOpen}
@@ -457,7 +459,7 @@ function ChatPageContent() {
       {/* 하단 네비게이션 바 */}
       <FooterActions>
         {isAdmin ? (
-          /* 관리자용 버튼 */
+          /* 관리자 모드일 때 버튼 */
           <UnifiedButton
             variant="primary"
             onClick={() => router.push(`/app/admin/matching?cohort=${cohortId}`)}
@@ -467,7 +469,7 @@ function ChatPageContent() {
             매칭 관리
           </UnifiedButton>
         ) : (
-          /* 일반 사용자용 버튼 */
+          /* 참가자 모드일 때 버튼 */
           <div className="grid grid-cols-2 gap-2">
             {/* 독서 인증하기 버튼 */}
             <UnifiedButton

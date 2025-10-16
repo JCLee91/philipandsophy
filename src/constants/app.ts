@@ -11,4 +11,10 @@ export const APP_CONSTANTS = {
 
   // LocalStorage Keys
   STORAGE_KEY_COLLAPSED_NOTICES: 'pns-collapsed-notices',
+  STORAGE_KEY_VIEW_MODE: 'pns-view-mode',
+} as const;
+
+// System IDs
+export const SYSTEM_IDS = {
+  ADMIN: 'admin',
 } as const;

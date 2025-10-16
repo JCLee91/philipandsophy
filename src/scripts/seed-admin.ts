@@ -49,7 +49,7 @@ const cohortsData = [
 ];
 
 const participantsData = [
-  { id: 'admin', cohortId: '1', name: '필립앤소피', phoneNumber: '01000000001', profileImage: '/favicon.webp', isAdmin: true },
+  { id: 'admin', cohortId: '1', name: '필립앤소피', phoneNumber: '01000000001', profileImage: '/favicon.webp', isAdministrator: true },
 ];
 
 const noticesData: any[] = [];

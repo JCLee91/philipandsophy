@@ -65,7 +65,7 @@ const participantsData = [
     name: '운영자',
     phoneNumber: '01000000001',
     profileImage: '/pns-logo.webp',
-    isAdmin: true,
+    isAdministrator: true,
   },
   // 1기 참가자들
   {

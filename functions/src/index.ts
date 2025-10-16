@@ -6,12 +6,16 @@
  * 2. onNoticeCreated - 공지사항 작성 시
  * 3. sendMatchingNotifications - 매칭 결과 알림 (HTTP 함수)
  * 4. scheduledMatchingPreview - 매일 오전 5시 자동 매칭 프리뷰 (Scheduled 함수)
+ *
+ * Auth Triggers:
+ * 5. beforeUserCreated - 회원가입 전 도메인 검증 (Data Center용)
  */
 
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { onRequest } from "firebase-functions/v2/https";
+import { onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { beforeUserCreated } from "firebase-functions/v2/identity";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
 import { logger } from "./lib/logger";
@@ -21,6 +25,11 @@ import {
   NOTIFICATION_ROUTES,
   NOTIFICATION_TYPES,
 } from "./constants/notifications";
+import {
+  ALLOWED_EMAIL_DOMAINS,
+  ALLOWED_PHONE_COUNTRY_CODES,
+  ALLOWED_DOMAINS_TEXT,
+} from "./constants/auth";
 
 // Global options for all functions
 setGlobalOptions({
@@ -480,3 +489,99 @@ export const scheduledMatchingPreview = onSchedule(
     }
   }
 );
+
+/**
+ * 5. 회원가입 전 도메인 검증 (Data Center용)
+ *
+ * beforeUserCreated Auth Trigger
+ * - 허용된 이메일 도메인만 회원가입 가능
+ * - 허용된 전화번호 국가 코드만 가능
+ */
+export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
+  const user = event.data;
+
+  // 데이터 검증
+  if (!user) {
+    logger.error("beforeUserCreated: No user data");
+    throw new HttpsError("invalid-argument", "사용자 데이터가 없습니다.");
+  }
+
+  logger.info("beforeUserCreated triggered", {
+    uid: user.uid,
+    email: user.email,
+    phoneNumber: user.phoneNumber,
+  });
+
+  // 이메일 또는 전화번호 필수 (익명 로그인 차단)
+  if (!user.email && !user.phoneNumber) {
+    logger.error("No email or phone number provided", {
+      uid: user.uid,
+      providerData: user.providerData,
+    });
+    throw new HttpsError(
+      "invalid-argument",
+      "이메일 또는 전화번호가 필요합니다."
+    );
+  }
+
+  // 이메일 가입인 경우 - 도메인 검증
+  if (user.email) {
+    const emailDomain = user.email.split("@")[1]?.toLowerCase();
+
+    if (!emailDomain) {
+      logger.error("Invalid email format", { email: user.email });
+      throw new HttpsError(
+        "invalid-argument",
+        "이메일 형식이 올바르지 않습니다."
+      );
+    }
+
+    // Type-safe domain check
+    const isAllowedDomain = (ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(emailDomain);
+
+    if (!isAllowedDomain) {
+      logger.warn("Blocked signup attempt - invalid domain", {
+        email: user.email,
+        domain: emailDomain,
+        allowedDomains: ALLOWED_DOMAINS_TEXT,
+      });
+
+      throw new HttpsError(
+        "permission-denied",
+        `${emailDomain} 도메인은 가입이 허용되지 않습니다. 허용 도메인: ${ALLOWED_DOMAINS_TEXT}`
+      );
+    }
+
+    logger.info("Email domain validated", { email: user.email, domain: emailDomain });
+  }
+
+  // 전화번호 가입인 경우 - 국가 코드 검증
+  if (user.phoneNumber) {
+    const isAllowedCountry = ALLOWED_PHONE_COUNTRY_CODES.some(
+      (code) => user.phoneNumber?.startsWith(code)
+    );
+
+    if (!isAllowedCountry) {
+      logger.warn("Blocked signup attempt - invalid country code", {
+        phoneNumber: user.phoneNumber,
+        allowedCodes: ALLOWED_PHONE_COUNTRY_CODES.join(", "),
+      });
+
+      throw new HttpsError(
+        "permission-denied",
+        `허용되지 않은 국가의 전화번호입니다. 허용 국가 코드: ${ALLOWED_PHONE_COUNTRY_CODES.join(", ")}`
+      );
+    }
+
+    logger.info("Phone country code validated", { phoneNumber: user.phoneNumber });
+  }
+
+  // 검증 통과
+  logger.info("✅ User creation allowed", {
+    uid: user.uid,
+    hasEmail: !!user.email,
+    hasPhone: !!user.phoneNumber,
+  });
+
+  return;
+});

@@ -84,16 +84,16 @@ export interface Participant {
   profileImage?: string; // 프로필 이미지 URL (큰 이미지, 프로필 상세용)
   profileImageCircle?: string; // 원형 프로필 이미지 URL (작은 아바타용)
   profileBookUrl?: string; // 프로필북 URL
-  isAdmin?: boolean; // 운영자 여부 (legacy)
-  isAdministrator?: boolean; // 관리자 여부 (최신 필드명)
+  isAdministrator?: boolean; // 관리자 여부
   occupation?: string; // 직업/하는 일
   bio?: string; // 한 줄 소개 (2줄 이내)
   currentBookTitle?: string; // 현재 읽고 있는 책 제목 (프로필북에 표시)
   currentBookAuthor?: string; // 현재 읽고 있는 책 저자 (자동 채움용)
   currentBookCoverUrl?: string; // 현재 읽고 있는 책 표지 URL (자동 채움용)
   bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
-  sessionToken?: string; // 세션 토큰 (로그인 세션 관리용)
-  sessionExpiry?: number; // 세션 만료 시간 (Unix timestamp, 밀리초)
+  firebaseUid?: string; // Firebase Auth UID (Phone Auth 연동용)
+  pushToken?: string; // 푸시 알림 토큰 (FCM)
+  lastActivityAt?: Timestamp; // 마지막 활동 시간 (데이터센터용)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }

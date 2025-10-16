@@ -1,53 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { COLLECTIONS } from '@/types/database';
-
-const SESSION_HEADER = 'x-session-token';
-
-async function resolveSession(sessionToken: string | null) {
-  if (!sessionToken) {
-    return null;
-  }
-
-  const db = getAdminDb();
-  const snapshot = await db
-    .collection(COLLECTIONS.PARTICIPANTS)
-    .where('sessionToken', '==', sessionToken)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    return null;
-  }
-
-  const doc = snapshot.docs[0];
-  const data = doc.data() as any;
-
-  const sessionExpiry = typeof data.sessionExpiry === 'number' ? data.sessionExpiry : null;
-  if (sessionExpiry && sessionExpiry < Date.now()) {
-    return null;
-  }
-
-  return {
-    id: doc.id,
-    isAdmin: data.isAdmin === true,
-  };
-}
+import { logger } from '@/lib/logger';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ noticeId: string }> }
 ) {
   try {
-    const sessionToken = request.headers.get(SESSION_HEADER) ?? request.cookies.get('pns-session')?.value ?? null;
-    const session = await resolveSession(sessionToken);
-
-    if (!session) {
-      return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
-    }
-
-    if (!session.isAdmin) {
-      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+    // Firebase Auth로 관리자 권한 검증
+    const { user, error } = await requireWebAppAdmin(request);
+    if (error) {
+      return error;
     }
 
     const { noticeId } = await params;
@@ -58,9 +23,15 @@ export async function DELETE(
     const db = getAdminDb();
     await db.collection(COLLECTIONS.NOTICES).doc(noticeId).delete();
 
+    logger.info('공지 삭제 성공', {
+      noticeId,
+      adminId: user.id,
+      adminName: user.name
+    });
+
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error('Failed to delete notice', error);
+    logger.error('Failed to delete notice', error);
     return NextResponse.json({ error: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }
