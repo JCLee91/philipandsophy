@@ -287,8 +287,8 @@ export const onNoticeCreated = onDocumentCreated(
       return;
     }
 
-    // Truncate long notice
-    const noticePreview = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
+    // Truncate long notice for body
+    const noticeBody = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
     // Send push notification to all participants
     const pushPromises = participantsSnapshot.docs.map(async (doc) => {
@@ -301,8 +301,8 @@ export const onNoticeCreated = onDocumentCreated(
 
       const success = await sendPushNotification(
         pushToken,
-        NOTIFICATION_CONFIG.BRAND_NAME,
-        NOTIFICATION_MESSAGES.NOTICE(noticePreview),
+        NOTIFICATION_MESSAGES.NOTICE_TITLE, // Title: "새로운 공지가 등록되었습니다"
+        noticeBody, // Body: 공지 내용
         NOTIFICATION_ROUTES.CHAT,
         NOTIFICATION_TYPES.NOTICE
       );
@@ -366,8 +366,8 @@ export const sendMatchingNotifications = onRequest(
 
         const success = await sendPushNotification(
           pushToken,
-          NOTIFICATION_CONFIG.BRAND_NAME,
-          NOTIFICATION_MESSAGES.MATCHING,
+          NOTIFICATION_MESSAGES.MATCHING_TITLE, // Title: "오늘의 프로필북이 도착했습니다"
+          "새롭게 도착한 참가자들의 프로필 북을 확인해보세요", // Body: 설명
           NOTIFICATION_ROUTES.TODAY_LIBRARY,
           NOTIFICATION_TYPES.MATCHING
         );

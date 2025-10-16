@@ -19,11 +19,11 @@ export const NOTIFICATION_CONFIG = {
 } as const;
 
 export const NOTIFICATION_MESSAGES = {
-  /** Notice notification */
-  NOTICE: (preview: string) => `📢 ${preview}`,
+  /** Notice notification title */
+  NOTICE_TITLE: "새로운 공지가 등록되었습니다",
 
-  /** Matching result notification */
-  MATCHING: "📚 오늘의 프로필북이 도착했어요",
+  /** Matching result notification title */
+  MATCHING_TITLE: "오늘의 프로필북이 도착했습니다",
 } as const;
 
 export const NOTIFICATION_ROUTES = {
