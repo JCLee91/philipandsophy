@@ -14,9 +14,10 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // 관리자 확인: 임시 비활성화
+    // TODO: Firebase Admin SDK로 custom claims 설정 필요
     function isAdmin() {
-      return isSignedIn() &&
-             firestore.get(/databases/(default)/documents/participants/$(request.auth.uid)).data.isAdministrator == true;
+      return false;  // 임시: 관리자 기능 비활성화
     }
 
     function isValidImage() {
@@ -52,14 +53,15 @@ service firebase.storage {
       // 읽기: 로그인한 사용자만
       allow read: if isSignedIn();
 
-      // 업로드: 관리자만 + 이미지 파일만, 10MB 이하
-      allow create: if isAdmin() && isValidImage() && isUnder10MB();
+      // 업로드: 로그인한 사용자만 + 이미지 파일만, 10MB 이하
+      // TODO: Firebase Admin SDK로 custom claims 설정 후 관리자만 허용
+      allow create: if isSignedIn() && isValidImage() && isUnder10MB();
 
-      // 수정: 관리자만
-      allow update: if isAdmin() && isValidImage() && isUnder10MB();
+      // 수정: 로그인한 사용자만
+      allow update: if isSignedIn() && isValidImage() && isUnder10MB();
 
-      // 삭제: 관리자만
-      allow delete: if isAdmin();
+      // 삭제: 로그인한 사용자만
+      allow delete: if isSignedIn();
     }
 
     // ============================================

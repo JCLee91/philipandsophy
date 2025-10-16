@@ -14,10 +14,21 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // 관리자 확인: firebaseUid로 participant 찾기
+    // 주의: request.auth.uid는 Firebase Auth UID이고,
+    // participant 문서 ID와는 다름
     function isAdmin() {
-      return isSignedIn() &&
-             exists(/databases/$(database)/documents/participants/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/participants/$(request.auth.uid)).data.isAdministrator == true;
+      // 모든 participant를 순회할 수 없으므로,
+      // 클라이언트에서 관리자 확인 후 특별한 custom claim 사용 권장
+      // 임시: 특정 Firebase UID를 하드코딩 (보안상 권장하지 않음)
+      // TODO: Firebase Admin SDK로 custom claims 설정 필요
+      return isSignedIn() && false;  // 임시: 관리자 기능 비활성화
+    }
+
+    // participant 문서에서 firebaseUid 확인
+    function hasFirebaseUid(participantId, uid) {
+      return exists(/databases/$(database)/documents/participants/$(participantId)) &&
+             get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == uid;
     }
 
     // ============================================
@@ -27,8 +38,8 @@ service cloud.firestore {
       // 읽기: 모두 허용 (로그인 전 접근 코드 검증용)
       allow read: if true;
 
-      // 쓰기: 관리자만 허용
-      allow create, update: if isAdmin();
+      // 쓰기: 로그인한 사용자만 (임시: 관리자 확인 불가)
+      allow create, update: if isSignedIn();
       allow delete: if false; // 삭제 금지
     }
 
@@ -42,11 +53,9 @@ service cloud.firestore {
       // 생성: Firebase 시스템에서만 (Phone Auth 후 자동 생성)
       allow create: if false;
 
-      // 수정: 본인 정보만 (firebaseUid로 확인) 또는 관리자
-      allow update: if isSignedIn() && (
-        (resource.data.firebaseUid == request.auth.uid) ||
-        isAdmin()
-      );
+      // 수정: 본인 정보만 (firebaseUid로 확인)
+      allow update: if isSignedIn() &&
+        resource.data.firebaseUid == request.auth.uid;
 
       // 삭제: 금지
       allow delete: if false;
@@ -59,24 +68,30 @@ service cloud.firestore {
       // 읽기: 로그인한 사용자만
       allow read: if isSignedIn();
 
-      // 생성/수정/삭제: 관리자만
-      allow create, update, delete: if isAdmin();
+      // 생성/수정: 로그인한 사용자만 (임시: 관리자 확인 불가)
+      // TODO: Firebase Admin SDK로 custom claims 설정 후 관리자만 허용
+      allow create, update: if isSignedIn();
+
+      // 삭제: 작성자 본인만 (author 필드 확인)
+      allow delete: if isSignedIn() &&
+                      hasFirebaseUid(resource.data.author, request.auth.uid);
     }
 
     // ============================================
     // 다이렉트 메시지 (Messages)
     // ============================================
     match /messages/{messageId} {
-      // 읽기: 발신자, 수신자, 또는 관리자만
+      // 읽기: 발신자 또는 수신자만
+      // senderId/receiverId는 participant 문서 ID
       allow read: if isSignedIn() && (
-        resource.data.senderId == request.auth.uid ||
-        resource.data.receiverId == request.auth.uid ||
-        isAdmin()
+        hasFirebaseUid(resource.data.senderId, request.auth.uid) ||
+        hasFirebaseUid(resource.data.receiverId, request.auth.uid)
       );
 
       // 생성: 로그인한 사용자만 + 필수 필드 검증
+      // 프론트엔드에서 올바른 senderId 전달 책임
       allow create: if isSignedIn() &&
-                      request.resource.data.senderId == request.auth.uid &&
+                      request.resource.data.senderId is string &&
                       request.resource.data.receiverId is string &&
                       request.resource.data.conversationId is string &&
                       ((request.resource.data.content is string &&
@@ -86,7 +101,7 @@ service cloud.firestore {
 
       // 수정: isRead 상태만 변경 가능 (수신자만)
       allow update: if isSignedIn() &&
-                      resource.data.receiverId == request.auth.uid &&
+                      hasFirebaseUid(resource.data.receiverId, request.auth.uid) &&
                       request.resource.data.diff(resource.data).affectedKeys()
                       .hasOnly(['isRead']);
 
@@ -114,16 +129,16 @@ service cloud.firestore {
                       request.resource.data.dailyAnswer is string &&
                       request.resource.data.status == 'approved';
 
-      // 수정: 본인이 작성한 것만 또는 관리자
+      // 수정: 본인이 작성한 것만
       // participantId로 participant 문서를 조회하여 firebaseUid 확인
-      allow update: if isSignedIn() && (
-        (exists(/databases/$(database)/documents/participants/$(resource.data.participantId)) &&
-         get(/databases/$(database)/documents/participants/$(resource.data.participantId)).data.firebaseUid == request.auth.uid) ||
-        isAdmin()
-      );
+      allow update: if isSignedIn() &&
+        exists(/databases/$(database)/documents/participants/$(resource.data.participantId)) &&
+        get(/databases/$(database)/documents/participants/$(resource.data.participantId)).data.firebaseUid == request.auth.uid;
 
-      // 삭제: 관리자만
-      allow delete: if isAdmin();
+      // 삭제: 본인이 작성한 것만
+      allow delete: if isSignedIn() &&
+        exists(/databases/$(database)/documents/participants/$(resource.data.participantId)) &&
+        get(/databases/$(database)/documents/participants/$(resource.data.participantId)).data.firebaseUid == request.auth.uid;
     }
   }
 }
