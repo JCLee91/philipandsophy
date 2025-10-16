@@ -8,7 +8,7 @@ import {
   persistentMultipleTabManager,
 } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { firebaseConfig } from './config';
 import { logger } from '@/lib/logger';
 
@@ -58,6 +58,18 @@ export function initializeFirebase() {
 
     storage = getStorage(app);
     auth = getAuth(app);
+
+    // PWA를 위한 명시적 persistence 설정
+    // browserLocalPersistence: localStorage 사용 (기본값)
+    // 브라우저를 닫아도 로그인 유지
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => {
+        logger.info('Firebase Auth persistence 설정 완료 (localStorage)');
+      })
+      .catch((error) => {
+        logger.warn('Firebase Auth persistence 설정 실패 (기본값 사용):', error);
+      });
+
     initialized = true;
 
     return { app, db, storage, auth };
@@ -72,6 +84,13 @@ export function initializeFirebase() {
         db = initializeFirestore(app, {});
         storage = getStorage(app);
         auth = getAuth(app);
+
+        // Fallback에서도 persistence 설정
+        setPersistence(auth, browserLocalPersistence)
+          .catch((error) => {
+            logger.warn('Fallback persistence 설정 실패:', error);
+          });
+
         initialized = true;
         logger.info('기존 Firebase 앱 재사용');
         return { app, db, storage, auth };
