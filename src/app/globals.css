@@ -441,3 +441,10 @@
     }
   }
 }
+
+/* reCAPTCHA 배지 숨기기 */
+/* 주의: display: none을 사용하면 reCAPTCHA가 작동하지 않음! */
+/* Google 정책에 따라 배지를 숨길 때는 법적 고지문 필수 */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
