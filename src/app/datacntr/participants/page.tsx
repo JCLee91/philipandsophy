@@ -114,13 +114,21 @@ export default function ParticipantsPage() {
 
         // Timestamp 타입 처리 (createdAt)
         if (sortKey === 'createdAt') {
-          // Firebase Timestamp 객체 직접 비교
-          const aTime = typeof aValue === 'object' && aValue !== null && 'seconds' in aValue
-            ? (aValue as any).seconds
-            : 0;
-          const bTime = typeof bValue === 'object' && bValue !== null && 'seconds' in bValue
-            ? (bValue as any).seconds
-            : 0;
+          // Firebase Timestamp 객체 직접 비교 (Client SDK: seconds, Admin SDK: _seconds)
+          const getTimestamp = (val: any): number => {
+            if (!val || typeof val !== 'object') return 0;
+
+            // Client SDK Timestamp: { seconds, nanoseconds }
+            if ('seconds' in val) return val.seconds;
+
+            // Admin SDK Timestamp: { _seconds, _nanoseconds }
+            if ('_seconds' in val) return val._seconds;
+
+            return 0;
+          };
+
+          const aTime = getTimestamp(aValue);
+          const bTime = getTimestamp(bValue);
 
           return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
         }
