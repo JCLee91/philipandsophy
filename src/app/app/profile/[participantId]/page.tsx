@@ -93,7 +93,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   );
 
   // 접근 제어
-  const { isSelf: checkIsSelf, isAdmin } = useAccessControl();
+  const { isSelf: checkIsSelf, isAdmin, isVerified: isVerifiedToday } = useAccessControl();
 
   const preferredMatchingDate = useMemo(() => {
     if (!matchingDate) return undefined;
@@ -223,7 +223,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   }, [viewerAssignment, isFeatured, participantId]);
 
   // 최종 접근 권한: 본인 OR 운영자 OR (매칭 날짜에 인증 완료 AND 추천 4명 중 하나)
-  const hasAccess = isSelf || isAdmin || (viewerHasAccessForDate && isFeatured);
+  const hasAccess = isSelf || isAdmin || (isVerifiedToday && viewerHasAccessForDate && isFeatured);
 
   // 로딩 상태
   if (sessionLoading || participantLoading || submissionsLoading || viewerSubmissionLoading) {
