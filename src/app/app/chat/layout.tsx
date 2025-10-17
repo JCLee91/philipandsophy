@@ -12,8 +12,11 @@ export default function ChatLayout({
   // ✅ AuthContext에서 participant 직접 가져오기 (localStorage 대신)
   const { participant } = useAuth();
 
-  // 푸시 알림 초기화 (participant.id 사용)
-  const { isSupported, permission } = usePushNotifications(participant?.id, true);
+  // 푸시 알림 초기화 (사용자가 명시적으로 활성화한 경우에만)
+  const { isSupported, permission } = usePushNotifications(
+    participant?.id,
+    participant?.pushNotificationEnabled ?? false
+  );
 
   return (
     <>

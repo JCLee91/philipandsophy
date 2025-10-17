@@ -94,7 +94,7 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
 
 /**
  * 코호트별 참가자 필터링 (비동기)
- * 🔒 순수 관리자(isAdmin=true) 제외, 참가자 겸 관리자(isAdministrator=true) 포함
+ * 🔒 슈퍼 관리자(isSuperAdmin=true) 제외, 일반 관리자(isAdministrator=true) 포함
  * onSnapshot 콜백 외부로 분리하여 메모리 누수 방지
  */
 async function filterByCohort(
@@ -117,9 +117,9 @@ async function filterByCohort(
     const participantsSnapshot = await getDocs(participantsQuery);
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      // 🔒 순수 관리자만 제외 (isAdmin=true)
-      // 참가자 겸 관리자(isAdministrator=true, isAdmin=false)는 매칭 대상이므로 포함
-      if (!data.isAdmin) {
+      // 🔒 슈퍼 관리자만 제외 (isSuperAdmin=true)
+      // 일반 관리자(isAdministrator=true)는 매칭 대상이므로 포함
+      if (!data.isSuperAdmin) {
         validParticipantIds.add(doc.id);
       }
     });

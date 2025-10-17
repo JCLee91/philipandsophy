@@ -105,9 +105,9 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // 관리자는 매칭에서 제외
-      if (participant.isAdmin || participant.isAdministrator) {
-        logger.info('관리자 참가자 매칭에서 제외', {
+      // 슈퍼 관리자만 매칭에서 제외 (일반 관리자는 매칭 대상 포함)
+      if (participant.isSuperAdmin) {
+        logger.info('슈퍼 관리자 매칭에서 제외', {
           participantId,
           name: participant.name,
         });
@@ -179,9 +179,8 @@ export async function POST(request: NextRequest) {
     const notSubmittedParticipants = allCohortParticipantsSnapshot.docs
       .filter(doc => {
         const data = doc.data() as ParticipantData;
-        // 관리자 제외 + 제출 안 한 사람만
-        return !submittedIds.has(doc.id) &&
-               !(data.isAdmin || data.isAdministrator);
+        // 슈퍼 관리자 제외 + 제출 안 한 사람만 (일반 관리자는 포함)
+        return !submittedIds.has(doc.id) && !data.isSuperAdmin;
       })
       .map(doc => ({
         id: doc.id,

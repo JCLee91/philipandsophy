@@ -41,10 +41,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .where('cohortId', '==', cohortId)
       .get();
 
-    // 관리자 제외 필터링
+    // 슈퍼 관리자 제외 필터링 (일반 관리자는 통계에 포함)
     const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !data.isAdmin && !data.isAdministrator;
+      return !data.isSuperAdmin;
     });
 
     // 각 참가자의 인증 횟수 조회 (관리자 제외)

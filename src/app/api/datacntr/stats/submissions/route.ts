@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const adminIds = new Set<string>();
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      if (data.isAdmin || data.isAdministrator) {
+      if (data.isSuperAdmin) {
         adminIds.add(doc.id);
       }
     });
