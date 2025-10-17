@@ -45,18 +45,15 @@ export function initializeFirebase() {
     // Safari Private Mode 대응: persistent cache 실패 시 메모리 캐시로 fallback
     try {
       db = initializeFirestore(app, {
-        databaseId: 'restored-20min-ago',
         localCache: persistentLocalCache({
           tabManager: persistentMultipleTabManager(),
         }),
-      });
+      }, 'restored-20min-ago');
       logger.info('Firestore initialized with database: restored-20min-ago, persistent cache and multi-tab sync');
     } catch (cacheError) {
       // Safari Private Mode or IndexedDB disabled
       logger.warn('Persistent cache 실패, 메모리 캐시 사용:', cacheError);
-      db = initializeFirestore(app, {
-        databaseId: 'restored-20min-ago',
-      });
+      db = initializeFirestore(app, {}, 'restored-20min-ago');
     }
 
     storage = getStorage(app);
@@ -84,9 +81,7 @@ export function initializeFirebase() {
       const apps = getApps();
       if (apps.length > 0) {
         app = apps[0];
-        db = initializeFirestore(app, {
-          databaseId: 'restored-20min-ago',
-        });
+        db = initializeFirestore(app, {}, 'restored-20min-ago');
         storage = getStorage(app);
         auth = getAuth(app);
 
