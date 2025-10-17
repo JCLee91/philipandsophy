@@ -125,25 +125,38 @@ export function NotificationToggle() {
       if (result === 'granted') {
         logger.info('Permission granted, initializing FCM...');
 
-        // 2. FCM 토큰 획득 및 저장
+        // 2. 즉시 UI 업데이트 (낙관적 업데이트)
+        setIsEnabled(true);
+        setIsLoading(false);
+
+        // 3. 백그라운드에서 FCM 토큰 획득 및 저장
         const messaging = getMessaging(getFirebaseApp());
-        const initResult = await initializePushNotifications(messaging, participantId);
+        initializePushNotifications(messaging, participantId)
+          .then((initResult) => {
+            if (initResult) {
+              setCleanup(() => initResult.cleanup);
 
-        if (initResult) {
-          setCleanup(() => initResult.cleanup);
-
-          // 3. Firestore에 사용자가 알림을 활성화했음을 기록
-          const participantRef = doc(getDb(), 'participants', participantId);
-          await updateDoc(participantRef, {
-            pushNotificationEnabled: true,
+              // Firestore에 사용자가 알림을 활성화했음을 기록
+              const participantRef = doc(getDb(), 'participants', participantId);
+              return updateDoc(participantRef, {
+                pushNotificationEnabled: true,
+              });
+            } else {
+              throw new Error('Failed to get FCM token');
+            }
+          })
+          .then(() => {
+            logger.info('Notifications enabled successfully');
+          })
+          .catch((error) => {
+            logger.error('Background FCM initialization failed', error);
+            // 실패 시 토글 다시 끄기
+            setIsEnabled(false);
+            setErrorMessage('알림 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
           });
 
-          setIsEnabled(true);
-          logger.info('Notifications enabled successfully');
-        } else {
-          logger.error('Failed to get FCM token');
-          setErrorMessage('알림 토큰을 가져올 수 없습니다. 다시 시도해주세요.');
-        }
+        // 함수 종료 (백그라운드에서 계속 처리)
+        return;
       }
     } catch (error) {
       logger.error('Error enabling notifications', error);

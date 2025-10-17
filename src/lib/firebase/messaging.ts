@@ -25,13 +25,12 @@ export function isPushNotificationSupported(): boolean {
 }
 
 /**
- * Ensure unified service worker is ready
+ * Ensure unified service worker is ready with timeout
  *
  * 변경 사항 (2025-10-17):
- * - 복잡한 상태 관리 로직 제거
- * - 단순히 navigator.serviceWorker.ready 사용
+ * - 10초 타임아웃 추가 (무한 대기 방지)
+ * - SW가 없으면 즉시 에러 반환
  * - 통합 SW는 register-sw.tsx에서 이미 등록됨
- * - 여기서는 등록된 SW가 준비되었는지만 확인
  */
 async function ensureServiceWorkerReady(): Promise<ServiceWorkerRegistration> {
   if (!('serviceWorker' in navigator)) {
@@ -42,9 +41,15 @@ async function ensureServiceWorkerReady(): Promise<ServiceWorkerRegistration> {
   logger.info('[ensureServiceWorkerReady] Waiting for service worker to be ready...');
 
   try {
-    // 통합 SW가 이미 register-sw.tsx에서 등록되었으므로
-    // 준비 상태만 확인하면 됨
-    const registration = await navigator.serviceWorker.ready;
+    // 10초 타임아웃으로 무한 대기 방지
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Service Worker ready timeout after 10s')), 10000);
+    });
+
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      timeoutPromise
+    ]);
 
     logger.info('[ensureServiceWorkerReady] Service worker is ready', {
       scope: registration.scope,
