@@ -14,7 +14,7 @@ type AuthStep = 'phone' | 'code';
 
 export default function DataCenterLoginPage() {
   const router = useRouter();
-  const { user, isAdministrator, isLoading: authLoading } = useAuth();
+  const { user, participant, isAdministrator, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
@@ -25,12 +25,12 @@ export default function DataCenterLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // 이미 로그인되어 있으면 대시보드로 리다이렉트
+  // 이미 로그인되어 있고 participant가 있으면 대시보드로 리다이렉트
   useEffect(() => {
-    if (!authLoading && user && isAdministrator) {
+    if (!authLoading && user && participant && isAdministrator) {
       router.replace('/datacntr');
     }
-  }, [authLoading, user, isAdministrator, router]);
+  }, [authLoading, user, participant, isAdministrator, router]);
 
   // reCAPTCHA 초기화
   useEffect(() => {
@@ -166,8 +166,9 @@ export default function DataCenterLoginPage() {
     );
   }
 
-  // 이미 로그인되어 있으면 null 반환 (리다이렉트됨)
-  if (user) {
+  // 이미 로그인되어 있고 participant가 있으면 null 반환 (리다이렉트됨)
+  // participant 없이 user만 있는 경우는 AuthContext에서 자동 로그아웃 처리됨
+  if (user && participant) {
     return null;
   }
 

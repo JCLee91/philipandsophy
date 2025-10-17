@@ -74,11 +74,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
                   return fetchParticipantWithRetry();
                 } else {
-                  // ✅ 최종 실패 시 로그아웃 대신 로그인 화면 유지 (재시도 가능)
-                  logger.error('Participant 조회 최종 실패, 로그인 화면 표시');
+                  // ✅ 최종 실패 시 명시적 로그아웃으로 user 상태 정리
+                  logger.error('Participant 조회 최종 실패, 로그아웃 처리');
                   if (mountedRef.current) {
                     setParticipant(null);
-                    // ❌ 자동 로그아웃 제거 - 사용자가 재시도할 수 있도록 함
+                    // ✅ Firebase 로그아웃으로 user 상태 정리 (Data Center 로그인 화면 복구)
+                    try {
+                      await auth.signOut();
+                      logger.info('Participant 조회 실패로 인한 자동 로그아웃 완료');
+                    } catch (logoutError) {
+                      logger.error('자동 로그아웃 실패:', logoutError);
+                    }
                   }
                 }
               }

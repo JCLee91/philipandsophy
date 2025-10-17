@@ -16,7 +16,7 @@ import { initRecaptcha, sendSmsVerification, confirmSmsCode } from '@/lib/fireba
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 import { logger } from '@/lib/logger';
 import { appRoutes } from '@/lib/navigation';
-import { PHONE_VALIDATION, AUTH_ERROR_MESSAGES, STORAGE_KEYS, AUTH_TIMING } from '@/constants/auth';
+import { PHONE_VALIDATION, AUTH_ERROR_MESSAGES, STORAGE_KEYS } from '@/constants/auth';
 import { phoneFormatUtils } from '@/constants/phone-format';
 
 const LAST_PHONE_KEY = STORAGE_KEYS.LAST_PHONE;
