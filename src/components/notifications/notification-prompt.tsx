@@ -8,32 +8,30 @@ import { initializePushNotifications, getPushTokenFromFirestore } from '@/lib/fi
 import { logger } from '@/lib/logger';
 import { toast } from '@/hooks/use-toast';
 import { UI_CONSTANTS } from '@/constants/ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * 알림 권한 요청 프롬프트 컴포넌트
  * 사용자에게 브라우저 알림 권한을 요청하고 FCM 토큰을 저장합니다.
  *
- * 수정 사항 (2025-10-13):
+ * 수정 사항 (2025-10-17):
+ * - ✅ useAuth()로 participant 직접 사용 (localStorage 의존성 제거)
+ * - ✅ participantStatus 기반 상태 관리
  * - Firestore pushToken 확인하여 이미 허용된 사용자는 프롬프트 표시 안 함
- * - participantId 로딩 상태 처리
  * - 사용자 피드백 강화
  */
 export function NotificationPrompt() {
+  // ✅ AuthContext에서 participant 직접 가져오기
+  const { participant, participantStatus } = useAuth();
+
   const [showPrompt, setShowPrompt] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
-  const [participantId, setParticipantId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const [cleanup, setCleanup] = useState<(() => void) | null>(null);
   const [isCheckingToken, setIsCheckingToken] = useState(true);
 
-  // localStorage에서 participantId 가져오기
-  useEffect(() => {
-    const storedParticipantId = localStorage.getItem('participantId');
-    if (storedParticipantId) {
-      setParticipantId(storedParticipantId);
-      logger.info('Participant ID loaded from localStorage', { participantId: storedParticipantId });
-    }
-  }, []);
+  // ✅ participant에서 participantId 추출 (localStorage 제거)
+  const participantId = participant?.id ?? null;
 
   // Firestore에서 pushToken 확인 후 프롬프트 표시 여부 결정
   useEffect(() => {
@@ -54,9 +52,12 @@ export function NotificationPrompt() {
       // 현재 알림 권한 상태 확인
       setPermission(Notification.permission);
 
-      // participantId가 없으면 대기
-      if (!participantId) {
-        logger.debug('[NotificationPrompt] Waiting for participantId...');
+      // ✅ participantStatus가 'ready'이고 participantId가 있을 때만 진행
+      if (participantStatus !== 'ready' || !participantId) {
+        logger.debug('[NotificationPrompt] Waiting for participant...', {
+          participantStatus,
+          hasParticipantId: !!participantId,
+        });
         setIsCheckingToken(false);
         return;
       }
@@ -104,7 +105,7 @@ export function NotificationPrompt() {
     return () => {
       cleanup?.();
     };
-  }, [participantId]);
+  }, [participantId, participantStatus]);
 
   const handleRequestPermission = async () => {
     // Capture participantId in closure to prevent race condition

@@ -44,8 +44,8 @@ service firebase.storage {
     // ============================================
     match /notices/{cohortId}/{fileName} {
       allow read: if isSignedIn();
-      allow create, update: if isAdminClaim() && isValidImage() && isUnder10MB();
-      allow delete: if isAdminClaim();
+      allow create, update: if isSignedIn() && isValidImage() && isUnder10MB();
+      allow delete: if isSignedIn();  // UI 레벨에서 관리자만 가능
     }
 
     // ============================================

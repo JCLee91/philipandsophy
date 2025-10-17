@@ -49,6 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (mountedRef.current) {
           setParticipant(participantData);
           setParticipantStatus('ready');
+
+          // ✅ localStorage에 participantId 저장 (푸시 알림용)
+          try {
+            localStorage.setItem('participantId', participantData.id);
+            logger.debug('Participant ID saved to localStorage', { participantId: participantData.id });
+          } catch (error) {
+            logger.error('Failed to save participantId to localStorage:', error);
+          }
+
           logger.info('Auth state: 로그인됨', {
             uid: firebaseUser.uid,
             name: participantData.name,
@@ -147,6 +156,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setParticipant(null);
       setParticipantStatus('idle');
       currentUserRef.current = null;
+
+      // ✅ localStorage에서 participantId 제거
+      try {
+        localStorage.removeItem('participantId');
+        logger.debug('Participant ID removed from localStorage');
+      } catch (error) {
+        logger.error('Failed to remove participantId from localStorage:', error);
+      }
+
       logger.info('로그아웃 성공');
     } catch (error) {
       logger.error('로그아웃 실패:', error);
