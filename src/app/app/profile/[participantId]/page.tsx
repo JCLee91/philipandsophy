@@ -125,6 +125,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
       ? viewerSubmissionDates.has(effectiveMatchingDate)
       : false;
 
+  // 접근 권한 체크 (submissions useMemo보다 먼저 선언)
+  const isSelf = checkIsSelf(participantId);
+
   // 매칭 날짜 기준으로 제출물 필터링 (스포일러 방지)
   const submissions = useMemo(() => {
     if (isSelf) {
@@ -174,9 +177,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
       });
     }
   }, [allQuestionsAnswers]); // allQuestionsAnswers는 이제 안정적인 참조
-
-  // 접근 권한 체크
-  const isSelf = checkIsSelf(participantId);
 
   const assignments = matchingLookup?.matching.assignments ?? {};
   const viewerAssignment = currentUserId
