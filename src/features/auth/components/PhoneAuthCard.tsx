@@ -2,6 +2,7 @@
 
 import { useState, useEffect, ChangeEvent, KeyboardEvent, ClipboardEvent, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Card,
   CardContent,
@@ -25,6 +26,7 @@ type AuthStep = 'phone' | 'code';
 
 export default function PhoneAuthCard() {
   const router = useRouter();
+  const { participantStatus, retryParticipantFetch } = useAuth();
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
 
@@ -34,6 +36,7 @@ export default function PhoneAuthCard() {
   const [verificationCode, setVerificationCode] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // 마지막 로그인 전화번호 불러오기
   useEffect(() => {
@@ -256,9 +259,24 @@ export default function PhoneAuthCard() {
     confirmationResultRef.current = null;
   };
 
+  // Participant 재시도 핸들러
+  const handleRetryParticipant = async () => {
+    setIsRetrying(true);
+    try {
+      await retryParticipantFetch();
+    } catch (error) {
+      logger.error('Participant 재시도 실패:', error);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
   // 완료 여부 체크
   const isPhoneComplete = phoneNumber.replace(/-/g, '').length === PHONE_VALIDATION.PHONE_LENGTH;
   const isCodeComplete = verificationCode.length === PHONE_VALIDATION.VERIFICATION_CODE_LENGTH;
+
+  // Participant 조회 실패 상태
+  const showParticipantError = participantStatus === 'missing' || participantStatus === 'error';
 
   return (
     <>
@@ -352,6 +370,44 @@ export default function PhoneAuthCard() {
           )}
         </CardFooter>
       </Card>
+
+      {/* Participant 조회 실패 시 재시도 UI */}
+      {showParticipantError && (
+        <Card className="w-full max-w-md mt-4 border-amber-200 bg-amber-50">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <div className="text-amber-900">
+                <p className="font-semibold text-base mb-2">
+                  {participantStatus === 'missing'
+                    ? '참가자 정보를 찾을 수 없습니다'
+                    : '참가자 정보 확인 중 문제가 발생했습니다'}
+                </p>
+                <p className="text-sm text-amber-700">
+                  {participantStatus === 'missing'
+                    ? '등록된 참가자가 아닙니다. 운영팀에 문의해주세요.'
+                    : '네트워크 연결을 확인하고 다시 시도해주세요.'}
+                </p>
+              </div>
+
+              <UnifiedButton
+                onClick={handleRetryParticipant}
+                loading={isRetrying}
+                loadingText="재시도 중..."
+                variant="secondary"
+                fullWidth
+              >
+                다시 시도
+              </UnifiedButton>
+
+              {participantStatus === 'missing' && (
+                <p className="text-xs text-amber-600">
+                  문제가 계속되면 운영팀(contact@philipandsophy.com)으로 문의해주세요.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }

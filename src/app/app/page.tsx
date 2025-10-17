@@ -9,18 +9,18 @@ import { appRoutes } from '@/lib/navigation';
 
 export default function Home() {
   const router = useRouter();
-  const { participant, isLoading } = useAuth();
+  const { participant, participantStatus, isLoading } = useAuth();
 
-  // ✅ AuthContext에서 이미 participant 조회했으므로 중복 조회 제거
+  // ✅ participant가 ready 상태이면 채팅으로 이동
   useEffect(() => {
-    if (!isLoading && participant) {
+    if (!isLoading && participantStatus === 'ready' && participant) {
       logger.info('기존 로그인 감지, 채팅으로 이동', {
         participantId: participant.id,
         cohortId: participant.cohortId,
       });
       router.replace(appRoutes.chat(participant.cohortId));
     }
-  }, [isLoading, participant, router]);
+  }, [isLoading, participantStatus, participant, router]);
 
   // ✅ 하나의 통합된 로딩 상태
   if (isLoading) {

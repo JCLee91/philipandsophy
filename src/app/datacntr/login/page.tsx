@@ -14,7 +14,7 @@ type AuthStep = 'phone' | 'code';
 
 export default function DataCenterLoginPage() {
   const router = useRouter();
-  const { user, participant, isAdministrator, isLoading: authLoading } = useAuth();
+  const { user, participant, participantStatus, isAdministrator, isLoading: authLoading, retryParticipantFetch } = useAuth();
   const { toast } = useToast();
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
@@ -24,13 +24,35 @@ export default function DataCenterLoginPage() {
   const [verificationCode, setVerificationCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isRetrying, setIsRetrying] = useState(false);
 
-  // 이미 로그인되어 있고 participant가 있으면 대시보드로 리다이렉트
+  // 이미 로그인되어 있고 participant가 ready 상태이고 관리자이면 대시보드로 리다이렉트
   useEffect(() => {
-    if (!authLoading && user && participant && isAdministrator) {
+    if (!authLoading && user && participantStatus === 'ready' && isAdministrator) {
       router.replace('/datacntr');
     }
-  }, [authLoading, user, participant, isAdministrator, router]);
+  }, [authLoading, user, participantStatus, isAdministrator, router]);
+
+  // Participant 재시도 핸들러
+  const handleRetryParticipant = async () => {
+    setIsRetrying(true);
+    try {
+      await retryParticipantFetch();
+      toast({
+        title: '재시도 완료',
+        description: '참가자 정보 확인을 다시 시도했습니다.',
+      });
+    } catch (error) {
+      logger.error('Participant 재시도 실패:', error);
+      toast({
+        title: '재시도 실패',
+        description: '참가자 정보 확인에 실패했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   // reCAPTCHA 초기화
   useEffect(() => {
@@ -166,10 +188,70 @@ export default function DataCenterLoginPage() {
     );
   }
 
-  // 이미 로그인되어 있고 participant가 있으면 null 반환 (리다이렉트됨)
-  // participant 없이 user만 있는 경우는 AuthContext에서 자동 로그아웃 처리됨
-  if (user && participant) {
+  // 이미 로그인되어 있고 participant가 ready면 null 반환 (리다이렉트됨)
+  if (user && participantStatus === 'ready' && isAdministrator) {
     return null;
+  }
+
+  // Participant 조회 중
+  if (user && participantStatus === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
+          <p className="text-gray-600">참가자 정보 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Participant 조회 실패
+  if (user && (participantStatus === 'missing' || participantStatus === 'error')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md space-y-4">
+          {/* 에러 카드 */}
+          <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8">
+            <div className="text-center space-y-4">
+              <AlertCircle className="h-12 w-12 text-red-600 mx-auto" />
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  {participantStatus === 'missing'
+                    ? '관리자 권한이 없습니다'
+                    : '참가자 정보 확인 실패'}
+                </h2>
+                <p className="text-gray-600">
+                  {participantStatus === 'missing'
+                    ? '등록된 관리자가 아닙니다. 운영팀에 문의해주세요.'
+                    : '네트워크 연결을 확인하고 다시 시도해주세요.'}
+                </p>
+              </div>
+
+              <button
+                onClick={handleRetryParticipant}
+                disabled={isRetrying}
+                className="w-full bg-blue-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {isRetrying ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    재시도 중...
+                  </>
+                ) : (
+                  '다시 시도'
+                )}
+              </button>
+
+              {participantStatus === 'missing' && (
+                <p className="text-sm text-gray-500">
+                  문제가 계속되면 운영팀에 문의해주세요.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
