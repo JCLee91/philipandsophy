@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     // 관리자 제외 필터링
     const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !data.isAdministrator;
+      return !(data.isSuperAdmin || data.isAdministrator);
     });
 
     // 관리자 ID 목록 생성
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       participantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isAdministrator === true;
+          return data.isSuperAdmin === true || data.isAdministrator === true;
         })
         .map((doc) => doc.id)
     );

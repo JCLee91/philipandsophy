@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       allParticipantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isAdministrator === true;
+          return data.isSuperAdmin === true || data.isAdministrator === true;
         })
         .map((doc) => doc.id)
     );

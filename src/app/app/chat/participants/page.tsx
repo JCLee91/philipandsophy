@@ -143,7 +143,7 @@ function ParticipantsPageContent() {
 
   const { participant, isLoading: sessionLoading, logout } = useAuth();
   const currentUserId = participant?.id || '';
-  const isAdmin = participant?.isAdministrator === true;
+  const isAdmin = participant?.isSuperAdmin === true || participant?.isAdministrator === true;
 
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
   const { data: verifiedIds } = useVerifiedToday();
