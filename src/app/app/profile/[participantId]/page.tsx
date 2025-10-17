@@ -126,10 +126,12 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
       : false;
 
   // 매칭 날짜 기준으로 제출물 필터링 (스포일러 방지)
-  const submissions = useMemo(
-    () => filterSubmissionsByDate(rawSubmissions, effectiveMatchingDate),
-    [rawSubmissions, effectiveMatchingDate]
-  );
+  const submissions = useMemo(() => {
+    if (isSelf) {
+      return rawSubmissions;
+    }
+    return filterSubmissionsByDate(rawSubmissions, effectiveMatchingDate);
+  }, [rawSubmissions, effectiveMatchingDate, isSelf]);
 
   // 세션 검증 (리다이렉트 플래그로 중복 방지)
   const hasRedirectedRef = useRef(false);
