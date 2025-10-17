@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, ArrowLeft, User, BookOpen, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import DataTable, { Column } from '@/components/datacntr/table/DataTable';
 import type { Participant, Cohort } from '@/types/database';
 
@@ -135,8 +134,8 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
           <p className="text-gray-600 mt-1">
             {cohort?.startDate && cohort?.endDate && (
               <>
-                {format(new Date(cohort.startDate), 'yyyy년 M월 d일', { locale: ko })} ~{' '}
-                {format(new Date(cohort.endDate), 'yyyy년 M월 d일', { locale: ko })}
+                {formatISODateKST(cohort.startDate, 'yyyy년 M월 d일')} ~{' '}
+                {formatISODateKST(cohort.endDate, 'yyyy년 M월 d일')}
               </>
             )}
           </p>

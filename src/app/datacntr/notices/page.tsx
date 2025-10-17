@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Bell, Pin, Calendar, User } from 'lucide-react';
-import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import type { Notice } from '@/types/database';
 
 interface NoticeWithCohort extends Notice {
@@ -118,8 +116,6 @@ export default function NoticesPage() {
       {/* 공지사항 리스트 */}
       <div className="space-y-4">
         {notices.map((notice) => {
-          const createdDate = safeTimestampToDate(notice.createdAt);
-
           return (
             <div
               key={notice.id}
@@ -141,7 +137,7 @@ export default function NoticesPage() {
                     </span>
                   )}
                   <span className="text-xs text-gray-500">
-                    {createdDate ? format(createdDate, 'M월 d일 HH:mm', { locale: ko }) : '-'}
+                    {formatTimestampKST(notice.createdAt, 'M월 d일 HH:mm')}
                   </span>
                 </div>
               </div>

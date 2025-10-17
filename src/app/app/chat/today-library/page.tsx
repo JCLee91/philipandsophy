@@ -16,11 +16,8 @@ import { useAccessControl } from '@/hooks/use-access-control';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
-import { logger } from '@/lib/logger';
 import type { Participant } from '@/types/database';
-import { getTodayString, getYesterdayString } from '@/lib/date-utils';
-import { normalizeMatchingData } from '@/lib/matching-utils';
+import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
@@ -36,30 +33,27 @@ function TodayLibraryContent() {
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { toast } = useToast();
-  const { isVerified, isAdmin, isLocked } = useAccessControl();
+  const { isLocked } = useAccessControl();
 
   // 독서 인증 다이얼로그 상태
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
 
-  // 날짜 정의
-  const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터)
-  const matchingDate = getTodayString(); // 매칭 실행 날짜 (오늘, Firebase 키)
+  const matchingLookup = useMemo(() => {
+    if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
+      return null;
+    }
 
-  // 오늘의 매칭 결과 (matchingDate 키로 조회, 없으면 submissionDate로 fallback)
-  // 어제 제출분으로 오늘 매칭을 실행했기 때문에 matchingDate(오늘) 키로 저장됨
-  // 매칭 생성 시간차로 인해 어제 키로도 확인 필요
-  const rawMatching = cohort?.dailyFeaturedParticipants?.[matchingDate]
-    || cohort?.dailyFeaturedParticipants?.[submissionDate];
-  const todayMatching = useMemo(() => {
-    // 매칭 데이터가 없으면 null 반환
-    if (!rawMatching) return null;
+    return findLatestMatchingForParticipant(
+      cohort.dailyFeaturedParticipants,
+      currentUserId
+    );
+  }, [cohort?.dailyFeaturedParticipants, currentUserId]);
 
-    // v1.0/v2.0 형식 모두 처리
-    return normalizeMatchingData(rawMatching);
-  }, [rawMatching]);
+  const activeMatchingDate = matchingLookup?.date ?? null;
+  const assignments = matchingLookup?.matching.assignments ?? {};
 
-  const userAssignment = currentUserId && todayMatching
-    ? todayMatching.assignments?.[currentUserId] ?? null
+  const userAssignment = currentUserId && assignments
+    ? assignments[currentUserId] ?? null
     : null;
 
   const similarFeaturedIds = userAssignment?.similar ?? [];
@@ -71,7 +65,7 @@ function TodayLibraryContent() {
 
   // 추천 참가자들의 정보 가져오기
   const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
-    queryKey: ['featured-participants-v3', allFeaturedIds],
+    queryKey: ['featured-participants-v3', activeMatchingDate, allFeaturedIds],
     queryFn: async () => {
       if (allFeaturedIds.length === 0) return [];
 
@@ -110,7 +104,7 @@ function TodayLibraryContent() {
       });
     },
     // 🔒 보안 수정: 인증된 유저(또는 관리자)만 개인정보 다운로드 가능
-    enabled: allFeaturedIds.length > 0 && !isLocked,
+    enabled: allFeaturedIds.length > 0 && !!activeMatchingDate && !isLocked,
     gcTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결) - React Query v5: cacheTime → gcTime
     staleTime: 0, // 항상 신선한 데이터 fetch
   });
@@ -213,8 +207,16 @@ function TodayLibraryContent() {
       });
       return;
     }
-    // 제출 날짜를 URL에 포함하여 스포일러 방지 (오늘 제출분은 아직 안 보이도록)
-    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(submissionDate)}`;
+    if (!activeMatchingDate) {
+      toast({
+        title: '프로필북 정보를 불러올 수 없습니다',
+        description: '잠시 후 다시 시도해주세요.',
+      });
+      return;
+    }
+
+    // 매칭 날짜를 URL에 포함하여 스포일러 방지 (미공개 데이터 차단)
+    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(activeMatchingDate)}`;
     router.push(profileUrl);
   };
 

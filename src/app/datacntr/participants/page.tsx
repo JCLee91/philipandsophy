@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CheckCircle, XCircle, Filter } from 'lucide-react';
-import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
-import { format } from 'date-fns';
+import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TablePagination from '@/components/datacntr/table/TablePagination';
@@ -115,14 +114,13 @@ export default function ParticipantsPage() {
 
         // Timestamp 타입 처리 (createdAt)
         if (sortKey === 'createdAt') {
-          const aDate = safeTimestampToDate(aValue);
-          const bDate = safeTimestampToDate(bValue);
-
-          if (!aDate) return 1;
-          if (!bDate) return -1;
-
-          const aTime = aDate.getTime();
-          const bTime = bDate.getTime();
+          // Firebase Timestamp 객체 직접 비교
+          const aTime = typeof aValue === 'object' && aValue !== null && 'seconds' in aValue
+            ? (aValue as any).seconds
+            : 0;
+          const bTime = typeof bValue === 'object' && bValue !== null && 'seconds' in bValue
+            ? (bValue as any).seconds
+            : 0;
 
           return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
         }
@@ -207,11 +205,7 @@ export default function ParticipantsPage() {
       key: 'createdAt',
       header: '가입일',
       sortable: true,
-      render: (p) => {
-        const date = safeTimestampToDate(p.createdAt);
-        if (!date) return '-';
-        return format(date, 'yy.MM.dd');
-      },
+      render: (p) => formatTimestampKST(p.createdAt, 'yy.MM.dd'),
       width: '12%',
     },
   ];

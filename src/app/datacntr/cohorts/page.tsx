@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { Loader2, Calendar, Users, CheckCircle, XCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import type { Cohort } from '@/types/database';
 
 export default function CohortsPage() {
@@ -82,8 +81,8 @@ export default function CohortsPage() {
       {/* 코호트 카드 그리드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {cohorts.map((cohort) => {
-          const startDate = cohort.startDate ? format(new Date(cohort.startDate), 'yyyy년 M월 d일', { locale: ko }) : '-';
-          const endDate = cohort.endDate ? format(new Date(cohort.endDate), 'yyyy년 M월 d일', { locale: ko }) : '-';
+          const startDate = formatISODateKST(cohort.startDate, 'yyyy년 M월 d일');
+          const endDate = formatISODateKST(cohort.endDate, 'yyyy년 M월 d일');
 
           return (
             <div

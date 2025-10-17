@@ -7,6 +7,11 @@ export interface NormalizedMatching {
   assignments: Record<string, DailyParticipantAssignment>;
 }
 
+export interface MatchingLookupResult {
+  date: string;
+  matching: NormalizedMatching;
+}
+
 /**
  * 일일 매칭 데이터를 정규화 (레거시 형식 호환)
  *
@@ -53,4 +58,56 @@ export function normalizeMatchingData(
   return {
     assignments: {},
   };
+}
+
+/**
+ * 지정한 참가자가 포함된 가장 최근 매칭 엔트리를 찾습니다.
+ *
+ * @param dailyMap - 날짜별 매칭 결과 맵 (cohort.dailyFeaturedParticipants)
+ * @param participantId - 조회할 참가자 ID
+ * @param options.preferredDate - 우선적으로 확인할 날짜 (예: 오늘)
+ * @returns 가장 최근 매칭 날짜와 정규화된 매칭 데이터, 없으면 null
+ */
+export function findLatestMatchingForParticipant(
+  dailyMap: Record<string, DailyMatchingEntry> | undefined | null,
+  participantId: string | undefined | null,
+  options: { preferredDate?: string } = {}
+): MatchingLookupResult | null {
+  if (!dailyMap || !participantId) {
+    return null;
+  }
+
+  const tryResolve = (date: string | undefined): MatchingLookupResult | null => {
+    if (!date) return null;
+    const entry = dailyMap[date];
+    if (!entry) return null;
+
+    const normalized = normalizeMatchingData(entry);
+    if (normalized.assignments?.[participantId]) {
+      return { date, matching: normalized };
+    }
+
+    return null;
+  };
+
+  const { preferredDate } = options;
+  if (preferredDate) {
+    const preferredResult = tryResolve(preferredDate);
+    if (preferredResult) {
+      return preferredResult;
+    }
+  }
+
+  const sortedDates = Object.keys(dailyMap)
+    .filter(Boolean)
+    .sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+
+  for (const date of sortedDates) {
+    const result = tryResolve(date);
+    if (result) {
+      return result;
+    }
+  }
+
+  return null;
 }

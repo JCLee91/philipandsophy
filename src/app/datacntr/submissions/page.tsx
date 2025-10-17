@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Calendar, User, BookOpen, BarChart3, MessageSquare } from 'lucide-react';
-import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TimeDistributionChart from '@/components/datacntr/dashboard/TimeDistributionChart';
 import BookDiversityPanel from '@/components/datacntr/dashboard/BookDiversityPanel';
@@ -181,8 +179,6 @@ export default function SubmissionsPage() {
       {/* 인증 카드 그리드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredSubmissions.map((submission) => {
-          const submittedDate = safeTimestampToDate(submission.submittedAt);
-
           return (
             <div
               key={submission.id}
@@ -250,7 +246,7 @@ export default function SubmissionsPage() {
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Calendar className="h-3 w-3" />
                   <span>
-                    {submittedDate ? format(submittedDate, 'yyyy년 M월 d일 HH:mm', { locale: ko }) : '-'}
+                    {formatTimestampKST(submission.submittedAt, 'yyyy년 M월 d일 HH:mm')}
                   </span>
                 </div>
               </div>

@@ -21,8 +21,8 @@ import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { getTodayString, getYesterdayString, filterSubmissionsByDate } from '@/lib/date-utils';
-import { normalizeMatchingData } from '@/lib/matching-utils';
+import { filterSubmissionsByDate } from '@/lib/date-utils';
+import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
 
@@ -39,7 +39,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const cohortId = searchParams.get('cohort');
 
   // 제출 날짜 cutoff (URL 파라미터: 스포일러 방지를 위해 이 날짜까지만 표시)
-  // today-library에서 submissionDate(어제)를 matchingDate 파라미터로 전달함
+  // today-library에서 노출 가능한 매칭 날짜를 matchingDate 파라미터로 전달함
   const matchingDate = searchParams.get('matchingDate');
 
   // Firebase Auth 기반 인증
@@ -90,10 +90,24 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 접근 제어
   const { isSelf: checkIsSelf, isAdmin, isVerified: isVerifiedToday } = useAccessControl();
 
-  // 매칭 날짜 필터링: matchingDate가 있으면 그 날짜까지만 표시 (스포일러 방지)
+  const matchingLookup = useMemo(() => {
+    if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
+      return null;
+    }
+
+    return findLatestMatchingForParticipant(
+      cohort.dailyFeaturedParticipants,
+      currentUserId,
+      { preferredDate: matchingDate || undefined }
+    );
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, matchingDate]);
+
+  const effectiveMatchingDate = matchingDate ?? matchingLookup?.date ?? null;
+
+  // 매칭 날짜 기준으로 제출물 필터링 (스포일러 방지)
   const submissions = useMemo(
-    () => filterSubmissionsByDate(rawSubmissions, matchingDate),
-    [rawSubmissions, matchingDate]
+    () => filterSubmissionsByDate(rawSubmissions, effectiveMatchingDate),
+    [rawSubmissions, effectiveMatchingDate]
   );
 
   // 세션 검증 (리다이렉트 플래그로 중복 방지)
@@ -141,21 +155,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 접근 권한 체크
   const isSelf = checkIsSelf(participantId);
 
-  // 매칭 날짜 (오늘, Firebase 키로 사용)
-  const todayMatchingDate = getTodayString();
-  const yesterdayMatchingDate = getYesterdayString();
-
-  // 오늘의 추천 참가자 목록 (개별 매칭 기반)
-  // 오늘 매칭이 없으면 어제 매칭 데이터 사용 (매칭 생성 시간차 대응)
-  const rawMatching = cohort?.dailyFeaturedParticipants?.[todayMatchingDate]
-    || cohort?.dailyFeaturedParticipants?.[yesterdayMatchingDate];
-  const todayMatching = useMemo(
-    () => normalizeMatchingData(rawMatching),
-    [rawMatching]
-  );
-
+  const assignments = matchingLookup?.matching.assignments ?? {};
   const viewerAssignment = currentUserId
-    ? todayMatching.assignments?.[currentUserId] ?? null
+    ? assignments[currentUserId] ?? null
     : null;
 
   const accessibleProfileIds = new Set([
