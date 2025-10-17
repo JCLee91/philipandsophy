@@ -21,8 +21,8 @@ export interface ParticipantData {
   id: string;
   name: string;
   gender?: 'male' | 'female' | 'other';
-  isAdmin?: boolean;
-  isAdministrator?: boolean;
+  isSuperAdmin?: boolean; // 슈퍼 관리자 (모든 프로필 열람, 리스트 미표시)
+  isAdministrator?: boolean; // 일반 관리자 (공지사항 관리, 프로필 열람 제약 동일)
   cohortId: string;
 }
 
@@ -84,7 +84,8 @@ export interface Participant {
   profileImage?: string; // 프로필 이미지 URL (큰 이미지, 프로필 상세용)
   profileImageCircle?: string; // 원형 프로필 이미지 URL (작은 아바타용)
   profileBookUrl?: string; // 프로필북 URL
-  isAdministrator?: boolean; // 관리자 여부
+  isSuperAdmin?: boolean; // 슈퍼 관리자 (모든 프로필 열람, 리스트 미표시)
+  isAdministrator?: boolean; // 일반 관리자 (공지사항 관리, 프로필 열람 제약 동일)
   occupation?: string; // 직업/하는 일
   bio?: string; // 한 줄 소개 (2줄 이내)
   currentBookTitle?: string; // 현재 읽고 있는 책 제목 (프로필북에 표시)
@@ -93,6 +94,8 @@ export interface Participant {
   bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
   firebaseUid?: string; // Firebase Auth UID (Phone Auth 연동용)
   pushToken?: string; // 푸시 알림 토큰 (FCM)
+  pushNotificationEnabled?: boolean; // 푸시 알림 활성화 여부 (사용자 설정)
+  pushTokenUpdatedAt?: Timestamp; // 푸시 토큰 마지막 갱신 시간
   lastActivityAt?: Timestamp; // 마지막 활동 시간 (데이터센터용)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시

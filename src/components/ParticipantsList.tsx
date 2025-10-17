@@ -171,18 +171,20 @@ export default function ParticipantsList({
   const { data: verifiedIds } = useVerifiedToday();
   const { logout, participant } = useAuth();
 
-  // 본인을 맨 위로 정렬
-  const sortedParticipants = [...participants].sort((a, b) => {
-    if (a.id === currentUserId) return -1;
-    if (b.id === currentUserId) return 1;
-    return 0;
-  });
+  // 슈퍼 관리자 제외 후 본인을 맨 위로 정렬
+  const sortedParticipants = [...participants]
+    .filter((p) => !p.isSuperAdmin) // 슈퍼 관리자는 리스트에 표시 안 함
+    .sort((a, b) => {
+      if (a.id === currentUserId) return -1;
+      if (b.id === currentUserId) return 1;
+      return 0;
+    });
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-80 p-0 flex flex-col">
           <SheetHeader className="border-b px-6 py-4">
-            <SheetTitle>참가자 목록 ({participants.length})</SheetTitle>
+            <SheetTitle>참가자 목록 ({sortedParticipants.length})</SheetTitle>
             <SheetDescription className="sr-only">
               프로그램에 참여 중인 멤버 목록을 확인하고 소통할 수 있습니다
             </SheetDescription>

@@ -43,12 +43,12 @@ export interface UsePushNotificationsResult {
  * Hook for managing push notifications
  *
  * @param participantId - Current user's participant ID
- * @param enabled - Whether to auto-initialize push notifications
+ * @param userEnabled - Whether user has enabled push notifications (from Firestore)
  * @returns Push notification state and methods
  *
  * @example
  * ```tsx
- * const { isSupported, permission, requestPermission } = usePushNotifications(userId);
+ * const { isSupported, permission, requestPermission } = usePushNotifications(userId, true);
  *
  * if (isSupported && permission === 'default') {
  *   return <button onClick={requestPermission}>Enable Notifications</button>;
@@ -57,7 +57,7 @@ export interface UsePushNotificationsResult {
  */
 export function usePushNotifications(
   participantId: string | undefined,
-  enabled = true
+  userEnabled = false
 ): UsePushNotificationsResult {
   const [isSupported] = useState(() => isPushNotificationSupported());
   const [permission, setPermission] = useState<NotificationPermission>(
@@ -120,19 +120,20 @@ export function usePushNotifications(
   };
 
   /**
-   * Auto-initialize on mount
+   * Auto-initialize on mount (only if user has enabled notifications)
    */
   useEffect(() => {
-    if (enabled && participantId && permission === 'granted' && !isInitialized) {
+    if (userEnabled && participantId && permission === 'granted' && !isInitialized) {
       initialize();
     }
-  }, [enabled, participantId, permission, isInitialized]);
+  }, [userEnabled, participantId, permission, isInitialized]);
 
   /**
    * Auto-refresh token periodically (iOS fix)
+   * Only runs if user has explicitly enabled notifications
    */
   useEffect(() => {
-    if (!enabled || !isSupported || !participantId || permission !== 'granted') {
+    if (!userEnabled || !isSupported || !participantId || permission !== 'granted') {
       return;
     }
 
@@ -151,7 +152,7 @@ export function usePushNotifications(
     );
 
     return () => clearInterval(interval);
-  }, [enabled, isSupported, participantId, permission]);
+  }, [userEnabled, isSupported, participantId, permission]);
 
   /**
    * Cleanup on unmount to prevent memory leaks

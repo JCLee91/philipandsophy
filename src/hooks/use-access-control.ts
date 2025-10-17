@@ -11,9 +11,11 @@ export interface AccessControlResult {
   userId: string | undefined;
   /** 오늘 인증 완료 여부 */
   isVerified: boolean;
-  /** 관리자 권한 여부 */
-  isAdmin: boolean;
-  /** 콘텐츠 잠금 상태 (인증 안 함 + 관리자 아님) */
+  /** 슈퍼 관리자 권한 (모든 프로필 열람 가능) */
+  isSuperAdmin: boolean;
+  /** 일반 관리자 권한 (공지사항 관리만 가능) */
+  isAdministrator: boolean;
+  /** 콘텐츠 잠금 상태 (인증 안 함 + 슈퍼관리자 아님) */
   isLocked: boolean;
   /** 본인 프로필 확인 함수 */
   isSelf: (targetId: string) => boolean;
@@ -29,13 +31,18 @@ export interface AccessControlResult {
  *
  * @example
  * // 오늘의 서재에서 사용
- * const { isLocked, isAdmin, isVerified } = useAccessControl();
+ * const { isLocked, isSuperAdmin, isVerified } = useAccessControl();
  * if (isLocked) return <LockedScreen />;
  *
  * @example
- * // 프로필북에서 사용
- * const { isSelf, isAdmin } = useAccessControl();
- * const canEdit = isSelf(participantId) || isAdmin;
+ * // 프로필북에서 사용 (슈퍼 관리자는 모든 프로필 열람 가능)
+ * const { isSelf, isSuperAdmin } = useAccessControl();
+ * const canViewAll = isSelf(participantId) || isSuperAdmin;
+ *
+ * @example
+ * // 공지사항 관리 권한 체크
+ * const { isSuperAdmin, isAdministrator } = useAccessControl();
+ * const canManageNotice = isSuperAdmin || isAdministrator;
  */
 export function useAccessControl(): AccessControlResult {
   const { participant } = useAuth();
@@ -43,15 +50,17 @@ export function useAccessControl(): AccessControlResult {
 
   const userId = participant?.id;
   const isVerified = verifiedIds?.has(userId || '') ?? false;
-  const isAdmin = participant?.isAdministrator === true;
-  const isLocked = !isAdmin && !isVerified;
+  const isSuperAdmin = participant?.isSuperAdmin === true;
+  const isAdministrator = participant?.isAdministrator === true;
+  const isLocked = !isSuperAdmin && !isVerified;
 
   const isSelf = (targetId: string) => userId === targetId;
 
   return {
     userId,
     isVerified,
-    isAdmin,
+    isSuperAdmin,
+    isAdministrator,
     isLocked,
     isSelf,
   };

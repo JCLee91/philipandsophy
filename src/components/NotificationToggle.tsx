@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Bell, BellOff, AlertCircle } from 'lucide-react';
-import { getMessaging } from 'firebase/messaging';
+import { getMessaging, deleteToken } from 'firebase/messaging';
 import { getFirebaseApp } from '@/lib/firebase';
 import {
   initializePushNotifications,
@@ -103,6 +103,13 @@ export function NotificationToggle() {
 
         if (initResult) {
           setCleanup(() => initResult.cleanup);
+
+          // 3. Firestore에 사용자가 알림을 활성화했음을 기록
+          const participantRef = doc(getDb(), 'participants', participantId);
+          await updateDoc(participantRef, {
+            pushNotificationEnabled: true,
+          });
+
           setIsEnabled(true);
           logger.info('Notifications enabled successfully');
         } else {
@@ -120,7 +127,8 @@ export function NotificationToggle() {
 
   /**
    * 알림 비활성화
-   * - Firestore에서 pushToken 제거
+   * - FCM 토큰 삭제 (기기 측 구독 해제)
+   * - Firestore에서 pushToken 및 pushNotificationEnabled 필드 업데이트
    * - Cleanup function 실행하여 메모리 누수 방지
    */
   const disableNotifications = async () => {
@@ -132,17 +140,28 @@ export function NotificationToggle() {
     try {
       setIsLoading(true);
 
-      // Cleanup listener to prevent memory leak
+      // 1. FCM 토큰 삭제 (기기 측 구독 해제)
+      try {
+        const messaging = getMessaging(getFirebaseApp());
+        await deleteToken(messaging);
+        logger.info('FCM token deleted successfully');
+      } catch (error) {
+        logger.warn('Failed to delete FCM token', error);
+        // Continue even if deleteToken fails (e.g., token already deleted)
+      }
+
+      // 2. Cleanup listener to prevent memory leak
       if (cleanup) {
         cleanup();
         setCleanup(null);
       }
 
-      // Firestore에서 pushToken 필드 삭제
+      // 3. Firestore에서 pushToken 및 사용자 설정 업데이트
       const participantRef = doc(getDb(), 'participants', participantId);
       await updateDoc(participantRef, {
         pushToken: null,
         pushTokenUpdatedAt: null,
+        pushNotificationEnabled: false, // 사용자가 명시적으로 비활성화했음을 기록
       });
 
       setIsEnabled(false);

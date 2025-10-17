@@ -32,7 +32,7 @@ function TodayLibraryContent() {
   // Firebase Auth 기반 인증
   const { participant, isLoading: sessionLoading } = useAuth();
   const currentUserId = participant?.id;
-  const { isAdmin, isLocked } = useAccessControl();
+  const { isSuperAdmin, isLocked } = useAccessControl();
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { toast } = useToast();
@@ -55,14 +55,14 @@ function TodayLibraryContent() {
     return findLatestMatchingForParticipant(
       cohort.dailyFeaturedParticipants,
       currentUserId,
-      isAdmin
+      isSuperAdmin
         ? { preferredDate: viewerHasSubmittedToday ? todayDate : undefined }
         : {
             preferredDate: viewerHasSubmittedToday ? todayDate : undefined,
             allowedDates: viewerSubmissionDates,
           }
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, isAdmin, viewerHasSubmittedToday, todayDate, viewerSubmissionDates]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, isSuperAdmin, viewerHasSubmittedToday, todayDate, viewerSubmissionDates]);
 
   const activeMatchingDate = matchingLookup?.date ?? null;
   const assignments = matchingLookup?.matching.assignments ?? {};

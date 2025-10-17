@@ -93,7 +93,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   );
 
   // 접근 제어
-  const { isSelf: checkIsSelf, isAdmin, isVerified: isVerifiedToday } = useAccessControl();
+  const { isSelf: checkIsSelf, isSuperAdmin, isVerified: isVerifiedToday } = useAccessControl();
 
   const preferredMatchingDate = useMemo(() => {
     if (!matchingDate) return undefined;
@@ -108,18 +108,18 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     return findLatestMatchingForParticipant(
       cohort.dailyFeaturedParticipants,
       currentUserId,
-      isAdmin
+      isSuperAdmin
         ? { preferredDate: preferredMatchingDate }
         : {
             preferredDate: preferredMatchingDate,
             allowedDates: viewerSubmissionDates,
           }
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate, viewerSubmissionDates, isAdmin]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate, viewerSubmissionDates, isSuperAdmin]);
 
   const effectiveMatchingDate = matchingLookup?.date ?? preferredMatchingDate ?? null;
 
-  const viewerHasAccessForDate = isAdmin
+  const viewerHasAccessForDate = isSuperAdmin
     ? true
     : effectiveMatchingDate
       ? viewerSubmissionDates.has(effectiveMatchingDate)
@@ -224,8 +224,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     return null;
   }, [viewerAssignment, isFeatured, participantId]);
 
-  // 최종 접근 권한: 본인 OR 운영자 OR (매칭 날짜에 인증 완료 AND 추천 4명 중 하나)
-  const hasAccess = isSelf || isAdmin || (isVerifiedToday && viewerHasAccessForDate && isFeatured);
+  // 최종 접근 권한: 본인 OR 슈퍼관리자 OR (매칭 날짜에 인증 완료 AND 추천 4명 중 하나)
+  const hasAccess = isSelf || isSuperAdmin || (isVerifiedToday && viewerHasAccessForDate && isFeatured);
 
   // 로딩 상태
   if (sessionLoading || participantLoading || submissionsLoading || viewerSubmissionLoading) {

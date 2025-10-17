@@ -20,8 +20,8 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
   const { participant, isLoading } = useAuth();
   const [viewMode, setViewModeState] = useState<ViewMode>('participant');
 
-  // 관리자 권한이 있는지 확인
-  const canSwitchMode = !isLoading && participant?.isAdministrator === true;
+  // 관리자 권한이 있는지 확인 (일반 관리자 또는 슈퍼 관리자)
+  const canSwitchMode = !isLoading && (participant?.isAdministrator === true || participant?.isSuperAdmin === true);
 
   // 🔍 프로덕션 디버깅: 강제 로그 출력
   useEffect(() => {
