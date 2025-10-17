@@ -20,7 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Participant } from '@/types/database';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
-import { getTodayString } from '@/lib/date-utils';
+import { getTodayString, getMatchingAccessDates } from '@/lib/date-utils';
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
@@ -44,6 +44,12 @@ function TodayLibraryContent() {
   );
   const viewerHasSubmittedToday = viewerSubmissionDates.has(todayDate);
 
+  // 제출일 기준 공개되는 프로필북 날짜 (제출 다음날 OR 오늘 인증 시 즉시)
+  const allowedMatchingDates = useMemo(
+    () => getMatchingAccessDates(viewerSubmissionDates),
+    [viewerSubmissionDates]
+  );
+
   // 독서 인증 다이얼로그 상태
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
 
@@ -59,10 +65,10 @@ function TodayLibraryContent() {
         ? { preferredDate: viewerHasSubmittedToday ? todayDate : undefined }
         : {
             preferredDate: viewerHasSubmittedToday ? todayDate : undefined,
-            allowedDates: viewerSubmissionDates,
+            allowedDates: allowedMatchingDates,
           }
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, isSuperAdmin, viewerHasSubmittedToday, todayDate, viewerSubmissionDates]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, isSuperAdmin, viewerHasSubmittedToday, todayDate, allowedMatchingDates]);
 
   const activeMatchingDate = matchingLookup?.date ?? null;
   const assignments = matchingLookup?.matching.assignments ?? {};
