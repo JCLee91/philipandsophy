@@ -63,7 +63,7 @@ service cloud.firestore {
          request.resource.data.diff(resource.data).affectedKeys()
            .hasOnly(['name', 'profileImage', 'profileImageCircle', 'profileBookUrl',
                     'occupation', 'bio', 'currentBookTitle', 'currentBookAuthor',
-                    'currentBookCoverUrl', 'bookHistory', 'pushToken', 'lastActivityAt', 'updatedAt']))
+                    'currentBookCoverUrl', 'bookHistory', 'pushToken', 'pushTokenUpdatedAt', 'lastActivityAt', 'updatedAt']))
       );
 
       allow delete: if false;

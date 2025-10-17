@@ -71,7 +71,7 @@ export function normalizeMatchingData(
 export function findLatestMatchingForParticipant(
   dailyMap: Record<string, DailyMatchingEntry> | undefined | null,
   participantId: string | undefined | null,
-  options: { preferredDate?: string } = {}
+  options: { preferredDate?: string; allowedDates?: Set<string> } = {}
 ): MatchingLookupResult | null {
   if (!dailyMap || !participantId) {
     return null;
@@ -79,6 +79,7 @@ export function findLatestMatchingForParticipant(
 
   const tryResolve = (date: string | undefined): MatchingLookupResult | null => {
     if (!date) return null;
+    if (options.allowedDates && !options.allowedDates.has(date)) return null;
     const entry = dailyMap[date];
     if (!entry) return null;
 

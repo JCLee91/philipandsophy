@@ -12,7 +12,7 @@ import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAccessControl } from '@/hooks/use-access-control';
+import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
@@ -30,10 +30,15 @@ function TodayLibraryContent() {
   // Firebase Auth 기반 인증
   const { participant, isLoading: sessionLoading } = useAuth();
   const currentUserId = participant?.id;
+  const isAdmin = participant?.isAdministrator === true;
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { toast } = useToast();
-  const { isLocked } = useAccessControl();
+  const { data: viewerSubmissions = [], isLoading: viewerSubmissionLoading } = useParticipantSubmissionsRealtime(currentUserId);
+  const viewerSubmissionDates = useMemo(
+    () => new Set(viewerSubmissions.map((submission) => submission.submissionDate)),
+    [viewerSubmissions]
+  );
 
   // 독서 인증 다이얼로그 상태
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
@@ -45,9 +50,10 @@ function TodayLibraryContent() {
 
     return findLatestMatchingForParticipant(
       cohort.dailyFeaturedParticipants,
-      currentUserId
+      currentUserId,
+      isAdmin ? {} : { allowedDates: viewerSubmissionDates }
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, isAdmin, viewerSubmissionDates]);
 
   const activeMatchingDate = matchingLookup?.date ?? null;
   const assignments = matchingLookup?.matching.assignments ?? {};
@@ -104,7 +110,10 @@ function TodayLibraryContent() {
       });
     },
     // 🔒 보안 수정: 인증된 유저(또는 관리자)만 개인정보 다운로드 가능
-    enabled: allFeaturedIds.length > 0 && !!activeMatchingDate && !isLocked,
+    enabled:
+      allFeaturedIds.length > 0 &&
+      !!activeMatchingDate &&
+      (isAdmin || viewerSubmissionDates.has(activeMatchingDate)),
     gcTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결) - React Query v5: cacheTime → gcTime
     staleTime: 0, // 항상 신선한 데이터 fetch
   });
@@ -141,7 +150,7 @@ function TodayLibraryContent() {
   }, [sessionLoading, cohortLoading, participant, cohortId, cohort, router, toast]);
 
   // 로딩 상태 - 스켈레톤 UI 표시
-  if (sessionLoading || cohortLoading || participantsLoading) {
+  if (sessionLoading || cohortLoading || participantsLoading || viewerSubmissionLoading) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
@@ -196,11 +205,12 @@ function TodayLibraryContent() {
     return null;
   }
 
+  const viewerHasAccess = isAdmin || (activeMatchingDate ? viewerSubmissionDates.has(activeMatchingDate) : false);
+  const isLocked = !viewerHasAccess;
+
   // 프로필북 클릭 핸들러 (인증 체크는 isLocked에서 이미 완료)
   const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
-    // isLocked가 true인 경우 이 함수는 자물쇠 카드에서만 호출됨
-    // Toast는 미인증 상태에서 카드 클릭 시 표시
-    if (isLocked) {
+    if (!viewerHasAccess) {
       toast({
         title: '프로필 잠김 🔒',
         description: '오늘의 독서를 인증하면 프로필을 확인할 수 있어요',

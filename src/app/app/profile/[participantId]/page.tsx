@@ -86,9 +86,19 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const { data: participant, isLoading: participantLoading } = useParticipant(participantId);
   const { data: cohort } = useCohort(cohortId || undefined);
   const { data: rawSubmissions = [], isLoading: submissionsLoading } = useParticipantSubmissionsRealtime(participantId);
+  const { data: viewerSubmissions = [], isLoading: viewerSubmissionLoading } = useParticipantSubmissionsRealtime(currentUserId);
+  const viewerSubmissionDates = useMemo(
+    () => new Set(viewerSubmissions.map((submission) => submission.submissionDate)),
+    [viewerSubmissions]
+  );
 
   // 접근 제어
-  const { isSelf: checkIsSelf, isAdmin, isVerified: isVerifiedToday } = useAccessControl();
+  const { isSelf: checkIsSelf, isAdmin } = useAccessControl();
+
+  const preferredMatchingDate = useMemo(() => {
+    if (!matchingDate) return undefined;
+    return viewerSubmissionDates.has(matchingDate) ? matchingDate : undefined;
+  }, [matchingDate, viewerSubmissionDates]);
 
   const matchingLookup = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
@@ -98,11 +108,22 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     return findLatestMatchingForParticipant(
       cohort.dailyFeaturedParticipants,
       currentUserId,
-      { preferredDate: matchingDate || undefined }
+      isAdmin
+        ? { preferredDate: preferredMatchingDate }
+        : {
+            preferredDate: preferredMatchingDate,
+            allowedDates: viewerSubmissionDates,
+          }
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, matchingDate]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate, viewerSubmissionDates, isAdmin]);
 
-  const effectiveMatchingDate = matchingDate ?? matchingLookup?.date ?? null;
+  const effectiveMatchingDate = matchingLookup?.date ?? preferredMatchingDate ?? null;
+
+  const viewerHasAccessForDate = isAdmin
+    ? true
+    : effectiveMatchingDate
+      ? viewerSubmissionDates.has(effectiveMatchingDate)
+      : false;
 
   // 매칭 날짜 기준으로 제출물 필터링 (스포일러 방지)
   const submissions = useMemo(
@@ -201,11 +222,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     return null;
   }, [viewerAssignment, isFeatured, participantId]);
 
-  // 최종 접근 권한: 본인 OR 운영자 OR (오늘 인증 완료 AND 추천 4명 중 하나)
-  const hasAccess = isSelf || isAdmin || (isVerifiedToday && isFeatured);
+  // 최종 접근 권한: 본인 OR 운영자 OR (매칭 날짜에 인증 완료 AND 추천 4명 중 하나)
+  const hasAccess = isSelf || isAdmin || (viewerHasAccessForDate && isFeatured);
 
   // 로딩 상태
-  if (sessionLoading || participantLoading || submissionsLoading) {
+  if (sessionLoading || participantLoading || submissionsLoading || viewerSubmissionLoading) {
     return <LoadingSpinner />;
   }
 
