@@ -197,6 +197,10 @@ export function NotificationToggle() {
       logger.info('Notifications disabled successfully');
     } catch (error) {
       logger.error('Error disabling notifications', error);
+      // 에러가 발생하면 토글 상태를 원래대로 복원 (여전히 활성화 상태)
+      setIsEnabled(true);
+      // 사용자에게 에러 메시지 표시
+      setErrorMessage('알림 해제 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
