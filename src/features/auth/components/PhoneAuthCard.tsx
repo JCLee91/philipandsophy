@@ -371,42 +371,16 @@ export default function PhoneAuthCard() {
         </CardFooter>
       </Card>
 
-      {/* Participant 조회 실패 시 재시도 UI */}
+      {/* Participant 조회 실패 시 재시도 버튼 */}
       {showParticipantError && (
-        <Card className="w-full max-w-md mt-4 border-amber-200 bg-amber-50">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="text-amber-900">
-                <p className="font-semibold text-base mb-2">
-                  {participantStatus === 'missing'
-                    ? '참가자 정보를 찾을 수 없습니다'
-                    : '참가자 정보 확인 중 문제가 발생했습니다'}
-                </p>
-                <p className="text-sm text-amber-700">
-                  {participantStatus === 'missing'
-                    ? '등록된 참가자가 아닙니다. 운영팀에 문의해주세요.'
-                    : '네트워크 연결을 확인하고 다시 시도해주세요.'}
-                </p>
-              </div>
-
-              <UnifiedButton
-                onClick={handleRetryParticipant}
-                loading={isRetrying}
-                loadingText="재시도 중..."
-                variant="secondary"
-                fullWidth
-              >
-                다시 시도
-              </UnifiedButton>
-
-              {participantStatus === 'missing' && (
-                <p className="text-xs text-amber-600">
-                  문제가 계속되면 운영팀(contact@philipandsophy.com)으로 문의해주세요.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <button
+          type="button"
+          onClick={handleRetryParticipant}
+          disabled={isRetrying}
+          className="w-full max-w-md mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+        >
+          {isRetrying ? '로그인 중...' : '다시 로그인하기'}
+        </button>
       )}
     </>
   );
