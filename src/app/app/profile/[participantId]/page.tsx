@@ -21,7 +21,7 @@ import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate, getMatchingAccessDates } from '@/lib/date-utils';
+import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
@@ -123,7 +123,12 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     );
   }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate, allowedMatchingDates, isSuperAdmin]);
 
+  // 매칭 날짜 (접근 권한 체크용)
   const effectiveMatchingDate = matchingLookup?.date ?? preferredMatchingDate ?? null;
+
+  // 프로필북 표시 규칙: "어제 답변 → 오늘 공개"
+  // 10월 17일 매칭 → 10월 16일까지의 인증만 표시
+  const submissionCutoffDate = effectiveMatchingDate ? getPreviousDayString(effectiveMatchingDate) : null;
 
   const viewerHasAccessForDate = isSuperAdmin
     ? true
@@ -135,12 +140,13 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const isSelf = checkIsSelf(participantId);
 
   // 매칭 날짜 기준으로 제출물 필터링 (스포일러 방지)
+  // "어제 답변 → 오늘 공개" 규칙: 10월 17일 매칭은 10월 16일까지의 제출물만 표시
   const submissions = useMemo(() => {
     if (isSelf) {
       return rawSubmissions;
     }
-    return filterSubmissionsByDate(rawSubmissions, effectiveMatchingDate);
-  }, [rawSubmissions, effectiveMatchingDate, isSelf]);
+    return filterSubmissionsByDate(rawSubmissions, submissionCutoffDate);
+  }, [rawSubmissions, submissionCutoffDate, isSelf]);
 
   // 세션 검증 (리다이렉트 플래그로 중복 방지)
   const hasRedirectedRef = useRef(false);
@@ -257,6 +263,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     viewerSubmissionDates: Array.from(viewerSubmissionDates),
     allowedMatchingDates: Array.from(allowedMatchingDates),
     effectiveMatchingDate,
+    submissionCutoffDate,
     viewerHasAccessForDate,
     isFeatured,
     hasAccess,

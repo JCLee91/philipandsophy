@@ -46,6 +46,30 @@ export function getYesterdayString(): string {
 }
 
 /**
+ * 주어진 날짜에서 하루를 뺀 날짜를 반환 (YYYY-MM-DD 형식)
+ *
+ * 프로필북 표시 규칙: "어제 답변 → 오늘 공개"
+ * - 10월 17일 매칭 → 10월 16일까지의 인증만 표시
+ * - 10월 18일 매칭 → 10월 17일까지의 인증만 표시
+ *
+ * @param dateString - ISO 날짜 문자열 (YYYY-MM-DD)
+ * @returns 하루 전 날짜 문자열 (YYYY-MM-DD)
+ *
+ * @example
+ * getPreviousDayString('2025-10-17'); // "2025-10-16"
+ * getPreviousDayString('2025-10-18'); // "2025-10-17"
+ */
+export function getPreviousDayString(dateString: string): string {
+  const date = parseISO(dateString);
+  if (!isValid(date)) {
+    logger.warn('Invalid date format in getPreviousDayString', { dateString });
+    return dateString; // Fallback to original if invalid
+  }
+  const previousDay = subDays(date, 1);
+  return format(previousDay, 'yyyy-MM-dd');
+}
+
+/**
  * Firebase 제출물을 cutoff 날짜 기준으로 필터링 (KST 타임존 처리)
  *
  * 날짜 형식 검증, 미래 날짜 방지, 타임존 변환을 수행합니다.
