@@ -54,14 +54,43 @@ export function NotificationToggle() {
 
   /**
    * 알림 상태 확인
-   * - Firestore에 pushToken이 있으면 활성화 상태
+   * - Firestore pushToken과 브라우저 권한 모두 체크
+   * - 불일치 시 자동 정리 (토큰 삭제)
    */
   const checkNotificationStatus = async (participantId: string) => {
     try {
+      // 1. Firestore에서 토큰 확인
       const token = await getPushTokenFromFirestore(participantId);
-      setIsEnabled(!!token);
+
+      // 2. 브라우저 권한 상태 확인
+      const browserPermission = getNotificationPermission();
+
+      // 3. 둘 다 만족해야 활성화 상태
+      const isActuallyEnabled = !!token && browserPermission === 'granted';
+
+      setIsEnabled(isActuallyEnabled);
+
+      // 4. 불일치 상태 감지 및 자동 정리
+      // (토큰은 있지만 권한이 차단된 경우)
+      if (token && browserPermission !== 'granted') {
+        logger.warn('[NotificationToggle] Token exists but permission not granted. Cleaning up...', {
+          browserPermission,
+          hasToken: !!token,
+        });
+
+        // Firestore에서 토큰 정리
+        const participantRef = doc(getDb(), 'participants', participantId);
+        await updateDoc(participantRef, {
+          pushToken: null,
+          pushTokenUpdatedAt: null,
+          pushNotificationEnabled: false,
+        });
+
+        setIsEnabled(false);
+        logger.info('[NotificationToggle] Cleaned up inconsistent token state');
+      }
     } catch (error) {
-      logger.error('Error checking notification status', error);
+      logger.error('[NotificationToggle] Error checking notification status', error);
     }
   };
 

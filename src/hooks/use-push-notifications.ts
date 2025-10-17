@@ -129,23 +129,39 @@ export function usePushNotifications(
   }, [userEnabled, participantId, permission, isInitialized]);
 
   /**
-   * Auto-refresh token periodically (iOS fix)
-   * Only runs if user has explicitly enabled notifications
+   * Auto-refresh token on mount and periodically (iOS fix)
+   * iOS PWA tokens expire after 1-2 weeks, so we check on every app open
+   * AND every 7 days while the app is open (belt and suspenders approach)
    */
   useEffect(() => {
     if (!userEnabled || !isSupported || !participantId || permission !== 'granted') {
       return;
     }
 
-    // Refresh token every 7 days
+    // ✅ Check token immediately on mount (iOS PWA fix)
+    // This handles the case where the app was closed for >7 days
+    const checkTokenOnMount = async () => {
+      try {
+        const messaging = getMessaging(getFirebaseApp());
+        logger.info('[usePushNotifications] Checking token on mount for iOS PWA...', { participantId });
+        await autoRefreshPushToken(messaging, participantId);
+        logger.info('[usePushNotifications] Token check on mount completed', { participantId });
+      } catch (error) {
+        logger.error('[usePushNotifications] Error checking token on mount', error);
+      }
+    };
+
+    checkTokenOnMount();
+
+    // ✅ Also refresh periodically while app is open (additional safety)
     const interval = setInterval(
       async () => {
         try {
           const messaging = getMessaging(getFirebaseApp());
           await autoRefreshPushToken(messaging, participantId);
-          logger.info('Auto-refreshed push token', { participantId });
+          logger.info('[usePushNotifications] Auto-refreshed push token (interval)', { participantId });
         } catch (error) {
-          logger.error('Error auto-refreshing push token', error);
+          logger.error('[usePushNotifications] Error auto-refreshing push token', error);
         }
       },
       7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
