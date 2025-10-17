@@ -23,7 +23,7 @@ export default function Home() {
   }, [isLoading, participantStatus, participant, router]);
 
   // ✅ 하나의 통합된 로딩 상태
-  if (isLoading) {
+  if (isLoading || (participantStatus === 'ready' && participant)) {
     return (
       <div className="app-shell flex items-center justify-center p-4">
         <div className="w-full max-w-md text-center space-y-4">
