@@ -196,6 +196,20 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   const isFeatured = accessibleProfileIds.has(participantId);
 
+  // 디버깅: 매칭 정보 로그
+  logger.info('매칭 정보 상세', {
+    matchingLookup: matchingLookup ? { date: matchingLookup.date } : null,
+    assignmentsKeys: Object.keys(assignments),
+    currentUserId,
+    viewerAssignment: viewerAssignment ? {
+      similar: viewerAssignment.similar,
+      opposite: viewerAssignment.opposite,
+    } : null,
+    accessibleProfileIds: Array.from(accessibleProfileIds),
+    participantId,
+    isFeatured,
+  });
+
   // 매칭 이유 추출 (현재 보는 프로필이 similar인지 opposite인지 확인)
   const matchingReason = useMemo(() => {
     if (!viewerAssignment || !isFeatured) return null;
@@ -232,6 +246,21 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 최종 접근 권한: 본인 OR 슈퍼관리자 OR (매칭 날짜에 인증 완료 AND 추천 4명 중 하나)
   const hasAccess = isSelf || isSuperAdmin || (isVerifiedToday && viewerHasAccessForDate && isFeatured);
+
+  // 디버깅 로그
+  logger.info('프로필북 접근 권한 체크', {
+    participantId,
+    currentUserId,
+    isSelf,
+    isSuperAdmin,
+    isVerifiedToday,
+    viewerSubmissionDates: Array.from(viewerSubmissionDates),
+    allowedMatchingDates: Array.from(allowedMatchingDates),
+    effectiveMatchingDate,
+    viewerHasAccessForDate,
+    isFeatured,
+    hasAccess,
+  });
 
   // 로딩 상태
   if (sessionLoading || participantLoading || submissionsLoading || viewerSubmissionLoading) {

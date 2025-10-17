@@ -55,3 +55,8 @@ parsed-*.json
 *-seed-data.json
 check-*.js
 check-*.mjs
+
+# PWA generated files (next-pwa)
+**/public/sw.js
+**/public/workbox-*.js
+**/public/worker-*.js

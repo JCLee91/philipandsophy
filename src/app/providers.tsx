@@ -13,6 +13,7 @@ import { initializeFirebase } from '@/lib/firebase';
 import { CACHE_TIMES } from '@/constants/cache';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { PushNotificationRefresher } from '@/components/PushNotificationRefresher';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -69,6 +70,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     >
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
+          <PushNotificationRefresher />
           {children}
           <Toaster />
         </QueryClientProvider>

@@ -25,29 +25,13 @@ export function isPushNotificationSupported(): boolean {
 }
 
 /**
- * Wait for service worker to activate
- */
-async function waitForActivation(registration: ServiceWorkerRegistration): Promise<void> {
-  if (!registration.installing) {
-    return; // Already active or waiting
-  }
-
-  return new Promise<void>((resolve) => {
-    const worker = registration.installing!;
-    const handler = (e: Event) => {
-      if ((e.target as ServiceWorker).state === 'activated') {
-        worker.removeEventListener('statechange', handler); // Cleanup listener
-        resolve();
-      }
-    };
-    worker.addEventListener('statechange', handler);
-  });
-}
-
-/**
- * Register and ensure service worker is ready
- * This fixes the issue where navigator.serviceWorker.ready never resolves
- * because Firebase SDK expects the service worker to already be registered
+ * Ensure unified service worker is ready
+ *
+ * 변경 사항 (2025-10-17):
+ * - 복잡한 상태 관리 로직 제거
+ * - 단순히 navigator.serviceWorker.ready 사용
+ * - 통합 SW는 register-sw.tsx에서 이미 등록됨
+ * - 여기서는 등록된 SW가 준비되었는지만 확인
  */
 async function ensureServiceWorkerReady(): Promise<ServiceWorkerRegistration> {
   if (!('serviceWorker' in navigator)) {
@@ -55,22 +39,21 @@ async function ensureServiceWorkerReady(): Promise<ServiceWorkerRegistration> {
     throw new Error('Service Worker not supported');
   }
 
-  logger.info('[ensureServiceWorkerReady] Registering firebase-messaging-sw.js...');
+  logger.info('[ensureServiceWorkerReady] Waiting for service worker to be ready...');
 
   try {
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    // 통합 SW가 이미 register-sw.tsx에서 등록되었으므로
+    // 준비 상태만 확인하면 됨
+    const registration = await navigator.serviceWorker.ready;
 
-    logger.info('[ensureServiceWorkerReady] Service worker registered', {
+    logger.info('[ensureServiceWorkerReady] Service worker is ready', {
       scope: registration.scope,
-      state: registration.active ? 'active' : registration.installing ? 'installing' : 'waiting'
+      scriptURL: registration.active?.scriptURL,
     });
 
-    await waitForActivation(registration);
-
-    logger.info('[ensureServiceWorkerReady] Service worker is active', { scope: registration.scope });
     return registration;
   } catch (error) {
-    logger.error('[ensureServiceWorkerReady] Failed to register service worker', error);
+    logger.error('[ensureServiceWorkerReady] Failed to get ready service worker', error);
     throw error;
   }
 }

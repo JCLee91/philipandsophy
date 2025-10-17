@@ -166,13 +166,49 @@ function MatchingPageContent() {
       logger.error('localStorage 처리 실패', error);
     }
 
-    // 3. Firestore 조회는 비동기로 백그라운드 실행 (UI 블로킹 안 함)
-    const loadFirestorePreview = async () => {
+    // 3. Firestore에서 확정된 매칭 또는 프리뷰 조회 (비동기, UI 블로킹 안 함)
+    const loadFirestoreData = async () => {
       try {
         const { getDb } = await import('@/lib/firebase');
-        const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
+        const { collection, query, where, getDocs, orderBy, limit, doc, getDoc } = await import('firebase/firestore');
 
         const db = getDb();
+
+        // 3-A. cohorts 문서에서 확정된 매칭 확인
+        const cohortRef = doc(db, 'cohorts', cohortId);
+        const cohortSnap = await getDoc(cohortRef);
+
+        if (cohortSnap.exists()) {
+          const cohortData = cohortSnap.data();
+          const dailyFeatured = cohortData.dailyFeaturedParticipants || {};
+          const todayMatching = dailyFeatured[submissionDate];
+
+          if (todayMatching?.assignments) {
+            // 확정된 매칭이 DB에 있음
+            const confirmedFromDb: MatchingResponse = {
+              success: true,
+              date: submissionDate,
+              question: todayMatching.question || getDailyQuestionText(submissionDate),
+              totalParticipants: Object.keys(todayMatching.assignments).length,
+              matching: {
+                assignments: todayMatching.assignments,
+              },
+              submissionStats: todayMatching.submissionStats || {
+                totalSubmissions: 0,
+                processedSubmissions: 0,
+              },
+            };
+
+            setConfirmedResult(confirmedFromDb);
+            setMatchingState('confirmed');
+            saveToStorage(CONFIRMED_STORAGE_KEY, confirmedFromDb);
+
+            logger.info('✅ DB에서 확정된 매칭 로드 완료', { date: submissionDate, count: confirmedFromDb.totalParticipants });
+            return; // 확정 매칭이 있으면 프리뷰는 확인 안 함
+          }
+        }
+
+        // 3-B. 확정 매칭이 없으면 matching_previews에서 pending 프리뷰 확인
         const previewsRef = collection(db, 'matching_previews');
         const q = query(
           previewsRef,
@@ -209,11 +245,11 @@ function MatchingPageContent() {
         }
       } catch (error) {
         // Firestore 조회 실패는 무시 (localStorage 데이터가 이미 표시됨)
-        logger.debug('Firestore preview 조회 실패 (무시)', error);
+        logger.debug('Firestore 데이터 조회 실패 (무시)', error);
       }
     };
 
-    loadFirestorePreview();
+    loadFirestoreData();
   }, [cohortId, submissionDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY, loadFromStorage, saveToStorage, toast]);
 
   // beforeunload 경고: AI 매칭 처리 중 페이지 이탈 방지

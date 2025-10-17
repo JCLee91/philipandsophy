@@ -54,26 +54,25 @@ export function NotificationToggle() {
 
   /**
    * 알림 상태 확인
-   * - Firestore pushToken과 브라우저 권한 모두 체크
-   * - 불일치 시 자동 정리 (토큰 삭제)
+   * - Firestore pushToken을 단일 진실 소스(Single Source of Truth)로 사용
+   * - iOS PWA 버그: Notification.permission이 불안정하므로 참고용으로만 사용
+   * - 명시적으로 차단된 경우(denied)에만 자동 정리
    */
   const checkNotificationStatus = async (participantId: string) => {
     try {
-      // 1. Firestore에서 토큰 확인
+      // 1. Firestore에서 토큰 확인 (단일 진실 소스)
       const token = await getPushTokenFromFirestore(participantId);
 
-      // 2. 브라우저 권한 상태 확인
+      // 2. 토큰이 있으면 활성화로 간주 (iOS PWA 버그 회피)
+      setIsEnabled(!!token);
+
+      // 3. 브라우저 권한 상태 확인 (참고용)
       const browserPermission = getNotificationPermission();
 
-      // 3. 둘 다 만족해야 활성화 상태
-      const isActuallyEnabled = !!token && browserPermission === 'granted';
-
-      setIsEnabled(isActuallyEnabled);
-
-      // 4. 불일치 상태 감지 및 자동 정리
-      // (토큰은 있지만 권한이 차단된 경우)
-      if (token && browserPermission !== 'granted') {
-        logger.warn('[NotificationToggle] Token exists but permission not granted. Cleaning up...', {
+      // 4. 권한이 명시적으로 차단된 경우에만 정리
+      // iOS PWA 버그 수정: permission이 'default'로 리셋되어도 알림은 동작할 수 있음
+      if (token && browserPermission === 'denied') {
+        logger.warn('[NotificationToggle] Permission explicitly denied. Cleaning up...', {
           browserPermission,
           hasToken: !!token,
         });
@@ -87,7 +86,7 @@ export function NotificationToggle() {
         });
 
         setIsEnabled(false);
-        logger.info('[NotificationToggle] Cleaned up inconsistent token state');
+        logger.info('[NotificationToggle] Cleaned up after explicit permission denial');
       }
     } catch (error) {
       logger.error('[NotificationToggle] Error checking notification status', error);
@@ -156,51 +155,53 @@ export function NotificationToggle() {
 
   /**
    * 알림 비활성화
-   * - FCM 토큰 삭제 (기기 측 구독 해제)
-   * - Firestore에서 pushToken 및 pushNotificationEnabled 필드 업데이트
-   * - Cleanup function 실행하여 메모리 누수 방지
+   * - Firestore 업데이트 우선 (단일 진실 소스)
+   * - FCM 토큰 삭제 (실패해도 non-critical)
+   * - 에러 시에도 사용자 의도(OFF) 존중
    */
   const disableNotifications = async () => {
     if (!participantId) {
-      logger.error('Cannot disable notifications: participantId not found');
+      logger.error('[NotificationToggle] Cannot disable: participantId not found');
       return;
     }
 
     try {
       setIsLoading(true);
 
-      // 1. FCM 토큰 삭제 (기기 측 구독 해제)
+      // 1. 먼저 Firestore 업데이트 (가장 중요!)
+      const participantRef = doc(getDb(), 'participants', participantId);
+      await updateDoc(participantRef, {
+        pushToken: null,
+        pushTokenUpdatedAt: null,
+        pushNotificationEnabled: false,
+      });
+
+      // 2. UI 즉시 업데이트 (Firestore 성공 시)
+      setIsEnabled(false);
+      logger.info('[NotificationToggle] Firestore updated, notification disabled');
+
+      // 3. FCM 토큰 삭제 시도 (실패해도 무시)
       try {
         const messaging = getMessaging(getFirebaseApp());
         await deleteToken(messaging);
-        logger.info('FCM token deleted successfully');
-      } catch (error) {
-        logger.warn('Failed to delete FCM token', error);
-        // Continue even if deleteToken fails (e.g., token already deleted)
+        logger.info('[NotificationToggle] FCM token deleted');
+      } catch (tokenError) {
+        logger.warn('[NotificationToggle] Failed to delete FCM token (non-critical)', tokenError);
+        // iOS PWA에서는 실패할 수 있음 - 무시하고 계속
       }
 
-      // 2. Cleanup listener to prevent memory leak
+      // 4. Cleanup listener
       if (cleanup) {
         cleanup();
         setCleanup(null);
       }
 
-      // 3. Firestore에서 pushToken 및 사용자 설정 업데이트
-      const participantRef = doc(getDb(), 'participants', participantId);
-      await updateDoc(participantRef, {
-        pushToken: null,
-        pushTokenUpdatedAt: null,
-        pushNotificationEnabled: false, // 사용자가 명시적으로 비활성화했음을 기록
-      });
-
-      setIsEnabled(false);
-      logger.info('Notifications disabled successfully');
     } catch (error) {
-      logger.error('Error disabling notifications', error);
-      // 에러가 발생하면 토글 상태를 원래대로 복원 (여전히 활성화 상태)
-      setIsEnabled(true);
-      // 사용자에게 에러 메시지 표시
-      setErrorMessage('알림 해제 중 오류가 발생했습니다. 다시 시도해주세요.');
+      logger.error('[NotificationToggle] Error disabling notifications', error);
+
+      // 에러 시에도 사용자 의도(OFF) 유지
+      setIsEnabled(false);
+      setErrorMessage('알림 해제 중 오류가 발생했습니다. 페이지를 새로고침해주세요.');
     } finally {
       setIsLoading(false);
     }
