@@ -1,4 +1,4 @@
-import { format, subDays, parseISO, isValid, isFuture } from 'date-fns';
+import { format, subDays, parseISO, isValid, isFuture, addDays } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import type { Timestamp } from 'firebase/firestore';
 import { logger } from './logger';
@@ -101,4 +101,50 @@ export function filterSubmissionsByDate<T extends { id?: string; submittedAt: Ti
     const submissionKST = toZonedTime(submissionDate, KOREA_TIMEZONE);
     return submissionKST <= cutoffDateKST;
   });
+}
+
+/**
+ * 제출 날짜 기준으로 접근 가능한 프로필북 공개 날짜집을 계산합니다.
+ *
+ * 매칭 결과는 제출 다음날 공개되지만, 오늘 인증한 경우에도 프로필북 접근을 허용합니다.
+ * - 어제 인증 → 오늘 프로필북 공개 (제출일 + 1)
+ * - 오늘 인증 → 오늘 프로필북 공개 (제출일과 동일)
+ *
+ * @param submissionDates - 제출 날짜 컬렉션 (Set 또는 Array)
+ * @returns 공개일 집합 (오늘 또는 과거)
+ *
+ * @example
+ * // 10월 13일 인증 → 10월 14일 공개
+ * // 10월 14일 인증 → 10월 14일 공개 (즉시)
+ */
+export function getMatchingAccessDates(submissionDates: Iterable<string>): Set<string> {
+  const today = getTodayString();
+  const accessDates = new Set<string>();
+
+  for (const rawDate of submissionDates) {
+    if (!rawDate) continue;
+
+    const parsed = parseISO(rawDate);
+    if (!isValid(parsed)) {
+      continue;
+    }
+
+    const submissionDateString = format(parsed, 'yyyy-MM-dd');
+
+    // 오늘 인증한 경우: 오늘 날짜 추가 (즉시 접근 허용)
+    if (submissionDateString === today) {
+      accessDates.add(today);
+      continue;
+    }
+
+    // 과거 인증한 경우: 제출일 + 1일
+    const releaseDate = addDays(parsed, 1);
+    const releaseDateString = format(releaseDate, 'yyyy-MM-dd');
+
+    if (releaseDateString <= today) {
+      accessDates.add(releaseDateString);
+    }
+  }
+
+  return accessDates;
 }

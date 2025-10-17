@@ -21,7 +21,7 @@ import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate } from '@/lib/date-utils';
+import { filterSubmissionsByDate, getMatchingAccessDates } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
@@ -92,13 +92,19 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     [viewerSubmissions]
   );
 
+  // 제출일 기준 공개되는 프로필북 날짜 (제출 다음날 OR 오늘 인증 시 즉시)
+  const allowedMatchingDates = useMemo(
+    () => getMatchingAccessDates(viewerSubmissionDates),
+    [viewerSubmissionDates]
+  );
+
   // 접근 제어
   const { isSelf: checkIsSelf, isSuperAdmin, isVerified: isVerifiedToday } = useAccessControl();
 
   const preferredMatchingDate = useMemo(() => {
     if (!matchingDate) return undefined;
-    return viewerSubmissionDates.has(matchingDate) ? matchingDate : undefined;
-  }, [matchingDate, viewerSubmissionDates]);
+    return allowedMatchingDates.has(matchingDate) ? matchingDate : undefined;
+  }, [matchingDate, allowedMatchingDates]);
 
   const matchingLookup = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
@@ -112,17 +118,17 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         ? { preferredDate: preferredMatchingDate }
         : {
             preferredDate: preferredMatchingDate,
-            allowedDates: viewerSubmissionDates,
+            allowedDates: allowedMatchingDates,
           }
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate, viewerSubmissionDates, isSuperAdmin]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate, allowedMatchingDates, isSuperAdmin]);
 
   const effectiveMatchingDate = matchingLookup?.date ?? preferredMatchingDate ?? null;
 
   const viewerHasAccessForDate = isSuperAdmin
     ? true
     : effectiveMatchingDate
-      ? viewerSubmissionDates.has(effectiveMatchingDate)
+      ? allowedMatchingDates.has(effectiveMatchingDate)
       : false;
 
   // 접근 권한 체크 (submissions useMemo보다 먼저 선언)

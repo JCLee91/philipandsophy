@@ -63,9 +63,13 @@ export function normalizeMatchingData(
 /**
  * 지정한 참가자가 포함된 가장 최근 매칭 엔트리를 찾습니다.
  *
+ * allowedDates가 비어있는 경우(오늘 처음 인증), 과거의 가장 최근 매칭을 반환합니다.
+ * 이를 통해 "어제 인증 안 했는데 오늘 인증한 경우 가장 최근 프로필북을 받는다" 플로우를 구현합니다.
+ *
  * @param dailyMap - 날짜별 매칭 결과 맵 (cohort.dailyFeaturedParticipants)
  * @param participantId - 조회할 참가자 ID
  * @param options.preferredDate - 우선적으로 확인할 날짜 (예: 오늘)
+ * @param options.allowedDates - 접근 가능한 날짜 집합 (빈 Set이면 과거 모든 날짜 허용)
  * @returns 가장 최근 매칭 날짜와 정규화된 매칭 데이터, 없으면 null
  */
 export function findLatestMatchingForParticipant(
@@ -77,9 +81,14 @@ export function findLatestMatchingForParticipant(
     return null;
   }
 
+  const hasAllowedDates = options.allowedDates && options.allowedDates.size > 0;
+
   const tryResolve = (date: string | undefined): MatchingLookupResult | null => {
     if (!date) return null;
-    if (options.allowedDates && !options.allowedDates.has(date)) return null;
+
+    // allowedDates가 있으면 체크, 없으면 모든 과거 날짜 허용
+    if (hasAllowedDates && !options.allowedDates!.has(date)) return null;
+
     const entry = dailyMap[date];
     if (!entry) return null;
 
@@ -99,6 +108,7 @@ export function findLatestMatchingForParticipant(
     }
   }
 
+  // 과거 날짜를 역순으로 순회 (가장 최근부터)
   const sortedDates = Object.keys(dailyMap)
     .filter(Boolean)
     .sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
