@@ -48,7 +48,7 @@ export default function PhoneAuthCard() {
     }
   }, []);
 
-  // reCAPTCHA 초기화 (컴포넌트 마운트 시 1회)
+  // ✅ reCAPTCHA 초기화 (컴포넌트 마운트 시 1회, 지연 제거)
   useEffect(() => {
     // Strict Mode 대응: 이미 초기화되었으면 스킵
     if (recaptchaVerifierRef.current) {
@@ -58,25 +58,20 @@ export default function PhoneAuthCard() {
 
     let isMounted = true; // Cleanup guard
 
-    // Firebase 초기화를 기다림 (약간의 지연)
-    const timer = setTimeout(() => {
-      if (!isMounted) return; // Component unmounted during timeout
-
-      try {
-        recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
-        logger.debug('reCAPTCHA 초기화 완료');
-      } catch (error) {
-        logger.error('reCAPTCHA 초기화 실패:', error);
-        if (isMounted) {
-          setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
-        }
+    // ✅ Firebase는 이미 초기화되어 있으므로 지연 없이 즉시 초기화
+    try {
+      recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
+      logger.debug('reCAPTCHA 초기화 완료');
+    } catch (error) {
+      logger.error('reCAPTCHA 초기화 실패:', error);
+      if (isMounted) {
+        setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
       }
-    }, AUTH_TIMING.RECAPTCHA_INIT_DELAY);
+    }
 
     // Cleanup: 모든 edge case 처리
     return () => {
       isMounted = false;
-      clearTimeout(timer);
 
       // RecaptchaVerifier cleanup with error handling
       if (recaptchaVerifierRef.current) {

@@ -42,11 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           setUser(currentUser);
 
-          // 로그인된 경우 participant 정보 가져오기 (재시도 포함)
+          // ✅ 로그인된 경우 participant 정보 가져오기 (개선된 재시도 로직)
           if (currentUser) {
             let retryCount = 0;
-            const MAX_RETRIES = 3;
-            const RETRY_DELAY = 1000; // 1초
+            const MAX_RETRIES = 2; // ✅ 3 → 2 (재시도 횟수 감소)
+            const RETRY_DELAY = 300; // ✅ 1000ms → 300ms (지연 시간 단축)
 
             const fetchParticipantWithRetry = async (): Promise<void> => {
               try {
@@ -70,15 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (retryCount < MAX_RETRIES - 1) {
                   retryCount++;
-                  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retryCount));
+                  // ✅ 고정 300ms 지연 (Exponential Backoff 제거로 예측 가능한 지연)
+                  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
                   return fetchParticipantWithRetry();
                 } else {
-                  // 최종 실패 시 로그아웃 처리
-                  logger.error('Participant 조회 최종 실패, 로그아웃 처리');
+                  // ✅ 최종 실패 시 로그아웃 대신 로그인 화면 유지 (재시도 가능)
+                  logger.error('Participant 조회 최종 실패, 로그인 화면 표시');
                   if (mountedRef.current) {
                     setParticipant(null);
-                    // Firebase 로그아웃
-                    await auth.signOut();
+                    // ❌ 자동 로그아웃 제거 - 사용자가 재시도할 수 있도록 함
                   }
                 }
               }
