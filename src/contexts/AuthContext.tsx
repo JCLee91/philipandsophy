@@ -172,7 +172,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isAdministrator = participant?.isAdministrator === true;
+  // 데이터센터 접근 권한: 일반 관리자 또는 슈퍼 관리자
+  const isAdministrator = participant?.isAdministrator === true || participant?.isSuperAdmin === true;
 
   return (
     <AuthContext.Provider
