@@ -8,15 +8,9 @@ import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TablePagination from '@/components/datacntr/table/TablePagination';
-import type { Participant } from '@/types/database';
+import { dataCenterParticipantSchema, type DataCenterParticipant } from '@/types/datacntr';
 
-interface ParticipantWithCohort extends Participant {
-  cohortName: string;
-  submissionCount: number;
-  engagementScore?: number;
-  engagementLevel?: 'high' | 'medium' | 'low';
-  activityStatus?: 'active' | 'moderate' | 'dormant';
-}
+type ParticipantRow = DataCenterParticipant;
 
 type FilterState = {
   pushToken: 'all' | 'enabled' | 'disabled';
@@ -27,8 +21,8 @@ type FilterState = {
 export default function ParticipantsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  const [participants, setParticipants] = useState<ParticipantWithCohort[]>([]);
-  const [filteredParticipants, setFilteredParticipants] = useState<ParticipantWithCohort[]>([]);
+  const [participants, setParticipants] = useState<ParticipantRow[]>([]);
+  const [filteredParticipants, setFilteredParticipants] = useState<ParticipantRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<string>('');
@@ -66,9 +60,15 @@ export default function ParticipantsPage() {
           throw new Error('참가자 조회 실패');
         }
 
-        const data = await response.json();
-        setParticipants(data);
-        setFilteredParticipants(data);
+        const rawData = await response.json();
+        const parsedData = dataCenterParticipantSchema.array().parse(rawData);
+        const normalizedData = parsedData.map((participant) => ({
+          ...participant,
+          phoneNumber: participant.phoneNumber ?? '',
+        })) as ParticipantRow[];
+
+        setParticipants(normalizedData);
+        setFilteredParticipants(normalizedData);
       } catch (error) {
         console.error(error);
       } finally {
@@ -96,17 +96,17 @@ export default function ParticipantsPage() {
     // 푸시 알림 필터
     if (filters.pushToken !== 'all') {
       if (filters.pushToken === 'enabled') {
-        filtered = filtered.filter((p) => !!p.pushToken);
+        filtered = filtered.filter((p) => !!p.hasPushToken);
       } else {
-        filtered = filtered.filter((p) => !p.pushToken);
+        filtered = filtered.filter((p) => !p.hasPushToken);
       }
     }
 
     // 정렬
     if (sortKey && sortDirection) {
       filtered.sort((a, b) => {
-        const aValue = a[sortKey as keyof ParticipantWithCohort];
-        const bValue = b[sortKey as keyof ParticipantWithCohort];
+        const aValue = a[sortKey as keyof ParticipantRow];
+        const bValue = b[sortKey as keyof ParticipantRow];
 
         // Null 처리
         if (aValue === undefined || aValue === null) return 1;
@@ -131,6 +131,13 @@ export default function ParticipantsPage() {
           const bTime = getTimestamp(bValue);
 
           return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
+        }
+
+        // 불리언 타입 처리 (푸시 허용 여부 등)
+        if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+          return sortDirection === 'asc'
+            ? Number(aValue) - Number(bValue)
+            : Number(bValue) - Number(aValue);
         }
 
         // 숫자 타입 처리 (submissionCount)
@@ -162,7 +169,7 @@ export default function ParticipantsPage() {
 
   if (!user) return null;
 
-  const columns: Column<ParticipantWithCohort>[] = [
+  const columns: Column<ParticipantRow>[] = [
     {
       key: 'name',
       header: '이름',
@@ -188,11 +195,11 @@ export default function ParticipantsPage() {
       width: '18%',
     },
     {
-      key: 'pushToken',
+      key: 'hasPushToken',
       header: '푸시 알림',
       sortable: true,
       render: (p) => {
-        if (p.pushToken) {
+        if (p.hasPushToken) {
           return (
             <span className="inline-flex items-center gap-1 text-green-600 text-sm">
               <CheckCircle className="h-4 w-4" />
@@ -300,7 +307,7 @@ export default function ParticipantsPage() {
       </div>
 
       {/* 테이블 */}
-      <DataTable
+      <DataTable<ParticipantRow>
         columns={columns}
         data={paginatedData}
         sortKey={sortKey}
