@@ -6,15 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, ArrowLeft, User, BookOpen, Calendar } from 'lucide-react';
 import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import DataTable, { Column } from '@/components/datacntr/table/DataTable';
-import type { Participant, Cohort } from '@/types/database';
+import type { Cohort } from '@/types/database';
+import { cohortParticipantSchema, type CohortParticipant } from '@/types/datacntr';
 
 interface CohortDetailPageProps {
   params: Promise<{ cohortId: string }>;
 }
 
-interface ParticipantWithStats extends Participant {
-  submissionCount: number;
-}
+type ParticipantWithStats = CohortParticipant & { id: string };
 
 export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   const router = useRouter();
@@ -54,8 +53,11 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         }
 
         const data = await response.json();
+        const parsedParticipants = cohortParticipantSchema
+          .array()
+          .parse(data.participants) as ParticipantWithStats[];
         setCohort(data.cohort);
-        setParticipants(data.participants);
+        setParticipants(parsedParticipants);
       } catch (error) {
         console.error(error);
       } finally {

@@ -8,6 +8,7 @@ import { calculateEngagementScore, getEngagementLevel, getWeeksPassed } from '@/
 import { sanitizeParticipantForClient } from '@/lib/datacntr/sanitize';
 import { getParticipantStatus } from '@/lib/datacntr/status';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
+import type { DataCenterParticipant } from '@/types/datacntr';
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // 각 참가자의 인증 횟수, 인게이지먼트, 활동 상태 추가 (관리자 제외)
     const now = Date.now();
-    const participantsWithStats = await Promise.all(
+    const participantsWithStats: DataCenterParticipant[] = await Promise.all(
       nonAdminParticipants.map(async (doc) => {
         const participantData = doc.data();
 
