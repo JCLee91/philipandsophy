@@ -27,6 +27,7 @@ export function NotificationToggle() {
 
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStatusLoading, setIsStatusLoading] = useState(true); // Initial load state
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [showDeniedMessage, setShowDeniedMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -60,6 +61,8 @@ export function NotificationToggle() {
    */
   const checkNotificationStatus = async (participantId: string) => {
     try {
+      setIsStatusLoading(true);
+
       // 1. Firestore에서 토큰 확인 (단일 진실 소스)
       const token = await getPushTokenFromFirestore(participantId);
 
@@ -90,6 +93,8 @@ export function NotificationToggle() {
       }
     } catch (error) {
       logger.error('[NotificationToggle] Error checking notification status', error);
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -97,6 +102,7 @@ export function NotificationToggle() {
    * 알림 활성화
    * - 브라우저 권한 요청
    * - FCM 토큰 획득 및 Firestore 저장
+   * - 완료 후 Firestore에서 상태 재확인하여 UI 동기화
    */
   const enableNotifications = async () => {
     if (!participantId) {
@@ -105,17 +111,23 @@ export function NotificationToggle() {
       return;
     }
 
+    // Guard: 이미 로딩 중이거나 초기 상태 확인 중이면 무시
+    if (isLoading || isStatusLoading) {
+      logger.warn('[enableNotifications] Already in progress, ignoring');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setErrorMessage(null);
 
-      logger.info('Requesting notification permission...');
+      logger.info('[enableNotifications] Requesting notification permission...');
 
       // 1. 브라우저 알림 권한 요청
       const result = await Notification.requestPermission();
       setPermission(result);
 
-      logger.info('Permission result:', result);
+      logger.info('[enableNotifications] Permission result:', result);
 
       if (result === 'denied') {
         setShowDeniedMessage(true);
@@ -123,44 +135,40 @@ export function NotificationToggle() {
       }
 
       if (result === 'granted') {
-        logger.info('Permission granted, initializing FCM...');
+        logger.info('[enableNotifications] Permission granted, initializing FCM...');
 
-        // 2. 즉시 UI 업데이트 (낙관적 업데이트)
-        setIsEnabled(true);
-        setIsLoading(false);
-
-        // 3. 백그라운드에서 FCM 토큰 획득 및 저장
+        // 2. FCM 토큰 획득 및 저장 (await으로 완료 대기)
         const messaging = getMessaging(getFirebaseApp());
-        initializePushNotifications(messaging, participantId)
-          .then((initResult) => {
-            if (initResult) {
-              setCleanup(() => initResult.cleanup);
+        const initResult = await initializePushNotifications(messaging, participantId);
 
-              // Firestore에 사용자가 알림을 활성화했음을 기록
-              const participantRef = doc(getDb(), 'participants', participantId);
-              return updateDoc(participantRef, {
-                pushNotificationEnabled: true,
-              });
-            } else {
-              throw new Error('Failed to get FCM token');
-            }
-          })
-          .then(() => {
-            logger.info('Notifications enabled successfully');
-          })
-          .catch((error) => {
-            logger.error('Background FCM initialization failed', error);
-            // 실패 시 토글 다시 끄기
-            setIsEnabled(false);
-            setErrorMessage('알림 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
-          });
+        if (!initResult) {
+          throw new Error('Failed to get FCM token');
+        }
 
-        // 함수 종료 (백그라운드에서 계속 처리)
-        return;
+        // 3. 토큰 획득 성공 - cleanup 저장
+        setCleanup(() => initResult.cleanup);
+
+        // 4. Firestore에 사용자가 알림을 활성화했음을 기록
+        const participantRef = doc(getDb(), 'participants', participantId);
+        await updateDoc(participantRef, {
+          pushNotificationEnabled: true,
+        });
+
+        logger.info('[enableNotifications] Firestore updated successfully');
+
+        // 5. Firestore에서 상태 재확인하여 UI 동기화 (Single Source of Truth)
+        await checkNotificationStatus(participantId);
+
+        logger.info('[enableNotifications] Notifications enabled successfully');
       }
     } catch (error) {
-      logger.error('Error enabling notifications', error);
-      setErrorMessage('알림 설정 중 오류가 발생했습니다');
+      logger.error('[enableNotifications] Error enabling notifications', error);
+      setErrorMessage('알림 설정 중 오류가 발생했습니다. 다시 시도해주세요.');
+
+      // 에러 발생 시 Firestore 상태 재확인하여 일관성 유지
+      if (participantId) {
+        await checkNotificationStatus(participantId);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -170,16 +178,23 @@ export function NotificationToggle() {
    * 알림 비활성화
    * - Firestore 업데이트 우선 (단일 진실 소스)
    * - FCM 토큰 삭제 (실패해도 non-critical)
-   * - 에러 시에도 사용자 의도(OFF) 존중
+   * - 완료 후 Firestore에서 상태 재확인하여 UI 동기화
    */
   const disableNotifications = async () => {
     if (!participantId) {
-      logger.error('[NotificationToggle] Cannot disable: participantId not found');
+      logger.error('[disableNotifications] Cannot disable: participantId not found');
+      return;
+    }
+
+    // Guard: 이미 로딩 중이거나 초기 상태 확인 중이면 무시
+    if (isLoading || isStatusLoading) {
+      logger.warn('[disableNotifications] Already in progress, ignoring');
       return;
     }
 
     try {
       setIsLoading(true);
+      setErrorMessage(null);
 
       // 1. 먼저 Firestore 업데이트 (가장 중요!)
       const participantRef = doc(getDb(), 'participants', participantId);
@@ -189,32 +204,36 @@ export function NotificationToggle() {
         pushNotificationEnabled: false,
       });
 
-      // 2. UI 즉시 업데이트 (Firestore 성공 시)
-      setIsEnabled(false);
-      logger.info('[NotificationToggle] Firestore updated, notification disabled');
+      logger.info('[disableNotifications] Firestore updated successfully');
 
-      // 3. FCM 토큰 삭제 시도 (실패해도 무시)
+      // 2. FCM 토큰 삭제 시도 (실패해도 무시)
       try {
         const messaging = getMessaging(getFirebaseApp());
         await deleteToken(messaging);
-        logger.info('[NotificationToggle] FCM token deleted');
+        logger.info('[disableNotifications] FCM token deleted');
       } catch (tokenError) {
-        logger.warn('[NotificationToggle] Failed to delete FCM token (non-critical)', tokenError);
+        logger.warn('[disableNotifications] Failed to delete FCM token (non-critical)', tokenError);
         // iOS PWA에서는 실패할 수 있음 - 무시하고 계속
       }
 
-      // 4. Cleanup listener
+      // 3. Cleanup listener
       if (cleanup) {
         cleanup();
         setCleanup(null);
       }
 
-    } catch (error) {
-      logger.error('[NotificationToggle] Error disabling notifications', error);
+      // 4. Firestore에서 상태 재확인하여 UI 동기화 (Single Source of Truth)
+      await checkNotificationStatus(participantId);
 
-      // 에러 시에도 사용자 의도(OFF) 유지
-      setIsEnabled(false);
-      setErrorMessage('알림 해제 중 오류가 발생했습니다. 페이지를 새로고침해주세요.');
+      logger.info('[disableNotifications] Notifications disabled successfully');
+    } catch (error) {
+      logger.error('[disableNotifications] Error disabling notifications', error);
+      setErrorMessage('알림 해제 중 오류가 발생했습니다. 다시 시도해주세요.');
+
+      // 에러 발생 시 Firestore 상태 재확인하여 일관성 유지
+      if (participantId) {
+        await checkNotificationStatus(participantId);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -224,7 +243,11 @@ export function NotificationToggle() {
    * 토글 핸들러
    */
   const handleToggle = async () => {
-    if (isLoading) return;
+    // Guard: 로딩 중이거나 초기 상태 확인 중이면 무시
+    if (isLoading || isStatusLoading) {
+      logger.warn('[handleToggle] Blocked: loading in progress');
+      return;
+    }
 
     if (isEnabled) {
       await disableNotifications();
@@ -335,10 +358,10 @@ export function NotificationToggle() {
       <button
         type="button"
         onClick={handleToggle}
-        disabled={isLoading}
+        disabled={isLoading || isStatusLoading}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-normal ${
           isEnabled ? 'bg-black' : 'bg-gray-200'
-        } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        } ${isLoading || isStatusLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         role="switch"
         aria-checked={isEnabled}
         aria-label="푸시 알림 토글"
