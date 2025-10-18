@@ -346,8 +346,8 @@ function MatchingPageContent() {
 
     return cohortParticipants
       .filter((participant) => {
-        // 관리자 제외
-        if (participant.isAdministrator) return false;
+        // 슈퍼 관리자만 제외 (일반 관리자는 매칭 대상 포함)
+        if (participant.isSuperAdmin) return false;
 
         // 매칭 결과가 있는 참가자만 포함 (어제 제출한 사람만)
         const assignment = currentResult.matching.assignments?.[participant.id];
