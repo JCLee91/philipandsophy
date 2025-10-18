@@ -142,19 +142,30 @@ export function NotificationPrompt() {
             participantId: capturedParticipantId,
           });
 
-          // 3. 테스트 알림 전송 (최초 1회만)
+          // 3. 테스트 알림 전송 (최초 1회만) - SW showNotification 사용
           const hasShownTestNotification = localStorage.getItem('notification-test-shown');
 
           if (!hasShownTestNotification) {
-            new Notification('필립앤소피', {
-              body: '알림이 활성화되었습니다 🎉',
-              icon: '/image/app-icon.webp',
-              badge: '/image/badge-icon.webp',
-            });
+            try {
+              // Service Worker를 통한 알림 표시 (안정적)
+              const registration = await navigator.serviceWorker.ready;
+              await registration.showNotification('필립앤소피', {
+                body: '알림이 활성화되었습니다 🎉',
+                icon: '/image/app-icon.webp',
+                badge: '/image/badge-icon.webp',
+                tag: 'welcome-notification',
+                requireInteraction: false,
+              });
 
-            // 테스트 알림 표시 완료 플래그 저장
-            localStorage.setItem('notification-test-shown', 'true');
-            logger.info('First-time test notification sent');
+              // 테스트 알림 표시 완료 플래그 저장
+              localStorage.setItem('notification-test-shown', 'true');
+              logger.info('First-time test notification sent via Service Worker');
+            } catch (notificationError) {
+              // 알림 표시 실패해도 전체 흐름은 계속 진행
+              logger.warn('Test notification failed, but push token was saved', notificationError);
+              // 실패해도 플래그 저장 (다음번에 재시도하지 않도록)
+              localStorage.setItem('notification-test-shown', 'true');
+            }
           } else {
             logger.info('Test notification skipped (already shown before)');
           }

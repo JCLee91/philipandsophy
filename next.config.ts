@@ -10,7 +10,24 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        hostname: '**',
+        protocol: 'https',
+        hostname: 'philipandsophy.firebasestorage.app',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+        pathname: '/v0/b/philipandsophy.firebasestorage.app/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'shopping-phinf.pstatic.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'bookthumb-phinf.pstatic.net',
+        pathname: '/**',
       },
     ],
   },

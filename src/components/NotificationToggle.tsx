@@ -8,10 +8,9 @@ import {
   initializePushNotifications,
   isPushNotificationSupported,
   getNotificationPermission,
-  getPushTokenFromFirestore
+  getPushTokenFromFirestore,
+  removePushTokenFromFirestore,
 } from '@/lib/firebase/messaging';
-import { doc, updateDoc } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase/client';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -55,7 +54,7 @@ export function NotificationToggle() {
 
   /**
    * 알림 상태 확인
-   * - Firestore pushToken을 단일 진실 소스(Single Source of Truth)로 사용
+   * - Firestore pushTokens 배열을 단일 진실 소스(Single Source of Truth)로 사용
    * - iOS PWA 버그: Notification.permission이 불안정하므로 참고용으로만 사용
    * - 명시적으로 차단된 경우(denied)에만 자동 정리
    */
@@ -63,7 +62,8 @@ export function NotificationToggle() {
     try {
       setIsStatusLoading(true);
 
-      // 1. Firestore에서 토큰 확인 (단일 진실 소스)
+      // 1. Firestore에서 현재 디바이스 토큰 확인 (단일 진실 소스)
+      // ✅ getPushTokenFromFirestore는 pushTokens 배열 기반으로 동작
       const token = await getPushTokenFromFirestore(participantId);
 
       // 2. 토큰이 있으면 활성화로 간주 (iOS PWA 버그 회피)
@@ -80,13 +80,8 @@ export function NotificationToggle() {
           hasToken: !!token,
         });
 
-        // Firestore에서 토큰 정리
-        const participantRef = doc(getDb(), 'participants', participantId);
-        await updateDoc(participantRef, {
-          pushToken: null,
-          pushTokenUpdatedAt: null,
-          pushNotificationEnabled: false,
-        });
+        // ✅ 현재 디바이스의 토큰을 pushTokens 배열에서 제거
+        await removePushTokenFromFirestore(participantId);
 
         setIsEnabled(false);
         logger.info('[NotificationToggle] Cleaned up after explicit permission denial');
@@ -148,15 +143,10 @@ export function NotificationToggle() {
         // 3. 토큰 획득 성공 - cleanup 저장
         setCleanup(() => initResult.cleanup);
 
-        // 4. Firestore에 사용자가 알림을 활성화했음을 기록
-        const participantRef = doc(getDb(), 'participants', participantId);
-        await updateDoc(participantRef, {
-          pushNotificationEnabled: true,
-        });
+        logger.info('[enableNotifications] Push notification initialized successfully');
 
-        logger.info('[enableNotifications] Firestore updated successfully');
-
-        // 5. Firestore에서 상태 재확인하여 UI 동기화 (Single Source of Truth)
+        // 4. ✅ Firestore에서 상태 재확인하여 UI 동기화 (Single Source of Truth)
+        // initializePushNotifications가 이미 pushNotificationEnabled: true로 설정함
         await checkNotificationStatus(participantId);
 
         logger.info('[enableNotifications] Notifications enabled successfully');
@@ -176,7 +166,7 @@ export function NotificationToggle() {
 
   /**
    * 알림 비활성화
-   * - Firestore 업데이트 우선 (단일 진실 소스)
+   * - ✅ removePushTokenFromFirestore 사용 (pushTokens 배열 기반)
    * - FCM 토큰 삭제 (실패해도 non-critical)
    * - 완료 후 Firestore에서 상태 재확인하여 UI 동기화
    */
@@ -196,15 +186,11 @@ export function NotificationToggle() {
       setIsLoading(true);
       setErrorMessage(null);
 
-      // 1. 먼저 Firestore 업데이트 (가장 중요!)
-      const participantRef = doc(getDb(), 'participants', participantId);
-      await updateDoc(participantRef, {
-        pushToken: null,
-        pushTokenUpdatedAt: null,
-        pushNotificationEnabled: false,
-      });
+      // 1. ✅ 현재 디바이스의 토큰을 pushTokens 배열에서 제거
+      // removePushTokenFromFirestore가 pushNotificationEnabled 플래그도 관리함
+      await removePushTokenFromFirestore(participantId);
 
-      logger.info('[disableNotifications] Firestore updated successfully');
+      logger.info('[disableNotifications] Push token removed from Firestore');
 
       // 2. FCM 토큰 삭제 시도 (실패해도 무시)
       try {

@@ -13,7 +13,7 @@ interface CohortDetailPageProps {
   params: Promise<{ cohortId: string }>;
 }
 
-type ParticipantWithStats = CohortParticipant;
+type ParticipantWithStats = CohortParticipant & { id: string };
 
 export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   const router = useRouter();
@@ -53,7 +53,9 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         }
 
         const data = await response.json();
-        const parsedParticipants = cohortParticipantSchema.array().parse(data.participants);
+        const parsedParticipants = cohortParticipantSchema
+          .array()
+          .parse(data.participants) as ParticipantWithStats[];
         setCohort(data.cohort);
         setParticipants(parsedParticipants);
       } catch (error) {

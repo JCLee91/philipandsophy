@@ -73,6 +73,17 @@ export interface BookHistoryEntry {
 }
 
 /**
+ * 푸시 알림 토큰 정보 (멀티 디바이스 지원)
+ */
+export interface PushTokenEntry {
+  deviceId: string; // 디바이스 고유 ID (브라우저 fingerprint)
+  token: string; // FCM 푸시 토큰
+  updatedAt: Timestamp; // 토큰 마지막 갱신 시간
+  userAgent?: string; // User Agent 정보 (디바이스 식별용)
+  lastUsedAt?: Timestamp; // 마지막 사용 시간 (토큰 만료 판별용)
+}
+
+/**
  * 참가자 정보
  */
 export interface Participant {
@@ -93,9 +104,10 @@ export interface Participant {
   currentBookCoverUrl?: string; // 현재 읽고 있는 책 표지 URL (자동 채움용)
   bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
   firebaseUid?: string; // Firebase Auth UID (Phone Auth 연동용)
-  pushToken?: string; // 푸시 알림 토큰 (FCM)
+  pushToken?: string; // 푸시 알림 토큰 (FCM) - DEPRECATED: pushTokens 배열 사용 권장
   pushNotificationEnabled?: boolean; // 푸시 알림 활성화 여부 (사용자 설정)
-  pushTokenUpdatedAt?: Timestamp; // 푸시 토큰 마지막 갱신 시간
+  pushTokenUpdatedAt?: Timestamp; // 푸시 토큰 마지막 갱신 시간 - DEPRECATED: pushTokens[].updatedAt 사용 권장
+  pushTokens?: PushTokenEntry[]; // 멀티 디바이스 푸시 토큰 배열 (NEW)
   lastActivityAt?: Timestamp; // 마지막 활동 시간 (데이터센터용)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시

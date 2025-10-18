@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setParticipantStatus('loading');
     let retryCount = 0;
-    const MAX_RETRIES = 2;
-    const RETRY_DELAY = 300;
+    const MAX_RETRIES = 5; // ✅ 2 → 5로 증가 (UID 연결 직후 약간의 지연 대응)
+    const RETRY_DELAY = 500; // ✅ 300ms → 500ms로 증가 (Firestore 전파 시간 확보)
 
     const fetchWithRetry = async (): Promise<void> => {
       try {
