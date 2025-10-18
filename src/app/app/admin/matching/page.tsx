@@ -121,9 +121,40 @@ function MatchingPageContent() {
     }
   }, []); // 상수만 사용하므로 dependency 불필요
 
+  // ✅ 날짜/코호트 변경 시 상태 초기화 (전날 데이터 제거)
   useEffect(() => {
+    // 1. 상태 초기화
+    setMatchingState('idle');
+    setPreviewResult(null);
+    setConfirmedResult(null);
     setHasFetchedInitialResult(false);
-  }, [cohortId, submissionDate]);
+    setError(null);
+
+    // 2. 전날 localStorage 캐시 제거
+    try {
+      // 현재 날짜 키와 다른 모든 매칭 관련 키 제거
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(key => {
+        // 이 코호트의 매칭 관련 키이지만 오늘 날짜가 아닌 경우 삭제
+        if (key.startsWith(`matching-preview-${cohortId}-`) && !key.includes(todayDate)) {
+          localStorage.removeItem(key);
+          logger.info('전날 프리뷰 캐시 삭제', { key });
+        }
+        if (key.startsWith(`matching-confirmed-${cohortId}-`) && !key.includes(todayDate)) {
+          localStorage.removeItem(key);
+          logger.info('전날 확정 캐시 삭제', { key });
+        }
+        if (key.startsWith(`matching-in-progress-${cohortId}-`) && !key.includes(todayDate)) {
+          localStorage.removeItem(key);
+          logger.info('전날 진행중 플래그 삭제', { key });
+        }
+      });
+    } catch (storageError) {
+      logger.error('localStorage 정리 실패', storageError);
+    }
+
+    logger.info('매칭 페이지 상태 초기화', { cohortId, submissionDate, todayDate });
+  }, [cohortId, submissionDate, todayDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY]);
 
   // ✅ Solution 3: localStorage 체크를 동기로 처리하여 초기 렌더링 블로킹 제거
   useEffect(() => {
