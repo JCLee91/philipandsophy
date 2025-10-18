@@ -12,9 +12,71 @@
 'use client';
 
 import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { getDb } from './client';
 import { logger } from '@/lib/logger';
+import type { PushTokenEntry } from '@/types/database';
+
+/**
+ * Generate a unique device ID based on browser fingerprint
+ *
+ * This creates a semi-stable identifier for the current browser/device.
+ * It's not 100% persistent (e.g., cleared on browser data clear), but good enough
+ * for multi-device token management.
+ *
+ * @returns Device ID string
+ */
+function generateDeviceId(): string {
+  // Check if device ID already exists in localStorage
+  try {
+    const existingId = localStorage.getItem('device-id');
+    if (existingId) {
+      return existingId;
+    }
+  } catch (error) {
+    // Safari Private Mode에서 localStorage 읽기 실패 시 계속 진행
+    logger.warn('localStorage read failed (Safari Private Mode?)', { error });
+  }
+
+  // Create a simple fingerprint from user agent and screen info
+  const ua = navigator.userAgent;
+  const screen = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const language = navigator.language;
+
+  // Generate a hash-like string
+  const fingerprint = `${ua}-${screen}-${timezone}-${language}`;
+  const hash = Array.from(fingerprint).reduce(
+    (acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0,
+    0
+  );
+
+  // Create device ID: timestamp + hash + random
+  const deviceId = `${Date.now()}-${Math.abs(hash)}-${Math.random().toString(36).substring(2, 9)}`;
+
+  // ✅ Store in localStorage (Safari Private Mode 대응)
+  try {
+    localStorage.setItem('device-id', deviceId);
+    logger.info('Generated new device ID', { deviceId });
+  } catch (error) {
+    // Safari Private Mode에서 localStorage 쓰기 실패 시 경고만 출력
+    logger.warn('localStorage write failed (Safari Private Mode?), device ID will be regenerated on reload', {
+      deviceId,
+      error,
+    });
+  }
+
+  return deviceId;
+}
+
+/**
+ * Get current device ID (creates one if not exists)
+ *
+ * @returns Device ID string
+ */
+export function getDeviceId(): string {
+  return generateDeviceId();
+}
 
 /**
  * Check if push notifications are supported in the current browser
@@ -133,7 +195,13 @@ export async function getFCMToken(messaging: Messaging): Promise<string | null> 
 }
 
 /**
- * Save push token to Firestore participant document
+ * Save push token to Firestore participant document (Multi-device support)
+ *
+ * This function manages push tokens for multiple devices:
+ * 1. Generates or retrieves device ID
+ * 2. Removes old token entry for this device (if exists)
+ * 3. Adds new token entry with current timestamp
+ * 4. Also updates legacy pushToken field for backward compatibility
  *
  * @param participantId - Participant ID
  * @param token - FCM push token
@@ -143,14 +211,54 @@ export async function savePushTokenToFirestore(
   token: string
 ): Promise<void> {
   try {
+    const deviceId = getDeviceId();
     const participantRef = doc(getDb(), 'participants', participantId);
 
-    await updateDoc(participantRef, {
-      pushToken: token,
-      pushTokenUpdatedAt: new Date(),
-    });
+    // Get current participant data to check existing tokens
+    const participantSnap = await getDoc(participantRef);
+    const currentData = participantSnap.exists() ? participantSnap.data() : {};
+    const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
 
-    logger.info('Push token saved to Firestore', { participantId });
+    // Find and remove old token entry for this device
+    const oldTokenEntry = existingTokens.find((entry) => entry.deviceId === deviceId);
+
+    // Create new token entry
+    const newTokenEntry: PushTokenEntry = {
+      deviceId,
+      token,
+      updatedAt: Timestamp.now(),
+      userAgent: navigator.userAgent,
+      lastUsedAt: Timestamp.now(),
+    };
+
+    // Update Firestore
+    const updates: any = {
+      // Add new token entry
+      pushTokens: arrayUnion(newTokenEntry),
+      // Legacy field for backward compatibility
+      pushToken: token,
+      pushTokenUpdatedAt: Timestamp.now(),
+      // Enable push notifications
+      pushNotificationEnabled: true,
+    };
+
+    // Remove old token entry if exists
+    if (oldTokenEntry) {
+      // Need to remove first, then add (Firestore doesn't support atomic replace in arrays)
+      await updateDoc(participantRef, {
+        pushTokens: arrayRemove(oldTokenEntry),
+      });
+      logger.info('Removed old token entry for device', { participantId, deviceId });
+    }
+
+    // Add new token entry
+    await updateDoc(participantRef, updates);
+
+    logger.info('Push token saved to Firestore (multi-device)', {
+      participantId,
+      deviceId,
+      tokenPrefix: token.substring(0, 20) + '...',
+    });
   } catch (error) {
     logger.error('Error saving push token to Firestore', error);
     throw error;
@@ -158,10 +266,13 @@ export async function savePushTokenToFirestore(
 }
 
 /**
- * Get push token from Firestore participant document
+ * Get push token from Firestore participant document (Multi-device support)
+ *
+ * Returns the push token for the current device if it exists in pushTokens array.
+ * Falls back to legacy pushToken field for backward compatibility.
  *
  * @param participantId - Participant ID
- * @returns Push token or null if not found
+ * @returns Push token for current device or null if not found
  */
 export async function getPushTokenFromFirestore(
   participantId: string
@@ -170,16 +281,104 @@ export async function getPushTokenFromFirestore(
     const participantRef = doc(getDb(), 'participants', participantId);
     const participantSnap = await getDoc(participantRef);
 
-    if (participantSnap.exists()) {
-      const token = participantSnap.data()?.pushToken;
-      // Validate token is non-empty string
-      return token && typeof token === 'string' && token.trim().length > 0 ? token : null;
+    if (!participantSnap.exists()) {
+      return null;
     }
 
+    const data = participantSnap.data();
+    const deviceId = getDeviceId();
+
+    // ✅ Priority 1: Check pushTokens array for current device
+    const pushTokens: PushTokenEntry[] = data.pushTokens || [];
+    const deviceToken = pushTokens.find((entry) => entry.deviceId === deviceId);
+
+    if (deviceToken?.token) {
+      logger.debug('Found push token for current device in pushTokens array', {
+        participantId,
+        deviceId,
+        tokenPrefix: deviceToken.token.substring(0, 20) + '...',
+      });
+      return deviceToken.token;
+    }
+
+    // ✅ Priority 2: Fallback to legacy pushToken field
+    const legacyToken = data.pushToken;
+    if (legacyToken && typeof legacyToken === 'string' && legacyToken.trim().length > 0) {
+      logger.debug('Found legacy push token (not in pushTokens array)', {
+        participantId,
+        tokenPrefix: legacyToken.substring(0, 20) + '...',
+      });
+      return legacyToken;
+    }
+
+    logger.debug('No push token found for participant', { participantId, deviceId });
     return null;
   } catch (error) {
     logger.error('Error getting push token from Firestore', error);
     return null;
+  }
+}
+
+/**
+ * Remove push token for current device from Firestore (Multi-device support)
+ *
+ * This removes the token entry for the current device from the pushTokens array.
+ * Also updates pushNotificationEnabled flag if no tokens remain.
+ *
+ * @param participantId - Participant ID
+ */
+export async function removePushTokenFromFirestore(
+  participantId: string
+): Promise<void> {
+  try {
+    const deviceId = getDeviceId();
+    const participantRef = doc(getDb(), 'participants', participantId);
+
+    // Get current participant data
+    const participantSnap = await getDoc(participantRef);
+    if (!participantSnap.exists()) {
+      logger.warn('Cannot remove push token: participant not found', { participantId });
+      return;
+    }
+
+    const currentData = participantSnap.data();
+    const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
+
+    // Find the token entry for this device
+    const deviceTokenEntry = existingTokens.find((entry) => entry.deviceId === deviceId);
+
+    if (!deviceTokenEntry) {
+      logger.debug('No push token to remove for this device', { participantId, deviceId });
+      return;
+    }
+
+    // Remove the token entry
+    await updateDoc(participantRef, {
+      pushTokens: arrayRemove(deviceTokenEntry),
+    });
+
+    // Check if there are any remaining tokens
+    const remainingTokens = existingTokens.filter((entry) => entry.deviceId !== deviceId);
+
+    // If no tokens remain, update pushNotificationEnabled to false
+    if (remainingTokens.length === 0) {
+      await updateDoc(participantRef, {
+        pushNotificationEnabled: false,
+      });
+      logger.info('Removed last push token, disabled push notifications', {
+        participantId,
+        deviceId,
+      });
+    } else {
+      logger.info('Removed push token for device', {
+        participantId,
+        deviceId,
+        remainingDevices: remainingTokens.length,
+      });
+    }
+  } catch (error) {
+    logger.error('Error removing push token from Firestore', error);
+    throw error;
   }
 }
 

@@ -28,8 +28,14 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/image/favicon.webp',
-    apple: '/image/app-icon.webp',
+    icon: [
+      { url: '/image/favicon.png', type: 'image/png' },
+      { url: '/image/favicon.webp', type: 'image/webp' },
+    ],
+    apple: [
+      { url: '/image/app-icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/image/app-icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
   },
   manifest: '/manifest.json',
   appleWebApp: {

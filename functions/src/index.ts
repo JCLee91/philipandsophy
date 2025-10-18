@@ -13,9 +13,9 @@
 
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { onRequest, HttpsError } from "firebase-functions/v2/https";
+import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { beforeUserCreated } from "firebase-functions/v2/identity";
+// import { beforeUserCreated } from "firebase-functions/v2/identity"; // Temporarily disabled
 import { setGlobalOptions } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
 import { logger } from "./lib/logger";
@@ -25,15 +25,16 @@ import {
   NOTIFICATION_ROUTES,
   NOTIFICATION_TYPES,
 } from "./constants/notifications";
-import {
-  ALLOWED_EMAIL_DOMAINS,
-  ALLOWED_PHONE_COUNTRY_CODES,
-  ALLOWED_DOMAINS_TEXT,
-} from "./constants/auth";
+// Auth constants temporarily unused
+// import {
+//   ALLOWED_EMAIL_DOMAINS,
+//   ALLOWED_PHONE_COUNTRY_CODES,
+//   ALLOWED_DOMAINS_TEXT,
+// } from "./constants/auth";
 
 // Global options for all functions
 setGlobalOptions({
-  region: "asia-northeast3", // Seoul region
+  region: "us-central1", // Closest to Firestore nam5 (US multi-region)
   maxInstances: 10,
 });
 
@@ -81,9 +82,25 @@ async function getCohortParticipants(
 }
 
 /**
- * Helper: Get push token for a participant
+ * Push token entry type
  */
-async function getPushToken(participantId: string): Promise<string | null> {
+interface PushTokenEntry {
+  deviceId: string;
+  token: string;
+  updatedAt: admin.firestore.Timestamp;
+}
+
+/**
+ * Helper: Get push tokens for a participant (supports multi-device)
+ *
+ * ✅ Updated to use pushTokens array for multi-device support
+ *
+ * @returns Object with tokens array and entries map for proper arrayRemove
+ */
+async function getPushTokens(participantId: string): Promise<{
+  tokens: string[];
+  entriesMap: Map<string, PushTokenEntry | null>;
+}> {
   try {
     const participantDoc = await admin
       .firestore()
@@ -93,13 +110,38 @@ async function getPushToken(participantId: string): Promise<string | null> {
 
     if (!participantDoc.exists) {
       logger.warn(`Participant not found: ${participantId}`);
-      return null;
+      return { tokens: [], entriesMap: new Map() };
     }
 
-    return participantDoc.data()?.pushToken || null;
+    const participantData = participantDoc.data();
+
+    // ✅ Check pushNotificationEnabled flag first
+    if (participantData?.pushNotificationEnabled === false) {
+      logger.debug(`Push notifications disabled for participant: ${participantId}`);
+      return { tokens: [], entriesMap: new Map() };
+    }
+
+    // ✅ Priority 1: Get tokens from pushTokens array
+    const pushTokens: PushTokenEntry[] = participantData?.pushTokens || [];
+    const tokens: string[] = [];
+    const entriesMap = new Map<string, PushTokenEntry | null>();
+
+    pushTokens.forEach((entry) => {
+      tokens.push(entry.token);
+      entriesMap.set(entry.token, entry); // Store actual Firestore entry
+    });
+
+    // ✅ Priority 2: Fallback to legacy pushToken if array is empty
+    if (tokens.length === 0 && participantData?.pushToken) {
+      tokens.push(participantData.pushToken);
+      entriesMap.set(participantData.pushToken, null); // Legacy token has no entry
+      logger.debug(`Using legacy pushToken for participant: ${participantId}`);
+    }
+
+    return { tokens, entriesMap };
   } catch (error) {
-    logger.error(`Error getting push token for ${participantId}`, error as Error);
-    return null;
+    logger.error(`Error getting push tokens for ${participantId}`, error as Error);
+    return { tokens: [], entriesMap: new Map() };
   }
 }
 
@@ -126,18 +168,37 @@ async function getParticipantName(participantId: string): Promise<string> {
 }
 
 /**
- * Helper: Send push notification
+ * Helper: Send push notification to multiple tokens (multi-device support)
+ *
+ * ✅ Updated to use multicast for sending to multiple devices
+ * ✅ Automatically removes invalid/expired tokens from pushTokens array
+ * ✅ Uses entriesMap for proper arrayRemove matching (fixes Timestamp.now() bug)
+ *
+ * @param participantId - Participant ID (for token cleanup)
+ * @param tokens - Array of FCM tokens
+ * @param entriesMap - Map of token strings to their Firestore entries (for proper arrayRemove)
+ * @param title - Notification title
+ * @param body - Notification body
+ * @param url - Click action URL
+ * @param type - Notification type
+ * @returns Number of successfully sent notifications
  */
-async function sendPushNotification(
-  token: string,
+async function sendPushNotificationMulticast(
+  participantId: string,
+  tokens: string[],
+  entriesMap: Map<string, PushTokenEntry | null>,
   title: string,
   body: string,
   url: string,
   type: string
-): Promise<boolean> {
+): Promise<number> {
+  if (tokens.length === 0) {
+    return 0;
+  }
+
   try {
-    const message: admin.messaging.Message = {
-      token,
+    const message: admin.messaging.MulticastMessage = {
+      tokens,
       notification: {
         title,
         body,
@@ -160,44 +221,126 @@ async function sendPushNotification(
       },
     };
 
-    await admin.messaging().send(message);
-    logger.info(`Push notification sent to token: ${truncateToken(token)}`);
-    return true;
-  } catch (error: any) {
-    // Handle expired or invalid token errors
-    const expiredTokenErrors = [
-      "messaging/registration-token-not-registered",
-      "messaging/invalid-registration-token",
-      "messaging/mismatched-credential",
-      "messaging/invalid-apns-credentials",
-    ];
+    const response = await admin.messaging().sendEachForMulticast(message);
 
-    if (expiredTokenErrors.includes(error.code)) {
-      logger.warn(`Push token invalid (${error.code}): ${truncateToken(token)}`);
-      return false;
+    logger.info(`Push notification multicast sent`, {
+      participantId,
+      totalDevices: tokens.length,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
+
+    // ✅ Handle failed tokens (remove invalid/expired tokens)
+    if (response.failureCount > 0) {
+      const failedTokens: string[] = [];
+
+      response.responses.forEach((resp, index) => {
+        if (!resp.success) {
+          const errorCode = resp.error?.code;
+
+          if (
+            errorCode === "messaging/invalid-registration-token" ||
+            errorCode === "messaging/registration-token-not-registered"
+          ) {
+            failedTokens.push(tokens[index]);
+            logger.warn(`Removing invalid/expired push token`, {
+              participantId,
+              token: truncateToken(tokens[index]),
+              errorCode,
+            });
+          }
+        }
+      });
+
+      // Remove failed tokens from Firestore
+      if (failedTokens.length > 0) {
+        await removeExpiredTokens(participantId, failedTokens);
+      }
     }
 
-    logger.error("Error sending push notification", error);
-    return false;
+    return response.successCount;
+  } catch (error) {
+    logger.error("Error sending push notification multicast", error as Error);
+    return 0;
   }
 }
 
 /**
- * Helper: Remove expired push token from Firestore
+ * Helper: Remove expired push tokens from Firestore
+ *
+ * ✅ Updated to remove tokens from pushTokens array
+ * ✅ Handles legacy pushToken field deletion (for backward compatibility)
+ * ✅ Sets pushNotificationEnabled to false if all tokens removed
  */
-async function removeExpiredToken(participantId: string): Promise<void> {
+async function removeExpiredTokens(
+  participantId: string,
+  failedTokens: string[]
+): Promise<void> {
   try {
-    await admin
+    const participantRef = admin
       .firestore()
       .collection("participants")
-      .doc(participantId)
-      .update({
-        pushToken: admin.firestore.FieldValue.delete(),
-      });
+      .doc(participantId);
 
-    logger.info(`Removed expired push token for participant: ${participantId}`);
+    const participantSnap = await participantRef.get();
+
+    if (!participantSnap.exists) {
+      return;
+    }
+
+    const participantData = participantSnap.data();
+    const pushTokens: Array<{ deviceId: string; token: string; updatedAt: admin.firestore.Timestamp }> =
+      participantData?.pushTokens || [];
+    const legacyPushToken: string | undefined = participantData?.pushToken;
+
+    // Find token entries to remove from pushTokens array
+    const tokensToRemove = pushTokens.filter((entry) =>
+      failedTokens.includes(entry.token)
+    );
+
+    // Check if legacy pushToken is in failedTokens
+    const shouldRemoveLegacyToken = legacyPushToken && failedTokens.includes(legacyPushToken);
+
+    // If nothing to remove, return early
+    if (tokensToRemove.length === 0 && !shouldRemoveLegacyToken) {
+      return;
+    }
+
+    // Prepare update object
+    const updateData: Record<string, any> = {};
+
+    // Remove failed tokens from pushTokens array
+    if (tokensToRemove.length > 0) {
+      updateData.pushTokens = admin.firestore.FieldValue.arrayRemove(...tokensToRemove);
+    }
+
+    // ✅ Remove legacy pushToken field if it's invalid
+    if (shouldRemoveLegacyToken) {
+      updateData.pushToken = admin.firestore.FieldValue.delete();
+      logger.info(`Removing legacy pushToken field for participant: ${participantId}`);
+    }
+
+    await participantRef.update(updateData);
+
+    logger.info(`Removed expired tokens for participant: ${participantId}`, {
+      arrayTokensRemoved: tokensToRemove.length,
+      legacyTokenRemoved: shouldRemoveLegacyToken,
+    });
+
+    // ✅ If all tokens removed, disable push notifications
+    const remainingTokens = pushTokens.filter(
+      (entry) => !tokensToRemove.some((failed) => failed.token === entry.token)
+    );
+
+    // No tokens left in array AND no legacy token (or legacy token was removed)
+    if (remainingTokens.length === 0 && (!legacyPushToken || shouldRemoveLegacyToken)) {
+      await participantRef.update({
+        pushNotificationEnabled: false,
+      });
+      logger.info(`All push tokens invalid, disabled push notifications for: ${participantId}`);
+    }
   } catch (error) {
-    logger.error(`Error removing expired token for ${participantId}`, error as Error);
+    logger.error(`Error removing expired tokens for ${participantId}`, error as Error);
   }
 }
 
@@ -205,9 +348,14 @@ async function removeExpiredToken(participantId: string): Promise<void> {
  * 1. DM 메시지 전송 시 푸시 알림
  *
  * Trigger: messages/{messageId} 문서 생성
+ *
+ * ✅ Updated to use pushTokens array for multi-device support
  */
 export const onMessageCreated = onDocumentCreated(
-  "messages/{messageId}",
+  {
+    document: "messages/{messageId}",
+    database: "(default)", // Explicitly specify database to auto-detect nam5 region
+  },
   async (event) => {
     const messageData = event.data?.data();
 
@@ -227,32 +375,34 @@ export const onMessageCreated = onDocumentCreated(
     // Get sender name
     const senderName = await getParticipantName(senderId);
 
-    // Get receiver's push token
-    const pushToken = await getPushToken(receiverId);
+    // ✅ Get receiver's push tokens (multi-device support)
+    const { tokens, entriesMap } = await getPushTokens(receiverId);
 
-    if (!pushToken) {
-      logger.info(`No push token for receiver: ${receiverId}`);
+    if (tokens.length === 0) {
+      logger.info(`No push tokens for receiver: ${receiverId}`);
       return;
     }
 
     // Truncate long messages
     const messagePreview = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
-    // Send push notification
-    const success = await sendPushNotification(
-      pushToken,
+    // ✅ Send push notification to all devices
+    const successCount = await sendPushNotificationMulticast(
+      receiverId,
+      tokens,
+      entriesMap,
       senderName,
       messagePreview,
       NOTIFICATION_ROUTES.CHAT,
       NOTIFICATION_TYPES.DM
     );
 
-    // Remove expired token if send failed
-    if (!success) {
-      await removeExpiredToken(receiverId);
-    }
-
-    logger.info(`DM push notification processed for message: ${event.params.messageId}`);
+    logger.info(`DM push notification processed`, {
+      messageId: event.params.messageId,
+      receiverId,
+      totalDevices: tokens.length,
+      successCount,
+    });
   }
 );
 
@@ -260,9 +410,14 @@ export const onMessageCreated = onDocumentCreated(
  * 2. 공지사항 작성 시 푸시 알림
  *
  * Trigger: notices/{noticeId} 문서 생성
+ *
+ * ✅ Updated to use pushTokens array for multi-device support
  */
 export const onNoticeCreated = onDocumentCreated(
-  "notices/{noticeId}",
+  {
+    document: "notices/{noticeId}",
+    database: "(default)", // Explicitly specify database to auto-detect nam5 region
+  },
   async (event) => {
     const noticeData = event.data?.data();
 
@@ -290,32 +445,43 @@ export const onNoticeCreated = onDocumentCreated(
     // Truncate long notice for body
     const noticeBody = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
-    // Send push notification to all participants
+    // ✅ Send push notification to all participants (multi-device support)
+    let totalDevices = 0;
+    let totalSuccess = 0;
+
     const pushPromises = participantsSnapshot.docs.map(async (doc) => {
       const participantId = doc.id;
-      const pushToken = doc.data().pushToken;
 
-      if (!pushToken) {
+      // Get all tokens for this participant
+      const { tokens, entriesMap } = await getPushTokens(participantId);
+
+      if (tokens.length === 0) {
         return;
       }
 
-      const success = await sendPushNotification(
-        pushToken,
+      totalDevices += tokens.length;
+
+      const successCount = await sendPushNotificationMulticast(
+        participantId,
+        tokens,
+        entriesMap,
         NOTIFICATION_MESSAGES.NOTICE_TITLE, // Title: "새로운 공지가 등록되었습니다"
         noticeBody, // Body: 공지 내용
         NOTIFICATION_ROUTES.CHAT,
         NOTIFICATION_TYPES.NOTICE
       );
 
-      // Remove expired token if send failed
-      if (!success) {
-        await removeExpiredToken(participantId);
-      }
+      totalSuccess += successCount;
     });
 
     await Promise.all(pushPromises);
 
-    logger.info(`Notice push notifications sent to ${participantsSnapshot.size} participants`);
+    logger.info(`Notice push notifications sent`, {
+      noticeId: event.params.noticeId,
+      totalParticipants: participantsSnapshot.size,
+      totalDevices,
+      totalSuccess,
+    });
   }
 );
 
@@ -323,6 +489,11 @@ export const onNoticeCreated = onDocumentCreated(
  * 3. 매칭 결과 알림 (HTTP 함수)
  *
  * 매칭 확정 API에서 호출하는 함수
+ *
+ * ✅ Security: Firebase ID Token 인증 + isAdministrator 커스텀 클레임 검증
+ *
+ * Request headers:
+ * - Authorization: Bearer <Firebase ID Token>
  *
  * Request body:
  * {
@@ -336,6 +507,50 @@ export const sendMatchingNotifications = onRequest(
     // Only allow POST requests
     if (request.method !== "POST") {
       response.status(405).json({error: "Method not allowed"});
+      return;
+    }
+
+    // ✅ Authentication: Verify Firebase ID Token
+    const authHeader = request.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      logger.warn("Unauthorized request: Missing or invalid Authorization header");
+      response.status(401).json({
+        error: "Unauthorized",
+        message: "Authorization header with Bearer token is required",
+      });
+      return;
+    }
+
+    const idToken = authHeader.split("Bearer ")[1];
+
+    try {
+      // Verify ID Token and decode claims
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+      // ✅ Authorization: Check isAdministrator custom claim
+      if (!decodedToken.isAdministrator) {
+        logger.warn("Forbidden request: User is not an administrator", {
+          uid: decodedToken.uid,
+          email: decodedToken.email,
+        });
+        response.status(403).json({
+          error: "Forbidden",
+          message: "Administrator permission required",
+        });
+        return;
+      }
+
+      logger.info("Authenticated administrator request", {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+      });
+    } catch (authError: any) {
+      logger.error("Authentication failed", authError);
+      response.status(401).json({
+        error: "Unauthorized",
+        message: "Invalid or expired token",
+      });
       return;
     }
 
@@ -355,40 +570,51 @@ export const sendMatchingNotifications = onRequest(
         return;
       }
 
-      // Send push notification to all participants
+      // ✅ Send push notification to all participants (multi-device support)
+      let totalDevices = 0;
+      let totalSuccess = 0;
+
       const pushPromises = participantsSnapshot.docs.map(async (doc) => {
         const participantId = doc.id;
-        const pushToken = doc.data().pushToken;
 
-        if (!pushToken) {
-          return false;
+        // Get all tokens for this participant
+        const { tokens, entriesMap } = await getPushTokens(participantId);
+
+        if (tokens.length === 0) {
+          return 0;
         }
 
-        const success = await sendPushNotification(
-          pushToken,
+        totalDevices += tokens.length;
+
+        const successCount = await sendPushNotificationMulticast(
+          participantId,
+          tokens,
+          entriesMap,
           NOTIFICATION_MESSAGES.MATCHING_TITLE, // Title: "오늘의 프로필북이 도착했습니다"
           "새롭게 도착한 참가자들의 프로필 북을 확인해보세요", // Body: 설명
           NOTIFICATION_ROUTES.TODAY_LIBRARY,
           NOTIFICATION_TYPES.MATCHING
         );
 
-        // Remove expired token if send failed
-        if (!success) {
-          await removeExpiredToken(participantId);
-        }
-
-        return success;
+        return successCount;
       });
 
       const results = await Promise.all(pushPromises);
-      const successCount = results.filter((r) => r === true).length;
+      totalSuccess = results.reduce((sum, count) => sum + count, 0);
 
-      logger.info(`Matching notifications sent: ${successCount}/${participantsSnapshot.size}`);
+      logger.info(`Matching notifications sent`, {
+        cohortId,
+        date,
+        totalParticipants: participantsSnapshot.size,
+        totalDevices,
+        totalSuccess,
+      });
 
       response.status(200).json({
         success: true,
         totalParticipants: participantsSnapshot.size,
-        notificationsSent: successCount,
+        totalDevices,
+        notificationsSent: totalSuccess,
         date,
       });
     } catch (error) {
@@ -496,7 +722,10 @@ export const scheduledMatchingPreview = onSchedule(
  * beforeUserCreated Auth Trigger
  * - 허용된 이메일 도메인만 회원가입 가능
  * - 허용된 전화번호 국가 코드만 가능
+ *
+ * ⚠️ Temporarily disabled due to region mismatch
  */
+/*
 export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
   const user = event.data;
 
@@ -585,3 +814,4 @@ export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
 
   return;
 });
+*/

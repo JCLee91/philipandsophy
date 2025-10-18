@@ -7,16 +7,30 @@
 import admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 import { logger } from '@/lib/logger';
+import type { PushTokenEntry } from '@/types/database';
 
 /**
  * Initialize Firebase Admin (if not already initialized)
  */
 function initializeAdmin() {
   if (admin.apps.length === 0) {
-    const serviceAccount = require('../../../firebase-service-account.json');
+    // ✅ 환경 변수 필수 (보안 강화)
+    if (!process.env.FIREBASE_PROJECT_ID ||
+        !process.env.FIREBASE_CLIENT_EMAIL ||
+        !process.env.FIREBASE_PRIVATE_KEY) {
+      throw new Error(
+        'Firebase Admin SDK credentials not found. ' +
+        'Required environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY'
+      );
+    }
 
+    console.log('[Push Notification] Initializing with environment variables');
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }),
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     });
   }
@@ -45,11 +59,13 @@ export interface PushNotificationPayload {
 }
 
 /**
- * Send push notification to a single user
+ * Send push notification to a single user (all devices)
+ *
+ * ✅ Updated to use pushTokens array for multi-device support
  *
  * @param participantId - Participant ID
  * @param payload - Notification payload
- * @returns Success status
+ * @returns Success status (true if sent to at least one device)
  */
 export async function sendPushToUser(
   participantId: string,
@@ -59,7 +75,7 @@ export async function sendPushToUser(
     initializeAdmin();
     const db = getFirestore();
 
-    // Get user's push token from Firestore
+    // Get user's push tokens from Firestore
     const participantRef = db.collection('participants').doc(participantId);
     const participantSnap = await participantRef.get();
 
@@ -68,16 +84,32 @@ export async function sendPushToUser(
       return false;
     }
 
-    const pushToken = participantSnap.data()?.pushToken;
+    const participantData = participantSnap.data();
 
-    if (!pushToken) {
-      logger.warn('Push token not found for participant', { participantId });
+    // ✅ Check pushNotificationEnabled flag first
+    if (participantData?.pushNotificationEnabled === false) {
+      logger.debug('Push notifications disabled for participant', { participantId });
       return false;
     }
 
-    // Prepare FCM message
-    const message: admin.messaging.Message = {
-      token: pushToken,
+    // ✅ Priority 1: Get tokens from pushTokens array
+    const pushTokens: PushTokenEntry[] = participantData?.pushTokens || [];
+    const tokens = pushTokens.map((entry) => entry.token);
+
+    // ✅ Priority 2: Fallback to legacy pushToken if array is empty
+    if (tokens.length === 0 && participantData?.pushToken) {
+      tokens.push(participantData.pushToken);
+      logger.debug('Using legacy pushToken (pushTokens array is empty)', { participantId });
+    }
+
+    if (tokens.length === 0) {
+      logger.warn('No push tokens found for participant', { participantId });
+      return false;
+    }
+
+    // ✅ Send to all devices using multicast
+    const message: admin.messaging.MulticastMessage = {
+      tokens,
       notification: {
         title: payload.title,
         body: payload.body,
@@ -100,32 +132,73 @@ export async function sendPushToUser(
       },
     };
 
-    // Send push notification
-    const response = await admin.messaging().send(message);
-    logger.info('Push notification sent successfully', {
+    // Send push notification to all devices
+    const response = await admin.messaging().sendEachForMulticast(message);
+
+    logger.info('Push notification sent to user devices', {
       participantId,
-      messageId: response,
+      totalDevices: tokens.length,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
       type: payload.type,
     });
 
-    return true;
-  } catch (error: any) {
-    // Handle token expiration (iOS issue)
-    if (error.code === 'messaging/registration-token-not-registered') {
-      logger.warn('Push token expired, removing from database', { participantId });
+    // ✅ Handle failed tokens (remove invalid/expired tokens)
+    if (response.failureCount > 0) {
+      const failedTokenEntries: PushTokenEntry[] = [];
 
-      try {
-        const db = getFirestore();
-        await db.collection('participants').doc(participantId).update({
-          pushToken: admin.firestore.FieldValue.delete(),
-        });
-      } catch (deleteError) {
-        logger.error('Error removing expired push token', deleteError);
+      response.responses.forEach((resp, index) => {
+        if (!resp.success) {
+          const errorCode = resp.error?.code;
+
+          if (
+            errorCode === 'messaging/invalid-registration-token' ||
+            errorCode === 'messaging/registration-token-not-registered'
+          ) {
+            // Find the token entry to remove
+            const failedToken = tokens[index];
+            const tokenEntry = pushTokens.find((entry) => entry.token === failedToken);
+
+            if (tokenEntry) {
+              failedTokenEntries.push(tokenEntry);
+              logger.warn('Removing invalid/expired push token', {
+                participantId,
+                deviceId: tokenEntry.deviceId,
+                errorCode,
+              });
+            }
+          }
+        }
+      });
+
+      // Remove failed tokens from pushTokens array
+      if (failedTokenEntries.length > 0) {
+        await db
+          .collection('participants')
+          .doc(participantId)
+          .update({
+            pushTokens: admin.firestore.FieldValue.arrayRemove(...failedTokenEntries),
+          });
+
+        // ✅ If all tokens removed, disable push notifications
+        const remainingTokens = pushTokens.filter(
+          (entry) => !failedTokenEntries.some((failed) => failed.deviceId === entry.deviceId)
+        );
+
+        if (remainingTokens.length === 0) {
+          await db
+            .collection('participants')
+            .doc(participantId)
+            .update({
+              pushNotificationEnabled: false,
+            });
+          logger.info('All push tokens invalid, disabled push notifications', { participantId });
+        }
       }
-
-      return false;
     }
 
+    return response.successCount > 0;
+  } catch (error: any) {
     logger.error('Error sending push notification', {
       error,
       participantId,
@@ -136,7 +209,9 @@ export async function sendPushToUser(
 }
 
 /**
- * Send push notification to multiple users
+ * Send push notification to multiple users (all their devices)
+ *
+ * ✅ Updated to use pushTokens array for multi-device support
  *
  * @param participantIds - Array of participant IDs
  * @param payload - Notification payload
@@ -150,19 +225,42 @@ export async function sendPushToMultipleUsers(
     initializeAdmin();
     const db = getFirestore();
 
-    // Get all push tokens
+    // ✅ Get all push tokens from pushTokens array
     const tokens: string[] = [];
-    const tokenMap = new Map<string, string>(); // token -> participantId
+    const tokenToParticipantMap = new Map<string, { participantId: string; tokenEntry: PushTokenEntry | null }>(); // token -> participant info
 
     for (const participantId of participantIds) {
       const participantRef = db.collection('participants').doc(participantId);
       const participantSnap = await participantRef.get();
 
       if (participantSnap.exists) {
-        const pushToken = participantSnap.data()?.pushToken;
-        if (pushToken) {
-          tokens.push(pushToken);
-          tokenMap.set(pushToken, participantId);
+        const participantData = participantSnap.data();
+
+        // ✅ Skip if push notifications are disabled
+        if (participantData?.pushNotificationEnabled === false) {
+          logger.debug('Skipping participant (push notifications disabled)', { participantId });
+          continue;
+        }
+
+        // ✅ Priority 1: Get tokens from pushTokens array
+        const pushTokens: PushTokenEntry[] = participantData?.pushTokens || [];
+
+        pushTokens.forEach((entry) => {
+          tokens.push(entry.token);
+          tokenToParticipantMap.set(entry.token, {
+            participantId,
+            tokenEntry: entry, // Store the actual Firestore entry
+          });
+        });
+
+        // ✅ Priority 2: Fallback to legacy pushToken
+        if (pushTokens.length === 0 && participantData?.pushToken) {
+          tokens.push(participantData.pushToken);
+          tokenToParticipantMap.set(participantData.pushToken, {
+            participantId,
+            tokenEntry: null, // Legacy token has no entry object
+          });
+          logger.debug('Using legacy pushToken for participant', { participantId });
         }
       }
     }
@@ -200,30 +298,81 @@ export async function sendPushToMultipleUsers(
     // Send multicast push notification
     const response = await admin.messaging().sendEachForMulticast(message);
 
-    // Handle expired tokens
-    const expiredTokens: string[] = [];
+    // ✅ Handle failed tokens (remove invalid/expired tokens)
+    const failedTokensByParticipant = new Map<string, PushTokenEntry[]>();
+
     response.responses.forEach((resp, index) => {
-      if (!resp.success && resp.error?.code === 'messaging/registration-token-not-registered') {
-        expiredTokens.push(tokens[index]);
+      if (!resp.success) {
+        const errorCode = resp.error?.code;
+
+        if (
+          errorCode === 'messaging/invalid-registration-token' ||
+          errorCode === 'messaging/registration-token-not-registered'
+        ) {
+          const failedToken = tokens[index];
+          const participantInfo = tokenToParticipantMap.get(failedToken);
+
+          if (participantInfo) {
+            const { participantId, tokenEntry } = participantInfo;
+
+            if (!failedTokensByParticipant.has(participantId)) {
+              failedTokensByParticipant.set(participantId, []);
+            }
+
+            // Only add if we have the actual token entry (not legacy)
+            if (tokenEntry) {
+              // Use the actual Firestore entry for arrayRemove to work correctly
+              failedTokensByParticipant.get(participantId)!.push(tokenEntry);
+            }
+
+            logger.warn('Removing invalid/expired push token', {
+              participantId,
+              deviceId: tokenEntry?.deviceId,
+              errorCode,
+            });
+          }
+        }
       }
     });
 
-    // Remove expired tokens from database
-    if (expiredTokens.length > 0) {
-      logger.warn('Removing expired push tokens', { count: expiredTokens.length });
-
+    // Remove failed tokens from database (batch operation)
+    if (failedTokensByParticipant.size > 0) {
       const batch = db.batch();
-      expiredTokens.forEach((token) => {
-        const participantId = tokenMap.get(token);
-        if (participantId) {
-          const participantRef = db.collection('participants').doc(participantId);
-          batch.update(participantRef, {
-            pushToken: admin.firestore.FieldValue.delete(),
-          });
-        }
-      });
+
+      for (const [participantId, failedTokenEntries] of failedTokensByParticipant.entries()) {
+        const participantRef = db.collection('participants').doc(participantId);
+
+        // Remove failed tokens from pushTokens array
+        batch.update(participantRef, {
+          pushTokens: admin.firestore.FieldValue.arrayRemove(...failedTokenEntries),
+        });
+
+        // Note: We'll need a separate query to check if all tokens are removed
+        // and update pushNotificationEnabled in a follow-up operation
+      }
 
       await batch.commit();
+
+      // ✅ Check if participants have no tokens left and disable push notifications
+      for (const participantId of failedTokensByParticipant.keys()) {
+        const participantRef = db.collection('participants').doc(participantId);
+        const participantSnap = await participantRef.get();
+
+        if (participantSnap.exists) {
+          const remainingTokens: PushTokenEntry[] = participantSnap.data()?.pushTokens || [];
+
+          if (remainingTokens.length === 0) {
+            await participantRef.update({
+              pushNotificationEnabled: false,
+            });
+            logger.info('All push tokens invalid, disabled push notifications', { participantId });
+          }
+        }
+      }
+
+      logger.warn('Removed expired/invalid push tokens', {
+        affectedParticipants: failedTokensByParticipant.size,
+      });
     }
 
     logger.info('Multicast push notification sent', {

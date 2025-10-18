@@ -1,5 +1,5 @@
 {
-  "gcm_sender_id": "518153642299",
+  "gcm_sender_id": "103953800507",
   "name": "필립앤소피 - 독서 소셜 클럽",
   "short_name": "필립앤소피",
   "description": "책과 사람을 연결하는 독서 소셜 클럽",
@@ -11,9 +11,21 @@
   "scope": "/",
   "icons": [
     {
+      "src": "/image/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/image/app-icon.webp",
       "sizes": "192x192",
       "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "/image/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     },
     {

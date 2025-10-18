@@ -25,12 +25,25 @@ export function getFirebaseAdmin() {
     return { app: cachedApp, db: cachedDb, bucket: cachedBucket };
   }
 
-  const serviceAccount = require('../../../firebase-service-account.json');
+  // ✅ 환경 변수 필수 (보안 강화)
+  if (!process.env.FIREBASE_PROJECT_ID ||
+      !process.env.FIREBASE_CLIENT_EMAIL ||
+      !process.env.FIREBASE_PRIVATE_KEY) {
+    throw new Error(
+      'Firebase Admin SDK credentials not found. ' +
+      'Required environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY'
+    );
+  }
 
   // Firebase Admin 앱 초기화 (이미 초기화된 경우 재사용)
   if (!getApps().length) {
+    console.log('[Firebase Admin] Initializing with environment variables');
     cachedApp = initializeApp({
-      credential: cert(serviceAccount),
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
   } else {

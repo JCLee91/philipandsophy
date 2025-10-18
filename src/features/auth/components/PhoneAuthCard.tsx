@@ -29,6 +29,7 @@ export default function PhoneAuthCard() {
   const { participantStatus, retryParticipantFetch } = useAuth();
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
+  const participantStatusRef = useRef(participantStatus);
 
   // State
   const [step, setStep] = useState<AuthStep>('phone');
@@ -37,6 +38,11 @@ export default function PhoneAuthCard() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+
+  // ✅ participantStatus를 ref에 동기화
+  useEffect(() => {
+    participantStatusRef.current = participantStatus;
+  }, [participantStatus]);
 
   // 마지막 로그인 전화번호 불러오기
   useEffect(() => {
@@ -225,6 +231,31 @@ export default function PhoneAuthCard() {
               oldFirebaseUid: participant.firebaseUid || 'none',
               newFirebaseUid: userCredential.user.uid,
             });
+
+            // ✅ UID 연결 직후 AuthContext가 최신 participant 데이터를 가져오도록 재시도
+            logger.info('AuthContext participant 재조회 요청');
+            await retryParticipantFetch();
+
+            // ✅ AuthContext가 ready 상태가 될 때까지 대기 (최대 3초)
+            const waitForReady = async () => {
+              const maxWaitTime = 3000; // 3초
+              const checkInterval = 100; // 100ms마다 체크
+              const startTime = Date.now();
+
+              while (Date.now() - startTime < maxWaitTime) {
+                // ✅ ref를 사용하여 최신 participantStatus 값 읽기
+                if (participantStatusRef.current === 'ready') {
+                  logger.info('AuthContext ready 상태 확인됨');
+                  return true;
+                }
+                await new Promise(resolve => setTimeout(resolve, checkInterval));
+              }
+
+              logger.warn('AuthContext ready 대기 시간 초과 (3초), 계속 진행');
+              return false;
+            };
+
+            await waitForReady();
           }
         }
       }
