@@ -66,6 +66,7 @@ function MatchingPageContent() {
   const IN_PROGRESS_KEY = `matching-in-progress-${cohortId}-${todayDate}`;
 
   // localStorage 데이터 검증 및 안전한 로드
+  const loadFromStorage = useCallback((key: string): MatchingResponse | null => {
     try {
       const stored = localStorage.getItem(key);
       if (!stored) return null;
