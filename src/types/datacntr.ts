@@ -2,6 +2,8 @@
  * Data Center 타입 정의
  */
 
+import { z } from 'zod';
+
 // 통계 메트릭
 export interface OverviewStats {
   totalCohorts: number;
@@ -58,6 +60,43 @@ export interface ParticipantRowData {
   hasPushToken?: boolean; // 푸시 알림 허용 여부
   activityStatus?: 'active' | 'moderate' | 'dormant'; // 활동 상태
 }
+
+export const sanitizedParticipantSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  cohortId: z.string(),
+  phoneNumber: z.string(),
+  gender: z.enum(['male', 'female', 'other']).optional(),
+  profileImage: z.string().optional(),
+  profileImageCircle: z.string().optional(),
+  occupation: z.string().optional(),
+  bio: z.string().optional(),
+  currentBookTitle: z.string().optional(),
+  currentBookAuthor: z.string().optional(),
+  currentBookCoverUrl: z.string().optional(),
+  createdAt: z.any(), // Firestore Timestamp (서버/클라이언트 혼용)
+  lastActivityAt: z.any().optional(),
+});
+
+// Data Center 참가자 응답 스키마 (API → 클라이언트)
+export const dataCenterParticipantSchema = sanitizedParticipantSchema.extend({
+  cohortName: z.string(),
+  submissionCount: z.number(),
+  engagementScore: z.number().optional(),
+  engagementLevel: z.enum(['high', 'medium', 'low']).optional(),
+  activityStatus: z.enum(['active', 'moderate', 'dormant']).optional(),
+  hasPushToken: z.boolean(),
+});
+
+export type DataCenterParticipant = z.infer<typeof dataCenterParticipantSchema>;
+
+// 코호트 상세 참가자 응답 스키마
+export const cohortParticipantSchema = sanitizedParticipantSchema.extend({
+  submissionCount: z.number(),
+});
+
+export type CohortParticipant = z.infer<typeof cohortParticipantSchema>;
+export type SanitizedParticipant = z.infer<typeof sanitizedParticipantSchema>;
 
 // 인증 데이터 (카드용)
 export interface SubmissionCardData {

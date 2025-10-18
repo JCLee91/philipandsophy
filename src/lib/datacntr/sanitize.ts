@@ -1,3 +1,5 @@
+import type { SanitizedParticipant } from '@/types/datacntr';
+
 /**
  * Data Center 데이터 Sanitization (민감 정보 제거)
  *
@@ -19,7 +21,7 @@
  * @param participant - Firestore 참가자 원본 데이터 (id 포함)
  * @returns 클라이언트 전송 가능한 안전한 데이터
  */
-export function sanitizeParticipantForClient(participant: any) {
+export function sanitizeParticipantForClient(participant: any): SanitizedParticipant {
   return {
     id: participant.id,
     name: participant.name,
@@ -34,6 +36,6 @@ export function sanitizeParticipantForClient(participant: any) {
     currentBookCoverUrl: participant.currentBookCoverUrl,
     createdAt: participant.createdAt,
     lastActivityAt: participant.lastActivityAt,
-    phoneNumber: participant.phoneNumber, // 현재는 전송 (참가자 관리에 필요)
+    phoneNumber: participant.phoneNumber ?? '', // 현재는 전송 (참가자 관리에 필요)
   };
 }

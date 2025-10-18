@@ -4,6 +4,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import { sanitizeParticipantForClient } from '@/lib/datacntr/sanitize';
+import type { CohortParticipant } from '@/types/datacntr';
 
 interface RouteParams {
   params: Promise<{ cohortId: string }>;
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
     // 각 참가자의 인증 횟수 조회 (관리자 제외)
-    const participantsWithStats = await Promise.all(
+    const participantsWithStats: CohortParticipant[] = await Promise.all(
       nonAdminParticipants.map(async (doc) => {
         const participantData = doc.data();
 
