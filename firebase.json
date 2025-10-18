@@ -1,8 +1,7 @@
 {
   "firestore": {
     "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json",
-    "database": "restored-20min-ago"
+    "indexes": "firestore.indexes.json"
   },
   "storage": [
     {

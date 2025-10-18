@@ -12,11 +12,11 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = initializeFirestore(app, {}, 'restored-20min-ago');
+const db = initializeFirestore(app, {});
 
 async function verifyRules() {
   try {
-    console.log('✅ Firebase initialized with restored-20min-ago database');
+    console.log('✅ Firebase initialized with (default) database');
 
     // Try to read cohort data (should require authentication per rules)
     const cohortRef = doc(db, 'cohorts', '1');
