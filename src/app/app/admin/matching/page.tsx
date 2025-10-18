@@ -181,13 +181,13 @@ function MatchingPageContent() {
         if (cohortSnap.exists()) {
           const cohortData = cohortSnap.data();
           const dailyFeatured = cohortData.dailyFeaturedParticipants || {};
-          const todayMatching = dailyFeatured[submissionDate];
+          const todayMatching = dailyFeatured[todayDate]; // ✅ 발행일(오늘) 키로 조회
 
           if (todayMatching?.assignments) {
             // 확정된 매칭이 DB에 있음
             const confirmedFromDb: MatchingResponse = {
               success: true,
-              date: submissionDate,
+              date: todayDate, // ✅ 발행일(오늘)로 저장
               question: todayMatching.question || getDailyQuestionText(submissionDate),
               totalParticipants: Object.keys(todayMatching.assignments).length,
               matching: {
@@ -203,7 +203,7 @@ function MatchingPageContent() {
             setMatchingState('confirmed');
             saveToStorage(CONFIRMED_STORAGE_KEY, confirmedFromDb);
 
-            logger.info('✅ DB에서 확정된 매칭 로드 완료', { date: submissionDate, count: confirmedFromDb.totalParticipants });
+            logger.info('✅ DB에서 확정된 매칭 로드 완료', { date: todayDate, count: confirmedFromDb.totalParticipants });
             return; // 확정 매칭이 있으면 프리뷰는 확인 안 함
           }
         }
