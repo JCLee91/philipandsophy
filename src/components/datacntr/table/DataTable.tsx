@@ -103,7 +103,7 @@ export default function DataTable<T extends { id: string }>({
                     col.sortable ? 'cursor-pointer hover:bg-gray-100 select-none' : ''
                   }`}
                   style={{ width: col.width }}
-                  onClick={() => handleSort(col.key as string, col.sortable)}
+                  onClick={() => handleSort(col.key, col.sortable)}
                 >
                   <div className="flex items-center gap-2">
                     {col.header}
