@@ -65,7 +65,7 @@ export const sanitizedParticipantSchema = z.object({
   id: z.string(),
   name: z.string(),
   cohortId: z.string(),
-  phoneNumber: z.string(), // 참가자 관리에 필요 (향후 마스킹 고려)
+  phoneNumber: z.string().default(''), // 기본값 처리로 ?? '' 불필요
   gender: z.enum(['male', 'female', 'other']).optional(),
   profileImage: z.string().optional(),
   profileImageCircle: z.string().optional(),
@@ -85,18 +85,24 @@ export const dataCenterParticipantSchema = sanitizedParticipantSchema.extend({
   engagementScore: z.number().optional(),
   engagementLevel: z.enum(['high', 'medium', 'low']).optional(),
   activityStatus: z.enum(['active', 'moderate', 'dormant']).optional(),
+  /**
+   * hasPushToken: 푸시 알림 활성화 여부
+   * - pushTokens 배열 우선 확인 (활성 토큰 존재 여부)
+   * - pushTokens 없으면 레거시 pushToken 필드 폴백
+   * - API 레이어에서 계산됨 (route.ts 참조)
+   */
   hasPushToken: z.boolean(),
 });
 
-export type DataCenterParticipant = z.infer<typeof dataCenterParticipantSchema>;
+export type DataCenterParticipant = z.infer<typeof dataCenterParticipantSchema> & { id: string };
 
 // 코호트 상세 참가자 응답 스키마
 export const cohortParticipantSchema = sanitizedParticipantSchema.extend({
   submissionCount: z.number(),
 });
 
-export type CohortParticipant = z.infer<typeof cohortParticipantSchema>;
-export type SanitizedParticipant = z.infer<typeof sanitizedParticipantSchema>;
+export type CohortParticipant = z.infer<typeof cohortParticipantSchema> & { id: string };
+export type SanitizedParticipant = z.infer<typeof sanitizedParticipantSchema> & { id: string };
 
 // 인증 데이터 (카드용)
 export interface SubmissionCardData {

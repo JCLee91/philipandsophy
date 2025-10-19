@@ -61,14 +61,10 @@ export default function ParticipantsPage() {
         }
 
         const rawData = await response.json();
-        const parsedData = dataCenterParticipantSchema.array().parse(rawData);
-        const normalizedData = parsedData.map((participant) => ({
-          ...participant,
-          phoneNumber: participant.phoneNumber ?? '',
-        })) as ParticipantRow[];
+        const parsedData = dataCenterParticipantSchema.array().parse(rawData) as ParticipantRow[];
 
-        setParticipants(normalizedData);
-        setFilteredParticipants(normalizedData);
+        setParticipants(parsedData);
+        setFilteredParticipants(parsedData);
       } catch (error) {
         console.error(error);
       } finally {

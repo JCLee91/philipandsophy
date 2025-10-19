@@ -13,14 +13,12 @@ interface CohortDetailPageProps {
   params: Promise<{ cohortId: string }>;
 }
 
-type ParticipantWithStats = CohortParticipant & { id: string };
-
 export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [cohortId, setCohortId] = useState<string>('');
   const [cohort, setCohort] = useState<Cohort | null>(null);
-  const [participants, setParticipants] = useState<ParticipantWithStats[]>([]);
+  const [participants, setParticipants] = useState<CohortParticipant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Params 추출
@@ -53,9 +51,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         }
 
         const data = await response.json();
-        const parsedParticipants = cohortParticipantSchema
-          .array()
-          .parse(data.participants) as ParticipantWithStats[];
+        const parsedParticipants = cohortParticipantSchema.array().parse(data.participants) as CohortParticipant[];
         setCohort(data.cohort);
         setParticipants(parsedParticipants);
       } catch (error) {
@@ -78,7 +74,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
 
   if (!user) return null;
 
-  const columns: Column<ParticipantWithStats>[] = [
+  const columns: Column<CohortParticipant>[] = [
     {
       key: 'name',
       header: '이름',
@@ -195,7 +191,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
       </div>
 
       {/* 참가자 테이블 */}
-      <DataTable columns={columns} data={participants} isLoading={isLoading} emptyMessage="참가자가 없습니다" />
+      <DataTable<CohortParticipant> columns={columns} data={participants} isLoading={isLoading} emptyMessage="참가자가 없습니다" />
     </div>
   );
 }

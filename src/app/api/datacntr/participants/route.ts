@@ -78,13 +78,18 @@ export async function GET(request: NextRequest) {
           activityStatus = getParticipantStatus(daysSinceActivity);
         }
 
+        // hasPushToken: pushTokens 배열 우선, 없으면 레거시 pushToken 필드 폴백
+        const hasPushToken = Array.isArray(participantData.pushTokens) && participantData.pushTokens.length > 0
+          ? participantData.pushTokens.some((entry: any) => entry?.token) // 활성 토큰 존재 여부
+          : !!participantData.pushToken; // 레거시 필드 폴백
+
         return {
           ...sanitizeParticipantForClient({ id: doc.id, ...participantData }),
           cohortName,
           submissionCount,
           engagementScore,
           engagementLevel,
-          hasPushToken: !!participantData.pushToken,
+          hasPushToken,
           activityStatus,
         };
       })

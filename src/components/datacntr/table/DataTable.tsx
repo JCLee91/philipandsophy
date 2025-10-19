@@ -6,14 +6,14 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 export type SortDirection = 'asc' | 'desc' | null;
 
 export interface Column<T> {
-  key: keyof T | string;
+  key: Extract<keyof T, string>;
   header: string;
   render?: (item: T) => ReactNode;
   sortable?: boolean;
   width?: string;
 }
 
-interface DataTableProps<T> {
+interface DataTableProps<T extends { id: string }> {
   columns: Column<T>[];
   data: T[];
   onSort?: (key: string, direction: SortDirection) => void;
@@ -23,7 +23,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
 }
 
-export default function DataTable<T extends Record<string, any>>({
+export default function DataTable<T extends { id: string }>({
   columns,
   data,
   onSort,
@@ -131,11 +131,11 @@ export default function DataTable<T extends Record<string, any>>({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {data.map((item, itemIdx) => (
-              <tr key={(item as any).id || itemIdx} className="hover:bg-gray-50 transition-colors">
+            {data.map((item) => (
+              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                 {columns.map((col, idx) => (
                   <td key={idx} className="px-6 py-4 text-sm text-gray-900">
-                    {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '-')}
+                    {col.render ? col.render(item) : String(item[col.key] ?? '-')}
                   </td>
                 ))}
               </tr>
