@@ -10,9 +10,7 @@ import TableSearch from '@/components/datacntr/table/TableSearch';
 import TablePagination from '@/components/datacntr/table/TablePagination';
 import { dataCenterParticipantSchema, type DataCenterParticipant } from '@/types/datacntr';
 
-type ParticipantRow = DataCenterParticipant & {
-  phoneNumber: string;
-};
+type ParticipantRow = DataCenterParticipant;
 
 type FilterState = {
   pushToken: 'all' | 'enabled' | 'disabled';
@@ -64,10 +62,10 @@ export default function ParticipantsPage() {
 
         const rawData = await response.json();
         const parsedData = dataCenterParticipantSchema.array().parse(rawData);
-        const normalizedData: ParticipantRow[] = parsedData.map((participant) => ({
+        const normalizedData = parsedData.map((participant) => ({
           ...participant,
           phoneNumber: participant.phoneNumber ?? '',
-        }));
+        })) as ParticipantRow[];
 
         setParticipants(normalizedData);
         setFilteredParticipants(normalizedData);
@@ -309,7 +307,7 @@ export default function ParticipantsPage() {
       </div>
 
       {/* 테이블 */}
-      <DataTable
+      <DataTable<ParticipantRow>
         columns={columns}
         data={paginatedData}
         sortKey={sortKey}
