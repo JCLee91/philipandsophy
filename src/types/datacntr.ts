@@ -65,7 +65,7 @@ export const sanitizedParticipantSchema = z.object({
   id: z.string(),
   name: z.string(),
   cohortId: z.string(),
-  phoneNumber: z.string(),
+  phoneNumber: z.string(), // 참가자 관리에 필요 (향후 마스킹 고려)
   gender: z.enum(['male', 'female', 'other']).optional(),
   profileImage: z.string().optional(),
   profileImageCircle: z.string().optional(),

@@ -23,7 +23,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
 }
 
-export default function DataTable<T extends { id: string }>({
+export default function DataTable<T extends Record<string, any>>({
   columns,
   data,
   onSort,
@@ -131,8 +131,8 @@ export default function DataTable<T extends { id: string }>({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {data.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+            {data.map((item, itemIdx) => (
+              <tr key={(item as any).id || itemIdx} className="hover:bg-gray-50 transition-colors">
                 {columns.map((col, idx) => (
                   <td key={idx} className="px-6 py-4 text-sm text-gray-900">
                     {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '-')}
