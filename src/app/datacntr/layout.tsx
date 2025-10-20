@@ -8,11 +8,7 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow', // 검색 엔진 차단
 };
 
-export default function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <DataCenterLayout>{children}</DataCenterLayout>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuthToken } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
@@ -7,10 +7,28 @@ import { format, subDays, endOfDay } from 'date-fns';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import type { DailyActivity } from '@/types/datacntr';
 
+function hasAnyPushSubscription(data: any): boolean {
+  const hasMultiDeviceToken =
+    Array.isArray(data.pushTokens) &&
+    data.pushTokens.some(
+      (entry: any) => typeof entry?.token === 'string' && entry.token.trim().length > 0
+    );
+
+  const hasWebPushSubscription =
+    Array.isArray(data.webPushSubscriptions) &&
+    data.webPushSubscriptions.some(
+      (sub: any) => typeof sub?.endpoint === 'string' && sub.endpoint.trim().length > 0
+    );
+
+  const hasLegacyToken = typeof data.pushToken === 'string' && data.pushToken.trim().length > 0;
+
+  return hasMultiDeviceToken || hasWebPushSubscription || hasLegacyToken;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Firebase Auth 검증
-    const auth = await requireAuthToken(request);
+    const auth = await requireWebAppAdmin(request);
     if (auth.error) {
       return auth.error;
     }
@@ -63,11 +81,14 @@ export async function GET(request: NextRequest) {
       const pushEnabledCount = allParticipantsSnapshot.docs.filter((doc) => {
         const data = doc.data();
         // 관리자 제외
-        if (data.isAdministrator) return false;
-        // 푸시 토큰 있음
-        if (!data.pushToken) return false;
+        if (data.isAdministrator || data.isSuperAdmin) return false;
+        // 푸시 구독/토큰 확인
+        if (!hasAnyPushSubscription(data)) return false;
         // 그날까지 가입한 참가자 (그날 늦게 가입한 사용자도 포함)
         const createdAt = safeTimestampToDate(data.createdAt);
+        if (!createdAt) {
+          return false;
+        }
         return createdAt <= endOfDayDate;
       }).length;
 

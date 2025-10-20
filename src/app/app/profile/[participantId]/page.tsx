@@ -54,6 +54,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const questionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
+  const [detailImageAspectRatio, setDetailImageAspectRatio] = useState<number | null>(null);
 
   const toggleQuestion = (question: string) => {
     setExpandedQuestions(prev => {
@@ -194,6 +195,10 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const viewerAssignment = currentUserId
     ? assignments[currentUserId] ?? null
     : null;
+
+  useEffect(() => {
+    setDetailImageAspectRatio(null);
+  }, [selectedSubmission?.bookImageUrl]);
 
   const accessibleProfileIds = new Set([
     ...(viewerAssignment?.similar ?? []),
@@ -408,7 +413,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               alt="책 표지"
                               fill
                               sizes="60px"
-                              className="object-cover"
+                              className="object-contain"
                             />
                           </div>
                         )}
@@ -514,15 +519,25 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
               <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                 {/* 책 이미지 */}
                 {selectedSubmission.bookImageUrl && (
-                  <div className="relative aspect-video overflow-hidden rounded-xl border bg-muted">
+                  <div
+                    className="relative w-full overflow-hidden rounded-xl border bg-muted"
+                    style={{
+                      aspectRatio: detailImageAspectRatio ?? 1.5,
+                    }}
+                  >
                     <Image
                       src={selectedSubmission.bookImageUrl}
                       alt="책 사진"
                       fill
                       sizes="(max-width: 768px) 100vw, 448px"
-                      className="object-cover"
+                      className="object-contain"
                       priority={false}
                       unoptimized={false}
+                      onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+                        if (naturalWidth > 0 && naturalHeight > 0) {
+                          setDetailImageAspectRatio(naturalWidth / naturalHeight);
+                        }
+                      }}
                     />
                   </div>
                 )}

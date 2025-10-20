@@ -24,6 +24,7 @@ docs/
 
 1. **[Firebase 설정](./setup/firebase.md)** - Firebase 프로젝트 생성 및 연동
 2. **[Admin SDK 설정](./setup/admin-sdk.md)** - Firebase Admin SDK 구성 (서버 사이드)
+3. **[Internal Service Secret 설정](./setup/internal-service-secret.md)** ✨ NEW - Cron ↔ Next.js API 내부 인증
 
 ---
 

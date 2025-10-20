@@ -50,6 +50,11 @@ const apiBaseUrlParam = defineString("API_BASE_URL", {
   default: "https://philipandsophy.vercel.app",
 });
 
+const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
+  description: "Internal secret for Cron ↔ Next.js API authentication",
+  default: "",
+});
+
 // Initialize Firebase Admin
 admin.initializeApp();
 
@@ -855,14 +860,22 @@ export const scheduledMatchingPreview = onSchedule(
       // 1. 환경 설정
       const cohortId = cohortIdParam.value();
       const apiBaseUrl = apiBaseUrlParam.value();
+      const internalSecret = internalSecretParam.value();
 
-      // 2. Preview API 호출
+      // 2. INTERNAL_SERVICE_SECRET 검증 (필수)
+      if (!internalSecret) {
+        logger.error("INTERNAL_SERVICE_SECRET is not set; aborting scheduled preview");
+        return;
+      }
+
+      // 3. Preview API 호출
       logger.info(`Calling preview API for cohort: ${cohortId}`);
 
       const response = await fetch(`${apiBaseUrl}/api/admin/matching/preview`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Internal-Secret": internalSecret,
         },
         body: JSON.stringify({ cohortId }),
       });

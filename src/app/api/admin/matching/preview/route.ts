@@ -14,10 +14,24 @@ import type { SubmissionData, ParticipantData } from '@/types/database';
  * AI 매칭 실행 (프리뷰 모드 - Firebase 저장하지 않음)
  */
 export async function POST(request: NextRequest) {
-  // 관리자 권한 검증
-  const { user, error } = await requireWebAppAdmin(request);
-  if (error) {
-    return error;
+  // 내부 서비스 시크릿 검증 (Cron 함수 → Next.js API)
+  const internalSecret = request.headers.get('x-internal-secret');
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET;
+
+  // 시크릿이 일치하면 관리자 인증 우회 (내부 서비스 인증됨)
+  let isInternalCall = false;
+  if (internalSecret && expectedSecret && internalSecret === expectedSecret) {
+    isInternalCall = true;
+    logger.info('[Matching Preview] Internal service authenticated via secret');
+  }
+
+  // 내부 호출이 아니면 관리자 권한 검증
+  if (!isInternalCall) {
+    const { user, error } = await requireWebAppAdmin(request);
+    if (error) {
+      return error;
+    }
+    logger.info('[Matching Preview] Admin user authenticated', { userId: user.id });
   }
 
   try {

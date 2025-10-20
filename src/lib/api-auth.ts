@@ -272,7 +272,9 @@ export async function requireWebAppAdmin(
   }
 
   // 관리자 권한 체크
-  if (!user?.isAdministrator) {
+  const hasAdminPrivileges = user?.isAdministrator === true || user?.isSuperAdmin === true;
+
+  if (!hasAdminPrivileges) {
     logger.warn('관리자 권한 없음', { participantId: user?.id, name: user?.name });
     return {
       user: null,

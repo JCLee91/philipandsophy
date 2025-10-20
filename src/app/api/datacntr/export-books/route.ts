@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuthToken } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 
@@ -10,7 +10,7 @@ import { COLLECTIONS } from '@/types/database';
 export async function GET(request: NextRequest) {
   try {
     // Firebase Auth 검증
-    const auth = await requireAuthToken(request);
+    const auth = await requireWebAppAdmin(request);
     if (auth.error) {
       return auth.error;
     }

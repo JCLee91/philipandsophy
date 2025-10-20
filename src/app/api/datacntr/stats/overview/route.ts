@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuthToken } from '@/lib/api-auth';
+import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
@@ -8,10 +8,28 @@ import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { getTodayString } from '@/lib/date-utils';
 
+function hasAnyPushSubscription(data: any): boolean {
+  const hasMultiDeviceToken =
+    Array.isArray(data.pushTokens) &&
+    data.pushTokens.some(
+      (entry: any) => typeof entry?.token === 'string' && entry.token.trim().length > 0
+    );
+
+  const hasWebPushSubscription =
+    Array.isArray(data.webPushSubscriptions) &&
+    data.webPushSubscriptions.some(
+      (sub: any) => typeof sub?.endpoint === 'string' && sub.endpoint.trim().length > 0
+    );
+
+  const hasLegacyToken = typeof data.pushToken === 'string' && data.pushToken.trim().length > 0;
+
+  return hasMultiDeviceToken || hasWebPushSubscription || hasLegacyToken;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Firebase Auth 검증
-    const auth = await requireAuthToken(request);
+    const auth = await requireWebAppAdmin(request);
     if (auth.error) {
       return auth.error;
     }
@@ -68,7 +86,7 @@ export async function GET(request: NextRequest) {
     // 푸시 알림 허용 인원 (관리자 제외)
     const pushEnabledCount = nonAdminParticipants.filter((doc) => {
       const data = doc.data();
-      return !!data.pushToken; // pushToken이 있으면 허용한 것
+      return hasAnyPushSubscription(data);
     }).length;
 
     // 참가자 활동 상태 분류 (3일 이내 / 4-7일 / 7일 이상)
