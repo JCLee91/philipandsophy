@@ -10,9 +10,9 @@ import type { DailyActivity } from '@/types/datacntr';
 export async function GET(request: NextRequest) {
   try {
     // Firebase Auth 검증
-    const { email, uid, error } = await requireAuthToken(request);
-    if (error) {
-      return error;
+    const auth = await requireAuthToken(request);
+    if (auth.error) {
+      return auth.error;
     }
 
     // days 파라미터 (기본 7일)

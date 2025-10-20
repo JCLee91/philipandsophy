@@ -21,7 +21,7 @@ import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/mess
 import { doc, updateDoc, getDoc, arrayUnion, arrayRemove, Timestamp, deleteField } from 'firebase/firestore';
 import { getDb, getFirebaseAuth } from './client';
 import { logger } from '@/lib/logger';
-import type { PushTokenEntry } from '@/types/database';
+import type { PushTokenEntry, WebPushSubscriptionData } from '@/types/database';
 import {
   isFCMSupported,
   isWebPushSupported,
@@ -394,22 +394,39 @@ export async function removePushTokenFromFirestore(
   const currentData = participantSnap.data();
   const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
   const deviceTokenEntry = existingTokens.find((entry) => entry.deviceId === deviceId);
+  const webPushSubscriptions: WebPushSubscriptionData[] = Array.isArray(
+    currentData.webPushSubscriptions
+  )
+    ? currentData.webPushSubscriptions
+    : [];
+  const subscriptionFromFirestore =
+    webPushSubscriptions.find((sub) => sub.deviceId === deviceId) || null;
 
   // ✅ Step 1: Remove Web Push subscription first (via API)
   // This ensures Firestore consistency if auth fails
   let webPushRemoved = false;
-  let registration: ServiceWorkerRegistration | null = null;
   let currentSubscription: PushSubscription | null = null;
   let subscriptionEndpoint: string | null = null;
-  let referenceEndpoint: string | null = null;
+  let referenceEndpoint: string | null = subscriptionFromFirestore?.endpoint ?? null;
 
   try {
-
     if ('serviceWorker' in navigator && 'PushManager' in window) {
-      registration = await navigator.serviceWorker.ready;
-      currentSubscription = await registration.pushManager.getSubscription();
-      subscriptionEndpoint = currentSubscription?.endpoint ?? null;
+      try {
+        const existingRegistration =
+          (await navigator.serviceWorker.getRegistration()) || (await ensureServiceWorkerReady());
+        if (existingRegistration) {
+          currentSubscription = await existingRegistration.pushManager.getSubscription();
+          subscriptionEndpoint = currentSubscription?.endpoint ?? null;
+        }
+      } catch (swError) {
+        // iOS PWA에서 ready가 resolve되지 않는 케이스 대비 - Firestore 정리는 계속 진행
+        logger.warn(
+          'Service worker not ready while removing Web Push subscription (continuing with stored data)',
+          swError
+        );
+      }
     }
+    const endpointForRemoval = subscriptionEndpoint ?? referenceEndpoint;
 
     const headers = await buildAuthorizedJsonHeaders();
     if (!headers) {
@@ -430,7 +447,7 @@ export async function removePushTokenFromFirestore(
       body: JSON.stringify({
         participantId,
         deviceId,
-        subscriptionEndpoint,
+        subscriptionEndpoint: endpointForRemoval,
       }),
     });
 
@@ -476,9 +493,9 @@ export async function removePushTokenFromFirestore(
 
   // ✅ Step 3: Check if there are any remaining tokens/subscriptions
   const remainingTokens = existingTokens.filter((entry) => entry.deviceId !== deviceId);
-  referenceEndpoint = subscriptionEndpoint || currentSubscription?.endpoint || null;
-  const webPushSubscriptions = currentData.webPushSubscriptions || [];
-  const remainingSubscriptions = webPushSubscriptions.filter((sub: any) => {
+  referenceEndpoint =
+    subscriptionEndpoint || currentSubscription?.endpoint || referenceEndpoint || null;
+  const remainingSubscriptions = webPushSubscriptions.filter((sub) => {
     if (referenceEndpoint && sub.endpoint === referenceEndpoint) {
       return false;
     }

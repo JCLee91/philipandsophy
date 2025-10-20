@@ -95,8 +95,17 @@ export default function ReadingSubmissionDialog({
   const { data: allSubmissions = [] } = useSubmissionsByParticipant(participantId);
 
   // 다이얼로그가 열릴 때 데이터 로드
+  const userModifiedBookRef = useRef(false);
+  const previousOpenRef = useRef(false);
+
   useEffect(() => {
+    const justOpened = open && !previousOpenRef.current;
+    previousOpenRef.current = open;
+
     if (open) {
+      if (justOpened) {
+        userModifiedBookRef.current = false;
+      }
       // 수정 모드: 기존 데이터 pre-fill
       if (isEditMode && existingSubmission) {
         setBookTitle(existingSubmission.bookTitle || '');
@@ -137,7 +146,7 @@ export default function ReadingSubmissionDialog({
         try {
           const participant = await getParticipantById(participantId);
 
-          if (participant?.currentBookTitle) {
+          if (!userModifiedBookRef.current && participant?.currentBookTitle) {
             setBookTitle(participant.currentBookTitle);
             setBookAuthor(participant.currentBookAuthor || '');
             setBookCoverUrl(participant.currentBookCoverUrl || '');
@@ -234,7 +243,7 @@ export default function ReadingSubmissionDialog({
         return; // 취소하면 변경 안 함
       }
     }
-
+    userModifiedBookRef.current = true;
     setBookTitle(value);
     setIsAutoFilled(false);
     // 사용자가 직접 입력하면 저자, 표지, 소개글 정보 초기화
@@ -244,6 +253,7 @@ export default function ReadingSubmissionDialog({
   };
 
   const handleBookSelect = (book: NaverBook) => {
+    userModifiedBookRef.current = true;
     setBookTitle(book.title);
     setBookAuthor(book.author);
     setBookCoverUrl(book.image);
@@ -262,6 +272,7 @@ export default function ReadingSubmissionDialog({
       }
     }
     
+    userModifiedBookRef.current = true;
     setBookTitle('');
     setBookAuthor('');
     setBookCoverUrl('');
@@ -302,6 +313,10 @@ export default function ReadingSubmissionDialog({
       // 검증
       if (!bookImage) {
         throw new Error('책 사진을 선택해주세요');
+      }
+
+      if (!trimmedBookTitle) {
+        throw new Error('책 제목을 입력하거나 검색해 주세요');
       }
 
       // 1️⃣ 책 정보 업데이트 (빠름, 실패 시 조기 종료)

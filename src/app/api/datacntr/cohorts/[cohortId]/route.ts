@@ -13,9 +13,9 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     // Firebase Auth 검증
-    const { email, uid, error } = await requireAuthToken(request);
-    if (error) {
-      return error;
+    const auth = await requireAuthToken(request);
+    if (auth.error) {
+      return auth.error;
     }
 
     const { cohortId } = await params;

@@ -10,24 +10,15 @@ import { COLLECTIONS } from '@/types/database';
  * @param idToken - Firebase Auth ID Token
  * @returns 검증된 사용자 정보 또는 null
  */
-export async function verifyAuthIdToken(idToken: string): Promise<{ email: string; uid: string } | null> {
+export async function verifyAuthIdToken(idToken: string): Promise<{ email: string | null; uid: string } | null> {
   try {
     const { getAdminAuth } = await import('@/lib/firebase/admin');
     const auth = getAdminAuth();
 
     const decodedToken = await auth.verifyIdToken(idToken);
 
-    // 이메일이 없으면 검증 실패 (Data Center는 이메일 필수)
-    if (!decodedToken.email) {
-      logger.warn('ID Token에 이메일 없음', {
-        uid: decodedToken.uid,
-        provider: decodedToken.firebase.sign_in_provider,
-      });
-      return null;
-    }
-
     return {
-      email: decodedToken.email,
+      email: decodedToken.email ?? null,
       uid: decodedToken.uid,
     };
   } catch (error) {
@@ -41,15 +32,30 @@ export async function verifyAuthIdToken(idToken: string): Promise<{ email: strin
  *
  * Firebase Auth ID Token을 검증하고 이메일 도메인을 체크합니다
  */
+type RequireAuthTokenSuccess = {
+  participant: Participant;
+  firebaseUid: string;
+  email: string | null;
+  error: null;
+};
+
+type RequireAuthTokenFailure = {
+  participant: null;
+  firebaseUid: null;
+  email: null;
+  error: NextResponse;
+};
+
 export async function requireAuthToken(
   request: NextRequest
-): Promise<{ email: string; uid: string; error: null } | { email: null; uid: null; error: NextResponse }> {
+): Promise<RequireAuthTokenSuccess | RequireAuthTokenFailure> {
   const authHeader = request.headers.get('authorization');
 
   if (!authHeader?.startsWith('Bearer ')) {
     return {
+      participant: null,
+      firebaseUid: null,
       email: null,
-      uid: null,
       error: NextResponse.json(
         { error: '인증 토큰이 필요합니다' },
         { status: 401 }
@@ -58,12 +64,13 @@ export async function requireAuthToken(
   }
 
   const idToken = authHeader.substring(7);
-  const user = await verifyAuthIdToken(idToken);
+  const decoded = await verifyAuthIdToken(idToken);
 
-  if (!user) {
+  if (!decoded) {
     return {
+      participant: null,
+      firebaseUid: null,
       email: null,
-      uid: null,
       error: NextResponse.json(
         { error: '유효하지 않은 인증 토큰입니다' },
         { status: 401 }
@@ -71,32 +78,77 @@ export async function requireAuthToken(
     };
   }
 
-  // 이메일 도메인 검증 (보안 강화)
-  const { validateEmailDomain, ALLOWED_DOMAINS_TEXT } = await import('@/constants/auth');
+  try {
+    const db = getAdminDb();
+    const snapshot = await db
+      .collection(COLLECTIONS.PARTICIPANTS)
+      .where('firebaseUid', '==', decoded.uid)
+      .limit(1)
+      .get();
 
-  if (!validateEmailDomain(user.email)) {
-    const emailDomain = user.email.split('@')[1];
+    if (snapshot.empty) {
+      logger.warn('Data center access denied - participant not found', {
+        firebaseUid: decoded.uid,
+      });
 
-    logger.warn('API 접근 차단 - 허용되지 않은 도메인', {
-      email: user.email,
-      domain: emailDomain,
-      uid: user.uid,
-    });
+      return {
+        participant: null,
+        firebaseUid: null,
+        email: null,
+        error: NextResponse.json(
+          {
+            error: '등록되지 않은 사용자입니다.',
+            code: 'PARTICIPANT_NOT_FOUND',
+          },
+          { status: 403 }
+        ),
+      };
+    }
+
+    const participantDoc = snapshot.docs[0];
+    const participant = {
+      id: participantDoc.id,
+      ...participantDoc.data(),
+    } as Participant;
+
+    if (participant.isSuperAdmin !== true && participant.isAdministrator !== true) {
+      logger.warn('Data center access denied - insufficient privileges', {
+        participantId: participant.id,
+        firebaseUid: decoded.uid,
+      });
+
+      return {
+        participant: null,
+        firebaseUid: null,
+        email: null,
+        error: NextResponse.json(
+          {
+            error: '데이터센터 접근 권한이 없습니다.',
+            code: 'INSUFFICIENT_PRIVILEGES',
+          },
+          { status: 403 }
+        ),
+      };
+    }
 
     return {
+      participant,
+      firebaseUid: decoded.uid,
+      email: decoded.email,
+      error: null,
+    };
+  } catch (error) {
+    logger.error('Data center auth verification failed', error);
+    return {
+      participant: null,
+      firebaseUid: null,
       email: null,
-      uid: null,
       error: NextResponse.json(
-        {
-          error: `${emailDomain} 도메인은 접근이 허용되지 않습니다`,
-          allowedDomains: ALLOWED_DOMAINS_TEXT,
-        },
-        { status: 403 }
+        { error: '인증 정보를 확인하는 중 오류가 발생했습니다.' },
+        { status: 500 }
       ),
     };
   }
-
-  return { ...user, error: null };
 }
 
 /**
@@ -234,4 +286,3 @@ export async function requireWebAppAdmin(
   logger.debug('관리자 권한 확인 완료', { participantId: user.id });
   return { user, error: null };
 }
-
