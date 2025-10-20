@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 import { getMessaging } from 'firebase/messaging';
 import { getFirebaseApp } from '@/lib/firebase';
-import { initializePushNotifications, getPushTokenFromFirestore } from '@/lib/firebase/messaging';
+import { initializePushNotifications, getDeviceId } from '@/lib/firebase/messaging';
+import { isPushEnabledForDevice } from '@/lib/push/helpers';
+import { doc, getDoc } from 'firebase/firestore';
+import { getDb } from '@/lib/firebase/client';
 import { logger } from '@/lib/logger';
 import { toast } from '@/hooks/use-toast';
 import { UI_CONSTANTS } from '@/constants/ui';
@@ -12,12 +15,14 @@ import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * 알림 권한 요청 프롬프트 컴포넌트
- * 사용자에게 브라우저 알림 권한을 요청하고 FCM 토큰을 저장합니다.
+ * 사용자에게 브라우저 알림 권한을 요청하고 푸시 알림을 활성화합니다.
  *
- * 수정 사항 (2025-10-17):
+ * 수정 사항 (2025-10-21):
+ * - ✅ isPushEnabledForDevice 통합 헬퍼 사용 (FCM + Web Push 모두 확인)
+ * - ✅ iOS Safari Web Push 구독도 올바르게 감지
  * - ✅ useAuth()로 participant 직접 사용 (localStorage 의존성 제거)
  * - ✅ participantStatus 기반 상태 관리
- * - Firestore pushToken 확인하여 이미 허용된 사용자는 프롬프트 표시 안 함
+ * - Firestore에서 현재 디바이스 푸시 상태 확인하여 이미 허용된 사용자는 프롬프트 표시 안 함
  * - 사용자 피드백 강화
  */
 export function NotificationPrompt() {
@@ -63,13 +68,23 @@ export function NotificationPrompt() {
       }
 
       try {
-        // 1. Firestore에서 pushToken 확인 (디바이스 간 동기화)
-        const existingToken = await getPushTokenFromFirestore(participantId);
+        // 1. Firestore에서 현재 디바이스의 푸시 상태 확인 (FCM + Web Push 통합)
+        const deviceId = getDeviceId();
+        const participantRef = doc(getDb(), 'participants', participantId);
+        const participantSnap = await getDoc(participantRef);
 
-        if (existingToken) {
-          logger.info('[NotificationPrompt] User already has push token, skipping prompt');
-          setIsCheckingToken(false);
-          return;
+        if (participantSnap.exists()) {
+          const data = participantSnap.data();
+          const isPushEnabled = isPushEnabledForDevice(data, deviceId);
+
+          if (isPushEnabled) {
+            logger.info('[NotificationPrompt] User already has push enabled for this device, skipping prompt', {
+              participantId,
+              deviceId,
+            });
+            setIsCheckingToken(false);
+            return;
+          }
         }
 
         // 2. localStorage에서 거부 이력 확인 (디바이스별)
