@@ -18,7 +18,7 @@ import type { WebPushSubscriptionData } from '@/types/database';
  *
  * Required for pushManager.subscribe()
  */
-export function urlBase64ToUint8Array(base64String: string): Uint8Array {
+export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
 
@@ -29,7 +29,7 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i);
   }
 
-  return outputArray;
+  return outputArray as Uint8Array<ArrayBuffer>;
 }
 
 /**
