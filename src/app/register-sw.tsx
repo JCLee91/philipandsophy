@@ -17,6 +17,44 @@ import { logger } from '@/lib/logger';
  * - PWA 캐싱 + FCM 푸시 알림을 하나의 워커에서 처리
  * - Scope 충돌 없음 (단일 scope: '/')
  */
+/**
+ * Wait for Service Worker to control the page
+ *
+ * iOS PWA에서 컨트롤러 전환이 느릴 수 있으므로
+ * controllerchange 이벤트를 대기합니다.
+ */
+async function waitForController(timeoutMs: number = 5000): Promise<void> {
+  // 이미 컨트롤러가 있으면 즉시 반환
+  if (navigator.serviceWorker.controller) {
+    logger.info('[RegisterSW] Controller already active');
+    return;
+  }
+
+  logger.info('[RegisterSW] Waiting for controller...');
+
+  return Promise.race([
+    new Promise<void>((resolve) => {
+      const onControllerChange = () => {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+          logger.info('[RegisterSW] Controller activated via event');
+          resolve();
+        }
+      };
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    }),
+    new Promise<void>((_, reject) => {
+      setTimeout(() => {
+        logger.warn('[RegisterSW] Controller timeout - continuing anyway');
+        reject(new Error('Controller timeout'));
+      }, timeoutMs);
+    }),
+  ]).catch(() => {
+    // 타임아웃되어도 계속 진행 (non-blocking)
+    logger.warn('[RegisterSW] Proceeding without controller');
+  });
+}
+
 export default function RegisterServiceWorker() {
   useEffect(() => {
     // Service Worker가 지원되지 않으면 종료
@@ -28,50 +66,45 @@ export default function RegisterServiceWorker() {
     /**
      * Unified Service Worker 등록
      *
-     * 간소화된 등록 프로세스:
-     * 1. 기존 SW 모두 제거 (깨끗한 상태에서 시작)
-     * 2. 새로운 통합 SW 등록
-     * 3. 등록 완료 대기
+     * iOS PWA 최적화 프로세스:
+     * 1. 기존 등록 재사용 (재등록 금지)
+     * 2. 없으면 새로 등록
+     * 3. 컨트롤러 확보 대기 (controllerchange 이벤트)
      */
     const registerUnifiedServiceWorker = async () => {
       try {
-        logger.info('[RegisterSW] Starting unified service worker registration...');
+        logger.info('[RegisterSW] Starting service worker registration...');
 
-        // Step 1: 기존 Service Worker 모두 제거
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        logger.info(`[RegisterSW] Found ${registrations.length} existing service worker(s)`);
+        // Step 1: 기존 등록 확인 (있으면 재사용)
+        let registration = await navigator.serviceWorker.getRegistration();
 
-        if (registrations.length > 0) {
-          await Promise.all(
-            registrations.map(async (registration) => {
-              const url = registration.active?.scriptURL || 'unknown';
-              logger.info(`[RegisterSW] Unregistering: ${url}`);
-              await registration.unregister();
-            })
-          );
-          logger.info('[RegisterSW] All existing service workers unregistered');
+        if (registration) {
+          logger.info('[RegisterSW] Service worker already registered', {
+            scope: registration.scope,
+            state: registration.active?.state || 'no active worker',
+          });
+        } else {
+          // Step 2: 없으면 새로 등록
+          logger.info('[RegisterSW] Registering new service worker at /sw.js');
+          registration = await navigator.serviceWorker.register('/sw.js', {
+            scope: '/',
+          });
+
+          logger.info('[RegisterSW] Service worker registered successfully', {
+            scope: registration.scope,
+            state: registration.active
+              ? 'active'
+              : registration.waiting
+              ? 'waiting'
+              : registration.installing
+              ? 'installing'
+              : 'unknown',
+          });
         }
 
-        // Step 2: 새로운 통합 Service Worker 등록
-        logger.info('[RegisterSW] Registering unified service worker at /sw.js');
-        const registration = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/',
-        });
-
-        logger.info('[RegisterSW] Service worker registered successfully', {
-          scope: registration.scope,
-          state: registration.active
-            ? 'active'
-            : registration.waiting
-            ? 'waiting'
-            : registration.installing
-            ? 'installing'
-            : 'unknown',
-        });
-
-        // Step 3: Service Worker가 활성화될 때까지 대기
-        await navigator.serviceWorker.ready;
-        logger.info('[RegisterSW] Service worker is ready and active');
+        // Step 3: 컨트롤러 확보 대기 (iOS 최적화)
+        await waitForController(5000);
+        logger.info('[RegisterSW] Service worker controller ready');
 
         // Step 4: 업데이트 체크 (개발 중에는 자주 업데이트됨)
         registration.addEventListener('updatefound', () => {
