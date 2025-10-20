@@ -66,8 +66,8 @@ export default withPWA({
   register: false,
   // Skip waiting to activate new SW immediately
   skipWaiting: true,
-  // Disable in development for easier debugging
-  disable: process.env.NODE_ENV === 'development',
+  // Enable in development for testing service worker and push notifications
+  disable: false,
   // Reload on network connection restored
   reloadOnOnline: true,
 })(nextConfig);

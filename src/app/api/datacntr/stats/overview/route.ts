@@ -7,24 +7,7 @@ import type { OverviewStats } from '@/types/datacntr';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { getTodayString } from '@/lib/date-utils';
-
-function hasAnyPushSubscription(data: any): boolean {
-  const hasMultiDeviceToken =
-    Array.isArray(data.pushTokens) &&
-    data.pushTokens.some(
-      (entry: any) => typeof entry?.token === 'string' && entry.token.trim().length > 0
-    );
-
-  const hasWebPushSubscription =
-    Array.isArray(data.webPushSubscriptions) &&
-    data.webPushSubscriptions.some(
-      (sub: any) => typeof sub?.endpoint === 'string' && sub.endpoint.trim().length > 0
-    );
-
-  const hasLegacyToken = typeof data.pushToken === 'string' && data.pushToken.trim().length > 0;
-
-  return hasMultiDeviceToken || hasWebPushSubscription || hasLegacyToken;
-}
+import { hasAnyPushSubscription } from '@/lib/push/helpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,50 +35,50 @@ export async function GET(request: NextRequest) {
       db.collection(COLLECTIONS.MESSAGES).get(),
     ]);
 
-    // 관리자 제외 필터링
-    const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
+    // 슈퍼관리자만 제외 (일반 관리자는 통계에 포함)
+    const nonSuperAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !(data.isSuperAdmin || data.isAdministrator);
+      return !data.isSuperAdmin;
     });
 
-    // 관리자 ID 목록 생성
-    const adminIds = new Set(
+    // 슈퍼관리자 ID 목록 생성 (일반 관리자는 포함 안함)
+    const superAdminIds = new Set(
       participantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isSuperAdmin === true || data.isAdministrator === true;
+          return data.isSuperAdmin === true;
         })
         .map((doc) => doc.id)
     );
 
-    // 관리자의 인증 제외
-    const nonAdminSubmissions = submissionsSnapshot.docs.filter((doc) => {
+    // 슈퍼관리자의 인증만 제외 (일반 관리자 인증은 포함)
+    const nonSuperAdminSubmissions = submissionsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !adminIds.has(data.participantId);
+      return !superAdminIds.has(data.participantId);
     });
 
     // 오늘 인증은 중복 제출을 방지하기 위해 참가자 기준으로 집계
-    const nonAdminTodaySubmissionIds = new Set<string>();
+    const nonSuperAdminTodaySubmissionIds = new Set<string>();
     todaySubmissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      if (!adminIds.has(data.participantId)) {
-        nonAdminTodaySubmissionIds.add(data.participantId);
+      if (!superAdminIds.has(data.participantId)) {
+        nonSuperAdminTodaySubmissionIds.add(data.participantId);
       }
     });
 
-    // 푸시 알림 허용 인원 (관리자 제외)
-    const pushEnabledCount = nonAdminParticipants.filter((doc) => {
+    // 푸시 알림 허용 인원 (슈퍼관리자만 제외)
+    const pushEnabledCount = nonSuperAdminParticipants.filter((doc) => {
       const data = doc.data();
       return hasAnyPushSubscription(data);
     }).length;
 
-    // 참가자 활동 상태 분류 (3일 이내 / 4-7일 / 7일 이상)
+    // 참가자 활동 상태 분류 (3일 이내 / 4-7일 / 7일 이상, 슈퍼관리자만 제외)
     const now = Date.now();
     let activeParticipants = 0;
     let moderateParticipants = 0;
     let dormantParticipants = 0;
 
-    nonAdminParticipants.forEach((doc) => {
+    nonSuperAdminParticipants.forEach((doc) => {
       const data = doc.data();
       const lastActivityAt = safeTimestampToDate(data.lastActivityAt);
 
@@ -115,7 +98,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 주간 참여율 계산 (이번 주 인증 참가자 비율)
+    // 주간 참여율 계산 (이번 주 인증 참가자 비율, 슈퍼관리자만 제외)
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // 이번 주 일요일
     weekStart.setHours(0, 0, 0, 0);
@@ -125,24 +108,24 @@ export async function GET(request: NextRequest) {
       .where('submittedAt', '>=', weekStart)
       .get();
 
-    // 이번 주 인증한 참가자 ID (관리자 제외, 중복 제거)
+    // 이번 주 인증한 참가자 ID (슈퍼관리자만 제외, 중복 제거)
     const weekParticipantIds = new Set<string>();
     weekSubmissionsSnapshot.forEach((doc) => {
       const data = doc.data();
-      if (!adminIds.has(data.participantId)) {
+      if (!superAdminIds.has(data.participantId)) {
         weekParticipantIds.add(data.participantId);
       }
     });
 
-    const weeklyParticipationRate = nonAdminParticipants.length > 0
-      ? Math.round((weekParticipantIds.size / nonAdminParticipants.length) * 100)
+    const weeklyParticipationRate = nonSuperAdminParticipants.length > 0
+      ? Math.round((weekParticipantIds.size / nonSuperAdminParticipants.length) * 100)
       : 0;
 
     const stats: OverviewStats = {
       totalCohorts: cohortsSnapshot.size,
-      totalParticipants: nonAdminParticipants.length,
-      todaySubmissions: nonAdminTodaySubmissionIds.size,
-      totalSubmissions: nonAdminSubmissions.length,
+      totalParticipants: nonSuperAdminParticipants.length,
+      todaySubmissions: nonSuperAdminTodaySubmissionIds.size,
+      totalSubmissions: nonSuperAdminSubmissions.length,
       totalNotices: noticesSnapshot.size,
       totalMessages: messagesSnapshot.size,
       pushEnabledCount,

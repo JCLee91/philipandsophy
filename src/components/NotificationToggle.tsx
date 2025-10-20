@@ -4,13 +4,16 @@ import { useState, useEffect } from 'react';
 import { Bell, BellOff, AlertCircle, Loader2 } from 'lucide-react';
 import { getMessaging, deleteToken } from 'firebase/messaging';
 import { getFirebaseApp } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { getDb } from '@/lib/firebase/client';
 import {
   initializePushNotifications,
   isPushNotificationSupported,
   getNotificationPermission,
-  getPushTokenFromFirestore,
   removePushTokenFromFirestore,
+  getDeviceId,
 } from '@/lib/firebase/messaging';
+import { isPushEnabledForDevice } from '@/lib/push/helpers';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -55,7 +58,8 @@ export function NotificationToggle() {
 
   /**
    * 알림 상태 확인
-   * - Firestore pushTokens 배열을 단일 진실 소스(Single Source of Truth)로 사용
+   * - Firestore를 단일 진실 소스(Single Source of Truth)로 사용
+   * - isPushEnabledForDevice 헬퍼로 FCM + Web Push 통합 체크
    * - iOS PWA 버그: Notification.permission이 불안정하므로 참고용으로만 사용
    * - 명시적으로 차단된 경우(denied)에만 자동 정리
    */
@@ -63,29 +67,41 @@ export function NotificationToggle() {
     try {
       setIsStatusLoading(true);
 
-      // 1. Firestore에서 현재 디바이스 토큰 확인 (단일 진실 소스)
-      // ✅ getPushTokenFromFirestore는 pushTokens 배열 기반으로 동작
-      const token = await getPushTokenFromFirestore(participantId);
+      // 1. Firestore에서 현재 디바이스 푸시 상태 확인 (FCM + Web Push)
+      const deviceId = getDeviceId();
+      const participantRef = doc(getDb(), 'participants', participantId);
+      const participantSnap = await getDoc(participantRef);
+
+      if (!participantSnap.exists()) {
+        logger.warn('[NotificationToggle] Participant not found', { participantId });
+        setIsEnabled(false);
+        return;
+      }
+
+      const data = participantSnap.data();
+      const isPushEnabled = isPushEnabledForDevice(data, deviceId);
+
       logger.info('[NotificationToggle] Status check result', {
         participantId,
-        hasToken: !!token,
+        deviceId,
+        isPushEnabled,
       });
 
-      // 2. 토큰이 있으면 활성화로 간주 (iOS PWA 버그 회피)
-      setIsEnabled(!!token);
+      // 2. 현재 디바이스에 푸시가 활성화되어 있으면 ON
+      setIsEnabled(isPushEnabled);
 
       // 3. 브라우저 권한 상태 확인 (참고용)
       const browserPermission = getNotificationPermission();
 
       // 4. 권한이 명시적으로 차단된 경우에만 정리
       // iOS PWA 버그 수정: permission이 'default'로 리셋되어도 알림은 동작할 수 있음
-      if (token && browserPermission === 'denied') {
+      if (isPushEnabled && browserPermission === 'denied') {
         logger.warn('[NotificationToggle] Permission explicitly denied. Cleaning up...', {
           browserPermission,
-          hasToken: !!token,
+          deviceId,
         });
 
-        // ✅ 현재 디바이스의 토큰을 pushTokens 배열에서 제거
+        // ✅ 현재 디바이스의 FCM + Web Push 모두 제거
         await removePushTokenFromFirestore(participantId);
 
         setIsEnabled(false);
