@@ -381,96 +381,97 @@ export async function getPushTokenFromFirestore(
 export async function removePushTokenFromFirestore(
   participantId: string
 ): Promise<void> {
+  const deviceId = getDeviceId();
+  const participantRef = doc(getDb(), 'participants', participantId);
+
+  // Get current participant data
+  const participantSnap = await getDoc(participantRef);
+  if (!participantSnap.exists()) {
+    logger.warn('Cannot remove push token: participant not found', { participantId });
+    return;
+  }
+
+  const currentData = participantSnap.data();
+  const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
+  const deviceTokenEntry = existingTokens.find((entry) => entry.deviceId === deviceId);
+
+  // ✅ Step 1: Remove Web Push subscription first (via API)
+  // This ensures Firestore consistency if auth fails
+  let webPushRemoved = false;
   try {
-    const deviceId = getDeviceId();
-    const participantRef = doc(getDb(), 'participants', participantId);
+    const headers = await buildAuthorizedJsonHeaders();
+    if (!headers) {
+      logger.error('Cannot remove Web Push subscription: missing auth headers');
 
-    // Get current participant data
-    const participantSnap = await getDoc(participantRef);
-    if (!participantSnap.exists()) {
-      logger.warn('Cannot remove push token: participant not found', { participantId });
-      return;
-    }
-
-    const currentData = participantSnap.data();
-    const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
-
-    // ✅ Remove FCM token (if exists)
-    const deviceTokenEntry = existingTokens.find((entry) => entry.deviceId === deviceId);
-
-    if (deviceTokenEntry) {
-      await updateDoc(participantRef, {
-        pushTokens: arrayRemove(deviceTokenEntry),
-      });
-      logger.info('Removed FCM push token for device', { participantId, deviceId });
-    }
-
-    // ✅ Remove Web Push subscription (via API)
-    try {
-      const headers = await buildAuthorizedJsonHeaders();
-      if (!headers) {
-        logger.error('Cannot remove Web Push subscription: missing auth headers');
-
-        // Fallback: Remove from client-side Service Worker subscription
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          const registration = await navigator.serviceWorker.ready;
-          const subscription = await registration.pushManager.getSubscription();
-          if (subscription) {
-            await subscription.unsubscribe();
-            logger.info('Unsubscribed from Web Push at client side (fallback)');
-          }
+      // Fallback: Remove from client-side Service Worker subscription only
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          await subscription.unsubscribe();
+          logger.info('Unsubscribed from Web Push at client side (fallback)');
         }
-
-        throw new Error('Auth headers unavailable - Web Push subscription removed locally only');
       }
 
-      const response = await fetch('/api/push-subscriptions', {
-        method: 'DELETE',
-        headers,
-        body: JSON.stringify({
-          participantId,
-          deviceId,
-        }),
-      });
-
-      if (response.ok) {
-        logger.info('Removed Web Push subscription for device', { participantId, deviceId });
-      } else {
-        const errorData = await response.json();
-        logger.warn('Failed to remove Web Push subscription (may not exist)', errorData);
-      }
-    } catch (error) {
-      logger.error('Error removing Web Push subscription via API', error);
-      throw error; // Re-throw to let caller handle
+      throw new Error('Auth headers unavailable - cannot remove Web Push from Firestore');
     }
 
-    // Check if there are any remaining tokens/subscriptions
-    const remainingTokens = existingTokens.filter((entry) => entry.deviceId !== deviceId);
-    const webPushSubscriptions = currentData.webPushSubscriptions || [];
-    const remainingSubscriptions = webPushSubscriptions.filter((sub: any) => sub.deviceId !== deviceId);
+    const response = await fetch('/api/push-subscriptions', {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify({
+        participantId,
+        deviceId,
+      }),
+    });
 
-    // If no tokens/subscriptions remain, update pushNotificationEnabled to false
-    if (remainingTokens.length === 0 && remainingSubscriptions.length === 0) {
-      await updateDoc(participantRef, {
-        pushNotificationEnabled: false,
-        pushToken: deleteField(),
-        pushTokenUpdatedAt: deleteField(),
-      });
-      logger.info('Removed last push token/subscription, disabled push notifications', {
-        participantId,
-        deviceId,
-      });
+    if (response.ok) {
+      logger.info('Removed Web Push subscription for device', { participantId, deviceId });
+      webPushRemoved = true;
+    } else if (response.status === 404) {
+      // Subscription not found - already removed or never existed
+      logger.info('Web Push subscription not found (already removed)', { participantId, deviceId });
+      webPushRemoved = true;
     } else {
-      logger.info('Removed push token/subscription for device', {
-        participantId,
-        deviceId,
-        remainingTokens: remainingTokens.length,
-        remainingSubscriptions: remainingSubscriptions.length,
-      });
+      const errorData = await response.json();
+      throw new Error(`Failed to remove Web Push subscription: ${errorData.error || 'Unknown error'}`);
     }
   } catch (error) {
-    logger.error('Error removing push token/subscription from Firestore', error);
-    throw error;
+    logger.error('Error removing Web Push subscription via API', error);
+    throw error; // Re-throw to prevent FCM token removal
+  }
+
+  // ✅ Step 2: Remove FCM token only if Web Push removal succeeded
+  if (webPushRemoved && deviceTokenEntry) {
+    await updateDoc(participantRef, {
+      pushTokens: arrayRemove(deviceTokenEntry),
+    });
+    logger.info('Removed FCM push token for device', { participantId, deviceId });
+  }
+
+  // ✅ Step 3: Check if there are any remaining tokens/subscriptions
+  const remainingTokens = existingTokens.filter((entry) => entry.deviceId !== deviceId);
+  const webPushSubscriptions = currentData.webPushSubscriptions || [];
+  const remainingSubscriptions = webPushSubscriptions.filter((sub: any) => sub.deviceId !== deviceId);
+
+  // If no tokens/subscriptions remain, update pushNotificationEnabled to false
+  if (remainingTokens.length === 0 && remainingSubscriptions.length === 0) {
+    await updateDoc(participantRef, {
+      pushNotificationEnabled: false,
+      pushToken: deleteField(),
+      pushTokenUpdatedAt: deleteField(),
+    });
+    logger.info('Removed last push token/subscription, disabled push notifications', {
+      participantId,
+      deviceId,
+    });
+  } else {
+    logger.info('Removed push token/subscription for device', {
+      participantId,
+      deviceId,
+      remainingTokens: remainingTokens.length,
+      remainingSubscriptions: remainingSubscriptions.length,
+    });
   }
 }
 

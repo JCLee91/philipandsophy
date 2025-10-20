@@ -18,7 +18,7 @@ import type { WebPushSubscriptionData } from '@/types/database';
  *
  * Required for pushManager.subscribe()
  */
-export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
+export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
 
@@ -29,7 +29,7 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuf
     outputArray[i] = rawData.charCodeAt(i);
   }
 
-  return outputArray as Uint8Array<ArrayBuffer>;
+  return outputArray;
 }
 
 /**
@@ -54,7 +54,7 @@ export async function isFCMSupported(): Promise<boolean> {
     }
 
     // Use Firebase's official support detection (async)
-    const { getMessaging, isSupported } = await import('firebase/messaging');
+    const { isSupported } = await import('firebase/messaging');
     const supported = await isSupported();
 
     if (!supported) {
