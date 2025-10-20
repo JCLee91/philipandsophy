@@ -176,7 +176,10 @@ export function serializeWebPushSubscription(
 }
 
 /**
- * Get current Web Push subscription
+ * Get current Web Push subscription (with timeout)
+ *
+ * iOS Safari에서 navigator.serviceWorker.ready가 무한 대기될 수 있으므로
+ * 5초 타임아웃을 설정하여 안전하게 처리합니다.
  */
 export async function getCurrentWebPushSubscription(): Promise<PushSubscription | null> {
   try {
@@ -184,10 +187,19 @@ export async function getCurrentWebPushSubscription(): Promise<PushSubscription 
       return null;
     }
 
-    const registration = await navigator.serviceWorker.ready;
+    // ✅ 5초 타임아웃 추가 (무한 대기 방지)
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Service Worker ready timeout (5s)')), 5000);
+    });
+
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      timeoutPromise
+    ]);
+
     return await registration.pushManager.getSubscription();
   } catch (error) {
-    logger.error('Error getting current Web Push subscription', error);
+    logger.warn('Cannot get Web Push subscription (timeout or error)', error);
     return null;
   }
 }
