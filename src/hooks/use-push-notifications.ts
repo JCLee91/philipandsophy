@@ -96,16 +96,19 @@ export function usePushNotifications(
       setIsLoading(true);
       setError(null);
 
-      const messaging = getMessaging(getFirebaseApp());
+      // Check FCM support before creating messaging instance
+      const { isFCMSupported } = await import('@/lib/firebase/webpush');
+      const fcmSupported = await isFCMSupported();
+      const messaging = fcmSupported ? getMessaging(getFirebaseApp()) : null;
 
-      // Initialize push notifications
+      // Initialize push notifications (FCM + Web Push)
       const initResult = await initializePushNotifications(messaging, participantId);
 
       if (initResult) {
         setCleanup(() => initResult.cleanup);
       }
 
-      // Auto-refresh token (iOS fix)
+      // Auto-refresh token (only for FCM-supported platforms)
       await autoRefreshPushToken(messaging, participantId);
 
       setIsInitialized(true);
@@ -142,7 +145,11 @@ export function usePushNotifications(
     // This handles the case where the app was closed for >7 days
     const checkTokenOnMount = async () => {
       try {
-        const messaging = getMessaging(getFirebaseApp());
+        // Check FCM support before creating messaging instance
+        const { isFCMSupported } = await import('@/lib/firebase/webpush');
+        const fcmSupported = await isFCMSupported();
+        const messaging = fcmSupported ? getMessaging(getFirebaseApp()) : null;
+
         logger.info('[usePushNotifications] Checking token on mount for iOS PWA...', { participantId });
         await autoRefreshPushToken(messaging, participantId);
         logger.info('[usePushNotifications] Token check on mount completed', { participantId });
@@ -157,7 +164,11 @@ export function usePushNotifications(
     const interval = setInterval(
       async () => {
         try {
-          const messaging = getMessaging(getFirebaseApp());
+          // Check FCM support before creating messaging instance
+          const { isFCMSupported } = await import('@/lib/firebase/webpush');
+          const fcmSupported = await isFCMSupported();
+          const messaging = fcmSupported ? getMessaging(getFirebaseApp()) : null;
+
           await autoRefreshPushToken(messaging, participantId);
           logger.info('[usePushNotifications] Auto-refreshed push token (interval)', { participantId });
         } catch (error) {

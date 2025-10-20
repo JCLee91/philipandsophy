@@ -28,7 +28,12 @@ export function PushNotificationRefresher() {
     const refreshToken = async () => {
       try {
         logger.info('[PushNotificationRefresher] Checking token refresh...');
-        const messaging = getMessaging(getFirebaseApp());
+
+        // Check FCM support before creating messaging instance
+        const { isFCMSupported } = await import('@/lib/firebase/webpush');
+        const fcmSupported = await isFCMSupported();
+        const messaging = fcmSupported ? getMessaging(getFirebaseApp()) : null;
+
         await autoRefreshPushToken(messaging, participant.id);
       } catch (error) {
         logger.error('[PushNotificationRefresher] Failed to refresh token', error);

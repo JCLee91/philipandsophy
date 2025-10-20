@@ -135,14 +135,18 @@ export function NotificationToggle() {
       }
 
       if (result === 'granted') {
-        logger.info('[enableNotifications] Permission granted, initializing FCM...');
+        logger.info('[enableNotifications] Permission granted, initializing push notifications...');
 
-        // 2. FCM 토큰 획득 및 저장 (await으로 완료 대기)
-        const messaging = getMessaging(getFirebaseApp());
+        // 2. FCM 지원 여부 확인 후 messaging 인스턴스 생성
+        const { isFCMSupported } = await import('@/lib/firebase/webpush');
+        const fcmSupported = await isFCMSupported();
+        const messaging = fcmSupported ? getMessaging(getFirebaseApp()) : null;
+
+        // 3. Push notifications 초기화 (FCM + Web Push)
         const initResult = await initializePushNotifications(messaging, participantId);
 
         if (!initResult) {
-          throw new Error('Failed to get FCM token');
+          throw new Error('Failed to initialize push notifications');
         }
 
         // 3. 토큰 획득 성공 - cleanup 저장

@@ -493,7 +493,7 @@ export async function removePushTokenFromFirestore(
  * @returns Object with token/subscription and cleanup function, or null if failed
  */
 export async function initializePushNotifications(
-  messaging: Messaging,
+  messaging: Messaging | null,
   participantId: string
 ): Promise<{ token: string; cleanup: () => void } | null> {
   try {
@@ -530,7 +530,7 @@ export async function initializePushNotifications(
 
     // ✅ Strategy 1: Try FCM (Android Chrome, Desktop Chrome/Edge/Firefox)
     // Safari (iOS/Desktop) will skip this due to isSupported() returning false
-    if (fcmSupported) {
+    if (fcmSupported && messaging) {
       logger.info('[initializePushNotifications] Platform supports FCM, using FCM token');
       token = await getFCMToken(messaging);
 
@@ -539,6 +539,8 @@ export async function initializePushNotifications(
         cleanup = setupForegroundMessageHandler(messaging);
         logger.info('FCM push notifications initialized', { participantId, deviceId });
       }
+    } else if (fcmSupported && !messaging) {
+      logger.warn('[initializePushNotifications] FCM supported but messaging instance not provided');
     }
 
     // ✅ Strategy 2: Try Web Push (iOS Safari PWA + All Platforms as fallback)
@@ -751,10 +753,15 @@ export async function shouldRefreshPushToken(participantId: string): Promise<boo
  * @param participantId - Participant ID
  */
 export async function autoRefreshPushToken(
-  messaging: Messaging,
+  messaging: Messaging | null,
   participantId: string
 ): Promise<void> {
   try {
+    if (!messaging) {
+      logger.info('Skipping token refresh: messaging instance not provided (likely Safari)');
+      return;
+    }
+
     const needsRefresh = await shouldRefreshPushToken(participantId);
 
     if (needsRefresh) {

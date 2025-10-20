@@ -130,10 +130,14 @@ export function NotificationPrompt() {
       setShowPrompt(false);
 
       if (result === 'granted') {
-        logger.info('Notification permission granted, initializing FCM...');
+        logger.info('Notification permission granted, initializing push notifications...');
 
-        // 2. Firebase Messaging 초기화 및 FCM 토큰 저장 (use captured value)
-        const messaging = getMessaging(getFirebaseApp());
+        // 2. FCM 지원 여부 확인 후 messaging 인스턴스 생성
+        const { isFCMSupported } = await import('@/lib/firebase/webpush');
+        const fcmSupported = await isFCMSupported();
+        const messaging = fcmSupported ? getMessaging(getFirebaseApp()) : null;
+
+        // 3. Push notifications 초기화 (FCM + Web Push)
         const initResult = await initializePushNotifications(messaging, capturedParticipantId);
 
         if (initResult) {
