@@ -398,10 +398,12 @@ export async function removePushTokenFromFirestore(
   // ✅ Step 1: Remove Web Push subscription first (via API)
   // This ensures Firestore consistency if auth fails
   let webPushRemoved = false;
+  let registration: ServiceWorkerRegistration | null = null;
+  let currentSubscription: PushSubscription | null = null;
+  let subscriptionEndpoint: string | null = null;
+  let referenceEndpoint: string | null = null;
+
   try {
-    let registration: ServiceWorkerRegistration | null = null;
-    let currentSubscription: PushSubscription | null = null;
-    let subscriptionEndpoint: string | null = null;
 
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       registration = await navigator.serviceWorker.ready;
@@ -474,10 +476,17 @@ export async function removePushTokenFromFirestore(
 
   // ✅ Step 3: Check if there are any remaining tokens/subscriptions
   const remainingTokens = existingTokens.filter((entry) => entry.deviceId !== deviceId);
+  referenceEndpoint = subscriptionEndpoint || currentSubscription?.endpoint || null;
   const webPushSubscriptions = currentData.webPushSubscriptions || [];
-  const remainingSubscriptions = webPushSubscriptions.filter((sub: any) =>
-    subscriptionEndpoint ? sub.endpoint !== subscriptionEndpoint : sub.deviceId !== deviceId
-  );
+  const remainingSubscriptions = webPushSubscriptions.filter((sub: any) => {
+    if (referenceEndpoint && sub.endpoint === referenceEndpoint) {
+      return false;
+    }
+    if (sub.deviceId === deviceId) {
+      return false;
+    }
+    return true;
+  });
 
   // If no tokens/subscriptions remain, update pushNotificationEnabled to false
   if (remainingTokens.length === 0 && remainingSubscriptions.length === 0) {
