@@ -5,7 +5,8 @@ import { Bell, X } from 'lucide-react';
 import { getMessaging } from 'firebase/messaging';
 import { getFirebaseApp } from '@/lib/firebase';
 import { initializePushNotifications, getDeviceId } from '@/lib/firebase/messaging';
-import { isPushEnabledForDevice } from '@/lib/push/helpers';
+import { isPushEnabledForDevice, isPushEnabledForEndpoint } from '@/lib/push/helpers';
+import { getCurrentWebPushSubscription } from '@/lib/firebase/webpush';
 import { doc, getDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase/client';
 import { logger } from '@/lib/logger';
@@ -68,19 +69,42 @@ export function NotificationPrompt() {
       }
 
       try {
-        // 1. Firestore에서 현재 디바이스의 푸시 상태 확인 (FCM + Web Push 통합)
-        const deviceId = getDeviceId();
+        // 1. Firestore에서 현재 브라우저의 푸시 상태 확인 (endpoint 기반)
         const participantRef = doc(getDb(), 'participants', participantId);
         const participantSnap = await getDoc(participantRef);
 
         if (participantSnap.exists()) {
           const data = participantSnap.data();
-          const isPushEnabled = isPushEnabledForDevice(data, deviceId);
 
-          if (isPushEnabled) {
-            logger.info('[NotificationPrompt] User already has push enabled for this device, skipping prompt', {
+          // ✅ Web Push 구독 확인 (endpoint 기반, localStorage 불필요)
+          const subscription = await getCurrentWebPushSubscription();
+
+          let isPushEnabled = false;
+
+          if (subscription) {
+            // Web Push endpoint로 확인 (가장 안정적)
+            isPushEnabled = isPushEnabledForEndpoint(data, subscription.endpoint);
+
+            logger.info('[NotificationPrompt] Status check (Web Push)', {
+              participantId,
+              endpoint: subscription.endpoint.substring(0, 50) + '...',
+              isPushEnabled,
+            });
+          } else {
+            // Web Push 없으면 FCM deviceId로 폴백
+            const deviceId = getDeviceId();
+            isPushEnabled = isPushEnabledForDevice(data, deviceId);
+
+            logger.info('[NotificationPrompt] Status check (FCM fallback)', {
               participantId,
               deviceId,
+              isPushEnabled,
+            });
+          }
+
+          if (isPushEnabled) {
+            logger.info('[NotificationPrompt] User already has push enabled, skipping prompt', {
+              participantId,
             });
             setIsCheckingToken(false);
             return;

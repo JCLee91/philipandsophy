@@ -177,3 +177,36 @@ export function isPushTokenRecent(updatedAt: Date | undefined, maxAgeDays = 30):
 
   return ageDays <= maxAgeDays;
 }
+
+/**
+ * Check if push is enabled for specific Web Push endpoint
+ *
+ * This is more reliable than deviceId-based checking because:
+ * - endpoint is generated and managed by the browser
+ * - endpoint never changes (unlike deviceId which depends on localStorage)
+ * - No localStorage dependency (works in Safari Private Mode)
+ * - Perfect for iOS Safari PWA
+ *
+ * @param data - Participant data from Firestore
+ * @param endpoint - Web Push subscription endpoint
+ * @returns true if this endpoint has push enabled
+ */
+export function isPushEnabledForEndpoint(data: any, endpoint: string): boolean {
+  if (!endpoint) {
+    return false;
+  }
+
+  // Check pushNotificationEnabled flag (user preference)
+  if (data.pushNotificationEnabled === false) {
+    return false;
+  }
+
+  // ✅ Check Web Push subscription for current endpoint
+  const webPushSubs: WebPushSubscriptionData[] = Array.isArray(data.webPushSubscriptions)
+    ? data.webPushSubscriptions
+    : [];
+
+  return webPushSubs.some(
+    (sub) => sub.endpoint === endpoint && typeof sub.endpoint === 'string' && sub.endpoint.trim().length > 0
+  );
+}

@@ -13,7 +13,8 @@ import {
   removePushTokenFromFirestore,
   getDeviceId,
 } from '@/lib/firebase/messaging';
-import { isPushEnabledForDevice } from '@/lib/push/helpers';
+import { isPushEnabledForDevice, isPushEnabledForEndpoint } from '@/lib/push/helpers';
+import { getCurrentWebPushSubscription } from '@/lib/firebase/webpush';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -59,7 +60,7 @@ export function NotificationToggle() {
   /**
    * 알림 상태 확인
    * - Firestore를 단일 진실 소스(Single Source of Truth)로 사용
-   * - isPushEnabledForDevice 헬퍼로 FCM + Web Push 통합 체크
+   * - ✅ endpoint 기반 체크 (localStorage 불필요, iOS Safari 안정적)
    * - iOS PWA 버그: Notification.permission이 불안정하므로 참고용으로만 사용
    * - 명시적으로 차단된 경우(denied)에만 자동 정리
    */
@@ -67,8 +68,7 @@ export function NotificationToggle() {
     try {
       setIsStatusLoading(true);
 
-      // 1. Firestore에서 현재 디바이스 푸시 상태 확인 (FCM + Web Push)
-      const deviceId = getDeviceId();
+      // 1. Firestore에서 participant 데이터 가져오기
       const participantRef = doc(getDb(), 'participants', participantId);
       const participantSnap = await getDoc(participantRef);
 
@@ -79,26 +79,44 @@ export function NotificationToggle() {
       }
 
       const data = participantSnap.data();
-      const isPushEnabled = isPushEnabledForDevice(data, deviceId);
 
-      logger.info('[NotificationToggle] Status check result', {
-        participantId,
-        deviceId,
-        isPushEnabled,
-      });
+      // 2. ✅ Web Push 구독 확인 (endpoint 기반)
+      const subscription = await getCurrentWebPushSubscription();
 
-      // 2. 현재 디바이스에 푸시가 활성화되어 있으면 ON
+      let isPushEnabled = false;
+
+      if (subscription) {
+        // Web Push endpoint로 확인 (가장 안정적)
+        isPushEnabled = isPushEnabledForEndpoint(data, subscription.endpoint);
+
+        logger.info('[NotificationToggle] Status check result (Web Push)', {
+          participantId,
+          endpoint: subscription.endpoint.substring(0, 50) + '...',
+          isPushEnabled,
+        });
+      } else {
+        // Web Push 없으면 FCM deviceId로 폴백
+        const deviceId = getDeviceId();
+        isPushEnabled = isPushEnabledForDevice(data, deviceId);
+
+        logger.info('[NotificationToggle] Status check result (FCM fallback)', {
+          participantId,
+          deviceId,
+          isPushEnabled,
+        });
+      }
+
+      // 3. 현재 브라우저에 푸시가 활성화되어 있으면 ON
       setIsEnabled(isPushEnabled);
 
-      // 3. 브라우저 권한 상태 확인 (참고용)
+      // 4. 브라우저 권한 상태 확인 (참고용)
       const browserPermission = getNotificationPermission();
 
-      // 4. 권한이 명시적으로 차단된 경우에만 정리
+      // 5. 권한이 명시적으로 차단된 경우에만 정리
       // iOS PWA 버그 수정: permission이 'default'로 리셋되어도 알림은 동작할 수 있음
       if (isPushEnabled && browserPermission === 'denied') {
         logger.warn('[NotificationToggle] Permission explicitly denied. Cleaning up...', {
           browserPermission,
-          deviceId,
         });
 
         // ✅ 현재 디바이스의 FCM + Web Push 모두 제거
