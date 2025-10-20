@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
  * Body: {
  *   participantId: string;
  *   deviceId: string;
+ *   subscriptionEndpoint?: string;
  * }
  */
 export async function DELETE(request: NextRequest) {
@@ -143,7 +144,7 @@ export async function DELETE(request: NextRequest) {
 
     const { user } = authResult;
     const body = await request.json();
-    const { participantId, deviceId } = body;
+    const { participantId, deviceId, subscriptionEndpoint } = body;
 
     // Validate input
     if (!participantId || !deviceId) {
@@ -177,9 +178,15 @@ export async function DELETE(request: NextRequest) {
       currentData.webPushSubscriptions || [];
 
     // Find subscription to remove
-    const subscriptionToRemove = existingSubscriptions.find(
+    let subscriptionToRemove = existingSubscriptions.find(
       (sub) => sub.deviceId === deviceId
     );
+
+    if (!subscriptionToRemove && subscriptionEndpoint) {
+      subscriptionToRemove = existingSubscriptions.find(
+        (sub) => sub.endpoint === subscriptionEndpoint
+      );
+    }
 
     if (!subscriptionToRemove) {
       return NextResponse.json(

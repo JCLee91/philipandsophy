@@ -399,18 +399,24 @@ export async function removePushTokenFromFirestore(
   // This ensures Firestore consistency if auth fails
   let webPushRemoved = false;
   try {
+    let registration: ServiceWorkerRegistration | null = null;
+    let currentSubscription: PushSubscription | null = null;
+    let subscriptionEndpoint: string | null = null;
+
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      registration = await navigator.serviceWorker.ready;
+      currentSubscription = await registration.pushManager.getSubscription();
+      subscriptionEndpoint = currentSubscription?.endpoint ?? null;
+    }
+
     const headers = await buildAuthorizedJsonHeaders();
     if (!headers) {
       logger.error('Cannot remove Web Push subscription: missing auth headers');
 
       // Fallback: Remove from client-side Service Worker subscription only
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        if (subscription) {
-          await subscription.unsubscribe();
-          logger.info('Unsubscribed from Web Push at client side (fallback)');
-        }
+      if (currentSubscription) {
+        await currentSubscription.unsubscribe();
+        logger.info('Unsubscribed from Web Push at client side (fallback)');
       }
 
       throw new Error('Auth headers unavailable - cannot remove Web Push from Firestore');
@@ -422,15 +428,32 @@ export async function removePushTokenFromFirestore(
       body: JSON.stringify({
         participantId,
         deviceId,
+        subscriptionEndpoint,
       }),
     });
 
     if (response.ok) {
       logger.info('Removed Web Push subscription for device', { participantId, deviceId });
+      if (currentSubscription) {
+        try {
+          await currentSubscription.unsubscribe();
+          logger.info('Client-side Web Push subscription unsubscribed');
+        } catch (unsubscribeError) {
+          logger.warn('Failed to unsubscribe client Web Push subscription', unsubscribeError);
+        }
+      }
       webPushRemoved = true;
     } else if (response.status === 404) {
       // Subscription not found - already removed or never existed
       logger.info('Web Push subscription not found (already removed)', { participantId, deviceId });
+      if (currentSubscription) {
+        try {
+          await currentSubscription.unsubscribe();
+          logger.info('Client-side Web Push subscription unsubscribed after 404');
+        } catch (unsubscribeError) {
+          logger.warn('Failed to unsubscribe client Web Push subscription after 404', unsubscribeError);
+        }
+      }
       webPushRemoved = true;
     } else {
       const errorData = await response.json();
@@ -452,7 +475,9 @@ export async function removePushTokenFromFirestore(
   // ✅ Step 3: Check if there are any remaining tokens/subscriptions
   const remainingTokens = existingTokens.filter((entry) => entry.deviceId !== deviceId);
   const webPushSubscriptions = currentData.webPushSubscriptions || [];
-  const remainingSubscriptions = webPushSubscriptions.filter((sub: any) => sub.deviceId !== deviceId);
+  const remainingSubscriptions = webPushSubscriptions.filter((sub: any) =>
+    subscriptionEndpoint ? sub.endpoint !== subscriptionEndpoint : sub.deviceId !== deviceId
+  );
 
   // If no tokens/subscriptions remain, update pushNotificationEnabled to false
   if (remainingTokens.length === 0 && remainingSubscriptions.length === 0) {
