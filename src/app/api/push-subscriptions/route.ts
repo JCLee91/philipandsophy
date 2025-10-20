@@ -8,7 +8,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { admin, getAdminDb } from '@/lib/firebase/admin';
 import { requireWebAppAuth } from '@/lib/api-auth';
-import type { WebPushSubscriptionData } from '@/types/database';
+
+// Admin SDK용 WebPushSubscriptionData 타입 (서버 전용)
+interface WebPushSubscriptionData {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+  deviceId: string;
+  userAgent: string;
+  createdAt: FirebaseFirestore.Timestamp;
+  lastUsedAt?: FirebaseFirestore.Timestamp;
+}
 
 /**
  * POST - Save Web Push subscription
