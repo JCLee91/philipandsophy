@@ -33,33 +33,36 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuf
 }
 
 /**
- * Check if FCM is supported
+ * Check if FCM is supported (async)
  *
- * FCM works on Chrome, Edge, Firefox (but not iOS Safari)
+ * Uses Firebase's isSupported() for accurate runtime detection.
+ * FCM works on Chrome, Edge, Firefox (but NOT iOS Safari, Desktop Safari)
  */
-export function isFCMSupported(): boolean {
+export async function isFCMSupported(): Promise<boolean> {
   try {
     if (typeof window === 'undefined') {
       return false;
     }
 
-    const userAgent = navigator.userAgent;
-    const isIOS = /iPhone|iPad|iPod/.test(userAgent);
-    const isSafari =
-      /Safari/.test(userAgent) &&
-      !/CriOS|FxiOS|EdgiOS/.test(userAgent) &&
-      !/Chrome/.test(userAgent);
-
-    // iOS Safari (including standalone PWA) does not support Firebase Cloud Messaging
-    if (isIOS && isSafari) {
+    // Quick check for basic requirements
+    if (
+      !('serviceWorker' in navigator) ||
+      !('PushManager' in window) ||
+      !('Notification' in window)
+    ) {
       return false;
     }
 
-    return (
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window
-    );
+    // Use Firebase's official support detection (async)
+    const { getMessaging, isSupported } = await import('firebase/messaging');
+    const supported = await isSupported();
+
+    if (!supported) {
+      logger.info('FCM not supported by Firebase messaging library');
+      return false;
+    }
+
+    return true;
   } catch (error) {
     logger.error('Error checking FCM support', error);
     return false;

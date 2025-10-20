@@ -409,26 +409,39 @@ export async function removePushTokenFromFirestore(
     try {
       const headers = await buildAuthorizedJsonHeaders();
       if (!headers) {
-        logger.warn('Skipping Web Push subscription removal: missing auth headers');
-      } else {
-        const response = await fetch('/api/push-subscriptions', {
-          method: 'DELETE',
-          headers,
-          body: JSON.stringify({
-            participantId,
-            deviceId,
-          }),
-        });
+        logger.error('Cannot remove Web Push subscription: missing auth headers');
 
-        if (response.ok) {
-          logger.info('Removed Web Push subscription for device', { participantId, deviceId });
-        } else {
-          const errorData = await response.json();
-          logger.warn('Failed to remove Web Push subscription (may not exist)', errorData);
+        // Fallback: Remove from client-side Service Worker subscription
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            await subscription.unsubscribe();
+            logger.info('Unsubscribed from Web Push at client side (fallback)');
+          }
         }
+
+        throw new Error('Auth headers unavailable - Web Push subscription removed locally only');
+      }
+
+      const response = await fetch('/api/push-subscriptions', {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({
+          participantId,
+          deviceId,
+        }),
+      });
+
+      if (response.ok) {
+        logger.info('Removed Web Push subscription for device', { participantId, deviceId });
+      } else {
+        const errorData = await response.json();
+        logger.warn('Failed to remove Web Push subscription (may not exist)', errorData);
       }
     } catch (error) {
       logger.error('Error removing Web Push subscription via API', error);
+      throw error; // Re-throw to let caller handle
     }
 
     // Check if there are any remaining tokens/subscriptions
@@ -511,7 +524,8 @@ export async function initializePushNotifications(
     let cleanup: (() => void) | null = null;
 
     // ✅ Strategy 1: Try FCM (Android/Desktop)
-    if (isFCMSupported()) {
+    const fcmSupported = await isFCMSupported();
+    if (fcmSupported) {
       logger.info('[initializePushNotifications] Platform supports FCM, using FCM token');
       token = await getFCMToken(messaging);
 
@@ -577,7 +591,7 @@ export async function initializePushNotifications(
     logger.info('Push notifications initialized (dual-path)', {
       participantId,
       deviceId,
-      hasFCM: isFCMSupported(),
+      hasFCM: fcmSupported,
       hasWebPush: isWebPushSupported(),
     });
 

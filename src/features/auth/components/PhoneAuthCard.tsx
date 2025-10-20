@@ -310,11 +310,11 @@ export default function PhoneAuthCard() {
   const showParticipantError = participantStatus === 'missing' || participantStatus === 'error';
 
   return (
-    <>
+    <div className="w-full max-w-md flex flex-col items-stretch gap-4">
       {/* reCAPTCHA 컨테이너 (invisible) */}
       <div id="recaptcha-container" />
 
-      <Card className="w-full max-w-md">
+      <Card className="w-full">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">필립앤소피</CardTitle>
           <CardDescription>
@@ -408,11 +408,11 @@ export default function PhoneAuthCard() {
           type="button"
           onClick={handleRetryParticipant}
           disabled={isRetrying}
-          className="w-full max-w-md mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
         >
           {isRetrying ? '로그인 중...' : '다시 로그인하기'}
         </button>
       )}
-    </>
+    </div>
   );
 }
