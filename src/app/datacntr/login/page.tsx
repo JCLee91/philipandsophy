@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type ParticipantStatus } from '@/contexts/AuthContext';
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 import { initRecaptcha, sendSmsVerification, confirmSmsCode } from '@/lib/firebase';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -14,10 +14,11 @@ type AuthStep = 'phone' | 'code';
 
 export default function DataCenterLoginPage() {
   const router = useRouter();
-  const { user, participant, participantStatus, isAdministrator, isLoading: authLoading, retryParticipantFetch } = useAuth();
+  const { user, participantStatus, isAdministrator, isLoading: authLoading, retryParticipantFetch } = useAuth();
   const { toast } = useToast();
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
   const confirmationResultRef = useRef<ConfirmationResult | null>(null);
+  const participantStatusRef = useRef<ParticipantStatus>('idle');
 
   const [step, setStep] = useState<AuthStep>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -25,6 +26,10 @@ export default function DataCenterLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isRetrying, setIsRetrying] = useState(false);
+
+  useEffect(() => {
+    participantStatusRef.current = participantStatus;
+  }, [participantStatus]);
 
   // 이미 로그인되어 있고 participant가 ready 상태이고 관리자이면 대시보드로 리다이렉트
   useEffect(() => {
@@ -149,8 +154,68 @@ export default function DataCenterLoginPage() {
     setIsSubmitting(true);
 
     try {
-      await confirmSmsCode(confirmationResultRef.current, verificationCode);
+      const userCredential = await confirmSmsCode(
+        confirmationResultRef.current,
+        verificationCode
+      );
       logger.info('로그인 성공');
+
+      try {
+        const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid } = await import('@/lib/firebase');
+        const currentUid = userCredential.user.uid;
+
+        let participantRecord = await getParticipantByFirebaseUid(currentUid);
+        let didLinkFirebaseUid = false;
+
+        if (!participantRecord) {
+          const cleanNumber = phoneNumber.replace(/-/g, '');
+          participantRecord = await getParticipantByPhoneNumber(cleanNumber);
+
+          if (participantRecord && participantRecord.firebaseUid !== currentUid) {
+            await linkFirebaseUid(participantRecord.id, currentUid);
+            didLinkFirebaseUid = true;
+            logger.info('Firebase UID 연결/업데이트 완료 (datacntr)', {
+              participantId: participantRecord.id,
+              newFirebaseUid: currentUid,
+              phoneNumber: participantRecord.phoneNumber,
+            });
+            participantRecord = {
+              ...participantRecord,
+              firebaseUid: currentUid,
+            };
+          }
+        }
+
+        if (!participantRecord) {
+          logger.warn('Firebase UID로 참가자 정보를 찾을 수 없습니다 (datacntr)', {
+            uid: currentUid,
+          });
+        } else if (didLinkFirebaseUid && participantStatusRef.current !== 'ready') {
+          logger.info('AuthContext participant 재조회 요청 (datacntr)');
+          await retryParticipantFetch();
+
+          const waitForReady = async () => {
+            const maxWaitTime = 3000;
+            const checkInterval = 100;
+            const startTime = Date.now();
+
+            while (Date.now() - startTime < maxWaitTime) {
+              if (participantStatusRef.current === 'ready') {
+                logger.info('AuthContext ready 상태 확인됨 (datacntr)');
+                return true;
+              }
+              await new Promise(resolve => setTimeout(resolve, checkInterval));
+            }
+
+            logger.warn('AuthContext ready 대기 시간 초과 (datacntr)');
+            return false;
+          };
+
+          await waitForReady();
+        }
+      } catch (linkError) {
+        logger.error('Firebase UID 동기화 실패 (datacntr):', linkError);
+      }
 
       toast({
         title: '로그인 성공',

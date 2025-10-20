@@ -338,7 +338,7 @@ export async function getPushTokenFromFirestore(
     const deviceId = getDeviceId();
 
     // ✅ Priority 1: Check pushTokens array for current device
-    const pushTokens: PushTokenEntry[] = data.pushTokens || [];
+    const pushTokens: PushTokenEntry[] = Array.isArray(data.pushTokens) ? data.pushTokens : [];
     const deviceToken = pushTokens.find((entry) => entry.deviceId === deviceId);
 
     if (deviceToken?.token) {
@@ -351,6 +351,16 @@ export async function getPushTokenFromFirestore(
     }
 
     // ✅ Priority 2: Fallback to legacy pushToken field
+    // pushTokens 배열이 존재하지만 현재 디바이스가 없다면 구버전 토큰은 무시
+    if (pushTokens.length > 0) {
+      logger.debug('No token for current device; pushTokens array present, skipping legacy token', {
+        participantId,
+        deviceId,
+        tokenEntries: pushTokens.length,
+      });
+      return null;
+    }
+
     const legacyToken = data.pushToken;
     if (legacyToken && typeof legacyToken === 'string' && legacyToken.trim().length > 0) {
       logger.debug('Found legacy push token (not in pushTokens array)', {
