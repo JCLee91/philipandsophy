@@ -47,7 +47,8 @@
     "verify:firebase-auth": "tsx src/scripts/verify-firebase-uid-linking.ts",
     "set:admin-claims": "tsx scripts/set-admin-claims.ts",
     "verify:admin-claims": "tsx scripts/verify-admin-claims.ts",
-    "verify:firebaseuid": "tsx scripts/verify-firebaseuid-linking.ts"
+    "verify:firebaseuid": "tsx scripts/verify-firebaseuid-linking.ts",
+    "add:phone-user": "tsx scripts/register-phone-user.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",

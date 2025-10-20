@@ -3,19 +3,30 @@
  *
  * Features:
  * - Request notification permission
- * - Get FCM push token
- * - Save token to Firestore
+ * - Get FCM push token (Android/Desktop)
+ * - Get Web Push subscription (iOS Safari + All Platforms)
+ * - Save tokens to Firestore (dual-path support)
  * - Auto-refresh expired tokens (iOS fix)
  * - Handle foreground messages
+ *
+ * Strategy:
+ * - FCM: Used on Android/Desktop (Chrome, Edge, Firefox)
+ * - Web Push: Used on iOS Safari 16.4+ and as fallback for all browsers
+ * - Both methods stored separately in Firestore for reliability
  */
 
 'use client';
 
 import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging';
 import { doc, updateDoc, getDoc, arrayUnion, arrayRemove, Timestamp, deleteField } from 'firebase/firestore';
-import { getDb } from './client';
+import { getDb, getFirebaseAuth } from './client';
 import { logger } from '@/lib/logger';
 import type { PushTokenEntry } from '@/types/database';
+import {
+  isFCMSupported,
+  isWebPushSupported,
+  createWebPushSubscription,
+} from './webpush';
 
 /**
  * Generate a unique device ID based on browser fingerprint
@@ -84,6 +95,37 @@ export function getDeviceId(): string {
 export function isPushNotificationSupported(): boolean {
   if (typeof window === 'undefined') return false;
   return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+}
+
+/**
+ * Build authorized JSON headers for push subscription API calls
+ */
+async function buildAuthorizedJsonHeaders(): Promise<Record<string, string> | null> {
+  try {
+    const auth = getFirebaseAuth();
+
+    // Wait for auth state if available (Firebase v10+)
+    // @ts-ignore authStateReady is available in modern SDKs
+    if (typeof auth.authStateReady === 'function') {
+      // eslint-disable-next-line @typescript-eslint/await-thenable
+      await auth.authStateReady();
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      logger.error('No authenticated user found for push subscription API call');
+      return null;
+    }
+
+    const idToken = await user.getIdToken();
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    };
+  } catch (error) {
+    logger.error('Failed to build auth headers for push subscription API', error);
+    return null;
+  }
 }
 
 /**
@@ -327,10 +369,12 @@ export async function getPushTokenFromFirestore(
 }
 
 /**
- * Remove push token for current device from Firestore (Multi-device support)
+ * Remove push token/subscription for current device (Dual-path: FCM + Web Push)
  *
- * This removes the token entry for the current device from the pushTokens array.
- * Also updates pushNotificationEnabled flag if no tokens remain.
+ * This removes:
+ * - FCM token from pushTokens array
+ * - Web Push subscription from webPushSubscriptions array (via API)
+ * - Updates pushNotificationEnabled flag if no tokens/subscriptions remain
  *
  * @param participantId - Participant ID
  */
@@ -351,57 +395,88 @@ export async function removePushTokenFromFirestore(
     const currentData = participantSnap.data();
     const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
 
-    // Find the token entry for this device
+    // ✅ Remove FCM token (if exists)
     const deviceTokenEntry = existingTokens.find((entry) => entry.deviceId === deviceId);
 
-    if (!deviceTokenEntry) {
-      logger.debug('No push token to remove for this device', { participantId, deviceId });
-      return;
+    if (deviceTokenEntry) {
+      await updateDoc(participantRef, {
+        pushTokens: arrayRemove(deviceTokenEntry),
+      });
+      logger.info('Removed FCM push token for device', { participantId, deviceId });
     }
 
-    // Remove the token entry
-    await updateDoc(participantRef, {
-      pushTokens: arrayRemove(deviceTokenEntry),
-    });
+    // ✅ Remove Web Push subscription (via API)
+    try {
+      const headers = await buildAuthorizedJsonHeaders();
+      if (!headers) {
+        logger.warn('Skipping Web Push subscription removal: missing auth headers');
+      } else {
+        const response = await fetch('/api/push-subscriptions', {
+          method: 'DELETE',
+          headers,
+          body: JSON.stringify({
+            participantId,
+            deviceId,
+          }),
+        });
 
-    // Check if there are any remaining tokens
+        if (response.ok) {
+          logger.info('Removed Web Push subscription for device', { participantId, deviceId });
+        } else {
+          const errorData = await response.json();
+          logger.warn('Failed to remove Web Push subscription (may not exist)', errorData);
+        }
+      }
+    } catch (error) {
+      logger.error('Error removing Web Push subscription via API', error);
+    }
+
+    // Check if there are any remaining tokens/subscriptions
     const remainingTokens = existingTokens.filter((entry) => entry.deviceId !== deviceId);
+    const webPushSubscriptions = currentData.webPushSubscriptions || [];
+    const remainingSubscriptions = webPushSubscriptions.filter((sub: any) => sub.deviceId !== deviceId);
 
-    // If no tokens remain, update pushNotificationEnabled to false
-    if (remainingTokens.length === 0) {
+    // If no tokens/subscriptions remain, update pushNotificationEnabled to false
+    if (remainingTokens.length === 0 && remainingSubscriptions.length === 0) {
       await updateDoc(participantRef, {
         pushNotificationEnabled: false,
         pushToken: deleteField(),
         pushTokenUpdatedAt: deleteField(),
       });
-      logger.info('Removed last push token, disabled push notifications', {
+      logger.info('Removed last push token/subscription, disabled push notifications', {
         participantId,
         deviceId,
       });
     } else {
-      logger.info('Removed push token for device', {
+      logger.info('Removed push token/subscription for device', {
         participantId,
         deviceId,
-        remainingDevices: remainingTokens.length,
+        remainingTokens: remainingTokens.length,
+        remainingSubscriptions: remainingSubscriptions.length,
       });
     }
   } catch (error) {
-    logger.error('Error removing push token from Firestore', error);
+    logger.error('Error removing push token/subscription from Firestore', error);
     throw error;
   }
 }
 
 /**
- * Initialize push notifications for a user
+ * Initialize push notifications for a user (Dual-path: FCM + Web Push)
  *
  * This should be called when:
  * 1. User logs in
  * 2. User grants notification permission
  * 3. App is opened (to refresh expired tokens)
  *
+ * Strategy:
+ * - Try FCM first (Android/Desktop)
+ * - Fallback to Web Push if FCM not supported (iOS Safari)
+ * - Save both if available for maximum reliability
+ *
  * @param messaging - Firebase Messaging instance
  * @param participantId - Participant ID
- * @returns Object with FCM token and cleanup function, or null if failed
+ * @returns Object with token/subscription and cleanup function, or null if failed
  */
 export async function initializePushNotifications(
   messaging: Messaging,
@@ -431,22 +506,85 @@ export async function initializePushNotifications(
       }
     }
 
-    // Get FCM token
-    const token = await getFCMToken(messaging);
+    const deviceId = getDeviceId();
+    let token: string | null = null;
+    let cleanup: (() => void) | null = null;
 
+    // ✅ Strategy 1: Try FCM (Android/Desktop)
+    if (isFCMSupported()) {
+      logger.info('[initializePushNotifications] Platform supports FCM, using FCM token');
+      token = await getFCMToken(messaging);
+
+      if (token) {
+        await savePushTokenToFirestore(participantId, token);
+        cleanup = setupForegroundMessageHandler(messaging);
+        logger.info('FCM push notifications initialized', { participantId, deviceId });
+      }
+    }
+
+    // ✅ Strategy 2: Try Web Push (iOS Safari + All Platforms)
+    if (isWebPushSupported()) {
+      logger.info('[initializePushNotifications] Platform supports Web Push, subscribing to Web Push');
+
+      const vapidKey = process.env.NEXT_PUBLIC_WEBPUSH_VAPID_KEY;
+      if (!vapidKey) {
+        logger.error('Web Push VAPID key not found in environment variables');
+      } else {
+        const subscription = await createWebPushSubscription(vapidKey);
+
+        if (subscription) {
+          // Save to Firestore via API route
+          try {
+            const headers = await buildAuthorizedJsonHeaders();
+            if (!headers) {
+              logger.error('Cannot save Web Push subscription: missing auth headers');
+            } else {
+              const response = await fetch('/api/push-subscriptions', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                  participantId,
+                  subscription: subscription.toJSON(),
+                  deviceId,
+                }),
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json();
+                logger.error('Failed to save Web Push subscription', errorData);
+              } else {
+                logger.info('Web Push subscription saved', { participantId, deviceId });
+
+                // If FCM failed but Web Push succeeded, return Web Push endpoint as token
+                if (!token) {
+                  token = subscription.endpoint;
+                }
+              }
+            }
+          } catch (error) {
+            logger.error('Error saving Web Push subscription to API', error);
+          }
+        }
+      }
+    }
+
+    // ✅ Result
     if (!token) {
-      logger.error('Failed to get FCM token');
+      logger.error('Failed to initialize any push notification method (FCM or Web Push)');
       return null;
     }
 
-    // Save token to Firestore
-    await savePushTokenToFirestore(participantId, token);
+    logger.info('Push notifications initialized (dual-path)', {
+      participantId,
+      deviceId,
+      hasFCM: isFCMSupported(),
+      hasWebPush: isWebPushSupported(),
+    });
 
-    // Setup foreground message handler and get cleanup function
-    const cleanup = setupForegroundMessageHandler(messaging);
-
-    logger.info('Push notifications initialized', { participantId });
-    return { token, cleanup };
+    return {
+      token,
+      cleanup: cleanup || (() => {}),
+    };
   } catch (error) {
     logger.error('Error initializing push notifications', error);
     return null;

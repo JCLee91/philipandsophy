@@ -40,6 +40,11 @@ service cloud.firestore {
              tokens.size() <= 20;
     }
 
+    function isValidWebPushSubscriptions(subscriptions) {
+      return subscriptions is list &&
+             subscriptions.size() <= 20;
+    }
+
     // ============================================
     // 기수 정보 (Cohorts)
     // ============================================
@@ -71,9 +76,11 @@ service cloud.firestore {
             .hasOnly(['name', 'profileImage', 'profileImageCircle', 'profileBookUrl',
                      'occupation', 'bio', 'currentBookTitle', 'currentBookAuthor',
                      'currentBookCoverUrl', 'bookHistory', 'pushToken', 'pushTokenUpdatedAt',
-                     'pushNotificationEnabled', 'lastActivityAt', 'pushTokens', 'updatedAt']) &&
+                     'pushNotificationEnabled', 'lastActivityAt', 'pushTokens', 'webPushSubscriptions', 'updatedAt']) &&
           (!request.resource.data.keys().hasAny(['pushTokens']) ||
-            isValidPushTokens(request.resource.data.pushTokens))
+            isValidPushTokens(request.resource.data.pushTokens)) &&
+          (!request.resource.data.keys().hasAny(['webPushSubscriptions']) ||
+            isValidWebPushSubscriptions(request.resource.data.webPushSubscriptions))
         )
       );
 

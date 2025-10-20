@@ -73,7 +73,7 @@ export interface BookHistoryEntry {
 }
 
 /**
- * 푸시 알림 토큰 정보 (멀티 디바이스 지원)
+ * 푸시 알림 토큰 정보 (멀티 디바이스 지원) - FCM 전용
  */
 export interface PushTokenEntry {
   deviceId: string; // 디바이스 고유 ID (브라우저 fingerprint)
@@ -81,6 +81,21 @@ export interface PushTokenEntry {
   updatedAt: Timestamp; // 토큰 마지막 갱신 시간
   userAgent?: string; // User Agent 정보 (디바이스 식별용)
   lastUsedAt?: Timestamp; // 마지막 사용 시간 (토큰 만료 판별용)
+}
+
+/**
+ * Web Push 구독 정보 (표준 Web Push API) - iOS Safari + All Platforms
+ */
+export interface WebPushSubscriptionData {
+  endpoint: string; // Push endpoint (e.g., https://web.push.apple.com/...)
+  keys: {
+    p256dh: string; // Public key for encryption
+    auth: string; // Auth secret for encryption
+  };
+  deviceId: string; // 디바이스 고유 ID (브라우저 fingerprint)
+  userAgent: string; // User Agent 정보 (디바이스 식별용)
+  createdAt: Date | Timestamp; // 구독 생성 시간
+  lastUsedAt?: Date | Timestamp; // 마지막 사용 시간 (optional)
 }
 
 /**
@@ -107,7 +122,8 @@ export interface Participant {
   pushToken?: string; // 푸시 알림 토큰 (FCM) - DEPRECATED: pushTokens 배열 사용 권장
   pushNotificationEnabled?: boolean; // 푸시 알림 활성화 여부 (사용자 설정)
   pushTokenUpdatedAt?: Timestamp; // 푸시 토큰 마지막 갱신 시간 - DEPRECATED: pushTokens[].updatedAt 사용 권장
-  pushTokens?: PushTokenEntry[]; // 멀티 디바이스 푸시 토큰 배열 (NEW)
+  pushTokens?: PushTokenEntry[]; // 멀티 디바이스 FCM 푸시 토큰 배열 (Android/Desktop)
+  webPushSubscriptions?: WebPushSubscriptionData[]; // 표준 Web Push 구독 배열 (iOS Safari + All)
   lastActivityAt?: Timestamp; // 마지막 활동 시간 (데이터센터용)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시

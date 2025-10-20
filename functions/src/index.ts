@@ -18,6 +18,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 // import { beforeUserCreated } from "firebase-functions/v2/identity"; // Temporarily disabled
 import { setGlobalOptions } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
+import * as webpush from "web-push";
 import { logger } from "./lib/logger";
 import {
   NOTIFICATION_CONFIG,
@@ -52,6 +53,28 @@ const apiBaseUrlParam = defineString("API_BASE_URL", {
 // Initialize Firebase Admin
 admin.initializeApp();
 
+// ✅ Configure Web Push VAPID details
+// These must match the keys in .env.local (NEXT_PUBLIC_WEBPUSH_VAPID_KEY and WEBPUSH_VAPID_PRIVATE_KEY)
+// Read from environment variables (.env file in functions directory)
+const WEBPUSH_VAPID_PUBLIC_KEY = process.env.WEBPUSH_VAPID_PUBLIC_KEY;
+const WEBPUSH_VAPID_PRIVATE_KEY = process.env.WEBPUSH_VAPID_PRIVATE_KEY;
+
+const IS_WEBPUSH_CONFIGURED = Boolean(
+  WEBPUSH_VAPID_PUBLIC_KEY && WEBPUSH_VAPID_PRIVATE_KEY
+);
+
+if (IS_WEBPUSH_CONFIGURED) {
+  webpush.setVapidDetails(
+    "mailto:noreply@philipandsophy.com",
+    WEBPUSH_VAPID_PUBLIC_KEY!,
+    WEBPUSH_VAPID_PRIVATE_KEY!
+  );
+} else {
+  logger.warn(
+    "Web Push VAPID keys are not configured. Web Push notifications will be skipped."
+  );
+}
+
 /**
  * Helper: Truncate long text for notifications
  */
@@ -82,7 +105,7 @@ async function getCohortParticipants(
 }
 
 /**
- * Push token entry type
+ * Push token entry type (FCM)
  */
 interface PushTokenEntry {
   deviceId: string;
@@ -91,15 +114,31 @@ interface PushTokenEntry {
 }
 
 /**
- * Helper: Get push tokens for a participant (supports multi-device)
+ * Web Push subscription data type (Standard Web Push API)
+ */
+interface WebPushSubscriptionData {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+  deviceId: string;
+  userAgent: string;
+  createdAt: admin.firestore.Timestamp | Date;
+  lastUsedAt?: admin.firestore.Timestamp | Date;
+}
+
+/**
+ * Helper: Get push tokens and subscriptions for a participant (Dual-path support)
  *
- * ✅ Updated to use pushTokens array for multi-device support
+ * ✅ Updated to support both FCM tokens and Web Push subscriptions
  *
- * @returns Object with tokens array and entries map for proper arrayRemove
+ * @returns Object with FCM tokens, entries map, and Web Push subscriptions
  */
 async function getPushTokens(participantId: string): Promise<{
   tokens: string[];
   entriesMap: Map<string, PushTokenEntry | null>;
+  webPushSubscriptions: WebPushSubscriptionData[];
 }> {
   try {
     const participantDoc = await admin
@@ -110,7 +149,7 @@ async function getPushTokens(participantId: string): Promise<{
 
     if (!participantDoc.exists) {
       logger.warn(`Participant not found: ${participantId}`);
-      return { tokens: [], entriesMap: new Map() };
+      return { tokens: [], entriesMap: new Map(), webPushSubscriptions: [] };
     }
 
     const participantData = participantDoc.data();
@@ -118,10 +157,10 @@ async function getPushTokens(participantId: string): Promise<{
     // ✅ Check pushNotificationEnabled flag first
     if (participantData?.pushNotificationEnabled === false) {
       logger.debug(`Push notifications disabled for participant: ${participantId}`);
-      return { tokens: [], entriesMap: new Map() };
+      return { tokens: [], entriesMap: new Map(), webPushSubscriptions: [] };
     }
 
-    // ✅ Priority 1: Get tokens from pushTokens array
+    // ✅ Priority 1: Get FCM tokens from pushTokens array
     const pushTokens: PushTokenEntry[] = participantData?.pushTokens || [];
     const tokens: string[] = [];
     const entriesMap = new Map<string, PushTokenEntry | null>();
@@ -138,10 +177,14 @@ async function getPushTokens(participantId: string): Promise<{
       logger.debug(`Using legacy pushToken for participant: ${participantId}`);
     }
 
-    return { tokens, entriesMap };
+    // ✅ Priority 3: Get Web Push subscriptions
+    const webPushSubscriptions: WebPushSubscriptionData[] =
+      participantData?.webPushSubscriptions || [];
+
+    return { tokens, entriesMap, webPushSubscriptions };
   } catch (error) {
     logger.error(`Error getting push tokens for ${participantId}`, error as Error);
-    return { tokens: [], entriesMap: new Map() };
+    return { tokens: [], entriesMap: new Map(), webPushSubscriptions: [] };
   }
 }
 
@@ -168,15 +211,155 @@ async function getParticipantName(participantId: string): Promise<string> {
 }
 
 /**
- * Helper: Send push notification to multiple tokens (multi-device support)
+ * Helper: Send Web Push notifications
  *
- * ✅ Updated to use multicast for sending to multiple devices
- * ✅ Automatically removes invalid/expired tokens from pushTokens array
+ * @param participantId - Participant ID (for subscription cleanup)
+ * @param subscriptions - Array of Web Push subscriptions
+ * @param title - Notification title
+ * @param body - Notification body
+ * @param url - Click action URL
+ * @param type - Notification type
+ * @returns Number of successfully sent notifications
+ */
+async function sendWebPushNotifications(
+  participantId: string,
+  subscriptions: WebPushSubscriptionData[],
+  title: string,
+  body: string,
+  url: string,
+  type: string
+): Promise<number> {
+  if (subscriptions.length === 0) {
+    return 0;
+  }
+
+  if (!IS_WEBPUSH_CONFIGURED) {
+    logger.warn("Web Push configuration missing, skipping Web Push delivery");
+    return 0;
+  }
+
+  let successCount = 0;
+  const failedSubscriptions: WebPushSubscriptionData[] = [];
+
+  await Promise.all(
+    subscriptions.map(async (subscription) => {
+      try {
+        const payload = JSON.stringify({
+          title,
+          body,
+          icon: NOTIFICATION_CONFIG.ICON_PATH,
+          badge: NOTIFICATION_CONFIG.BADGE_PATH,
+          data: {
+            url,
+            type,
+          },
+        });
+
+        await webpush.sendNotification(
+          {
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: subscription.keys.p256dh,
+              auth: subscription.keys.auth,
+            },
+          },
+          payload
+        );
+
+        successCount++;
+        logger.info(`Web Push sent successfully`, {
+          participantId,
+          deviceId: subscription.deviceId,
+          endpoint: subscription.endpoint.substring(0, 50) + "...",
+        });
+      } catch (error: any) {
+        const statusCode = error?.statusCode;
+
+        // 410 Gone = subscription expired or invalid
+        if (statusCode === 410 || statusCode === 404) {
+          failedSubscriptions.push(subscription);
+          logger.warn(`Web Push subscription expired/invalid`, {
+            participantId,
+            deviceId: subscription.deviceId,
+            statusCode,
+          });
+        } else {
+          logger.error(`Web Push send failed`, {
+            participantId,
+            deviceId: subscription.deviceId,
+            error: error.message,
+            statusCode,
+          });
+        }
+      }
+    })
+  );
+
+  // Remove expired subscriptions
+  if (failedSubscriptions.length > 0) {
+    await removeExpiredWebPushSubscriptions(participantId, failedSubscriptions);
+  }
+
+  return successCount;
+}
+
+/**
+ * Helper: Remove expired Web Push subscriptions from Firestore
+ *
+ * @param participantId - Participant ID
+ * @param failedSubscriptions - Array of expired subscriptions
+ */
+async function removeExpiredWebPushSubscriptions(
+  participantId: string,
+  failedSubscriptions: WebPushSubscriptionData[]
+): Promise<void> {
+  try {
+    const participantRef = admin
+      .firestore()
+      .collection("participants")
+      .doc(participantId);
+
+    // Remove expired subscriptions using arrayRemove
+    await participantRef.update({
+      webPushSubscriptions: admin.firestore.FieldValue.arrayRemove(...failedSubscriptions),
+    });
+
+    logger.info(`Removed ${failedSubscriptions.length} expired Web Push subscriptions`, {
+      participantId,
+      deviceIds: failedSubscriptions.map((sub) => sub.deviceId),
+    });
+
+    // Check if any subscriptions/tokens remain
+    const participantSnap = await participantRef.get();
+    const participantData = participantSnap.data();
+    const remainingWebPush = participantData?.webPushSubscriptions || [];
+    const remainingFCM = participantData?.pushTokens || [];
+
+    // If no push methods remain, disable push notifications
+    if (remainingWebPush.length === 0 && remainingFCM.length === 0) {
+      await participantRef.update({
+        pushNotificationEnabled: false,
+      });
+      logger.info(`All push subscriptions invalid, disabled push notifications`, {
+        participantId,
+      });
+    }
+  } catch (error) {
+    logger.error(`Error removing expired Web Push subscriptions`, error as Error);
+  }
+}
+
+/**
+ * Helper: Send push notifications (Dual-path: FCM + Web Push)
+ *
+ * ✅ Updated to send via both FCM and Web Push
+ * ✅ Automatically removes invalid/expired tokens and subscriptions
  * ✅ Uses entriesMap for proper arrayRemove matching (fixes Timestamp.now() bug)
  *
  * @param participantId - Participant ID (for token cleanup)
  * @param tokens - Array of FCM tokens
  * @param entriesMap - Map of token strings to their Firestore entries (for proper arrayRemove)
+ * @param webPushSubscriptions - Array of Web Push subscriptions
  * @param title - Notification title
  * @param body - Notification body
  * @param url - Click action URL
@@ -187,82 +370,98 @@ async function sendPushNotificationMulticast(
   participantId: string,
   tokens: string[],
   entriesMap: Map<string, PushTokenEntry | null>,
+  webPushSubscriptions: WebPushSubscriptionData[],
   title: string,
   body: string,
   url: string,
   type: string
 ): Promise<number> {
-  if (tokens.length === 0) {
-    return 0;
-  }
+  let totalSuccessCount = 0;
 
-  try {
-    const message: admin.messaging.MulticastMessage = {
-      tokens,
-      notification: {
-        title,
-        body,
-      },
-      data: {
-        url,
-        type,
-      },
-      webpush: {
+  // ✅ Send via FCM (Android/Desktop)
+  if (tokens.length > 0) {
+    try {
+      const message: admin.messaging.MulticastMessage = {
+        tokens,
         notification: {
-          icon: NOTIFICATION_CONFIG.ICON_PATH,
-          badge: NOTIFICATION_CONFIG.BADGE_PATH,
+          title,
+          body,
         },
-        fcmOptions: {
-          link: url,
+        data: {
+          url,
+          type,
         },
-        headers: {
-          Urgency: NOTIFICATION_CONFIG.URGENCY,
+        webpush: {
+          notification: {
+            icon: NOTIFICATION_CONFIG.ICON_PATH,
+            badge: NOTIFICATION_CONFIG.BADGE_PATH,
+          },
+          fcmOptions: {
+            link: url,
+          },
+          headers: {
+            Urgency: NOTIFICATION_CONFIG.URGENCY,
+          },
         },
-      },
-    };
+      };
 
-    const response = await admin.messaging().sendEachForMulticast(message);
+      const response = await admin.messaging().sendEachForMulticast(message);
 
-    logger.info(`Push notification multicast sent`, {
-      participantId,
-      totalDevices: tokens.length,
-      successCount: response.successCount,
-      failureCount: response.failureCount,
-    });
+      totalSuccessCount += response.successCount;
 
-    // ✅ Handle failed tokens (remove invalid/expired tokens)
-    if (response.failureCount > 0) {
-      const failedTokens: string[] = [];
-
-      response.responses.forEach((resp, index) => {
-        if (!resp.success) {
-          const errorCode = resp.error?.code;
-
-          if (
-            errorCode === "messaging/invalid-registration-token" ||
-            errorCode === "messaging/registration-token-not-registered"
-          ) {
-            failedTokens.push(tokens[index]);
-            logger.warn(`Removing invalid/expired push token`, {
-              participantId,
-              token: truncateToken(tokens[index]),
-              errorCode,
-            });
-          }
-        }
+      logger.info(`FCM push notification multicast sent`, {
+        participantId,
+        totalDevices: tokens.length,
+        successCount: response.successCount,
+        failureCount: response.failureCount,
       });
 
-      // Remove failed tokens from Firestore
-      if (failedTokens.length > 0) {
-        await removeExpiredTokens(participantId, failedTokens);
-      }
-    }
+      // ✅ Handle failed tokens (remove invalid/expired tokens)
+      if (response.failureCount > 0) {
+        const failedTokens: string[] = [];
 
-    return response.successCount;
-  } catch (error) {
-    logger.error("Error sending push notification multicast", error as Error);
-    return 0;
+        response.responses.forEach((resp, index) => {
+          if (!resp.success) {
+            const errorCode = resp.error?.code;
+
+            if (
+              errorCode === "messaging/invalid-registration-token" ||
+              errorCode === "messaging/registration-token-not-registered"
+            ) {
+              failedTokens.push(tokens[index]);
+              logger.warn(`Removing invalid/expired FCM token`, {
+                participantId,
+                token: truncateToken(tokens[index]),
+                errorCode,
+              });
+            }
+          }
+        });
+
+        // Remove failed tokens from Firestore
+        if (failedTokens.length > 0) {
+          await removeExpiredTokens(participantId, failedTokens);
+        }
+      }
+    } catch (error) {
+      logger.error("Error sending FCM push notification multicast", error as Error);
+    }
   }
+
+  // ✅ Send via Web Push (iOS Safari + All Platforms)
+  if (webPushSubscriptions.length > 0) {
+    const webPushSuccessCount = await sendWebPushNotifications(
+      participantId,
+      webPushSubscriptions,
+      title,
+      body,
+      url,
+      type
+    );
+    totalSuccessCount += webPushSuccessCount;
+  }
+
+  return totalSuccessCount;
 }
 
 /**
@@ -375,32 +574,34 @@ export const onMessageCreated = onDocumentCreated(
     // Get sender name
     const senderName = await getParticipantName(senderId);
 
-    // ✅ Get receiver's push tokens (multi-device support)
-    const { tokens, entriesMap } = await getPushTokens(receiverId);
+    // ✅ Get receiver's push tokens and subscriptions (dual-path support)
+    const { tokens, entriesMap, webPushSubscriptions } = await getPushTokens(receiverId);
 
-    if (tokens.length === 0) {
-      logger.info(`No push tokens for receiver: ${receiverId}`);
+    if (tokens.length === 0 && webPushSubscriptions.length === 0) {
+      logger.info(`No push tokens/subscriptions for receiver: ${receiverId}`);
       return;
     }
 
     // Truncate long messages
     const messagePreview = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
-    // ✅ Send push notification to all devices
+    // ✅ Send push notification via FCM + Web Push
     const successCount = await sendPushNotificationMulticast(
       receiverId,
       tokens,
       entriesMap,
+      webPushSubscriptions,
       senderName,
       messagePreview,
       NOTIFICATION_ROUTES.CHAT,
       NOTIFICATION_TYPES.DM
     );
 
-    logger.info(`DM push notification processed`, {
+    logger.info(`DM push notification processed (dual-path)`, {
       messageId: event.params.messageId,
       receiverId,
-      totalDevices: tokens.length,
+      totalFCM: tokens.length,
+      totalWebPush: webPushSubscriptions.length,
       successCount,
     });
   }
@@ -445,41 +646,46 @@ export const onNoticeCreated = onDocumentCreated(
     // Truncate long notice for body
     const noticeBody = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
-    // ✅ Send push notification to all participants (multi-device support)
-    let totalDevices = 0;
+    // ✅ Send push notification to all participants (dual-path support)
+    let totalFCM = 0;
+    let totalWebPush = 0;
     let totalSuccess = 0;
 
     const pushPromises = participantsSnapshot.docs.map(async (doc) => {
       const participantId = doc.id;
 
-      // Get all tokens for this participant
-      const { tokens, entriesMap } = await getPushTokens(participantId);
+      // Get all tokens and subscriptions for this participant
+      const { tokens, entriesMap, webPushSubscriptions } = await getPushTokens(participantId);
 
-      if (tokens.length === 0) {
-        return;
+      if (tokens.length === 0 && webPushSubscriptions.length === 0) {
+        return 0;
       }
 
-      totalDevices += tokens.length;
+      totalFCM += tokens.length;
+      totalWebPush += webPushSubscriptions.length;
 
       const successCount = await sendPushNotificationMulticast(
         participantId,
         tokens,
         entriesMap,
+        webPushSubscriptions,
         NOTIFICATION_MESSAGES.NOTICE_TITLE, // Title: "새로운 공지가 등록되었습니다"
         noticeBody, // Body: 공지 내용
         NOTIFICATION_ROUTES.CHAT,
         NOTIFICATION_TYPES.NOTICE
       );
 
-      totalSuccess += successCount;
+      return successCount;
     });
 
-    await Promise.all(pushPromises);
+    const results = await Promise.all(pushPromises);
+    totalSuccess = results.reduce((sum, count) => sum + (count || 0), 0);
 
-    logger.info(`Notice push notifications sent`, {
+    logger.info(`Notice push notifications sent (dual-path)`, {
       noticeId: event.params.noticeId,
       totalParticipants: participantsSnapshot.size,
-      totalDevices,
+      totalFCM,
+      totalWebPush,
       totalSuccess,
     });
   }
@@ -570,26 +776,29 @@ export const sendMatchingNotifications = onRequest(
         return;
       }
 
-      // ✅ Send push notification to all participants (multi-device support)
-      let totalDevices = 0;
+      // ✅ Send push notification to all participants (dual-path support)
+      let totalFCM = 0;
+      let totalWebPush = 0;
       let totalSuccess = 0;
 
       const pushPromises = participantsSnapshot.docs.map(async (doc) => {
         const participantId = doc.id;
 
-        // Get all tokens for this participant
-        const { tokens, entriesMap } = await getPushTokens(participantId);
+        // Get all tokens and subscriptions for this participant
+        const { tokens, entriesMap, webPushSubscriptions } = await getPushTokens(participantId);
 
-        if (tokens.length === 0) {
+        if (tokens.length === 0 && webPushSubscriptions.length === 0) {
           return 0;
         }
 
-        totalDevices += tokens.length;
+        totalFCM += tokens.length;
+        totalWebPush += webPushSubscriptions.length;
 
         const successCount = await sendPushNotificationMulticast(
           participantId,
           tokens,
           entriesMap,
+          webPushSubscriptions,
           NOTIFICATION_MESSAGES.MATCHING_TITLE, // Title: "오늘의 프로필북이 도착했습니다"
           "새롭게 도착한 참가자들의 프로필 북을 확인해보세요", // Body: 설명
           NOTIFICATION_ROUTES.TODAY_LIBRARY,
@@ -602,18 +811,20 @@ export const sendMatchingNotifications = onRequest(
       const results = await Promise.all(pushPromises);
       totalSuccess = results.reduce((sum, count) => sum + count, 0);
 
-      logger.info(`Matching notifications sent`, {
+      logger.info(`Matching notifications sent (dual-path)`, {
         cohortId,
         date,
         totalParticipants: participantsSnapshot.size,
-        totalDevices,
+        totalFCM,
+        totalWebPush,
         totalSuccess,
       });
 
       response.status(200).json({
         success: true,
         totalParticipants: participantsSnapshot.size,
-        totalDevices,
+        totalFCM,
+        totalWebPush,
         notificationsSent: totalSuccess,
         date,
       });

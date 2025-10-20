@@ -30,6 +30,40 @@ const messaging = firebase.messaging();
  */
 
 /**
+ * Standard Web Push API handler (iOS Safari + All Platforms)
+ *
+ * Handles both FCM messages and standard Web Push messages.
+ * Works for iOS Safari PWA, Android, and Desktop browsers.
+ */
+self.addEventListener('push', (event) => {
+  console.log('[firebase-messaging-sw.js] Push event received', event);
+
+  try {
+    // Parse push data
+    const data = event.data ? event.data.json() : {};
+
+    // Extract notification content (works for both FCM and Web Push)
+    const title = data.notification?.title || data.title || '필립앤소피';
+    const options = {
+      body: data.notification?.body || data.body || '',
+      icon: data.notification?.icon || data.icon || '/image/app-icon-192.png',
+      badge: '/image/badge-icon.webp',
+      tag: data.tag || 'default',
+      data: data.data || data,
+      requireInteraction: false,
+      silent: false,
+    };
+
+    // Show notification
+    event.waitUntil(
+      self.registration.showNotification(title, options)
+    );
+  } catch (error) {
+    console.error('[firebase-messaging-sw.js] Error handling push event', error);
+  }
+});
+
+/**
  * Handle notification click events
  */
 self.addEventListener('notificationclick', (event) => {
@@ -66,13 +100,6 @@ self.addEventListener('notificationclick', (event) => {
 /**
  * Handle push event (low-level push API)
  */
-self.addEventListener('push', (event) => {
-  console.log('[firebase-messaging-sw.js] Push event received', event);
-
-  // Firebase Messaging handles this automatically with onBackgroundMessage
-  // This is just for logging and debugging
-});
-
 /**
  * Service Worker activation
  */
