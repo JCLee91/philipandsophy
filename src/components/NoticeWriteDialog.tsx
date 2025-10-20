@@ -42,7 +42,7 @@ export default function NoticeWriteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
+      <DialogContent className="max-w-2xl p-0 flex flex-col gap-0">
         <DialogHeader className="px-6 py-6 border-b">
           <DialogTitle>공지 작성</DialogTitle>
           <DialogDescription>
@@ -50,31 +50,33 @@ export default function NoticeWriteDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="px-6 py-4 space-y-3">
+          {/* 이미지 미리보기 */}
+          {imagePreview && (
+            <div className="flex justify-center">
+              <div className="relative w-full max-w-sm h-48 animate-in fade-in-0 duration-fast">
+                <Image
+                  src={imagePreview}
+                  alt="첨부 이미지"
+                  fill
+                  className="object-contain rounded border"
+                />
+                <button
+                  onClick={resetImage}
+                  className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast"
+                >
+                  <X className="h-4 w-4 text-white" />
+                </button>
+              </div>
+            </div>
+          )}
+
           <Textarea
             value={content}
             onChange={(e) => onContentChange(e.target.value)}
-            className="min-h-[120px]"
+            className="min-h-[200px]"
             placeholder="공지 내용을 입력하세요..."
             autoFocus
           />
-
-          {/* 이미지 미리보기 */}
-          {imagePreview && (
-            <div className="relative w-full max-w-sm h-48 animate-in fade-in-0 duration-fast">
-              <Image
-                src={imagePreview}
-                alt="첨부 이미지"
-                fill
-                className="object-contain rounded border"
-              />
-              <button
-                onClick={resetImage}
-                className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast"
-              >
-                <X className="h-4 w-4 text-white" />
-              </button>
-            </div>
-          )}
         </div>
 
         <DialogFooter className="px-6 py-3 border-t flex-row items-center gap-2">
