@@ -38,19 +38,40 @@ firebase projects:list
 # Then use the web interface as shown above
 ```
 
-## Step 2: Add VAPID Key to Environment Variables
+## Step 2: Add VAPID Keys to Environment Variables
 
-Add the following to your `.env.local` file:
+### Next.js (.env.local)
 
 ```env
-# FCM VAPID Key for Web Push
-NEXT_PUBLIC_FCM_VAPID_KEY=YOUR_VAPID_KEY_HERE
+# Firebase FCM VAPID public key (Android / Desktop)
+NEXT_PUBLIC_FCM_VAPID_KEY=YOUR_VAPID_PUBLIC_KEY
+
+# Standard Web Push VAPID public key (iOS PWA 포함)
+# 대부분의 경우 FCM VAPID 키와 동일한 값을 사용합니다.
+NEXT_PUBLIC_WEBPUSH_VAPID_KEY=YOUR_VAPID_PUBLIC_KEY
 ```
 
-**Example:**
+### Firebase Functions (로컬 + 프로덕션)
+
+`functions/.env` 파일 및 Firebase Functions 런타임 환경에 동일한 키 쌍을 설정하세요.
+
 ```env
-NEXT_PUBLIC_FCM_VAPID_KEY=BMxY7Zq3...rest_of_the_key
+# functions/.env
+WEBPUSH_VAPID_PUBLIC_KEY=YOUR_VAPID_PUBLIC_KEY
+WEBPUSH_VAPID_PRIVATE_KEY=YOUR_VAPID_PRIVATE_KEY
 ```
+
+Firebase에 배포할 때는 다음 명령으로 런타임 환경 변수도 등록합니다:
+
+```bash
+cd functions
+firebase functions:config:set \
+  WEBPUSH_VAPID_PUBLIC_KEY="YOUR_VAPID_PUBLIC_KEY" \
+  WEBPUSH_VAPID_PRIVATE_KEY="YOUR_VAPID_PRIVATE_KEY"
+```
+
+> 🔁 **중요**: Next.js와 Firebase Functions가 동일한 VAPID 키 쌍을 사용해야
+> `webpush.sendNotification`와 클라이언트 구독이 정상 동작합니다.
 
 ## Step 3: Verify Firebase Admin Setup
 

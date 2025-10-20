@@ -191,8 +191,78 @@ self.addEventListener('notificationclick', (event) => {
  * This is automatically handled by Firebase Messaging
  */
 self.addEventListener('push', (event) => {
-  console.log('[Unified SW] Push event received', event);
-  // Firebase Messaging handles this automatically
+  console.log('[Unified SW] Push event received');
+
+  if (!event.data) {
+    console.warn('[Unified SW] Push event received without data payload');
+    return;
+  }
+
+  let payload;
+
+  try {
+    payload = event.data.json();
+  } catch (error) {
+    console.warn('[Unified SW] Failed to parse push payload as JSON', error);
+    payload = {
+      title: '필립앤소피',
+      body: event.data.text(),
+    };
+  }
+
+  // FCM 자동 알림(Chrome 등)은 별도로 표시되므로 중복 표시 방지
+  if (payload?.notification && payload?.from) {
+    console.log('[Unified SW] Skipping push display (handled by FCM auto notification)');
+    return;
+  }
+
+  const title =
+    payload?.title ||
+    payload?.notification?.title ||
+    '필립앤소피';
+
+  const body =
+    payload?.body ||
+    payload?.notification?.body ||
+    '';
+
+  const icon =
+    payload?.icon ||
+    payload?.notification?.icon ||
+    '/image/app-icon-192.png';
+
+  const badge =
+    payload?.badge ||
+    payload?.notification?.badge ||
+    '/image/badge-icon.webp';
+
+  const url =
+    payload?.data?.url ||
+    payload?.url ||
+    '/app';
+
+  const type =
+    payload?.data?.type ||
+    payload?.type;
+
+  const options = {
+    body,
+    icon,
+    badge,
+    data: {
+      url,
+      type,
+      ...(payload?.data || {}),
+    },
+    actions: payload?.actions,
+    tag: payload?.tag,
+    renotify: payload?.renotify,
+    requireInteraction: payload?.requireInteraction,
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
 });
 
 /**
