@@ -43,8 +43,8 @@ openssl rand -base64 32
 # Using Node.js
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
-# Example output:
-# vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
+# Example output (do not reuse):
+# SAMPLEDLDJkb28wN2F1NjNmbE9HM0ppeEFldHptUWY1b0s=
 ```
 
 **Save this value** - you'll need it for both Firebase and Vercel.
@@ -60,10 +60,7 @@ Firebase Functions uses `firebase functions:config:set` to store runtime configu
 ```bash
 # Set the secret in Firebase Functions config
 cd /Users/jclee/Desktop/휠즈랩스/projectpns
-firebase functions:config:set INTERNAL_SERVICE_SECRET="YOUR_SECRET_HERE"
-
-# Example:
-firebase functions:config:set INTERNAL_SERVICE_SECRET="vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8="
+firebase functions:config:set INTERNAL_SERVICE_SECRET="YOUR_GENERATED_SECRET"
 
 # Verify it was set correctly
 firebase functions:config:get
@@ -72,7 +69,7 @@ firebase functions:config:get
 **Expected output**:
 ```json
 {
-  "internal_service_secret": "vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8="
+  "internal_service_secret": "YOUR_GENERATED_SECRET"
 }
 ```
 
@@ -88,7 +85,7 @@ cd functions
 nano .env
 
 # Add this line:
-INTERNAL_SERVICE_SECRET=vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
+INTERNAL_SERVICE_SECRET=YOUR_GENERATED_SECRET
 
 # Save and exit (Ctrl+X, then Y, then Enter)
 ```
@@ -127,7 +124,7 @@ cd /Users/jclee/Desktop/휠즈랩스/projectpns
 nano .env.local
 
 # Add this line (must match Firebase secret):
-INTERNAL_SERVICE_SECRET=vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
+INTERNAL_SERVICE_SECRET=YOUR_GENERATED_SECRET
 ```
 
 **Important**: Add `.env.local` to `.gitignore` (already done in this project)
@@ -140,7 +137,7 @@ vercel env add INTERNAL_SERVICE_SECRET
 
 # When prompted:
 # ? What's the value of INTERNAL_SERVICE_SECRET?
-# [Paste: vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=]
+# [Paste: YOUR_GENERATED_SECRET]
 #
 # ? Add INTERNAL_SERVICE_SECRET to which Environments?
 # [Select: Production, Preview, Development - all]
@@ -149,7 +146,7 @@ vercel env add INTERNAL_SERVICE_SECRET
 # 1. Go to https://vercel.com/jclees-projects-c1bb6dfd/pslanding/settings/environment-variables
 # 2. Click "Add New"
 # 3. Name: INTERNAL_SERVICE_SECRET
-# 4. Value: vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
+# 4. Value: YOUR_GENERATED_SECRET
 # 5. Environments: Select all (Production, Preview, Development)
 # 6. Click "Save"
 ```
@@ -182,7 +179,7 @@ git push origin main
    Should show:
    ```json
    {
-     "internal_service_secret": "YOUR_SECRET_HERE"
+     "internal_service_secret": "YOUR_GENERATED_SECRET"
    }
    ```
 
@@ -193,7 +190,7 @@ git push origin main
 
    Should show:
    ```
-   INTERNAL_SERVICE_SECRET=YOUR_SECRET_HERE
+   INTERNAL_SERVICE_SECRET=YOUR_GENERATED_SECRET
    ```
 
 3. **Check Next.js local environment**:
@@ -203,7 +200,7 @@ git push origin main
 
    Should show:
    ```
-   INTERNAL_SERVICE_SECRET=YOUR_SECRET_HERE
+   INTERNAL_SERVICE_SECRET=YOUR_GENERATED_SECRET
    ```
 
 4. **Verify secrets match**:
@@ -330,7 +327,7 @@ firebase functions:log --only scheduledMatchingPreview --limit 10
 
 2. If empty, set it:
    ```bash
-   firebase functions:config:set INTERNAL_SERVICE_SECRET="YOUR_SECRET"
+firebase functions:config:set INTERNAL_SERVICE_SECRET="YOUR_GENERATED_SECRET"
    firebase deploy --only functions
    ```
 
@@ -384,7 +381,7 @@ vercel logs pslanding --follow
 # 3. Test manually with curl
 curl -X POST https://philipandsophy.vercel.app/api/admin/matching/preview \
   -H "Content-Type: application/json" \
-  -H "X-Internal-Secret: YOUR_SECRET_HERE" \
+  -H "X-Internal-Secret: YOUR_GENERATED_SECRET" \
   -d '{"cohortId":"1"}' \
   -v
 ```
@@ -399,7 +396,7 @@ curl -X POST https://philipandsophy.vercel.app/api/admin/matching/preview \
 firebase functions:config:get
 
 # 2. If not set, configure it
-firebase functions:config:set INTERNAL_SERVICE_SECRET="YOUR_SECRET"
+firebase functions:config:set INTERNAL_SERVICE_SECRET="YOUR_GENERATED_SECRET"
 
 # 3. Redeploy (config changes require redeployment)
 cd functions
@@ -417,7 +414,7 @@ firebase functions:log --only scheduledMatchingPreview --follow
 **Solution**: Use `.env` file for local development:
 ```bash
 cd functions
-echo 'INTERNAL_SERVICE_SECRET=YOUR_SECRET_HERE' >> .env
+echo 'INTERNAL_SERVICE_SECRET=YOUR_GENERATED_SECRET' >> .env
 npm run serve
 ```
 
@@ -513,10 +510,10 @@ export async function POST(request: NextRequest) {
 
 ```bash
 # Example: Same secret everywhere
-Firebase config:   vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
-functions/.env:    vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
-.env.local:        vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
-Vercel env:        vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
+Firebase config:   YOUR_GENERATED_SECRET
+functions/.env:    YOUR_GENERATED_SECRET
+.env.local:        YOUR_GENERATED_SECRET
+Vercel env:        YOUR_GENERATED_SECRET
 ```
 
 ---

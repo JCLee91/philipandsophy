@@ -35,7 +35,7 @@ if firebase functions:config:get INTERNAL_SERVICE_SECRET &> /dev/null; then
         echo -e "${RED}❌ INTERNAL_SERVICE_SECRET not set in Firebase Functions${NC}"
         echo ""
         echo "Set it with:"
-        echo "  firebase functions:config:set INTERNAL_SERVICE_SECRET=\"YOUR_SECRET_HERE\""
+        echo "  firebase functions:config:set INTERNAL_SERVICE_SECRET=\"YOUR_GENERATED_SECRET\""
         exit 1
     else
         echo -e "${GREEN}✅ INTERNAL_SERVICE_SECRET is set in Firebase Functions${NC}"
@@ -57,7 +57,7 @@ if [ -f .env.local ]; then
         echo -e "${GREEN}✅ INTERNAL_SERVICE_SECRET found in .env.local${NC}"
 
         # Extract the value (basic extraction, not parsing)
-        LOCAL_SECRET=$(grep "INTERNAL_SERVICE_SECRET" .env.local | cut -d '=' -f2 | tr -d '"' | tr -d ' ')
+        LOCAL_SECRET=$(grep "INTERNAL_SERVICE_SECRET" .env.local | cut -d '=' -f2- | tr -d '"' | tr -d ' ')
 
         if [ -z "$LOCAL_SECRET" ]; then
             echo -e "${YELLOW}⚠️  INTERNAL_SERVICE_SECRET is empty in .env.local${NC}"
@@ -66,14 +66,14 @@ if [ -f .env.local ]; then
         echo -e "${RED}❌ INTERNAL_SERVICE_SECRET not found in .env.local${NC}"
         echo ""
         echo "Add it to .env.local:"
-        echo "  INTERNAL_SERVICE_SECRET=\"YOUR_SECRET_HERE\""
+        echo "  INTERNAL_SERVICE_SECRET=\"YOUR_GENERATED_SECRET\""
         exit 1
     fi
 else
     echo -e "${RED}❌ .env.local file not found${NC}"
     echo ""
     echo "Create .env.local with:"
-    echo "  INTERNAL_SERVICE_SECRET=\"YOUR_SECRET_HERE\""
+    echo "  INTERNAL_SERVICE_SECRET=\"YOUR_GENERATED_SECRET\""
     exit 1
 fi
 

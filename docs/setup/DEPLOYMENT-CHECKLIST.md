@@ -9,7 +9,7 @@
 
 ### Local Development Environment
 
-- ✅ **Secret Generated**: `vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=`
+- ✅ **Secret Generated**: `YOUR_GENERATED_SECRET`
 - ✅ **Functions .env**: `/functions/.env` updated with `INTERNAL_SERVICE_SECRET` (for local emulator)
 - ✅ **Next.js .env.local**: `/.env.local` updated with `INTERNAL_SERVICE_SECRET`
 - ✅ **Functions Build**: Successfully compiled TypeScript
@@ -33,7 +33,7 @@
 cd /Users/jclee/Desktop/휠즈랩스/projectpns
 
 # Set the secret in Firebase Functions runtime config
-firebase functions:config:set INTERNAL_SERVICE_SECRET="vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8="
+firebase functions:config:set INTERNAL_SERVICE_SECRET="YOUR_GENERATED_SECRET"
 
 # Verify it was set correctly
 firebase functions:config:get
@@ -42,7 +42,7 @@ firebase functions:config:get
 **Expected Output**:
 ```json
 {
-  "internal_service_secret": "vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8="
+  "internal_service_secret": "YOUR_GENERATED_SECRET"
 }
 ```
 
@@ -59,7 +59,7 @@ firebase functions:config:get
 vercel env add INTERNAL_SERVICE_SECRET
 
 # When prompted, paste:
-vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
+YOUR_GENERATED_SECRET
 
 # Select environments: Production, Preview, Development (all)
 ```
@@ -69,7 +69,7 @@ vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=
 1. Go to: https://vercel.com/jclees-projects-c1bb6dfd/pslanding/settings/environment-variables
 2. Click **Add New**
 3. **Name**: `INTERNAL_SERVICE_SECRET`
-4. **Value**: `vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=`
+4. **Value**: `YOUR_GENERATED_SECRET`
 5. **Environments**: Select all (Production, Preview, Development)
 6. Click **Save**
 
@@ -136,7 +136,7 @@ firebase functions:log --only scheduledMatchingPreview --limit 10
 # Test with valid secret (should succeed)
 curl -X POST https://philipandsophy.vercel.app/api/admin/matching/preview \
   -H "Content-Type: application/json" \
-  -H "X-Internal-Secret: vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=" \
+  -H "X-Internal-Secret: YOUR_GENERATED_SECRET" \
   -d '{"cohortId":"1"}'
 
 # Expected response:
@@ -175,7 +175,7 @@ curl -X POST https://philipandsophy.vercel.app/api/admin/matching/preview \
 # Test 1: Valid secret (should succeed)
 curl -X POST https://philipandsophy.vercel.app/api/admin/matching/preview \
   -H "Content-Type: application/json" \
-  -H "X-Internal-Secret: vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=" \
+  -H "X-Internal-Secret: YOUR_GENERATED_SECRET" \
   -d '{"cohortId":"1"}'
 # Expected: 200 OK
 
@@ -340,10 +340,10 @@ firebase functions:log --only scheduledMatchingPreview --follow
 
 | Environment | Variable | How to Set | Value |
 |------------|----------|------------|-------|
-| **Firebase Production** | `INTERNAL_SERVICE_SECRET` | `firebase functions:config:set` | `vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=` |
-| **Firebase Local** | `INTERNAL_SERVICE_SECRET` | `functions/.env` file | `vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=` |
-| **Next.js Local** | `INTERNAL_SERVICE_SECRET` | `.env.local` file | `vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=` |
-| **Vercel Production** | `INTERNAL_SERVICE_SECRET` | Vercel Dashboard/CLI | `vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=` |
+| **Firebase Production** | `INTERNAL_SERVICE_SECRET` | `firebase functions:config:set` | `YOUR_GENERATED_SECRET` |
+| **Firebase Local** | `INTERNAL_SERVICE_SECRET` | `functions/.env` file | `YOUR_GENERATED_SECRET` |
+| **Next.js Local** | `INTERNAL_SERVICE_SECRET` | `.env.local` file | `YOUR_GENERATED_SECRET` |
+| **Vercel Production** | `INTERNAL_SERVICE_SECRET` | Vercel Dashboard/CLI | `YOUR_GENERATED_SECRET` |
 
 ### Value Consistency Check
 
