@@ -523,8 +523,12 @@ export async function initializePushNotifications(
     let token: string | null = null;
     let cleanup: (() => void) | null = null;
 
-    // ✅ Strategy 1: Try FCM (Android/Desktop)
+    // Check platform support
     const fcmSupported = await isFCMSupported();
+    const webPushSupported = isWebPushSupported();
+
+    // ✅ Strategy 1: Try FCM (Android Chrome, Desktop Chrome/Edge/Firefox)
+    // Safari (iOS/Desktop) will skip this due to isSupported() returning false
     if (fcmSupported) {
       logger.info('[initializePushNotifications] Platform supports FCM, using FCM token');
       token = await getFCMToken(messaging);
@@ -536,8 +540,10 @@ export async function initializePushNotifications(
       }
     }
 
-    // ✅ Strategy 2: Try Web Push (iOS Safari + All Platforms)
-    if (isWebPushSupported()) {
+    // ✅ Strategy 2: Try Web Push (iOS Safari PWA + All Platforms as fallback)
+    // Safari will use ONLY this path (FCM not supported)
+    // Other browsers can use both (dual-path redundancy)
+    if (webPushSupported) {
       logger.info('[initializePushNotifications] Platform supports Web Push, subscribing to Web Push');
 
       const vapidKey = process.env.NEXT_PUBLIC_WEBPUSH_VAPID_KEY;
@@ -592,7 +598,7 @@ export async function initializePushNotifications(
       participantId,
       deviceId,
       hasFCM: fcmSupported,
-      hasWebPush: isWebPushSupported(),
+      hasWebPush: webPushSupported,
     });
 
     return {
