@@ -34,6 +34,12 @@ service cloud.firestore {
              get(/databases/$(database)/documents/participants/admin).data.isAdministrator == true;
     }
 
+    // pushTokens 배열 항목 검증
+    function isValidPushTokens(tokens) {
+      return tokens is list &&
+             tokens.size() <= 20;
+    }
+
     // ============================================
     // 기수 정보 (Cohorts)
     // ============================================
@@ -59,11 +65,16 @@ service cloud.firestore {
            .hasOnly(['firebaseUid', 'updatedAt'])) ||
 
         // 케이스 2: 기존 소유자의 프로필 업데이트
-        (resource.data.firebaseUid == request.auth.uid &&
-         request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['name', 'profileImage', 'profileImageCircle', 'profileBookUrl',
-                    'occupation', 'bio', 'currentBookTitle', 'currentBookAuthor',
-                    'currentBookCoverUrl', 'bookHistory', 'pushToken', 'pushTokenUpdatedAt', 'pushNotificationEnabled', 'lastActivityAt', 'updatedAt']))
+        (
+          resource.data.firebaseUid == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['name', 'profileImage', 'profileImageCircle', 'profileBookUrl',
+                     'occupation', 'bio', 'currentBookTitle', 'currentBookAuthor',
+                     'currentBookCoverUrl', 'bookHistory', 'pushToken', 'pushTokenUpdatedAt',
+                     'pushNotificationEnabled', 'lastActivityAt', 'pushTokens', 'updatedAt']) &&
+          (!request.resource.data.keys().hasAny(['pushTokens']) ||
+            isValidPushTokens(request.resource.data.pushTokens))
+        )
       );
 
       allow delete: if false;

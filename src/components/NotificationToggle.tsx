@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, BellOff, AlertCircle } from 'lucide-react';
+import { Bell, BellOff, AlertCircle, Loader2 } from 'lucide-react';
 import { getMessaging, deleteToken } from 'firebase/messaging';
 import { getFirebaseApp } from '@/lib/firebase';
 import {
@@ -31,6 +31,7 @@ export function NotificationToggle() {
   const [showDeniedMessage, setShowDeniedMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cleanup, setCleanup] = useState<(() => void) | null>(null);
+  const isBusy = isLoading || isStatusLoading;
 
   // Check current notification status
   useEffect(() => {
@@ -65,6 +66,10 @@ export function NotificationToggle() {
       // 1. Firestore에서 현재 디바이스 토큰 확인 (단일 진실 소스)
       // ✅ getPushTokenFromFirestore는 pushTokens 배열 기반으로 동작
       const token = await getPushTokenFromFirestore(participantId);
+      logger.info('[NotificationToggle] Status check result', {
+        participantId,
+        hasToken: !!token,
+      });
 
       // 2. 토큰이 있으면 활성화로 간주 (iOS PWA 버그 회피)
       setIsEnabled(!!token);
@@ -107,7 +112,7 @@ export function NotificationToggle() {
     }
 
     // Guard: 이미 로딩 중이거나 초기 상태 확인 중이면 무시
-    if (isLoading || isStatusLoading) {
+    if (isBusy) {
       logger.warn('[enableNotifications] Already in progress, ignoring');
       return;
     }
@@ -177,7 +182,7 @@ export function NotificationToggle() {
     }
 
     // Guard: 이미 로딩 중이거나 초기 상태 확인 중이면 무시
-    if (isLoading || isStatusLoading) {
+    if (isBusy) {
       logger.warn('[disableNotifications] Already in progress, ignoring');
       return;
     }
@@ -230,7 +235,7 @@ export function NotificationToggle() {
    */
   const handleToggle = async () => {
     // Guard: 로딩 중이거나 초기 상태 확인 중이면 무시
-    if (isLoading || isStatusLoading) {
+    if (isBusy) {
       logger.warn('[handleToggle] Blocked: loading in progress');
       return;
     }
@@ -341,23 +346,31 @@ export function NotificationToggle() {
       </div>
 
       {/* Toggle Switch */}
-      <button
-        type="button"
-        onClick={handleToggle}
-        disabled={isLoading || isStatusLoading}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-normal ${
-          isEnabled ? 'bg-black' : 'bg-gray-200'
-        } ${isLoading || isStatusLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-        role="switch"
-        aria-checked={isEnabled}
-        aria-label="푸시 알림 토글"
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-normal ${
-            isEnabled ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
+      <div className="relative h-6 w-11">
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={isBusy}
+          className={`absolute inset-0 inline-flex h-6 w-11 items-center rounded-full transition-colors duration-normal ${
+            isEnabled ? 'bg-black' : 'bg-gray-200'
+          } ${isBusy ? 'cursor-default opacity-0' : 'cursor-pointer'}`}
+          role="switch"
+          aria-checked={isEnabled}
+          aria-label="푸시 알림 토글"
+          aria-busy={isBusy}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-normal ${
+              isEnabled ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
+        {isBusy && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

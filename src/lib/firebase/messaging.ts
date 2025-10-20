@@ -12,7 +12,7 @@
 'use client';
 
 import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging';
-import { doc, updateDoc, getDoc, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, arrayUnion, arrayRemove, Timestamp, deleteField } from 'firebase/firestore';
 import { getDb } from './client';
 import { logger } from '@/lib/logger';
 import type { PushTokenEntry } from '@/types/database';
@@ -286,6 +286,13 @@ export async function getPushTokenFromFirestore(
     }
 
     const data = participantSnap.data();
+
+    if (data?.pushNotificationEnabled === false) {
+      logger.debug('Push notifications disabled for participant, no token expected', {
+        participantId,
+      });
+      return null;
+    }
     const deviceId = getDeviceId();
 
     // ✅ Priority 1: Check pushTokens array for current device
@@ -364,6 +371,8 @@ export async function removePushTokenFromFirestore(
     if (remainingTokens.length === 0) {
       await updateDoc(participantRef, {
         pushNotificationEnabled: false,
+        pushToken: deleteField(),
+        pushTokenUpdatedAt: deleteField(),
       });
       logger.info('Removed last push token, disabled push notifications', {
         participantId,
@@ -548,6 +557,13 @@ export async function shouldRefreshPushToken(participantId: string): Promise<boo
     }
 
     const data = participantSnap.data();
+
+    if (data?.pushNotificationEnabled === false) {
+      logger.info('Push notifications disabled, skipping token refresh', {
+        participantId,
+      });
+      return false;
+    }
     const pushTokenUpdatedAt = data?.pushTokenUpdatedAt?.toDate();
 
     if (!pushTokenUpdatedAt) {
