@@ -210,41 +210,23 @@ self.addEventListener('push', (event) => {
     };
   }
 
-  // ✅ FCM이 notification 필드를 포함하면 이미 알림을 표시함
-  // Service Worker는 Web Push(iOS 등) 전용으로만 수동 표시
-  if (payload?.notification) {
-    console.log('[Unified SW] FCM already showing notification, skipping manual display');
-    return;
-  }
+  // ✅ Data-only 메시지 처리
+  // notification 필드 없이 data만 전송됨
+  const data = payload?.data || payload;
 
-  const title =
-    payload?.title ||
-    payload?.notification?.title ||
-    '필립앤소피';
+  const title = data?.title || '필립앤소피';
+  const body = data?.body || '';
+  const icon = data?.icon || '/image/app-icon-192.png';
+  const badge = data?.badge || '/image/badge-icon.webp';
+  const url = data?.url || '/app';
+  const type = data?.type || 'general';
+  const tag = data?.tag;
 
-  const body =
-    payload?.body ||
-    payload?.notification?.body ||
-    '';
-
-  const icon =
-    payload?.icon ||
-    payload?.notification?.icon ||
-    '/image/app-icon-192.png';
-
-  const badge =
-    payload?.badge ||
-    payload?.notification?.badge ||
-    '/image/badge-icon.webp';
-
-  const url =
-    payload?.data?.url ||
-    payload?.url ||
-    '/app';
-
-  const type =
-    payload?.data?.type ||
-    payload?.type;
+  console.log('[Unified SW] Showing notification (data-only message)', {
+    title,
+    type,
+    tag,
+  });
 
   const options = {
     body,
@@ -253,12 +235,9 @@ self.addEventListener('push', (event) => {
     data: {
       url,
       type,
-      ...(payload?.data || {}),
     },
-    actions: payload?.actions,
-    tag: payload?.tag,
-    renotify: payload?.renotify,
-    requireInteraction: payload?.requireInteraction,
+    tag,
+    requireInteraction: false,
   };
 
   event.waitUntil(

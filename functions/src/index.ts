@@ -389,35 +389,24 @@ async function sendPushNotificationMulticast(
       // ✅ Generate unique tag for Android notification stacking
       const notificationTag = `${type}-${Date.now()}`;
 
+      // ✅ Data-only message (Service Worker에서 수동 표시)
+      // notification 필드 제거로 FCM 자동 표시 방지 → 중복 알림 해결
       const message: admin.messaging.MulticastMessage = {
         tokens,
-        notification: {
+        data: {
+          // ✅ title, body를 data에 포함 (SW에서 읽음)
           title,
           body,
-        },
-        data: {
+          icon: NOTIFICATION_CONFIG.ICON_PATH,
+          badge: NOTIFICATION_CONFIG.BADGE_PATH,
           url,
           type,
+          tag: notificationTag,
         },
-        // ✅ Android: 고유한 태그로 알림이 쌓이도록 설정
         android: {
-          notification: {
-            tag: notificationTag,
-            channelId: 'pns-default',
-            priority: 'high',
-            icon: NOTIFICATION_CONFIG.ICON_PATH,
-            color: '#000000',
-          },
+          priority: 'high',
         },
         webpush: {
-          notification: {
-            icon: NOTIFICATION_CONFIG.ICON_PATH,
-            badge: NOTIFICATION_CONFIG.BADGE_PATH,
-            tag: notificationTag, // ✅ Web Push도 동일한 태그
-          },
-          fcmOptions: {
-            link: url,
-          },
           headers: {
             Urgency: NOTIFICATION_CONFIG.URGENCY,
           },

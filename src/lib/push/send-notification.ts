@@ -111,38 +111,29 @@ export async function sendPushToUser(
     // ✅ Generate unique tag for Android notification stacking
     const notificationTag = payload.tag || `${payload.type || 'general'}-${Date.now()}`;
 
-    // ✅ Send to all devices using multicast
+    // ✅ Data-only message (Service Worker에서 수동 표시)
+    // notification 필드 제거로 FCM 자동 표시 방지 → 중복 알림 해결
     const message: admin.messaging.MulticastMessage = {
       tokens,
-      notification: {
+      data: {
+        // ✅ title, body를 data에 포함 (SW에서 읽음)
         title: payload.title,
         body: payload.body,
-        imageUrl: payload.icon || '/image/favicon.webp',
-      },
-      data: {
+        icon: payload.icon || '/image/favicon.webp',
+        badge: payload.badge || '/image/favicon.webp',
         url: payload.url || '/app/chat',
         type: payload.type || 'general',
+        tag: notificationTag,
         ...payload.data,
       },
-      // ✅ Android: 고유한 태그로 알림이 쌓이도록 설정
+      // ✅ Android 설정 (data-only에도 적용)
       android: {
-        notification: {
-          tag: notificationTag,
-          channelId: 'pns-default',
-          priority: 'high' as const,
-          icon: payload.icon || '/image/favicon.webp',
-          color: '#000000',
-        },
+        priority: 'high' as const,
       },
+      // ✅ Web Push 설정
       webpush: {
-        notification: {
-          icon: payload.icon || '/image/favicon.webp',
-          badge: payload.badge || '/image/favicon.webp',
-          requireInteraction: false,
-          tag: notificationTag, // ✅ Web Push도 동일한 태그
-        },
-        fcmOptions: {
-          link: payload.url || '/app/chat',
+        headers: {
+          Urgency: 'high',
         },
       },
     };
@@ -288,38 +279,26 @@ export async function sendPushToMultipleUsers(
     // ✅ Generate unique tag for Android notification stacking
     const notificationTag = payload.tag || `${payload.type || 'general'}-${Date.now()}`;
 
-    // Prepare multicast message
+    // ✅ Data-only message (Service Worker에서 수동 표시)
     const message: admin.messaging.MulticastMessage = {
       tokens,
-      notification: {
+      data: {
+        // ✅ title, body를 data에 포함
         title: payload.title,
         body: payload.body,
-        imageUrl: payload.icon || '/image/favicon.webp',
-      },
-      data: {
+        icon: payload.icon || '/image/favicon.webp',
+        badge: payload.badge || '/image/favicon.webp',
         url: payload.url || '/app/chat',
         type: payload.type || 'general',
+        tag: notificationTag,
         ...payload.data,
       },
-      // ✅ Android: 고유한 태그로 알림이 쌓이도록 설정
       android: {
-        notification: {
-          tag: notificationTag,
-          channelId: 'pns-default',
-          priority: 'high' as const,
-          icon: payload.icon || '/image/favicon.webp',
-          color: '#000000',
-        },
+        priority: 'high' as const,
       },
       webpush: {
-        notification: {
-          icon: payload.icon || '/image/favicon.webp',
-          badge: payload.badge || '/image/favicon.webp',
-          requireInteraction: false,
-          tag: notificationTag, // ✅ Web Push도 동일한 태그
-        },
-        fcmOptions: {
-          link: payload.url || '/app/chat',
+        headers: {
+          Urgency: 'high',
         },
       },
     };
