@@ -16,8 +16,8 @@ interface FooterActionsProps {
 
 export default function FooterActions({ children }: FooterActionsProps) {
   return (
-    <div className="shrink-0 border-t bg-white">
-      <div className="mx-auto max-w-md px-6 app-footer">
+    <div className="shrink-0 border-t">
+      <div className="mx-auto max-w-md px-6 app-footer bg-white">
         {children}
       </div>
     </div>

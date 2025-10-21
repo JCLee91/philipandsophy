@@ -406,7 +406,7 @@ function ChatPageContent() {
         )}
 
         {/* 일반 공지 영역 - flex-col-reverse로 최신 공지가 아래로 */}
-        <main className="relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-20">
+        <main className="relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
           {/* 일반 공지 영역 - 날짜별 그룹 */}
           {sortedGroupedNotices.map(([date, groupData], groupIndex) => {
             const { notices: dateNotices } = groupData as { date: Date; notices: Notice[] };

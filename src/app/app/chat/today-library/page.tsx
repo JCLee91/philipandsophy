@@ -173,7 +173,7 @@ function TodayLibraryContent() {
 
           <main className="flex-1 overflow-y-auto bg-background">
             <div className="mx-auto max-w-md px-4 w-full">
-              <div className="pt-12 pb-8">
+              <div className="pt-12 pb-6">
                 <div className="flex flex-col gap-12">
                   <div className="flex flex-col gap-3">
                     {/* Title Skeleton */}
@@ -263,7 +263,7 @@ function TodayLibraryContent() {
           {/* Main Content */}
           <main className="flex-1 overflow-y-auto bg-background">
             <div className="mx-auto max-w-md px-4 w-full">
-              <div className="pt-12 pb-8">
+              <div className="pt-12 pb-6">
                 {/* Header Section */}
                 <div className="flex flex-col gap-12">
                 <div className="flex flex-col gap-3">
@@ -397,7 +397,7 @@ function TodayLibraryContent() {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-4 w-full">
-            <div className="pt-12 pb-8">
+            <div className="pt-12 pb-6">
               {/* Header Section */}
               <div className="flex flex-col gap-12">
               <div className="flex flex-col gap-3">
@@ -454,7 +454,7 @@ function LoadingSkeleton() {
         <HeaderNavigation title="오늘의 서재" />
         <main className="flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-4 w-full">
-            <div className="pt-12 pb-8">
+            <div className="pt-12 pb-6">
               <div className="flex flex-col gap-12">
                 <div className="flex flex-col gap-3">
                   <div className="h-8 w-48 shimmer rounded" />
