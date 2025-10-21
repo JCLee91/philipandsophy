@@ -143,8 +143,19 @@
 
   /* PWA 설정 - 웹앱(/app)에서만 적용 */
   html[data-app="true"] {
+    /* viewport-fit: cover 사용 시 하단 여백 제거 핵 */
+    min-height: calc(100% + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     /* Pull-to-refresh 방지 및 overscroll bounce 제거 */
     overscroll-behavior: none;
+  }
+
+  /* iOS 11.2 이전 버전 호환성 */
+  @supports (padding-top: constant(safe-area-inset-top)) {
+    html[data-app="true"] {
+      min-height: calc(100% + constant(safe-area-inset-top));
+      padding: constant(safe-area-inset-top) constant(safe-area-inset-right) constant(safe-area-inset-bottom) constant(safe-area-inset-left);
+    }
   }
 
   html,
