@@ -26,6 +26,7 @@ import {
   isFCMSupported,
   isWebPushSupported,
   createWebPushSubscription,
+  getCurrentWebPushSubscription,
 } from './webpush';
 
 /**
