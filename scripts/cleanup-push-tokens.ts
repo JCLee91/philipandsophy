@@ -153,7 +153,7 @@ async function cleanupPushTokens() {
     const validWebPushSubs = webPushSubs.filter((sub) => {
       if (!isValidWebPushSubscription(sub)) {
         invalidWebPushRemoved++;
-        console.log(`  ❌ [${participantId}] Removing invalid Web Push: ${sub.deviceId || 'unknown'}`);
+        console.log(`  ❌ [${participantId}] Removing invalid Web Push: ${(sub as any).deviceId || 'unknown'}`);
         return false;
       }
 
