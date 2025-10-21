@@ -12,11 +12,9 @@ import {
   getNotificationPermission,
   removePushTokenFromFirestore,
   detectPushChannel,
-  getDeviceId,
 } from '@/lib/firebase/messaging';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
-import type { PushTokenEntry, WebPushSubscriptionData } from '@/types/database';
 
 /**
  * 알림 토글 컴포넌트
@@ -58,9 +56,9 @@ export function NotificationToggle() {
   }, [cleanup]);
 
   /**
-   * 알림 상태 확인 (디바이스별 토큰 존재 여부로 판단)
-   * - 현재 디바이스의 토큰이 pushTokens 또는 webPushSubscriptions에 있는지 확인
-   * - 브라우저 권한이 denied면 자동 정리
+   * 알림 상태 확인 (단순화 - 토큰 존재 여부만)
+   * - pushTokens 또는 webPushSubscriptions가 비어있지 않으면 ON
+   * - deviceId 체크 불필요 (항상 1개만 저장됨)
    */
   const checkNotificationStatus = async (participantId: string) => {
     try {
@@ -77,29 +75,23 @@ export function NotificationToggle() {
 
       const data = participantSnap.data();
 
-      // ✅ 현재 디바이스의 토큰 존재 여부로 판단 (디바이스별 독립적 제어)
-      const deviceId = getDeviceId();
-      const pushTokens: PushTokenEntry[] = Array.isArray(data.pushTokens) ? data.pushTokens : [];
-      const webPushSubs: WebPushSubscriptionData[] = Array.isArray(data.webPushSubscriptions)
-        ? data.webPushSubscriptions
-        : [];
+      // ✅ 단순화: 토큰/구독 배열이 비어있지 않으면 ON
+      const pushTokens = Array.isArray(data.pushTokens) ? data.pushTokens : [];
+      const webPushSubs = Array.isArray(data.webPushSubscriptions) ? data.webPushSubscriptions : [];
 
-      const hasTokenForThisDevice =
-        pushTokens.some(token => token.deviceId === deviceId) ||
-        webPushSubs.some(sub => sub.deviceId === deviceId);
+      const hasAnyToken = pushTokens.length > 0 || webPushSubs.length > 0;
 
-      logger.info('[NotificationToggle] Status check (device-specific)', {
+      logger.info('[NotificationToggle] Status check (simplified)', {
         participantId,
-        deviceId,
-        hasTokenForThisDevice,
-        totalTokens: pushTokens.length,
-        totalWebPushSubs: webPushSubs.length,
+        hasAnyToken,
+        pushTokensCount: pushTokens.length,
+        webPushSubsCount: webPushSubs.length,
       });
 
-      setIsEnabled(hasTokenForThisDevice);
+      setIsEnabled(hasAnyToken);
 
       // 브라우저 권한이 명시적으로 denied면 정리
-      if (hasTokenForThisDevice && getNotificationPermission() === 'denied') {
+      if (hasAnyToken && getNotificationPermission() === 'denied') {
         logger.warn('[NotificationToggle] Permission denied, cleaning up');
         await removePushTokenFromFirestore(participantId);
         setIsEnabled(false);

@@ -307,12 +307,17 @@ export async function getFCMToken(messaging: Messaging): Promise<string | null> 
 }
 
 /**
- * Save push token to Firestore participant document (Multi-device support)
+ * Save push token to Firestore participant document (Single device - simplified)
  *
- * This function manages push tokens for multiple devices:
- * 1. Generates or retrieves device ID
- * 2. Removes old token entry for this device (if exists)
- * 3. Adds new token entry with current timestamp and type
+ * 단순화 전략:
+ * 1. 기존 모든 토큰/구독 삭제
+ * 2. 현재 기기의 토큰만 저장
+ * 3. deviceId 불필요 (마지막 기기만 유효)
+ *
+ * 장점:
+ * - deviceId 불일치 문제 완전 제거
+ * - localStorage 의존성 최소화
+ * - 토글 ON/OFF 확실하게 작동
  *
  * @param participantId - Participant ID
  * @param token - FCM token or Web Push endpoint
@@ -328,42 +333,27 @@ export async function savePushTokenToFirestore(
     const db = getDb();
     const participantRef = doc(db, 'participants', participantId);
 
-    // ✅ Use Firestore transaction to prevent race conditions
-    await runTransaction(db, async (transaction) => {
-      const participantSnap = await transaction.get(participantRef);
-      const currentData = participantSnap.exists() ? participantSnap.data() : {};
-      const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
+    // ✅ 단순화: 기존 토큰 전부 삭제 후 현재 토큰만 저장
+    const newTokenEntry: PushTokenEntry = {
+      deviceId,
+      type,
+      token,
+      updatedAt: Timestamp.now(),
+      userAgent: navigator.userAgent,
+      lastUsedAt: Timestamp.now(),
+    };
 
-      // Filter out ALL tokens for this device
-      const tokensForOtherDevices = existingTokens.filter((entry) => entry.deviceId !== deviceId);
-
-      // Create new token entry with type
-      const newTokenEntry: PushTokenEntry = {
-        deviceId,
-        type, // Add channel type
-        token,
-        updatedAt: Timestamp.now(),
-        userAgent: navigator.userAgent,
-        lastUsedAt: Timestamp.now(),
-      };
-
-      // Build updated array
-      const updatedTokens = [...tokensForOtherDevices, newTokenEntry];
-
-      // Update in transaction (atomic)
-      transaction.update(participantRef, {
-        pushTokens: updatedTokens,
-        // Legacy field for backward compatibility
-        pushToken: token,
-        pushTokenUpdatedAt: Timestamp.now(),
-        // Enable push notifications
-        pushNotificationEnabled: true,
-      });
+    await updateDoc(participantRef, {
+      pushTokens: [newTokenEntry], // ✅ 배열에 1개만 (기존 전부 대체)
+      pushToken: token,
+      pushTokenUpdatedAt: Timestamp.now(),
+      pushNotificationEnabled: true,
     });
 
-    logger.info('Push token saved to Firestore (multi-device)', {
+    logger.info('Push token saved to Firestore (single device)', {
       participantId,
       deviceId,
+      type,
       tokenPrefix: token.substring(0, 20) + '...',
     });
   } catch (error) {
@@ -444,136 +434,52 @@ export async function getPushTokenFromFirestore(
 }
 
 /**
- * Remove push token for current device
+ * Remove all push tokens (simplified - single device strategy)
  *
- * Platform-specific removal:
- * - Web Push (iOS): Use DELETE /api/push-subscriptions (Admin SDK)
- * - FCM (Android): Use Client SDK Transaction
+ * 단순화 전략:
+ * - 모든 토큰/구독 완전 삭제
+ * - pushNotificationEnabled = false
+ * - deviceId/채널 구분 불필요
  *
  * @param participantId - Participant ID
  */
 export async function removePushTokenFromFirestore(
   participantId: string
 ): Promise<void> {
-  const deviceId = getDeviceId();
-  const channel = detectPushChannel();
-
   try {
-    // Web Push (iOS): Use Admin SDK via API
-    if (channel === 'webpush') {
-      logger.info('[removePushTokenFromFirestore] Removing Web Push via API', {
-        participantId,
-        deviceId,
-      });
+    const db = getDb();
+    const participantRef = doc(db, 'participants', participantId);
 
-      // Get current subscription endpoint before unsubscribing
-      let subscriptionEndpoint: string | undefined;
-      try {
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            const subscription = await registration.pushManager.getSubscription();
-            if (subscription) {
-              subscriptionEndpoint = subscription.endpoint;
-            }
+    // ✅ 단순화: 모든 토큰/구독 삭제
+    await updateDoc(participantRef, {
+      pushTokens: [],
+      webPushSubscriptions: [],
+      pushNotificationEnabled: false,
+      pushToken: deleteField(),
+      pushTokenUpdatedAt: deleteField(),
+    });
+
+    logger.info('[removePushTokenFromFirestore] All push tokens removed', {
+      participantId,
+    });
+
+    // ✅ 브라우저 PushManager에서도 구독 해제 (Web Push)
+    try {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          const subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            await subscription.unsubscribe();
+            logger.info('[removePushTokenFromFirestore] Browser subscription unsubscribed');
           }
         }
-      } catch (error) {
-        logger.warn('[removePushTokenFromFirestore] Failed to get subscription endpoint', error);
       }
-
-      // Call DELETE API (requires authentication)
-      const headers = await buildAuthorizedJsonHeaders();
-      if (!headers) {
-        throw new Error('Authentication required to remove Web Push subscription');
-      }
-
-      const response = await fetch('/api/push-subscriptions', {
-        method: 'DELETE',
-        headers,
-        body: JSON.stringify({
-          participantId,
-          deviceId,
-          subscriptionEndpoint,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(`Failed to remove Web Push: ${errorData.error || response.statusText}`);
-      }
-
-      logger.info('[removePushTokenFromFirestore] Web Push removed via API');
-
-      // Unsubscribe from browser PushManager
-      try {
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            const subscription = await registration.pushManager.getSubscription();
-            if (subscription) {
-              await subscription.unsubscribe();
-              logger.info('[removePushTokenFromFirestore] Web Push subscription unsubscribed');
-            }
-          }
-        }
-      } catch (error) {
-        logger.warn('[removePushTokenFromFirestore] Failed to unsubscribe Web Push (non-critical)', error);
-      }
-
-      return;
+    } catch (error) {
+      logger.warn('[removePushTokenFromFirestore] Failed to unsubscribe (non-critical)', error);
     }
-
-    // FCM (Android): Use Client SDK Transaction
-    logger.info('[removePushTokenFromFirestore] Removing FCM via Client SDK', {
-      participantId,
-      deviceId,
-    });
-
-    const participantRef = doc(getDb(), 'participants', participantId);
-
-    // Use transaction to prevent race conditions
-    await runTransaction(getDb(), async (transaction) => {
-      const participantSnap = await transaction.get(participantRef);
-      if (!participantSnap.exists()) {
-        logger.warn('[removePushTokenFromFirestore] Participant not found', { participantId });
-        return;
-      }
-
-      const currentData = participantSnap.data();
-      const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
-      const existingWebPushSubs = currentData.webPushSubscriptions || [];
-
-      // Filter out FCM tokens for current device
-      const tokensForOtherDevices = existingTokens.filter(
-        (entry) => entry.deviceId !== deviceId
-      );
-
-      // Calculate total tokens (FCM only, Web Push handled via API)
-      const totalTokensRemaining = tokensForOtherDevices.length + existingWebPushSubs.length;
-
-      // Update with remaining tokens
-      const updates: any = {
-        pushTokens: tokensForOtherDevices,
-        // Disable push ONLY if no tokens remain
-        pushNotificationEnabled: totalTokensRemaining > 0,
-      };
-
-      // Clean up legacy fields if no tokens remain at all
-      if (totalTokensRemaining === 0) {
-        updates.pushToken = deleteField();
-        updates.pushTokenUpdatedAt = deleteField();
-      }
-
-      transaction.update(participantRef, updates);
-    });
-
-    logger.info('[removePushTokenFromFirestore] FCM token removed for device', {
-      participantId,
-      deviceId,
-    });
   } catch (error) {
-    logger.error('[removePushTokenFromFirestore] Error removing push token', error);
+    logger.error('[removePushTokenFromFirestore] Error removing push tokens', error);
     throw error;
   }
 }

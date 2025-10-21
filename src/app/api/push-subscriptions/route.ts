@@ -77,15 +77,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const currentData = participantSnap.data() || {};
-    const existingWebPushSubs: WebPushSubscriptionData[] = currentData.webPushSubscriptions || [];
-
-    // Filter out existing subscriptions for this device
-    const subsForOtherDevices = existingWebPushSubs.filter(
-      (sub: WebPushSubscriptionData) => sub.deviceId !== deviceId
-    );
-
-    // Create new Web Push subscription entry
+    // ✅ 단순화: 기존 구독 전부 삭제, 현재 구독만 저장
     const newSubscription: WebPushSubscriptionData = {
       endpoint: subscription.endpoint,
       keys: {
@@ -98,9 +90,9 @@ export async function POST(request: NextRequest) {
       lastUsedAt: admin.firestore.Timestamp.now(),
     };
 
-    // Update with new webPushSubscriptions array (separate from pushTokens)
+    // ✅ 배열에 1개만 (기존 전부 대체)
     await participantRef.update({
-      webPushSubscriptions: [...subsForOtherDevices, newSubscription],
+      webPushSubscriptions: [newSubscription],
       pushNotificationEnabled: true,
     });
 
@@ -167,39 +159,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const currentData = participantSnap.data() || {};
-    const existingWebPushSubs: WebPushSubscriptionData[] = currentData.webPushSubscriptions || [];
-    const existingFCMTokens = currentData.pushTokens || [];
-
-    // Filter out Web Push subscriptions for this device
-    const subsForOtherDevices = existingWebPushSubs.filter(
-      (sub: WebPushSubscriptionData) => sub.deviceId !== deviceId
-    );
-
-    // Check if subscription was removed
-    if (subsForOtherDevices.length === existingWebPushSubs.length) {
-      return NextResponse.json(
-        { error: 'No Web Push subscription found for this device' },
-        { status: 404 }
-      );
-    }
-
-    // Calculate total tokens (Web Push + FCM)
-    const totalTokensRemaining = subsForOtherDevices.length + existingFCMTokens.length;
-
-    // Update with remaining subscriptions
-    const updates: any = {
-      webPushSubscriptions: subsForOtherDevices,
-      pushNotificationEnabled: totalTokensRemaining > 0,
-    };
-
-    // Clean up legacy fields if no tokens remain at all
-    if (totalTokensRemaining === 0) {
-      updates.pushToken = admin.firestore.FieldValue.delete();
-      updates.pushTokenUpdatedAt = admin.firestore.FieldValue.delete();
-    }
-
-    await participantRef.update(updates);
+    // ✅ 단순화: 모든 토큰/구독 완전 삭제
+    await participantRef.update({
+      pushTokens: [],
+      webPushSubscriptions: [],
+      pushNotificationEnabled: false,
+      pushToken: admin.firestore.FieldValue.delete(),
+      pushTokenUpdatedAt: admin.firestore.FieldValue.delete(),
+    });
 
     return NextResponse.json({
       success: true,

@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 import { getMessaging } from 'firebase/messaging';
 import { getFirebaseApp } from '@/lib/firebase';
-import { initializePushNotifications, getDeviceId } from '@/lib/firebase/messaging';
-import { isPushEnabledForDevice, isPushEnabledForEndpoint } from '@/lib/push/helpers';
-import { getCurrentWebPushSubscription } from '@/lib/firebase/webpush';
+import { initializePushNotifications } from '@/lib/firebase/messaging';
 import { doc, getDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase/client';
 import { logger } from '@/lib/logger';
@@ -69,43 +67,27 @@ export function NotificationPrompt() {
       }
 
       try {
-        // 1. Firestore에서 현재 브라우저의 푸시 상태 확인 (endpoint 기반)
+        // 1. Firestore에서 푸시 토큰 존재 여부 확인 (단순화)
         const participantRef = doc(getDb(), 'participants', participantId);
         const participantSnap = await getDoc(participantRef);
 
         if (participantSnap.exists()) {
           const data = participantSnap.data();
 
-          // ✅ Web Push 구독 확인 (endpoint 기반, localStorage 불필요)
-          const subscription = await getCurrentWebPushSubscription();
+          // ✅ 단순화: 토큰/구독 배열이 비어있지 않으면 이미 설정됨
+          const pushTokens = Array.isArray(data.pushTokens) ? data.pushTokens : [];
+          const webPushSubs = Array.isArray(data.webPushSubscriptions) ? data.webPushSubscriptions : [];
+          const hasAnyToken = pushTokens.length > 0 || webPushSubs.length > 0;
 
-          let isPushEnabled = false;
+          logger.info('[NotificationPrompt] Status check (simplified)', {
+            participantId,
+            hasAnyToken,
+            pushTokensCount: pushTokens.length,
+            webPushSubsCount: webPushSubs.length,
+          });
 
-          if (subscription) {
-            // Web Push endpoint로 확인 (가장 안정적)
-            isPushEnabled = isPushEnabledForEndpoint(data, subscription.endpoint);
-
-            logger.info('[NotificationPrompt] Status check (Web Push)', {
-              participantId,
-              endpoint: subscription.endpoint.substring(0, 50) + '...',
-              isPushEnabled,
-            });
-          } else {
-            // Web Push 없으면 FCM deviceId로 폴백
-            const deviceId = getDeviceId();
-            isPushEnabled = isPushEnabledForDevice(data, deviceId);
-
-            logger.info('[NotificationPrompt] Status check (FCM fallback)', {
-              participantId,
-              deviceId,
-              isPushEnabled,
-            });
-          }
-
-          if (isPushEnabled) {
-            logger.info('[NotificationPrompt] User already has push enabled, skipping prompt', {
-              participantId,
-            });
+          if (hasAnyToken) {
+            logger.info('[NotificationPrompt] User already has push enabled, skipping prompt');
             setIsCheckingToken(false);
             return;
           }
