@@ -28,9 +28,13 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.vercel.production
 
 # vercel
 .vercel
+
+# firebase
+firebase-debug.log
 
 # typescript
 *.tsbuildinfo
