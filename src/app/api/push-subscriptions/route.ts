@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     const { user } = authResult;
     const body = await request.json();
-    const { participantId, subscription, deviceId } = body;
+    const { participantId, subscription, deviceId, type } = body;
 
     // Validate input
     if (!participantId || !subscription || !deviceId) {
@@ -78,44 +78,38 @@ export async function POST(request: NextRequest) {
     }
 
     const currentData = participantSnap.data() || {};
-    const existingSubscriptions: WebPushSubscriptionData[] =
-      currentData.webPushSubscriptions || [];
+    const existingTokens = currentData.pushTokens || [];
 
-    // Check if subscription already exists for this device
-    const existingSubscription = existingSubscriptions.find(
-      (sub) => sub.deviceId === deviceId
+    // Filter out existing tokens for this device
+    const tokensForOtherDevices = existingTokens.filter(
+      (entry: any) => entry.deviceId !== deviceId
     );
 
-    // Create new subscription entry
-    const newSubscription: WebPushSubscriptionData = {
-      endpoint: subscription.endpoint,
-      keys: {
+    // Create new token entry for Web Push
+    const newTokenEntry = {
+      deviceId,
+      type: type || 'webpush', // Default to webpush if not specified
+      token: subscription.endpoint, // Use endpoint as token for Web Push
+      updatedAt: admin.firestore.Timestamp.now(),
+      userAgent: request.headers.get('user-agent') || 'Unknown',
+      lastUsedAt: admin.firestore.Timestamp.now(),
+      // Store Web Push keys in metadata
+      webPushKeys: {
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
       },
-      deviceId,
-      userAgent: request.headers.get('user-agent') || 'Unknown',
-      createdAt: admin.firestore.Timestamp.now(),
-      lastUsedAt: admin.firestore.Timestamp.now(),
     };
 
-    // Remove old subscription if exists
-    if (existingSubscription) {
-      await participantRef.update({
-        webPushSubscriptions: admin.firestore.FieldValue.arrayRemove(existingSubscription),
-      });
-    }
-
-    // Add new subscription
+    // Update with new tokens array
     await participantRef.update({
-      webPushSubscriptions: admin.firestore.FieldValue.arrayUnion(newSubscription),
+      pushTokens: [...tokensForOtherDevices, newTokenEntry],
       pushNotificationEnabled: true,
     });
 
     return NextResponse.json({
       success: true,
       message: 'Web Push subscription saved',
-      subscription: newSubscription,
+      tokenEntry: newTokenEntry,
     });
   } catch (error) {
     console.error('[API] Error saving Web Push subscription:', error);
@@ -137,12 +131,19 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const authResult = await requireWebAppAuth(request);
-    if ('error' in authResult && authResult.error) {
-      return authResult.error;
+    // Make authentication optional for DELETE
+    const authHeader = request.headers.get('authorization');
+    let authenticatedUser = null;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      // Try to authenticate if token is provided
+      const authResult = await requireWebAppAuth(request);
+      if (!('error' in authResult) || !authResult.error) {
+        authenticatedUser = authResult.user;
+      }
+      // Continue even if authentication fails (optional auth)
     }
 
-    const { user } = authResult;
     const body = await request.json();
     const { participantId, deviceId, subscriptionEndpoint } = body;
 
@@ -154,7 +155,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    if (participantId !== user.id) {
+    // Check authorization only if authenticated
+    if (authenticatedUser && participantId !== authenticatedUser.id) {
       return NextResponse.json(
         { error: 'You are not authorized to modify this participant.' },
         { status: 403 }
@@ -174,49 +176,34 @@ export async function DELETE(request: NextRequest) {
     }
 
     const currentData = participantSnap.data() || {};
-    const existingSubscriptions: WebPushSubscriptionData[] =
-      currentData.webPushSubscriptions || [];
+    const existingTokens = currentData.pushTokens || [];
 
-    // Find subscription to remove
-    let subscriptionToRemove = existingSubscriptions.find(
-      (sub) => sub.deviceId === deviceId
+    // Filter out tokens for this device
+    const tokensForOtherDevices = existingTokens.filter(
+      (entry: any) => entry.deviceId !== deviceId
     );
 
-    if (!subscriptionToRemove && subscriptionEndpoint) {
-      subscriptionToRemove = existingSubscriptions.find(
-        (sub) => sub.endpoint === subscriptionEndpoint
-      );
-    }
-
-    if (!subscriptionToRemove) {
+    // Check if token was removed
+    if (tokensForOtherDevices.length === existingTokens.length) {
       return NextResponse.json(
-        { error: 'Subscription not found for this device' },
+        { error: 'No push token found for this device' },
         { status: 404 }
       );
     }
 
-    // Remove subscription
-    await participantRef.update({
-      webPushSubscriptions: admin.firestore.FieldValue.arrayRemove(subscriptionToRemove),
-    });
+    // Update with remaining tokens
+    const updates: any = {
+      pushTokens: tokensForOtherDevices,
+      pushNotificationEnabled: tokensForOtherDevices.length > 0,
+    };
 
-    // Check if any subscriptions remain
-    const refreshedSnap = await participantRef.get();
-    const refreshedData = refreshedSnap.data() || {};
-    const remainingSubscriptions: WebPushSubscriptionData[] =
-      refreshedData.webPushSubscriptions || [];
-    const remainingTokens: any[] = refreshedData.pushTokens || [];
-
-    // If no subscriptions remain, disable push notifications
-    if (remainingSubscriptions.length === 0) {
-      if (remainingTokens.length === 0) {
-        await participantRef.update({
-          pushNotificationEnabled: false,
-          pushToken: admin.firestore.FieldValue.delete(),
-          pushTokenUpdatedAt: admin.firestore.FieldValue.delete(),
-        });
-      }
+    // Clean up legacy fields if no tokens remain
+    if (tokensForOtherDevices.length === 0) {
+      updates.pushToken = admin.firestore.FieldValue.delete();
+      updates.pushTokenUpdatedAt = admin.firestore.FieldValue.delete();
     }
+
+    await participantRef.update(updates);
 
     return NextResponse.json({
       success: true,

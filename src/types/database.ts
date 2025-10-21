@@ -73,11 +73,12 @@ export interface BookHistoryEntry {
 }
 
 /**
- * 푸시 알림 토큰 정보 (멀티 디바이스 지원) - FCM 전용
+ * 푸시 알림 토큰 정보 (멀티 디바이스 지원) - FCM + Web Push 통합
  */
 export interface PushTokenEntry {
   deviceId: string; // 디바이스 고유 ID (브라우저 fingerprint)
-  token: string; // FCM 푸시 토큰
+  type: 'fcm' | 'webpush'; // 푸시 채널 타입 (Android=fcm, iOS=webpush)
+  token: string; // FCM 토큰 또는 Web Push endpoint
   updatedAt: Timestamp; // 토큰 마지막 갱신 시간
   userAgent?: string; // User Agent 정보 (디바이스 식별용)
   lastUsedAt?: Timestamp; // 마지막 사용 시간 (토큰 만료 판별용)

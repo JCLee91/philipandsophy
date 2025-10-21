@@ -275,7 +275,7 @@ function ParticipantsPageContent() {
         </main>
 
         <div className="border-t bg-white">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-4 py-4">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-4 pt-4 pb-[60px]">
             <UnifiedButton
               variant="destructive"
               onClick={logout}
