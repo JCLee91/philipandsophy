@@ -267,7 +267,7 @@ export default function ParticipantsList({
           </div>
 
           {/* 로그아웃 버튼 - 하단 고정 */}
-          <div className="border-t px-4 pt-4 pb-[86px]">
+          <div className="border-t px-4 pt-4 pb-[40px]">
             <button
               type="button"
               onClick={logout}

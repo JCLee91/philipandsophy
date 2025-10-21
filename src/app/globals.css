@@ -241,7 +241,7 @@
 
 .app-footer {
   padding-top: 16px;
-  padding-bottom: 86px;
+  padding-bottom: 40px;
 }
 
 /* 모든 버튼과 인터랙티브 요소에 cursor pointer 적용 - utilities 레이어로 최상위 우선순위 보장 */

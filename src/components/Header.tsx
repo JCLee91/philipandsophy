@@ -23,7 +23,7 @@ export default function Header({
   const { data: unreadCount = 0 } = useTotalUnreadCount(participant?.id || '');
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-area-header">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background safe-area-header">
       <div className="container flex h-14 items-center justify-center relative px-6">
         {/* Left side - Settings icon */}
         <div className="absolute left-6 flex items-center gap-2">

@@ -9,7 +9,7 @@ interface BackHeaderProps {
 
 export default function BackHeader({ onBack, title }: BackHeaderProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur safe-area-header">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background safe-area-header">
       <div className="container mx-auto flex h-14 max-w-2xl items-center px-6 relative">
         <button
           type="button"
