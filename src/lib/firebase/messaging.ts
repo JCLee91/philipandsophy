@@ -594,11 +594,27 @@ export async function initializePushNotifications(
     const fcmSupported = await isFCMSupported();
     const webPushSupported = isWebPushSupported();
 
-    // ✅ Strategy 1: Try FCM (Android Chrome PWA, Desktop Chrome/Edge/Firefox PWA)
-    // Safari (iOS/Desktop) will skip this due to isSupported() returning false
-    // Chrome browser tabs are already blocked by standalone check above
-    if (fcmSupported && messaging) {
-      logger.info('[initializePushNotifications] Platform supports FCM, using FCM token (PWA only)');
+    // ✅ Detect iOS/Apple devices
+    const isiOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+
+    // ✅ Clear strategy: Android PWA uses FCM, iOS PWA uses Web Push
+    const shouldUseFcm = isStandalone && fcmSupported && !isiOS;
+    const shouldUseWebPush = isStandalone && isiOS;
+
+    logger.info('[initializePushNotifications] Platform detection', {
+      isStandalone,
+      isiOS,
+      fcmSupported,
+      webPushSupported,
+      shouldUseFcm,
+      shouldUseWebPush,
+    });
+
+    // ✅ Strategy 1: FCM for Android PWA ONLY
+    if (shouldUseFcm && messaging) {
+      logger.info('[initializePushNotifications] Using FCM (Android PWA)');
       token = await getFCMToken(messaging);
 
       if (token) {
@@ -606,15 +622,13 @@ export async function initializePushNotifications(
         cleanup = setupForegroundMessageHandler(messaging);
         logger.info('FCM push notifications initialized', { participantId, deviceId });
       }
-    } else if (fcmSupported && !messaging) {
-      logger.warn('[initializePushNotifications] FCM supported but messaging instance not provided');
+    } else if (shouldUseFcm && !messaging) {
+      logger.warn('[initializePushNotifications] FCM required but messaging instance not provided');
     }
 
-    // ✅ Strategy 2: Try Web Push (iOS Safari PWA ONLY)
-    // Safari will use ONLY this path (FCM not supported)
-    // Android/Desktop Chrome skip this (FCM already working)
-    if (webPushSupported && !fcmSupported) {
-      logger.info('[initializePushNotifications] FCM not supported, using Web Push fallback');
+    // ✅ Strategy 2: Web Push for iOS PWA ONLY
+    if (shouldUseWebPush && webPushSupported) {
+      logger.info('[initializePushNotifications] Using Web Push (iOS PWA)');
 
       const vapidKey = process.env.NEXT_PUBLIC_WEBPUSH_VAPID_KEY;
       if (!vapidKey) {
