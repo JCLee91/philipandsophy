@@ -22,7 +22,7 @@ export const NOTIFICATION_MESSAGES = {
   /** Notice notification title */
   NOTICE_TITLE: "새로운 공지가 등록되었습니다",
 
-  /** Matching result notification title */
+  /** Daily profile book notification title */
   MATCHING_TITLE: "오늘의 프로필북이 도착했습니다",
 } as const;
 

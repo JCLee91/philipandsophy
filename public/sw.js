@@ -37,7 +37,7 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v3'; // Increment version to force update
+const CACHE_NAME = 'philipandsophy-v4'; // Increment version to force update
 const urlsToCache = [
   '/',
   '/app',

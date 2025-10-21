@@ -48,12 +48,25 @@ export default function DirectMessageDialog({
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(0);
 
-  // 항상 참가자와 admin 간의 대화 (참가자 ID 기준)
-  const conversationId = otherUser
-    ? (currentUser?.isSuperAdmin || currentUser?.isAdministrator)
-      ? getConversationId(otherUser.id)  // 관리자가 볼 때: 참가자 ID 사용
-      : getConversationId(currentUserId)  // 참가자가 볼 때: 자신의 ID 사용
-    : '';
+  // conversationId 생성 로직
+  const conversationId = useMemo(() => {
+    if (!otherUser) return '';
+
+    // admin과의 대화는 항상 현재 유저의 ID 사용
+    // (관리자 권한을 가진 참가자가 admin과 대화할 때 "admin-admin" 방지)
+    if (otherUser.id === 'admin') {
+      return getConversationId(currentUserId);
+    }
+
+    // 참가자 간 대화
+    if (currentUser?.isSuperAdmin || currentUser?.isAdministrator) {
+      // 관리자가 다른 참가자와 대화: 상대방 ID 사용
+      return getConversationId(otherUser.id);
+    }
+
+    // 일반 참가자: 자신의 ID 사용
+    return getConversationId(currentUserId);
+  }, [otherUser, currentUser, currentUserId]);
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
   const sendMessageMutation = useSendMessage();
