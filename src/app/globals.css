@@ -225,6 +225,18 @@
   max-height: var(--app-viewport-height, 100vh);
 }
 
+/* 헤더 높이 보정 - fixed 헤더 아래 컨텐츠가 헤더를 덮지 않도록 */
+.app-main-content {
+  padding-top: calc(56px + env(safe-area-inset-top));
+}
+
+/* iOS 11.2 이전 버전 호환성 */
+@supports (padding-top: constant(safe-area-inset-top)) {
+  .app-main-content {
+    padding-top: calc(56px + constant(safe-area-inset-top));
+  }
+}
+
 /* iOS PWA 모달/다이얼로그 높이 수정 */
 @supports (height: 100svh) {
   .app-shell {

@@ -78,38 +78,36 @@ export async function POST(request: NextRequest) {
     }
 
     const currentData = participantSnap.data() || {};
-    const existingTokens = currentData.pushTokens || [];
+    const existingWebPushSubs: WebPushSubscriptionData[] = currentData.webPushSubscriptions || [];
 
-    // Filter out existing tokens for this device
-    const tokensForOtherDevices = existingTokens.filter(
-      (entry: any) => entry.deviceId !== deviceId
+    // Filter out existing subscriptions for this device
+    const subsForOtherDevices = existingWebPushSubs.filter(
+      (sub: WebPushSubscriptionData) => sub.deviceId !== deviceId
     );
 
-    // Create new token entry for Web Push
-    const newTokenEntry = {
-      deviceId,
-      type: type || 'webpush', // Default to webpush if not specified
-      token: subscription.endpoint, // Use endpoint as token for Web Push
-      updatedAt: admin.firestore.Timestamp.now(),
-      userAgent: request.headers.get('user-agent') || 'Unknown',
-      lastUsedAt: admin.firestore.Timestamp.now(),
-      // Store Web Push keys in metadata
-      webPushKeys: {
+    // Create new Web Push subscription entry
+    const newSubscription: WebPushSubscriptionData = {
+      endpoint: subscription.endpoint,
+      keys: {
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
       },
+      deviceId,
+      userAgent: request.headers.get('user-agent') || 'Unknown',
+      createdAt: admin.firestore.Timestamp.now(),
+      lastUsedAt: admin.firestore.Timestamp.now(),
     };
 
-    // Update with new tokens array
+    // Update with new webPushSubscriptions array (separate from pushTokens)
     await participantRef.update({
-      pushTokens: [...tokensForOtherDevices, newTokenEntry],
+      webPushSubscriptions: [...subsForOtherDevices, newSubscription],
       pushNotificationEnabled: true,
     });
 
     return NextResponse.json({
       success: true,
       message: 'Web Push subscription saved',
-      tokenEntry: newTokenEntry,
+      subscription: newSubscription,
     });
   } catch (error) {
     console.error('[API] Error saving Web Push subscription:', error);
@@ -176,29 +174,33 @@ export async function DELETE(request: NextRequest) {
     }
 
     const currentData = participantSnap.data() || {};
-    const existingTokens = currentData.pushTokens || [];
+    const existingWebPushSubs: WebPushSubscriptionData[] = currentData.webPushSubscriptions || [];
+    const existingFCMTokens = currentData.pushTokens || [];
 
-    // Filter out tokens for this device
-    const tokensForOtherDevices = existingTokens.filter(
-      (entry: any) => entry.deviceId !== deviceId
+    // Filter out Web Push subscriptions for this device
+    const subsForOtherDevices = existingWebPushSubs.filter(
+      (sub: WebPushSubscriptionData) => sub.deviceId !== deviceId
     );
 
-    // Check if token was removed
-    if (tokensForOtherDevices.length === existingTokens.length) {
+    // Check if subscription was removed
+    if (subsForOtherDevices.length === existingWebPushSubs.length) {
       return NextResponse.json(
-        { error: 'No push token found for this device' },
+        { error: 'No Web Push subscription found for this device' },
         { status: 404 }
       );
     }
 
-    // Update with remaining tokens
+    // Calculate total tokens (Web Push + FCM)
+    const totalTokensRemaining = subsForOtherDevices.length + existingFCMTokens.length;
+
+    // Update with remaining subscriptions
     const updates: any = {
-      pushTokens: tokensForOtherDevices,
-      pushNotificationEnabled: tokensForOtherDevices.length > 0,
+      webPushSubscriptions: subsForOtherDevices,
+      pushNotificationEnabled: totalTokensRemaining > 0,
     };
 
-    // Clean up legacy fields if no tokens remain
-    if (tokensForOtherDevices.length === 0) {
+    // Clean up legacy fields if no tokens remain at all
+    if (totalTokensRemaining === 0) {
       updates.pushToken = admin.firestore.FieldValue.delete();
       updates.pushTokenUpdatedAt = admin.firestore.FieldValue.delete();
     }

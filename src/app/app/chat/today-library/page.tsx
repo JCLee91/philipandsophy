@@ -171,7 +171,7 @@ function TodayLibraryContent() {
         <div className="app-shell flex flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
-          <main className="flex-1 overflow-y-auto bg-background">
+          <main className="app-main-content flex-1 overflow-y-auto bg-background">
             <div className="mx-auto max-w-md px-4 w-full">
               <div className="pt-12 pb-6">
                 <div className="flex flex-col gap-12">
@@ -261,7 +261,7 @@ function TodayLibraryContent() {
           <HeaderNavigation title="오늘의 서재" />
 
           {/* Main Content */}
-          <main className="flex-1 overflow-y-auto bg-background">
+          <main className="app-main-content flex-1 overflow-y-auto bg-background">
             <div className="mx-auto max-w-md px-4 w-full">
               <div className="pt-12 pb-6">
                 {/* Header Section */}
@@ -340,7 +340,7 @@ function TodayLibraryContent() {
         <div className="app-shell flex flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
-          <main className="flex flex-1 overflow-y-auto items-center justify-center bg-background">
+          <main className="app-main-content flex flex-1 overflow-y-auto items-center justify-center bg-background">
             <div className="mx-auto max-w-md px-6">
               <div className="text-center space-y-6">
                 {/* Empty State Icon */}

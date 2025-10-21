@@ -381,7 +381,7 @@ function ChatPageContent() {
 
         {/* 고정 공지 영역 - 항상 최상단 고정 (flex-col-reverse 영향 받지 않음) */}
         {pinnedNotices.length > 0 && (
-          <div className="sticky top-0 z-40 border-b border-primary/20 shadow-sm bg-background">
+          <div className="sticky z-40 border-b border-primary/20 shadow-sm bg-background" style={{ top: 'calc(56px + env(safe-area-inset-top))' }}>
             {pinnedNotices.map((notice, index) => (
               <div
                 key={notice.id}
@@ -406,7 +406,7 @@ function ChatPageContent() {
         )}
 
         {/* 일반 공지 영역 - flex-col-reverse로 최신 공지가 아래로 */}
-        <main className="relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
+        <main className="app-main-content relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
           {/* 일반 공지 영역 - 날짜별 그룹 */}
           {sortedGroupedNotices.map(([date, groupData], groupIndex) => {
             const { notices: dateNotices } = groupData as { date: Date; notices: Notice[] };

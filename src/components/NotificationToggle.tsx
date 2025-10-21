@@ -165,27 +165,46 @@ export function NotificationToggle() {
       setIsLoading(true);
       setErrorMessage(null);
 
-      // 1. Firestore에서 토큰 제거
-      await removePushTokenFromFirestore(participantId);
+      const channel = detectPushChannel();
 
-      // 2. FCM 토큰 삭제 시도 (선택사항)
-      try {
-        const channel = detectPushChannel();
-        if (channel === 'fcm') {
+      // 1. 채널별 토큰/구독 제거
+      if (channel === 'fcm') {
+        // FCM: Firestore에서 토큰 제거
+        await removePushTokenFromFirestore(participantId);
+
+        // FCM 서버에서도 토큰 삭제 시도
+        try {
           const messaging = getMessaging(getFirebaseApp());
           await deleteToken(messaging);
+        } catch (error) {
+          logger.warn('[disableNotifications] FCM delete failed (non-critical)', error);
         }
-      } catch (error) {
-        logger.warn('[disableNotifications] FCM delete failed (non-critical)', error);
+      } else if (channel === 'webpush') {
+        // Web Push: API 호출로 Firestore에서 구독 제거
+        const { getDeviceId } = await import('@/lib/firebase/messaging');
+        const deviceId = getDeviceId();
+
+        const headers = { 'Content-Type': 'application/json' };
+        await fetch('/api/push-subscriptions', {
+          method: 'DELETE',
+          headers,
+          body: JSON.stringify({
+            participantId,
+            deviceId,
+          }),
+        });
+
+        // PushSubscription unsubscribe (removePushTokenFromFirestore 내부에서 처리됨)
+        await removePushTokenFromFirestore(participantId);
       }
 
-      // 3. Cleanup
+      // 2. Cleanup
       if (cleanup) {
         cleanup();
         setCleanup(null);
       }
 
-      // 4. 상태 재확인
+      // 3. 상태 재확인
       await checkNotificationStatus(participantId);
     } catch (error) {
       logger.error('[disableNotifications] Error', error);

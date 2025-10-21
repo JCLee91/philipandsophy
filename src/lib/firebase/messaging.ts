@@ -482,20 +482,24 @@ export async function removePushTokenFromFirestore(
       deviceId,
     });
 
-    // Try to unsubscribe from browser push (best-effort, non-critical)
-    try {
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        const registration = await navigator.serviceWorker.getRegistration();
-        if (registration) {
-          const subscription = await registration.pushManager.getSubscription();
-          if (subscription) {
-            await subscription.unsubscribe();
-            logger.info('[removePushTokenFromFirestore] Browser push subscription unsubscribed');
+    // Unsubscribe from browser PushManager ONLY for Web Push channel
+    // (FCM also uses PushSubscription internally, so unsubscribing breaks FCM)
+    const channel = detectPushChannel();
+    if (channel === 'webpush') {
+      try {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            const subscription = await registration.pushManager.getSubscription();
+            if (subscription) {
+              await subscription.unsubscribe();
+              logger.info('[removePushTokenFromFirestore] Web Push subscription unsubscribed');
+            }
           }
         }
+      } catch (error) {
+        logger.warn('[removePushTokenFromFirestore] Failed to unsubscribe Web Push (non-critical)', error);
       }
-    } catch (error) {
-      logger.warn('[removePushTokenFromFirestore] Failed to unsubscribe browser push (non-critical)', error);
     }
   } catch (error) {
     logger.error('[removePushTokenFromFirestore] Error removing push token', error);
@@ -562,27 +566,28 @@ async function initializeWebPush(
       return null;
     }
 
-    // Save Web Push subscription with type
+    // Save Web Push subscription with type (requires authentication)
     const headers = await buildAuthorizedJsonHeaders();
-    if (headers) {
-      const response = await fetch('/api/push-subscriptions', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          participantId,
-          subscription: subscription.toJSON(),
-          deviceId: getDeviceId(),
-          type: 'webpush', // Add type field
-        }),
-      });
+    if (!headers) {
+      logger.error('[initializeWebPush] No auth headers - user not logged in');
+      throw new Error('Authentication required for Web Push subscription');
+    }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        logger.error('[initializeWebPush] Failed to save subscription', errorData);
-        return null;
-      }
-    } else {
-      logger.warn('[initializeWebPush] No auth headers, subscription not saved to Firestore');
+    const response = await fetch('/api/push-subscriptions', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        participantId,
+        subscription: subscription.toJSON(),
+        deviceId: getDeviceId(),
+        type: 'webpush', // Add type field
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      logger.error('[initializeWebPush] Failed to save subscription', errorData);
+      throw new Error(`Failed to save Web Push subscription: ${errorData.error || 'Unknown error'}`);
     }
 
     logger.info('[initializeWebPush] Web Push initialized successfully', {
