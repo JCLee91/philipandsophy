@@ -111,28 +111,19 @@ export function NotificationPrompt() {
           }
         }
 
-        // 2. localStorage에서 거부 이력 확인 (디바이스별)
-        const hasDeclinedBefore = localStorage.getItem('notification-declined');
-        logger.debug('[NotificationPrompt] Has declined before:', hasDeclinedBefore);
+        // 2. 조건: Firestore에 토큰 없음 (localStorage 무시)
+        // - permission 상관없이 Firestore 기준으로만 판단
+        // - "나중에" 클릭해도 다음번에 또 프롬프트 표시 (설정에서 끄면 됨)
+        logger.debug('[NotificationPrompt] Will show prompt after delay (Firestore has no token)');
 
-        // 3. 조건: permission === 'default' AND 거부 이력 없음 AND Firestore에 토큰 없음
-        if (Notification.permission === 'default' && !hasDeclinedBefore) {
-          logger.debug('[NotificationPrompt] Will show prompt after delay');
-          // 페이지 로드 후 일정 시간 뒤에 프롬프트 표시
-          const timer = setTimeout(() => {
-            logger.info('[NotificationPrompt] Showing prompt now');
-            setShowPrompt(true);
-            setIsCheckingToken(false);
-          }, UI_CONSTANTS.NOTIFICATION_PROMPT_DELAY);
-
-          cleanup = () => clearTimeout(timer);
-        } else {
-          logger.debug('[NotificationPrompt] Will NOT show prompt', {
-            permission: Notification.permission,
-            hasDeclined: hasDeclinedBefore,
-          });
+        // 페이지 로드 후 일정 시간 뒤에 프롬프트 표시
+        const timer = setTimeout(() => {
+          logger.info('[NotificationPrompt] Showing prompt now');
+          setShowPrompt(true);
           setIsCheckingToken(false);
-        }
+        }, UI_CONSTANTS.NOTIFICATION_PROMPT_DELAY);
+
+        cleanup = () => clearTimeout(timer);
       } catch (error) {
         logger.error('[NotificationPrompt] Error checking push token', error);
         setIsCheckingToken(false);
@@ -185,32 +176,21 @@ export function NotificationPrompt() {
             participantId: capturedParticipantId,
           });
 
-          // 3. 테스트 알림 전송 (최초 1회만) - SW showNotification 사용
-          const hasShownTestNotification = localStorage.getItem('notification-test-shown');
-
-          if (!hasShownTestNotification) {
-            try {
-              // Service Worker를 통한 알림 표시 (안정적)
-              const registration = await navigator.serviceWorker.ready;
-              await registration.showNotification('필립앤소피', {
-                body: '알림이 활성화되었습니다 🎉',
-                icon: '/image/app-icon.webp',
-                badge: '/image/badge-icon.webp',
-                tag: 'welcome-notification',
-                requireInteraction: false,
-              });
-
-              // 테스트 알림 표시 완료 플래그 저장
-              localStorage.setItem('notification-test-shown', 'true');
-              logger.info('First-time test notification sent via Service Worker');
-            } catch (notificationError) {
-              // 알림 표시 실패해도 전체 흐름은 계속 진행
-              logger.warn('Test notification failed, but push token was saved', notificationError);
-              // 실패해도 플래그 저장 (다음번에 재시도하지 않도록)
-              localStorage.setItem('notification-test-shown', 'true');
-            }
-          } else {
-            logger.info('Test notification skipped (already shown before)');
+          // 3. 환영 알림 표시 (localStorage 사용 안 함)
+          try {
+            // Service Worker를 통한 알림 표시
+            const registration = await navigator.serviceWorker.ready;
+            await registration.showNotification('필립앤소피', {
+              body: '알림이 활성화되었습니다 🎉',
+              icon: '/image/app-icon.webp',
+              badge: '/image/badge-icon.webp',
+              tag: 'welcome-notification',
+              requireInteraction: false,
+            });
+            logger.info('Welcome notification sent via Service Worker');
+          } catch (notificationError) {
+            // 알림 표시 실패해도 전체 흐름은 계속 진행
+            logger.warn('Welcome notification failed, but push token was saved', notificationError);
           }
         } else {
           logger.error('Failed to get FCM token');
@@ -222,8 +202,7 @@ export function NotificationPrompt() {
         }
       } else if (result === 'denied') {
         logger.warn('Notification permission denied', { result });
-        // localStorage에 거부 이력 저장하여 다시 표시 안 함
-        localStorage.setItem('notification-declined', 'true');
+        // 브라우저 설정에서 차단됨 - 프롬프트만 닫기 (localStorage 사용 안 함)
       }
     } catch (error) {
       logger.error('Error requesting notification permission', error);
@@ -239,7 +218,8 @@ export function NotificationPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('notification-declined', 'true');
+    // localStorage 사용 안 함 - Firestore 기준으로만 판단
+    // 다음번 진입 시 토큰 없으면 프롬프트 다시 표시 (사용자가 설정에서 제어 가능)
   };
 
   // Cleanup on unmount

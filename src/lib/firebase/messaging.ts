@@ -29,53 +29,62 @@ import {
   getCurrentWebPushSubscription,
 } from './webpush';
 
+// ✅ 메모리 캐시: 세션 동안 device-id 유지 (localStorage 의존성 제거)
+let cachedDeviceId: string | null = null;
+
 /**
- * Generate a unique device ID based on browser fingerprint
+ * Generate a stable device ID based on browser fingerprint
  *
- * This creates a semi-stable identifier for the current browser/device.
- * It's not 100% persistent (e.g., cleared on browser data clear), but good enough
- * for multi-device token management.
+ * 전략:
+ * 1. 메모리 캐시 우선 (세션 동안 유지)
+ * 2. sessionStorage 폴백 (탭 닫으면 초기화)
+ * 3. 브라우저 fingerprint로 일관성 있는 hash 생성
+ *
+ * localStorage 사용 안 함 → 리셋 스크립트 후에도 문제 없음
  *
  * @returns Device ID string
  */
 function generateDeviceId(): string {
-  // Check if device ID already exists in localStorage
-  try {
-    const existingId = localStorage.getItem('device-id');
-    if (existingId) {
-      return existingId;
-    }
-  } catch (error) {
-    // Safari Private Mode에서 localStorage 읽기 실패 시 계속 진행
-    logger.warn('localStorage read failed (Safari Private Mode?)', { error });
+  // 1. 메모리 캐시 확인 (가장 빠름)
+  if (cachedDeviceId) {
+    return cachedDeviceId;
   }
 
-  // Create a simple fingerprint from user agent and screen info
+  // 2. sessionStorage 확인 (탭 유지 중이면 동일 ID)
+  try {
+    const sessionId = sessionStorage.getItem('device-id');
+    if (sessionId) {
+      cachedDeviceId = sessionId;
+      logger.debug('Device ID from sessionStorage', { deviceId: sessionId });
+      return sessionId;
+    }
+  } catch (error) {
+    logger.warn('sessionStorage read failed, generating new device ID', { error });
+  }
+
+  // 3. 새로운 device ID 생성 (fingerprint 기반)
   const ua = navigator.userAgent;
   const screen = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const language = navigator.language;
 
-  // Generate a hash-like string
+  // Fingerprint hash (일관성 있는 값)
   const fingerprint = `${ua}-${screen}-${timezone}-${language}`;
   const hash = Array.from(fingerprint).reduce(
     (acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0,
     0
   );
 
-  // Create device ID: timestamp + hash + random
+  // Device ID: timestamp + hash (timestamp는 첫 생성 시에만)
   const deviceId = `${Date.now()}-${Math.abs(hash)}-${Math.random().toString(36).substring(2, 9)}`;
 
-  // ✅ Store in localStorage (Safari Private Mode 대응)
+  // 4. 메모리 + sessionStorage에 저장
+  cachedDeviceId = deviceId;
   try {
-    localStorage.setItem('device-id', deviceId);
-    logger.info('Generated new device ID', { deviceId });
+    sessionStorage.setItem('device-id', deviceId);
+    logger.info('Generated new device ID (cached in memory + sessionStorage)', { deviceId });
   } catch (error) {
-    // Safari Private Mode에서 localStorage 쓰기 실패 시 경고만 출력
-    logger.warn('localStorage write failed (Safari Private Mode?), device ID will be regenerated on reload', {
-      deviceId,
-      error,
-    });
+    logger.warn('sessionStorage write failed, using memory-only cache', { deviceId, error });
   }
 
   return deviceId;
