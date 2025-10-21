@@ -18,7 +18,7 @@
 'use client';
 
 import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging';
-import { doc, updateDoc, getDoc, arrayUnion, arrayRemove, Timestamp, deleteField } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, arrayUnion, arrayRemove, Timestamp, deleteField, runTransaction } from 'firebase/firestore';
 import { getDb, getFirebaseAuth } from './client';
 import { logger } from '@/lib/logger';
 import type { PushTokenEntry, WebPushSubscriptionData } from '@/types/database';
@@ -254,37 +254,39 @@ export async function savePushTokenToFirestore(
 ): Promise<void> {
   try {
     const deviceId = getDeviceId();
-    const participantRef = doc(getDb(), 'participants', participantId);
+    const db = getDb();
+    const participantRef = doc(db, 'participants', participantId);
 
-    // Get current participant data to check existing tokens
-    const participantSnap = await getDoc(participantRef);
-    const currentData = participantSnap.exists() ? participantSnap.data() : {};
-    const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
+    // ✅ Use Firestore transaction to prevent race conditions
+    await runTransaction(db, async (transaction) => {
+      const participantSnap = await transaction.get(participantRef);
+      const currentData = participantSnap.exists() ? participantSnap.data() : {};
+      const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
 
-    // ✅ Filter out ALL tokens for this device (not just find one)
-    // This prevents duplicates caused by arrayRemove failures
-    const tokensForOtherDevices = existingTokens.filter((entry) => entry.deviceId !== deviceId);
+      // Filter out ALL tokens for this device
+      const tokensForOtherDevices = existingTokens.filter((entry) => entry.deviceId !== deviceId);
 
-    // Create new token entry
-    const newTokenEntry: PushTokenEntry = {
-      deviceId,
-      token,
-      updatedAt: Timestamp.now(),
-      userAgent: navigator.userAgent,
-      lastUsedAt: Timestamp.now(),
-    };
+      // Create new token entry
+      const newTokenEntry: PushTokenEntry = {
+        deviceId,
+        token,
+        updatedAt: Timestamp.now(),
+        userAgent: navigator.userAgent,
+        lastUsedAt: Timestamp.now(),
+      };
 
-    // ✅ Replace entire array (remove duplicates + add new)
-    const updatedTokens = [...tokensForOtherDevices, newTokenEntry];
+      // Build updated array
+      const updatedTokens = [...tokensForOtherDevices, newTokenEntry];
 
-    // Update Firestore in one atomic operation
-    await updateDoc(participantRef, {
-      pushTokens: updatedTokens,
-      // Legacy field for backward compatibility
-      pushToken: token,
-      pushTokenUpdatedAt: Timestamp.now(),
-      // Enable push notifications
-      pushNotificationEnabled: true,
+      // Update in transaction (atomic)
+      transaction.update(participantRef, {
+        pushTokens: updatedTokens,
+        // Legacy field for backward compatibility
+        pushToken: token,
+        pushTokenUpdatedAt: Timestamp.now(),
+        // Enable push notifications
+        pushNotificationEnabled: true,
+      });
     });
 
     logger.info('Push token saved to Firestore (multi-device)', {
