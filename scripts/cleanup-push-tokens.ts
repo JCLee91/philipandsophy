@@ -130,7 +130,7 @@ async function cleanupPushTokens() {
     const validPushTokens = pushTokens.filter((entry) => {
       if (!isValidPushToken(entry)) {
         invalidTokensRemoved++;
-        console.log(`  ❌ [${participantId}] Removing invalid token: ${entry.deviceId || 'unknown'}`);
+        console.log(`  ❌ [${participantId}] Removing invalid token: ${(entry as any).deviceId || 'unknown'}`);
         return false;
       }
 
