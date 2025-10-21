@@ -623,6 +623,28 @@ export async function initializePushNotifications(
         await savePushTokenToFirestore(participantId, token);
         cleanup = setupForegroundMessageHandler(messaging);
         logger.info('FCM push notifications initialized', { participantId, deviceId });
+
+        // ✅ Android에서 FCM 성공 시 기존 Web Push 구독 제거
+        try {
+          const subscription = await getCurrentWebPushSubscription();
+          if (subscription) {
+            logger.info('[initializePushNotifications] Unsubscribing from Web Push (Android uses FCM)');
+            await subscription.unsubscribe();
+
+            // Remove from Firestore
+            const headers = await buildAuthorizedJsonHeaders();
+            if (headers) {
+              await fetch('/api/push-subscriptions', {
+                method: 'DELETE',
+                headers,
+                body: JSON.stringify({ participantId, deviceId }),
+              });
+              logger.info('Web Push subscription removed (Android)');
+            }
+          }
+        } catch (error) {
+          logger.warn('Failed to remove Web Push subscription (non-critical)', error);
+        }
       }
     } else if (shouldUseFcm && !messaging) {
       logger.warn('[initializePushNotifications] FCM required but messaging instance not provided');
