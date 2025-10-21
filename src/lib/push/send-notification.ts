@@ -24,7 +24,6 @@ function initializeAdmin() {
       );
     }
 
-    console.log('[Push Notification] Initializing with environment variables');
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
@@ -56,6 +55,8 @@ export interface PushNotificationPayload {
   type?: 'dm' | 'notice' | 'matching' | 'general';
   /** Additional custom data */
   data?: Record<string, string>;
+  /** Unique tag/ID for Android notification stacking (optional, auto-generated if not provided) */
+  tag?: string;
 }
 
 /**
@@ -107,6 +108,9 @@ export async function sendPushToUser(
       return false;
     }
 
+    // ✅ Generate unique tag for Android notification stacking
+    const notificationTag = payload.tag || `${payload.type || 'general'}-${Date.now()}`;
+
     // ✅ Send to all devices using multicast
     const message: admin.messaging.MulticastMessage = {
       tokens,
@@ -120,11 +124,22 @@ export async function sendPushToUser(
         type: payload.type || 'general',
         ...payload.data,
       },
+      // ✅ Android: 고유한 태그로 알림이 쌓이도록 설정
+      android: {
+        notification: {
+          tag: notificationTag,
+          channelId: 'pns-default',
+          priority: 'high' as const,
+          icon: payload.icon || '/image/favicon.webp',
+          color: '#000000',
+        },
+      },
       webpush: {
         notification: {
           icon: payload.icon || '/image/favicon.webp',
           badge: payload.badge || '/image/favicon.webp',
           requireInteraction: false,
+          tag: notificationTag, // ✅ Web Push도 동일한 태그
         },
         fcmOptions: {
           link: payload.url || '/app/chat',
@@ -270,6 +285,9 @@ export async function sendPushToMultipleUsers(
       return 0;
     }
 
+    // ✅ Generate unique tag for Android notification stacking
+    const notificationTag = payload.tag || `${payload.type || 'general'}-${Date.now()}`;
+
     // Prepare multicast message
     const message: admin.messaging.MulticastMessage = {
       tokens,
@@ -283,11 +301,22 @@ export async function sendPushToMultipleUsers(
         type: payload.type || 'general',
         ...payload.data,
       },
+      // ✅ Android: 고유한 태그로 알림이 쌓이도록 설정
+      android: {
+        notification: {
+          tag: notificationTag,
+          channelId: 'pns-default',
+          priority: 'high' as const,
+          icon: payload.icon || '/image/favicon.webp',
+          color: '#000000',
+        },
+      },
       webpush: {
         notification: {
           icon: payload.icon || '/image/favicon.webp',
           badge: payload.badge || '/image/favicon.webp',
           requireInteraction: false,
+          tag: notificationTag, // ✅ Web Push도 동일한 태그
         },
         fcmOptions: {
           link: payload.url || '/app/chat',

@@ -386,6 +386,9 @@ async function sendPushNotificationMulticast(
   // ✅ Send via FCM (Android/Desktop)
   if (tokens.length > 0) {
     try {
+      // ✅ Generate unique tag for Android notification stacking
+      const notificationTag = `${type}-${Date.now()}`;
+
       const message: admin.messaging.MulticastMessage = {
         tokens,
         notification: {
@@ -396,10 +399,21 @@ async function sendPushNotificationMulticast(
           url,
           type,
         },
+        // ✅ Android: 고유한 태그로 알림이 쌓이도록 설정
+        android: {
+          notification: {
+            tag: notificationTag,
+            channelId: 'pns-default',
+            priority: 'high',
+            icon: NOTIFICATION_CONFIG.ICON_PATH,
+            color: '#000000',
+          },
+        },
         webpush: {
           notification: {
             icon: NOTIFICATION_CONFIG.ICON_PATH,
             badge: NOTIFICATION_CONFIG.BADGE_PATH,
+            tag: notificationTag, // ✅ Web Push도 동일한 태그
           },
           fcmOptions: {
             link: url,
@@ -453,8 +467,16 @@ async function sendPushNotificationMulticast(
     }
   }
 
-  // ✅ Send via Web Push (iOS Safari + All Platforms)
-  if (webPushSubscriptions.length > 0) {
+  // ✅ Send via Web Push (iOS Safari ONLY - FCM fallback)
+  // FCM 토큰이 있으면 Web Push는 건너뜀 (중복 방지)
+  const shouldSendWebPush = tokens.length === 0;
+
+  if (shouldSendWebPush && webPushSubscriptions.length > 0) {
+    logger.info('Sending via Web Push (FCM not available)', {
+      participantId,
+      subscriptionCount: webPushSubscriptions.length,
+    });
+
     const webPushSuccessCount = await sendWebPushNotifications(
       participantId,
       webPushSubscriptions,
@@ -464,6 +486,11 @@ async function sendPushNotificationMulticast(
       type
     );
     totalSuccessCount += webPushSuccessCount;
+  } else if (webPushSubscriptions.length > 0) {
+    logger.debug('Skipping Web Push (FCM already sent)', {
+      participantId,
+      fcmTokenCount: tokens.length,
+    });
   }
 
   return totalSuccessCount;

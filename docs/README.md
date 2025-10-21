@@ -25,6 +25,7 @@ docs/
 1. **[Firebase 설정](./setup/firebase.md)** - Firebase 프로젝트 생성 및 연동
 2. **[Admin SDK 설정](./setup/admin-sdk.md)** - Firebase Admin SDK 구성 (서버 사이드)
 3. **[Internal Service Secret 설정](./setup/internal-service-secret.md)** ✨ NEW - Cron ↔ Next.js API 내부 인증
+4. **[iOS PWA Web Push 구현](./setup/web-push-implementation.md)** ✨ NEW - iOS Safari PWA 푸시 알림 완전 가이드
 
 ---
 
@@ -297,6 +298,7 @@ docs/
 #### 개발 환경 및 API
 - **개발 환경 설정**: [development/setup-guide.md](./development/setup-guide.md) ✨ NEW
 - **Firebase 설정**: [setup/firebase.md](./setup/firebase.md)
+- **iOS PWA Web Push**: [setup/web-push-implementation.md](./setup/web-push-implementation.md) ✨ NEW
 - **API 레퍼런스**: [api/api-reference.md](./api/api-reference.md) ✨ NEW
 
 #### 데이터베이스
@@ -324,6 +326,7 @@ docs/
 #### 개발 환경
 - 프로젝트 초기 설정 → [development/setup-guide.md](./development/setup-guide.md) ✨ NEW
 - Firebase 연결 문제 → [setup/firebase.md](./setup/firebase.md)
+- iOS PWA 푸시 알림 → [setup/web-push-implementation.md](./setup/web-push-implementation.md) ✨ NEW
 - 환경 변수 설정 → [development/setup-guide.md](./development/setup-guide.md#환경-변수) ✨ NEW
 
 #### 데이터베이스
@@ -370,6 +373,6 @@ docs/
 
 ---
 
-**마지막 업데이트**: 2025-10-16
+**마지막 업데이트**: 2025-10-21
 **프로젝트 버전**: V1.0 (프로덕션 배포 완료)
-**문서 상태**: ✅ 종합 문서화 완료 (PRD, TRD, System Architecture, API Reference, Setup Guide, Database Docs, Design System)
+**문서 상태**: ✅ 종합 문서화 완료 (PRD, TRD, System Architecture, API Reference, Setup Guide, Database Docs, Design System, iOS PWA Web Push)

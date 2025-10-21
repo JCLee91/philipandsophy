@@ -210,9 +210,10 @@ self.addEventListener('push', (event) => {
     };
   }
 
-  // FCM 자동 알림(Chrome 등)은 별도로 표시되므로 중복 표시 방지
-  if (payload?.notification && payload?.from) {
-    console.log('[Unified SW] Skipping push display (handled by FCM auto notification)');
+  // ✅ FCM이 notification 필드를 포함하면 이미 알림을 표시함
+  // Service Worker는 Web Push(iOS 등) 전용으로만 수동 표시
+  if (payload?.notification) {
+    console.log('[Unified SW] FCM already showing notification, skipping manual display');
     return;
   }
 

@@ -61,7 +61,6 @@ export function getFirebaseAdmin() {
 
   // Firebase Admin 앱 초기화 (이미 초기화된 경우 재사용)
   if (!getApps().length) {
-    console.log('[Firebase Admin] Initializing with provided credentials');
     cachedApp = initializeApp({
       credential: cert(credentialSource),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,

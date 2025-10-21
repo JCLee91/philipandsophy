@@ -261,8 +261,9 @@ export async function savePushTokenToFirestore(
     const currentData = participantSnap.exists() ? participantSnap.data() : {};
     const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
 
-    // Find and remove old token entry for this device
-    const oldTokenEntry = existingTokens.find((entry) => entry.deviceId === deviceId);
+    // ✅ Filter out ALL tokens for this device (not just find one)
+    // This prevents duplicates caused by arrayRemove failures
+    const tokensForOtherDevices = existingTokens.filter((entry) => entry.deviceId !== deviceId);
 
     // Create new token entry
     const newTokenEntry: PushTokenEntry = {
@@ -273,28 +274,18 @@ export async function savePushTokenToFirestore(
       lastUsedAt: Timestamp.now(),
     };
 
-    // Update Firestore
-    const updates: any = {
-      // Add new token entry
-      pushTokens: arrayUnion(newTokenEntry),
+    // ✅ Replace entire array (remove duplicates + add new)
+    const updatedTokens = [...tokensForOtherDevices, newTokenEntry];
+
+    // Update Firestore in one atomic operation
+    await updateDoc(participantRef, {
+      pushTokens: updatedTokens,
       // Legacy field for backward compatibility
       pushToken: token,
       pushTokenUpdatedAt: Timestamp.now(),
       // Enable push notifications
       pushNotificationEnabled: true,
-    };
-
-    // Remove old token entry if exists
-    if (oldTokenEntry) {
-      // Need to remove first, then add (Firestore doesn't support atomic replace in arrays)
-      await updateDoc(participantRef, {
-        pushTokens: arrayRemove(oldTokenEntry),
-      });
-      logger.info('Removed old token entry for device', { participantId, deviceId });
-    }
-
-    // Add new token entry
-    await updateDoc(participantRef, updates);
+    });
 
     logger.info('Push token saved to Firestore (multi-device)', {
       participantId,
@@ -581,6 +572,20 @@ export async function initializePushNotifications(
       }
     }
 
+    // ✅ PWA 컨텍스트 확인 (Chrome 브라우저 탭에서는 푸시 등록 안함)
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true || // iOS Safari
+      document.referrer.includes('android-app://'); // Android TWA
+
+    if (!isStandalone) {
+      logger.info('[initializePushNotifications] Not in PWA/standalone mode - skipping push registration');
+      logger.info('Please install the app to home screen to enable push notifications');
+      return null;
+    }
+
+    logger.info('[initializePushNotifications] Running in PWA/standalone mode ✅');
+
     const deviceId = getDeviceId();
     let token: string | null = null;
     let cleanup: (() => void) | null = null;
@@ -589,10 +594,11 @@ export async function initializePushNotifications(
     const fcmSupported = await isFCMSupported();
     const webPushSupported = isWebPushSupported();
 
-    // ✅ Strategy 1: Try FCM (Android Chrome, Desktop Chrome/Edge/Firefox)
+    // ✅ Strategy 1: Try FCM (Android Chrome PWA, Desktop Chrome/Edge/Firefox PWA)
     // Safari (iOS/Desktop) will skip this due to isSupported() returning false
+    // Chrome browser tabs are already blocked by standalone check above
     if (fcmSupported && messaging) {
-      logger.info('[initializePushNotifications] Platform supports FCM, using FCM token');
+      logger.info('[initializePushNotifications] Platform supports FCM, using FCM token (PWA only)');
       token = await getFCMToken(messaging);
 
       if (token) {
@@ -604,11 +610,11 @@ export async function initializePushNotifications(
       logger.warn('[initializePushNotifications] FCM supported but messaging instance not provided');
     }
 
-    // ✅ Strategy 2: Try Web Push (iOS Safari PWA + All Platforms as fallback)
+    // ✅ Strategy 2: Try Web Push (iOS Safari PWA ONLY)
     // Safari will use ONLY this path (FCM not supported)
-    // Other browsers can use both (dual-path redundancy)
-    if (webPushSupported) {
-      logger.info('[initializePushNotifications] Platform supports Web Push, subscribing to Web Push');
+    // Android/Desktop Chrome skip this (FCM already working)
+    if (webPushSupported && !fcmSupported) {
+      logger.info('[initializePushNotifications] FCM not supported, using Web Push fallback');
 
       const vapidKey = process.env.NEXT_PUBLIC_WEBPUSH_VAPID_KEY;
       if (!vapidKey) {

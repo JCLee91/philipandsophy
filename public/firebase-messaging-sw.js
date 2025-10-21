@@ -36,8 +36,6 @@ const messaging = firebase.messaging();
  * Works for iOS Safari PWA, Android, and Desktop browsers.
  */
 self.addEventListener('push', (event) => {
-  console.log('[firebase-messaging-sw.js] Push event received', event);
-
   try {
     // Parse push data
     const data = event.data ? event.data.json() : {};
@@ -59,7 +57,7 @@ self.addEventListener('push', (event) => {
       self.registration.showNotification(title, options)
     );
   } catch (error) {
-    console.error('[firebase-messaging-sw.js] Error handling push event', error);
+    // Silent fail - no console logs in production
   }
 });
 
@@ -67,8 +65,6 @@ self.addEventListener('push', (event) => {
  * Handle notification click events
  */
 self.addEventListener('notificationclick', (event) => {
-  console.log('[firebase-messaging-sw.js] Notification click received.');
-
   event.notification.close();
 
   // Get the URL from notification data
@@ -104,7 +100,6 @@ self.addEventListener('notificationclick', (event) => {
  * Service Worker activation
  */
 self.addEventListener('activate', (event) => {
-  console.log('[firebase-messaging-sw.js] Service Worker activated');
   event.waitUntil(clients.claim());
 });
 
@@ -112,6 +107,5 @@ self.addEventListener('activate', (event) => {
  * Service Worker installation
  */
 self.addEventListener('install', (event) => {
-  console.log('[firebase-messaging-sw.js] Service Worker installed');
   self.skipWaiting();
 });
