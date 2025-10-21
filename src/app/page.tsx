@@ -49,7 +49,7 @@ export default function LandingPage() {
           "alternateName": "필립앤소피",
           "description": "25-40세 직장인 전문직을 위한 승인제 독서소셜클럽",
           "url": "https://www.philipandsophy.kr/",
-          "sameAs": ["https://smore.im/form/13J1nUevrX"],
+          "sameAs": ["https://smore.im/form/0C2SFfq79d#_q=rtwE0JeU"],
           "address": {
             "@type": "PostalAddress",
             "addressLocality": "서울",
@@ -118,7 +118,7 @@ export default function LandingPage() {
         <div className="cta-section">
           <Tooltip />
           <a
-            href="https://smore.im/form/13J1nUevrX"
+            href="https://smore.im/form/0C2SFfq79d#_q=rtwE0JeU"
             target="_blank"
             rel="noopener"
             aria-label="사전 신청 설문 열기"
