@@ -333,22 +333,33 @@ export async function savePushTokenToFirestore(
     const db = getDb();
     const participantRef = doc(db, 'participants', participantId);
 
-    // ✅ 단순화: 기존 토큰 전부 삭제 후 현재 토큰만 저장
-    const newTokenEntry: PushTokenEntry = {
-      deviceId,
-      type,
-      token,
-      updatedAt: Timestamp.now(),
-      userAgent: navigator.userAgent,
-      lastUsedAt: Timestamp.now(),
-    };
+    // ✅ Transaction 사용 (필드 없어도 생성 가능, 안정적)
+    await runTransaction(db, async (transaction) => {
+      const participantSnap = await transaction.get(participantRef);
 
-    await updateDoc(participantRef, {
-      pushTokens: [newTokenEntry], // ✅ FCM 토큰만 저장
-      webPushSubscriptions: [], // ✅ iOS Web Push 구독 삭제
-      pushToken: token,
-      pushTokenUpdatedAt: Timestamp.now(),
-      pushNotificationEnabled: true,
+      if (!participantSnap.exists()) {
+        logger.error('[savePushTokenToFirestore] Participant not found', { participantId });
+        throw new Error('Participant not found');
+      }
+
+      // 새 토큰 엔트리
+      const newTokenEntry: PushTokenEntry = {
+        deviceId,
+        type,
+        token,
+        updatedAt: Timestamp.now(),
+        userAgent: navigator.userAgent,
+        lastUsedAt: Timestamp.now(),
+      };
+
+      // ✅ 단순화: 기존 모든 토큰 삭제, 현재 토큰만 저장
+      transaction.update(participantRef, {
+        pushTokens: [newTokenEntry], // FCM 토큰만 저장
+        webPushSubscriptions: [], // Web Push 구독 삭제
+        pushToken: token,
+        pushTokenUpdatedAt: Timestamp.now(),
+        pushNotificationEnabled: true,
+      });
     });
 
     logger.info('Push token saved to Firestore (single device)', {
@@ -440,7 +451,7 @@ export async function getPushTokenFromFirestore(
  * 단순화 전략:
  * - 모든 토큰/구독 완전 삭제
  * - pushNotificationEnabled = false
- * - deviceId/채널 구분 불필요
+ * - Transaction 사용 (안정성)
  *
  * @param participantId - Participant ID
  */
@@ -451,13 +462,23 @@ export async function removePushTokenFromFirestore(
     const db = getDb();
     const participantRef = doc(db, 'participants', participantId);
 
-    // ✅ 단순화: 모든 토큰/구독 삭제
-    await updateDoc(participantRef, {
-      pushTokens: [],
-      webPushSubscriptions: [],
-      pushNotificationEnabled: false,
-      pushToken: deleteField(),
-      pushTokenUpdatedAt: deleteField(),
+    // ✅ Transaction 사용 (안정적)
+    await runTransaction(db, async (transaction) => {
+      const participantSnap = await transaction.get(participantRef);
+
+      if (!participantSnap.exists()) {
+        logger.warn('[removePushTokenFromFirestore] Participant not found', { participantId });
+        return;
+      }
+
+      // 모든 토큰/구독 삭제
+      transaction.update(participantRef, {
+        pushTokens: [],
+        webPushSubscriptions: [],
+        pushNotificationEnabled: false,
+        pushToken: deleteField(),
+        pushTokenUpdatedAt: deleteField(),
+      });
     });
 
     logger.info('[removePushTokenFromFirestore] All push tokens removed', {
