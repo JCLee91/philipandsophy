@@ -12,9 +12,11 @@ import {
   getNotificationPermission,
   removePushTokenFromFirestore,
   detectPushChannel,
+  getDeviceId,
 } from '@/lib/firebase/messaging';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
+import type { PushTokenEntry, WebPushSubscriptionData } from '@/types/database';
 
 /**
  * 알림 토글 컴포넌트
@@ -56,8 +58,8 @@ export function NotificationToggle() {
   }, [cleanup]);
 
   /**
-   * 알림 상태 확인 (단순화 버전)
-   * - pushNotificationEnabled 필드만 확인
+   * 알림 상태 확인 (디바이스별 토큰 존재 여부로 판단)
+   * - 현재 디바이스의 토큰이 pushTokens 또는 webPushSubscriptions에 있는지 확인
    * - 브라우저 권한이 denied면 자동 정리
    */
   const checkNotificationStatus = async (participantId: string) => {
@@ -74,17 +76,30 @@ export function NotificationToggle() {
       }
 
       const data = participantSnap.data();
-      const isPushEnabled = data.pushNotificationEnabled === true;
 
-      logger.info('[NotificationToggle] Status check', {
+      // ✅ 현재 디바이스의 토큰 존재 여부로 판단 (디바이스별 독립적 제어)
+      const deviceId = getDeviceId();
+      const pushTokens: PushTokenEntry[] = Array.isArray(data.pushTokens) ? data.pushTokens : [];
+      const webPushSubs: WebPushSubscriptionData[] = Array.isArray(data.webPushSubscriptions)
+        ? data.webPushSubscriptions
+        : [];
+
+      const hasTokenForThisDevice =
+        pushTokens.some(token => token.deviceId === deviceId) ||
+        webPushSubs.some(sub => sub.deviceId === deviceId);
+
+      logger.info('[NotificationToggle] Status check (device-specific)', {
         participantId,
-        pushNotificationEnabled: isPushEnabled,
+        deviceId,
+        hasTokenForThisDevice,
+        totalTokens: pushTokens.length,
+        totalWebPushSubs: webPushSubs.length,
       });
 
-      setIsEnabled(isPushEnabled);
+      setIsEnabled(hasTokenForThisDevice);
 
       // 브라우저 권한이 명시적으로 denied면 정리
-      if (isPushEnabled && getNotificationPermission() === 'denied') {
+      if (hasTokenForThisDevice && getNotificationPermission() === 'denied') {
         logger.warn('[NotificationToggle] Permission denied, cleaning up');
         await removePushTokenFromFirestore(participantId);
         setIsEnabled(false);
