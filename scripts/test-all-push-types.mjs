@@ -42,74 +42,82 @@ const db = getFirestore();
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Get all participants with push notifications enabled
+ * Get admin participant only
  */
-async function getEnabledParticipants() {
-  const snapshot = await db.collection('participants').get();
-  const enabledParticipants = [];
+async function getAdminParticipant() {
+  const adminDoc = await db.collection('participants').doc('admin').get();
 
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    const pushTokens = data.pushTokens || [];
+  if (!adminDoc.exists) {
+    return [];
+  }
 
-    // Include if pushNotificationEnabled is true (or undefined/null for backward compatibility)
-    // AND has at least one push token
-    if (data.pushNotificationEnabled !== false && pushTokens.length > 0) {
-      enabledParticipants.push({
-        id: doc.id,
-        name: data.name,
-        pushTokens: pushTokens,
-      });
-    }
-  });
+  const data = adminDoc.data();
+  const pushTokens = data.pushTokens || [];
+  const webPushSubs = data.webPushSubscriptions || [];
 
-  return enabledParticipants;
+  // Admin must have at least one token/subscription
+  if (pushTokens.length === 0 && webPushSubs.length === 0) {
+    console.log('⚠️  Admin has no push tokens/subscriptions');
+    return [];
+  }
+
+  return [{
+    id: 'admin',
+    name: data.name,
+    pushTokens: pushTokens,
+  }];
 }
 
 /**
- * Send push notification to all tokens
+ * Send push notification (supports both FCM and Web Push)
  */
 async function sendPushToAll(participants, payload, type) {
   try {
-    // Collect all tokens from all participants
+    // ✅ Check for FCM tokens first
     const allTokens = [];
     participants.forEach((participant) => {
       const tokens = participant.pushTokens.map((entry) => entry.token);
       allTokens.push(...tokens);
     });
 
+    // ✅ If no FCM tokens, check Web Push subscriptions
     if (allTokens.length === 0) {
-      console.log(`⚠️  No FCM tokens found\n`);
+      console.log(`⚠️  No FCM tokens - checking Web Push subscriptions...\n`);
+
+      // Get Web Push subscriptions from Firestore
+      const participant = participants[0];
+      if (participant) {
+        const participantDoc = await db.collection('participants').doc(participant.id).get();
+        const webPushSubs = participantDoc.data()?.webPushSubscriptions || [];
+
+        if (webPushSubs.length > 0) {
+          console.log(`✅ Found ${webPushSubs.length} Web Push subscription(s) (iOS)`);
+          console.log(`   Note: Web Push is sent via Firebase Functions, not test script\n`);
+        } else {
+          console.log(`❌ No Web Push subscriptions found\n`);
+        }
+      }
       return;
     }
 
+    // ✅ Data-only message (Service Worker에서 수동 표시)
     const message = {
       tokens: allTokens,
-      notification: {
+      data: {
         title: payload.title,
         body: payload.body,
-      },
-      data: {
+        icon: payload.icon || '/image/app-icon-192.png',
+        badge: payload.badge || '/image/badge-icon.webp',
         url: payload.url || '/app/chat',
         type: type,
+        tag: `${type}-${Date.now()}`,
       },
-      // ✅ Android: 각 알림 타입마다 고유한 태그 설정 (덮어쓰기 방지)
       android: {
-        notification: {
-          tag: `${type}-${Date.now()}`, // 고유한 태그로 알림이 쌓임
-          icon: payload.icon || '/image/app-icon-192.png',
-          color: '#000000',
-        },
+        priority: 'high',
       },
       webpush: {
-        notification: {
-          icon: payload.icon || '/image/app-icon-192.png',
-          badge: payload.badge || '/image/badge-icon.webp',
-          requireInteraction: false,
-          tag: `${type}-${Date.now()}`, // Web도 동일하게 고유 태그
-        },
-        fcmOptions: {
-          link: payload.url || '/app/chat',
+        headers: {
+          Urgency: 'high',
         },
       },
     };
@@ -140,10 +148,10 @@ async function sendPushToAll(participants, payload, type) {
  */
 async function testAllPushTypes() {
   try {
-    console.log('🔔 Sending all push notification types to ALL enabled users...\n');
+    console.log('🔔 Sending all push notification types to ADMIN only...\n');
 
-    // Get all participants with push enabled
-    const participants = await getEnabledParticipants();
+    // Get admin participant only
+    const participants = await getAdminParticipant();
 
     if (participants.length === 0) {
       console.error('❌ No participants with push notifications enabled found\n');
