@@ -32,11 +32,13 @@ async function waitForController(timeoutMs: number = 5000): Promise<void> {
 
   logger.info('[RegisterSW] Waiting for controller...');
 
+  // ✅ 리스너 정리를 위한 변수
+  let onControllerChange: (() => void) | null = null;
+
   return Promise.race([
     new Promise<void>((resolve) => {
-      const onControllerChange = () => {
+      onControllerChange = () => {
         if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
           logger.info('[RegisterSW] Controller activated via event');
           resolve();
         }
@@ -49,10 +51,20 @@ async function waitForController(timeoutMs: number = 5000): Promise<void> {
         reject(new Error('Controller timeout'));
       }, timeoutMs);
     }),
-  ]).catch(() => {
-    // 타임아웃되어도 계속 진행 (non-blocking)
-    logger.warn('[RegisterSW] Proceeding without controller');
-  });
+  ])
+    .then(() => {
+      // ✅ 성공 시 리스너 정리
+      if (onControllerChange) {
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+      }
+    })
+    .catch(() => {
+      // ✅ 타임아웃 시에도 리스너 정리
+      if (onControllerChange) {
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+      }
+      logger.warn('[RegisterSW] Proceeding without controller');
+    });
 }
 
 export default function RegisterServiceWorker() {
@@ -62,6 +74,9 @@ export default function RegisterServiceWorker() {
       logger.warn('[RegisterSW] Service Worker not supported');
       return;
     }
+
+    // ✅ cleanup을 위한 변수들
+    let updateIntervalId: NodeJS.Timeout | null = null;
 
     /**
      * Unified Service Worker 등록
@@ -126,8 +141,8 @@ export default function RegisterServiceWorker() {
           }
         });
 
-        // Optional: 주기적 업데이트 체크 (1시간마다)
-        setInterval(() => {
+        // ✅ 주기적 업데이트 체크 (1시간마다) - cleanup을 위해 ID 저장
+        updateIntervalId = setInterval(() => {
           logger.info('[RegisterSW] Checking for service worker updates...');
           registration.update();
         }, 60 * 60 * 1000);
@@ -136,15 +151,18 @@ export default function RegisterServiceWorker() {
       }
     };
 
-    // 페이지 로드 완료 후 등록 (성능 최적화)
-    if (document.readyState === 'complete') {
-      registerUnifiedServiceWorker();
-    } else {
-      window.addEventListener('load', registerUnifiedServiceWorker);
-      return () => {
-        window.removeEventListener('load', registerUnifiedServiceWorker);
-      };
-    }
+    // ✅ PWABuilder 권장: 가능한 한 빨리 등록 (즉시 실행)
+    // iOS PWA에서 홈 화면으로 열면 이미 load가 끝난 상태이므로 즉시 등록
+    registerUnifiedServiceWorker();
+
+    // ✅ Cleanup function
+    return () => {
+      // setInterval 정리
+      if (updateIntervalId) {
+        clearInterval(updateIntervalId);
+        logger.info('[RegisterSW] Cleared update interval');
+      }
+    };
   }, []);
 
   return null;

@@ -1,6 +1,4 @@
 import type { NextConfig } from 'next';
-// @ts-ignore - next-pwa doesn't have proper TypeScript definitions
-import withPWA from 'next-pwa';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -57,17 +55,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Configure PWA with custom worker directory
-export default withPWA({
-  dest: 'public',
-  // Use custom worker directory for unified SW
-  customWorkerDir: 'worker',
-  // Disable automatic registration (we'll handle it manually)
-  register: false,
-  // Skip waiting to activate new SW immediately
-  skipWaiting: true,
-  // Enable in development for testing service worker and push notifications
-  disable: false,
-  // Reload on network connection restored
-  reloadOnOnline: true,
-})(nextConfig);
+// ✅ We're NOT using next-pwa anymore - it was overwriting our custom SW
+// Instead, we maintain public/sw.js manually (copied from worker/index.js)
+// This ensures FCM initialization and push handlers are preserved
+export default nextConfig;

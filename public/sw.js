@@ -1,100 +1,287 @@
 /**
- * Copyright 2018 Google Inc. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unified Service Worker for PWA + Firebase Cloud Messaging
+ *
+ * This service worker handles:
+ * 1. PWA caching for offline support
+ * 2. Firebase Cloud Messaging for push notifications
+ *
+ * Benefits of unified approach:
+ * - No service worker scope conflicts
+ * - Single registration point
+ * - Better control over lifecycle
+ * - iOS PWA compatible
  */
 
-// If the loader is already loaded, just stop.
-if (!self.define) {
-  let registry = {};
+// ============================================
+// PART 1: Firebase Cloud Messaging Setup
+// ============================================
 
-  // Used for `eval` and `importScripts` where we can't get script URL by other means.
-  // In both cases, it's safe to use a global var because those functions are synchronous.
-  let nextDefineUri;
+// Import Firebase scripts for FCM
+importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js');
 
-  const singleRequire = (uri, parentUri) => {
-    uri = new URL(uri + ".js", parentUri).href;
-    return registry[uri] || (
-      
-        new Promise(resolve => {
-          if ("document" in self) {
-            const script = document.createElement("script");
-            script.src = uri;
-            script.onload = resolve;
-            document.head.appendChild(script);
-          } else {
-            nextDefineUri = uri;
-            importScripts(uri);
-            resolve();
-          }
-        })
-      
-      .then(() => {
-        let promise = registry[uri];
-        if (!promise) {
-          throw new Error(`Module ${uri} didn’t register its module`);
-        }
-        return promise;
+// Initialize Firebase app in the service worker
+firebase.initializeApp({
+  apiKey: 'AIzaSyCEFXW_Gvp_lJtYy35xe288ncvtfSHbFqY',
+  authDomain: 'philipandsophy.firebaseapp.com',
+  projectId: 'philipandsophy',
+  storageBucket: 'philipandsophy.firebasestorage.app',
+  messagingSenderId: '518153642299',
+  appId: '1:518153642299:web:a6c0aa959b7cf9bc57571e',
+});
+
+// Get Firebase Messaging instance
+const messaging = firebase.messaging();
+
+// ============================================
+// PART 2: PWA Caching Setup
+// ============================================
+
+const CACHE_NAME = 'philipandsophy-v3'; // Increment version to force update
+const urlsToCache = [
+  '/',
+  '/app',
+  '/image/favicon.webp',
+];
+
+// ============================================
+// PART 3: Service Worker Lifecycle Events
+// ============================================
+
+/**
+ * Install event - cache essential resources
+ * Triggered when SW is first installed or updated
+ */
+self.addEventListener('install', (event) => {
+  console.log('[Unified SW] Installing...');
+
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('[Unified SW] Caching essential resources');
+        return cache.addAll(urlsToCache);
       })
-    );
-  };
+      .catch((error) => {
+        console.error('[Unified SW] Failed to cache resources:', error);
+      })
+  );
 
-  self.define = (depsNames, factory) => {
-    const uri = nextDefineUri || ("document" in self ? document.currentScript.src : "") || location.href;
-    if (registry[uri]) {
-      // Module is already loading or loaded.
-      return;
-    }
-    let exports = {};
-    const require = depUri => singleRequire(depUri, uri);
-    const specialDeps = {
-      module: { uri },
-      exports,
-      require
-    };
-    registry[uri] = Promise.all(depsNames.map(
-      depName => specialDeps[depName] || require(depName)
-    )).then(deps => {
-      factory(...deps);
-      return exports;
-    });
-  };
-}
-define(['./workbox-e43f5367'], (function (workbox) { 'use strict';
-
-  importScripts("worker-development.js");
+  // Force the waiting service worker to become the active service worker
   self.skipWaiting();
-  workbox.clientsClaim();
-  workbox.registerRoute("/", new workbox.NetworkFirst({
-    "cacheName": "start-url",
-    plugins: [{
-      cacheWillUpdate: async ({
-        request,
-        response,
-        event,
-        state
-      }) => {
-        if (response && response.type === 'opaqueredirect') {
-          return new Response(response.body, {
-            status: 200,
-            statusText: 'OK',
-            headers: response.headers
-          });
+});
+
+/**
+ * Activate event - clean up old caches
+ * Triggered when SW becomes active
+ */
+self.addEventListener('activate', (event) => {
+  console.log('[Unified SW] Activating...');
+
+  event.waitUntil(
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('[Unified SW] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Take control of all clients immediately
+      self.clients.claim(),
+    ])
+  );
+
+  console.log('[Unified SW] Activated successfully');
+});
+
+/**
+ * Fetch event - network first, fallback to cache
+ * Handles all network requests
+ */
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Skip non-HTTP(S) requests (chrome-extension, etc.)
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Never cache API requests (always fetch fresh data)
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Network first, fallback to cache strategy
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Only cache successful GET requests
+        if (event.request.method === 'GET' && response.ok) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, responseToCache));
         }
         return response;
-      }
-    }]
-  }), 'GET');
-  workbox.registerRoute(/.*/i, new workbox.NetworkOnly({
-    "cacheName": "dev",
-    plugins: []
-  }), 'GET');
+      })
+      .catch(() => {
+        // Network failed, try cache
+        return caches.match(event.request);
+      })
+  );
+});
 
-}));
+// ============================================
+// PART 4: Firebase Cloud Messaging Handlers
+// ============================================
+
+/**
+ * Background message handling
+ * FCM automatically displays notifications using the 'notification' field
+ * No manual handling needed - this prevents "from 앱이름" text
+ */
+messaging.onBackgroundMessage((payload) => {
+  console.log('[Unified SW] Background message received:', payload);
+
+  // Firebase automatically handles notification display
+  // We just log it for debugging
+});
+
+/**
+ * Handle notification click events
+ * Opens the app or focuses existing window when user clicks notification
+ */
+self.addEventListener('notificationclick', (event) => {
+  console.log('[Unified SW] Notification click received');
+
+  event.notification.close();
+
+  // Get the URL from notification data
+  const urlToOpen = event.notification.data?.url || '/app/chat';
+
+  // Handle action buttons
+  if (event.action === 'close') {
+    return;
+  }
+
+  // Open the app or focus existing window
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Check if there's already a window open
+      for (const client of clientList) {
+        if (client.url.includes(urlToOpen) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+
+      // If no matching window found, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+/**
+ * Handle push event (low-level push API)
+ * This is automatically handled by Firebase Messaging
+ */
+self.addEventListener('push', (event) => {
+  console.log('[Unified SW] Push event received');
+
+  if (!event.data) {
+    console.warn('[Unified SW] Push event received without data payload');
+    return;
+  }
+
+  let payload;
+
+  try {
+    payload = event.data.json();
+  } catch (error) {
+    console.warn('[Unified SW] Failed to parse push payload as JSON', error);
+    payload = {
+      title: '필립앤소피',
+      body: event.data.text(),
+    };
+  }
+
+  // FCM 자동 알림(Chrome 등)은 별도로 표시되므로 중복 표시 방지
+  if (payload?.notification && payload?.from) {
+    console.log('[Unified SW] Skipping push display (handled by FCM auto notification)');
+    return;
+  }
+
+  const title =
+    payload?.title ||
+    payload?.notification?.title ||
+    '필립앤소피';
+
+  const body =
+    payload?.body ||
+    payload?.notification?.body ||
+    '';
+
+  const icon =
+    payload?.icon ||
+    payload?.notification?.icon ||
+    '/image/app-icon-192.png';
+
+  const badge =
+    payload?.badge ||
+    payload?.notification?.badge ||
+    '/image/badge-icon.webp';
+
+  const url =
+    payload?.data?.url ||
+    payload?.url ||
+    '/app';
+
+  const type =
+    payload?.data?.type ||
+    payload?.type;
+
+  const options = {
+    body,
+    icon,
+    badge,
+    data: {
+      url,
+      type,
+      ...(payload?.data || {}),
+    },
+    actions: payload?.actions,
+    tag: payload?.tag,
+    renotify: payload?.renotify,
+    requireInteraction: payload?.requireInteraction,
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+/**
+ * Handle message events from the main app
+ * Allows communication between app and service worker
+ */
+self.addEventListener('message', (event) => {
+  console.log('[Unified SW] Message received from app:', event.data);
+
+  // Handle SKIP_WAITING command (for SW updates)
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// ============================================
+// PART 5: Service Worker Info
+// ============================================
+
+console.log('[Unified SW] Service Worker loaded successfully');
+console.log('[Unified SW] Cache version:', CACHE_NAME);
+console.log('[Unified SW] Firebase initialized for project:', firebase.app().options.projectId);

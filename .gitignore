@@ -61,6 +61,8 @@ check-*.js
 check-*.mjs
 
 # PWA generated files (next-pwa)
-**/public/sw.js
+# ✅ We maintain public/sw.js manually, so DON'T ignore it
+# Only ignore next-pwa auto-generated files
 **/public/workbox-*.js
-**/public/worker-*.js
+**/public/worker-development.js
+**/public/worker-production.js
