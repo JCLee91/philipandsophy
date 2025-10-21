@@ -34,7 +34,6 @@ export async function createNotice(
     cohortId: data.cohortId,
     author: data.author,
     content: data.content,
-    isPinned: data.isPinned || false,
     createdAt: now,
     updatedAt: now,
   };
@@ -116,26 +115,6 @@ export async function updateNotice(
 
   await updateDoc(docRef, {
     ...data,
-    updatedAt: Timestamp.now(),
-  });
-}
-
-/**
- * 공지 고정 토글
- */
-export async function toggleNoticePin(id: string): Promise<void> {
-  const db = getDb();
-  const docRef = doc(db, COLLECTIONS.NOTICES, id);
-  const docSnap = await getDoc(docRef);
-
-  if (!docSnap.exists()) {
-    throw new Error('Notice not found');
-  }
-
-  const currentData = docSnap.data() as Notice;
-
-  await updateDoc(docRef, {
-    isPinned: !currentData.isPinned,
     updatedAt: Timestamp.now(),
   });
 }

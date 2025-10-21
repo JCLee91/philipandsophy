@@ -7,7 +7,6 @@ import {
   getNoticesByCohort,
   getAllNotices,
   updateNotice,
-  toggleNoticePin,
 } from '@/lib/firebase';
 import { Notice } from '@/types/database';
 import { CACHE_TIMES } from '@/constants/cache';
@@ -74,7 +73,6 @@ export function useCreateNotice() {
       author: string;
       content: string;
       imageUrl?: string;
-      isPinned?: boolean;
     }) => createNotice(data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: NOTICE_KEYS.lists() });
@@ -104,21 +102,6 @@ export function useUpdateNotice() {
       queryClient.invalidateQueries({
         queryKey: NOTICE_KEYS.detail(variables.id),
       });
-    },
-  });
-}
-
-/**
- * 공지 고정 토글
- */
-export function useToggleNoticePin() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => toggleNoticePin(id),
-    onSuccess: () => {
-      // 모든 공지 관련 쿼리 무효화 (lists와 cohort별 쿼리 모두)
-      queryClient.invalidateQueries({ queryKey: NOTICE_KEYS.all });
     },
   });
 }

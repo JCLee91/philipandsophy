@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Bell, Pin, Calendar, User } from 'lucide-react';
+import { Loader2, Bell, Calendar, User } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import type { Notice } from '@/types/database';
 
@@ -71,7 +71,7 @@ export default function NoticesPage() {
       </div>
 
       {/* 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -80,20 +80,6 @@ export default function NoticesPage() {
             </div>
             <div className="p-3 rounded-lg bg-blue-50">
               <Bell className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">고정 공지</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {notices.filter((n) => n.isPinned).length}개
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-purple-50">
-              <Pin className="h-6 w-6 text-purple-600" />
             </div>
           </div>
         </div>
@@ -129,17 +115,9 @@ export default function NoticesPage() {
                   <span className="text-gray-400">·</span>
                   <span className="text-sm text-gray-500">{notice.cohortName}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {notice.isPinned && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold">
-                      <Pin className="h-3 w-3" />
-                      고정
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-500">
-                    {formatTimestampKST(notice.createdAt, 'M월 d일 HH:mm')}
-                  </span>
-                </div>
+                <span className="text-xs text-gray-500">
+                  {formatTimestampKST(notice.createdAt, 'M월 d일 HH:mm')}
+                </span>
               </div>
 
               {/* 내용 */}

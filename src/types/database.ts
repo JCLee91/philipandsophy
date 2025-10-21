@@ -156,6 +156,8 @@ export interface ReadingSubmission {
 
 /**
  * 공지사항
+ *
+ * Note: isPinned 필드는 DB에 남아있을 수 있으나 앱에서는 사용하지 않음 (레거시)
  */
 export interface Notice {
   id: string; // 문서 ID
@@ -163,7 +165,6 @@ export interface Notice {
   author: string; // 작성자
   content: string; // 공지 내용
   imageUrl?: string; // 이미지 URL (선택)
-  isPinned?: boolean; // 상단 고정 여부
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }

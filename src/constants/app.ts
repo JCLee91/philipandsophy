@@ -10,7 +10,6 @@ export const APP_CONSTANTS = {
   MIDNIGHT_CHECK_INTERVAL: 60000, // 1분 (밀리초)
 
   // LocalStorage Keys
-  STORAGE_KEY_COLLAPSED_NOTICES: 'pns-collapsed-notices',
   STORAGE_KEY_VIEW_MODE: 'pns-view-mode',
 } as const;
 

@@ -13,7 +13,7 @@ import { appRoutes } from '@/lib/navigation';
 import { AUTH_TIMING } from '@/constants/auth';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
-import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useToggleNoticePin, useDeleteNotice } from '@/hooks/use-notices';
+import { useNoticesByCohort, useCreateNotice, useUpdateNotice, useDeleteNotice } from '@/hooks/use-notices';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsIosStandalone } from '@/hooks/use-standalone-ios';
 import { useIsAdminMode } from '@/contexts/ViewModeContext';
@@ -34,30 +34,6 @@ import NoticeEditDialog from '@/components/NoticeEditDialog';
 import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
 import SettingsDialog from '@/components/SettingsDialog';
 
-/**
- * Set에서 item을 토글 (추가/삭제)
- */
-function toggleSetItem<T>(set: Set<T>, item: T): Set<T> {
-  const newSet = new Set(set);
-  if (newSet.has(item)) {
-    newSet.delete(item);
-  } else {
-    newSet.add(item);
-  }
-  return newSet;
-}
-
-/**
- * localStorage에 데이터 저장 (에러 처리 포함)
- */
-function saveToLocalStorage(key: string, data: unknown): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (error) {
-    logger.warn('localStorage 저장 실패:', error);
-  }
-}
-
 function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -77,7 +53,6 @@ function ChatPageContent() {
   const [dmDialogOpen, setDmDialogOpen] = useState(false);
   const [dmTarget, setDmTarget] = useState<Participant | null>(null);
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
-  const [collapsedNotices, setCollapsedNotices] = useState<Set<string>>(new Set());
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const isIosStandalone = useIsIosStandalone();
@@ -106,20 +81,7 @@ function ChatPageContent() {
   const { data: noticesData = [], isLoading } = useNoticesByCohort(cohortId || undefined);
   const createNoticeMutation = useCreateNotice();
   const updateNoticeMutation = useUpdateNotice();
-  const togglePinMutation = useToggleNoticePin();
   const deleteNoticeMutation = useDeleteNotice();
-
-  // localStorage에서 접힌 공지 목록 로드 (클라이언트 전용, SSR 호환)
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(APP_CONSTANTS.STORAGE_KEY_COLLAPSED_NOTICES);
-      if (saved) {
-        setCollapsedNotices(new Set(JSON.parse(saved)));
-      }
-    } catch (error) {
-      logger.error('localStorage 로드 실패:', error);
-    }
-  }, []);
 
   // 세션 및 cohort 검증
   useEffect(() => {
@@ -289,29 +251,8 @@ function ChatPageContent() {
     }
   };
 
-  const handleTogglePin = async (notice: Notice) => {
-    try {
-      await togglePinMutation.mutateAsync(notice.id);
-    } catch (error) {
-      logger.error('공지 고정 토글 실패:', error);
-    }
-  };
-
-  const toggleNoticeCollapse = (noticeId: string) => {
-    setCollapsedNotices((prev) => {
-      const newSet = toggleSetItem(prev, noticeId);
-      saveToLocalStorage(APP_CONSTANTS.STORAGE_KEY_COLLAPSED_NOTICES, [...newSet]);
-      return newSet;
-    });
-  };
-
-
-  // 고정 공지와 일반 공지 분리
-  const pinnedNotices = noticesData.filter((n) => n.isPinned);
-  const unpinnedNotices = noticesData.filter((n) => !n.isPinned);
-
-  // 일반 공지만 날짜별로 그룹화
-  const groupedNotices = unpinnedNotices.reduce(
+  // 공지를 날짜별로 그룹화
+  const groupedNotices = noticesData.reduce(
     (acc, notice) => {
       const dateKey = formatDate(notice.createdAt);
       if (!acc[dateKey]) {
@@ -379,40 +320,13 @@ function ChatPageContent() {
           }}
         />
 
-        {/* 고정 공지 영역 - 항상 최상단 고정 (flex-col-reverse 영향 받지 않음) */}
-        {pinnedNotices.length > 0 && (
-          <div className="sticky z-40 border-b border-primary/20 shadow-sm bg-background" style={{ top: 'calc(56px + env(safe-area-inset-top))' }}>
-            {pinnedNotices.map((notice, index) => (
-              <div
-                key={notice.id}
-                className="group transition-colors duration-normal bg-primary-light hover:bg-blue-100"
-              >
-                <div className="container mx-auto max-w-3xl px-4 py-3">
-                  <NoticeItem
-                    notice={notice}
-                    isAdmin={isAdmin}
-                    isCollapsed={collapsedNotices.has(notice.id)}
-                    onToggleCollapse={toggleNoticeCollapse}
-                    onTogglePin={handleTogglePin}
-                    onEdit={handleEditNotice}
-                    onDelete={setDeleteConfirm}
-                    formatTime={formatTime}
-                    priority={index === 0 && !!notice.imageUrl}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 일반 공지 영역 - flex-col-reverse로 최신 공지가 아래로 */}
+        {/* 공지 영역 - flex-col-reverse로 최신 공지가 아래로 */}
         <main className="app-main-content relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
-          {/* 일반 공지 영역 - 날짜별 그룹 */}
+          {/* 공지 영역 - 날짜별 그룹 */}
           {sortedGroupedNotices.map(([date, groupData], groupIndex) => {
             const { notices: dateNotices } = groupData as { date: Date; notices: Notice[] };
-            // 첫 번째 그룹의 첫 번째 공지에만 priority (고정 공지가 없을 경우)
+            // 첫 번째 그룹의 첫 번째 공지에만 priority
             const isFirstGroup = groupIndex === 0;
-            const hasNoPinnedNotices = pinnedNotices.length === 0;
 
             return (
               <div key={date}>
@@ -441,11 +355,10 @@ function ChatPageContent() {
                         <NoticeItem
                           notice={notice}
                           isAdmin={isAdmin}
-                          onTogglePin={handleTogglePin}
                           onEdit={handleEditNotice}
                           onDelete={setDeleteConfirm}
                           formatTime={formatTime}
-                          priority={hasNoPinnedNotices && isLatestNotice && !!notice.imageUrl}
+                          priority={isLatestNotice && !!notice.imageUrl}
                         />
                       </div>
                     </div>

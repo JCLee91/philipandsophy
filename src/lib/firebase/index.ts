@@ -81,7 +81,6 @@ export {
   getNoticesByCohort,
   getAllNotices,
   updateNotice,
-  toggleNoticePin,
   deleteNotice,
   searchNotices,
 } from './notices';

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Notice } from '@/types/database';
 import { APP_CONSTANTS } from '@/constants/app';
-import { Pin, PinOff, Pencil, Trash2, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { Pencil, Trash2, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
 import { Timestamp } from 'firebase/firestore';
 import { useState } from 'react';
@@ -18,9 +18,6 @@ import ImageViewerDialog from '@/components/ImageViewerDialog';
 interface NoticeItemProps {
   notice: Notice;
   isAdmin: boolean;
-  isCollapsed?: boolean;
-  onToggleCollapse?: (noticeId: string) => void;
-  onTogglePin: (notice: Notice) => void;
   onEdit: (notice: Notice) => void;
   onDelete: (notice: Notice) => void;
   formatTime: (timestamp: Timestamp) => string;
@@ -30,18 +27,12 @@ interface NoticeItemProps {
 export default function NoticeItem({
   notice,
   isAdmin,
-  isCollapsed = false,
-  onToggleCollapse,
-  onTogglePin,
   onEdit,
   onDelete,
   formatTime,
   priority = false,
 }: NoticeItemProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const contentLines = notice.content.split('\n');
-  const isLongContent = contentLines.length >= 2 || notice.imageUrl;
-  const showCollapseButton = notice.isPinned && isLongContent && onToggleCollapse;
 
   return (
     <div className="flex gap-3 items-start">
@@ -58,67 +49,36 @@ export default function NoticeItem({
             <span className="text-sm font-bold text-foreground">
               {notice.author}
             </span>
-            {notice.isPinned && (
-              <Pin className="h-3.5 w-3.5 text-primary fill-primary" />
-            )}
             <span className="text-xs text-muted-foreground">
               {formatTime(notice.createdAt)}
             </span>
           </div>
-          <div className="flex items-center gap-1">
-            {showCollapseButton && (
-              <button
-                onClick={() => onToggleCollapse!(notice.id)}
-                className="p-0.5 hover:bg-muted rounded transition-colors duration-normal"
-                title={isCollapsed ? '펼치기' : '접기'}
-              >
-                {isCollapsed ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronUp className="h-4 w-4" />
-                )}
-              </button>
-            )}
-            {isAdmin && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-normal p-0.5 hover:bg-muted rounded">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onTogglePin(notice)}>
-                    {notice.isPinned ? (
-                      <>
-                        <PinOff className="mr-2 h-4 w-4" />
-                        고정 해제
-                      </>
-                    ) : (
-                      <>
-                        <Pin className="mr-2 h-4 w-4" />
-                        상단 고정
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onEdit(notice)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    수정
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDelete(notice)}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    삭제
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-normal p-0.5 hover:bg-muted rounded">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(notice)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  수정
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onDelete(notice)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  삭제
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         <div className="space-y-2">
-          {!isCollapsed && notice.imageUrl && (
+          {notice.imageUrl && (
             <div className="w-full max-w-lg mx-auto">
               <div
                 className="relative w-full overflow-hidden rounded cursor-pointer hover:opacity-90 transition-opacity duration-fast"
@@ -136,7 +96,7 @@ export default function NoticeItem({
             </div>
           )}
 
-          <div className={showCollapseButton && isCollapsed ? 'line-clamp-2' : ''}>
+          <div>
             <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
               {notice.content
                 .split(/(https?:\/\/[^\s]+)/g)
