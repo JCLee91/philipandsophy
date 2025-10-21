@@ -80,33 +80,16 @@ export function NotificationToggle() {
 
       const data = participantSnap.data();
 
-      // 2. ✅ Web Push 구독 확인 (endpoint 기반)
-      const subscription = await getCurrentWebPushSubscription();
+      // 2. ✅ pushNotificationEnabled 필드로 간단히 체크 (마스터 스위치)
+      const isPushEnabled = data.pushNotificationEnabled !== false;
 
-      let isPushEnabled = false;
+      logger.info('[NotificationToggle] Status check result', {
+        participantId,
+        pushNotificationEnabled: data.pushNotificationEnabled,
+        isPushEnabled,
+      });
 
-      if (subscription) {
-        // Web Push endpoint로 확인 (가장 안정적)
-        isPushEnabled = isPushEnabledForEndpoint(data, subscription.endpoint);
-
-        logger.info('[NotificationToggle] Status check result (Web Push)', {
-          participantId,
-          endpoint: subscription.endpoint.substring(0, 50) + '...',
-          isPushEnabled,
-        });
-      } else {
-        // Web Push 없으면 FCM deviceId로 폴백
-        const deviceId = getDeviceId();
-        isPushEnabled = isPushEnabledForDevice(data, deviceId);
-
-        logger.info('[NotificationToggle] Status check result (FCM fallback)', {
-          participantId,
-          deviceId,
-          isPushEnabled,
-        });
-      }
-
-      // 3. 현재 브라우저에 푸시가 활성화되어 있으면 ON
+      // 3. 토글 상태 업데이트
       setIsEnabled(isPushEnabled);
 
       // 4. 브라우저 권한 상태 확인 (참고용)

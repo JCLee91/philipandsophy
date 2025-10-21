@@ -242,34 +242,34 @@ async function testAllEnabledUsers() {
     for (const participant of participants) {
       console.log(`📤 Sending to ${participant.name} (${participant.id})...\n`);
 
-      // 1. DM
+      // 1. DM (실제 운영 텍스트)
       await sendPushToParticipant(
         participant.id,
-        '💬 새 메시지',
-        '문준영님이 메시지를 보냈습니다',
+        '문준영',
+        '안녕하세요! 독서 모임에서 뵙게 되어 반갑습니다.',
         '/app/chat',
         'dm'
       );
 
       await sleep(1000);
 
-      // 2. Notice
+      // 2. Notice (실제 운영 텍스트)
       await sendPushToParticipant(
         participant.id,
-        '📢 새 공지사항',
-        '10기 첫 모임 일정이 공지되었습니다',
+        '새로운 공지가 등록되었습니다',
+        '10기 첫 모임이 10월 26일 토요일 오후 2시에 진행됩니다. 장소는 강남역 인근 카페이며, 자세한 내용은 채팅방에서 확인해주세요.',
         '/app/chat',
         'notice'
       );
 
       await sleep(1000);
 
-      // 3. Matching
+      // 3. Matching (실제 운영 텍스트)
       await sendPushToParticipant(
         participant.id,
-        '📖 프로필북 도착',
-        '새로운 매칭 상대가 공개되었습니다!',
-        '/app/chat',
+        '오늘의 프로필북이 도착했습니다',
+        '새롭게 도착한 참가자들의 프로필 북을 확인해보세요',
+        '/app/chat/today-library',
         'matching'
       );
 
