@@ -230,10 +230,19 @@
   padding-top: calc(56px + env(safe-area-inset-top));
 }
 
+/* 프로필 페이지 상단바 - safe area 고려 */
+.safe-area-header {
+  padding-top: env(safe-area-inset-top);
+}
+
 /* iOS 11.2 이전 버전 호환성 */
 @supports (padding-top: constant(safe-area-inset-top)) {
   .app-main-content {
     padding-top: calc(56px + constant(safe-area-inset-top));
+  }
+
+  .safe-area-header {
+    padding-top: constant(safe-area-inset-top);
   }
 }
 

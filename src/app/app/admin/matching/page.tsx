@@ -652,7 +652,7 @@ function MatchingPageContent() {
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
           <HeaderNavigation title="매칭 관리" />
-          <main className="flex-1 flex items-center justify-center bg-background">
+          <main className="app-main-content flex-1 flex items-center justify-center bg-background">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </main>
         </div>
@@ -676,7 +676,7 @@ function MatchingPageContent() {
           onBackClick={() => router.push(`/app/chat?cohort=${cohortId}`)}
         />
 
-        <main className="flex-1 overflow-y-auto bg-admin-bg-page">
+        <main className="app-main-content flex-1 overflow-y-auto bg-admin-bg-page">
           <div className="mx-auto max-w-md px-4 py-6 space-y-4">
             {/* 1. 오늘의 인증 현황 */}
             <div className={CARD_STYLES.CONTAINER}>

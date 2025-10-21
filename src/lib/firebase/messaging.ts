@@ -431,69 +431,66 @@ export async function getPushTokenFromFirestore(
 /**
  * Remove push token for current device
  *
- * Simplified approach:
- * - Remove only current device's token from pushTokens array
- * - Update pushNotificationEnabled based on remaining tokens
- * - Let server-side filtering handle the rest
+ * Platform-specific removal:
+ * - Web Push (iOS): Use DELETE /api/push-subscriptions (Admin SDK)
+ * - FCM (Android): Use Client SDK Transaction
  *
  * @param participantId - Participant ID
  */
 export async function removePushTokenFromFirestore(
   participantId: string
 ): Promise<void> {
+  const deviceId = getDeviceId();
+  const channel = detectPushChannel();
+
   try {
-    const deviceId = getDeviceId();
-    const participantRef = doc(getDb(), 'participants', participantId);
-
-    // Use transaction to prevent race conditions
-    await runTransaction(getDb(), async (transaction) => {
-      const participantSnap = await transaction.get(participantRef);
-      if (!participantSnap.exists()) {
-        logger.warn('[removePushTokenFromFirestore] Participant not found', { participantId });
-        return;
-      }
-
-      const currentData = participantSnap.data();
-      const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
-      const existingWebPushSubs = currentData.webPushSubscriptions || [];
-
-      // Filter out tokens AND subscriptions for current device
-      const tokensForOtherDevices = existingTokens.filter(
-        (entry) => entry.deviceId !== deviceId
-      );
-      const subsForOtherDevices = existingWebPushSubs.filter(
-        (sub: any) => sub.deviceId !== deviceId
-      );
-
-      // Calculate total tokens across both arrays (FCM + Web Push)
-      const totalTokensRemaining = tokensForOtherDevices.length + subsForOtherDevices.length;
-
-      // Update with remaining tokens AND subscriptions
-      const updates: any = {
-        pushTokens: tokensForOtherDevices,
-        webPushSubscriptions: subsForOtherDevices,
-        // Disable push ONLY if no tokens remain in BOTH arrays
-        pushNotificationEnabled: totalTokensRemaining > 0,
-      };
-
-      // Clean up legacy fields if no tokens remain at all
-      if (totalTokensRemaining === 0) {
-        updates.pushToken = deleteField();
-        updates.pushTokenUpdatedAt = deleteField();
-      }
-
-      transaction.update(participantRef, updates);
-    });
-
-    logger.info('[removePushTokenFromFirestore] Push token removed for device', {
-      participantId,
-      deviceId,
-    });
-
-    // Unsubscribe from browser PushManager ONLY for Web Push channel
-    // (FCM also uses PushSubscription internally, so unsubscribing breaks FCM)
-    const channel = detectPushChannel();
+    // Web Push (iOS): Use Admin SDK via API
     if (channel === 'webpush') {
+      logger.info('[removePushTokenFromFirestore] Removing Web Push via API', {
+        participantId,
+        deviceId,
+      });
+
+      // Get current subscription endpoint before unsubscribing
+      let subscriptionEndpoint: string | undefined;
+      try {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            const subscription = await registration.pushManager.getSubscription();
+            if (subscription) {
+              subscriptionEndpoint = subscription.endpoint;
+            }
+          }
+        }
+      } catch (error) {
+        logger.warn('[removePushTokenFromFirestore] Failed to get subscription endpoint', error);
+      }
+
+      // Call DELETE API (requires authentication)
+      const headers = await buildAuthorizedJsonHeaders();
+      if (!headers) {
+        throw new Error('Authentication required to remove Web Push subscription');
+      }
+
+      const response = await fetch('/api/push-subscriptions', {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({
+          participantId,
+          deviceId,
+          subscriptionEndpoint,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(`Failed to remove Web Push: ${errorData.error || response.statusText}`);
+      }
+
+      logger.info('[removePushTokenFromFirestore] Web Push removed via API');
+
+      // Unsubscribe from browser PushManager
       try {
         if ('serviceWorker' in navigator && 'PushManager' in window) {
           const registration = await navigator.serviceWorker.getRegistration();
@@ -508,7 +505,58 @@ export async function removePushTokenFromFirestore(
       } catch (error) {
         logger.warn('[removePushTokenFromFirestore] Failed to unsubscribe Web Push (non-critical)', error);
       }
+
+      return;
     }
+
+    // FCM (Android): Use Client SDK Transaction
+    logger.info('[removePushTokenFromFirestore] Removing FCM via Client SDK', {
+      participantId,
+      deviceId,
+    });
+
+    const participantRef = doc(getDb(), 'participants', participantId);
+
+    // Use transaction to prevent race conditions
+    await runTransaction(getDb(), async (transaction) => {
+      const participantSnap = await transaction.get(participantRef);
+      if (!participantSnap.exists()) {
+        logger.warn('[removePushTokenFromFirestore] Participant not found', { participantId });
+        return;
+      }
+
+      const currentData = participantSnap.data();
+      const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
+      const existingWebPushSubs = currentData.webPushSubscriptions || [];
+
+      // Filter out FCM tokens for current device
+      const tokensForOtherDevices = existingTokens.filter(
+        (entry) => entry.deviceId !== deviceId
+      );
+
+      // Calculate total tokens (FCM only, Web Push handled via API)
+      const totalTokensRemaining = tokensForOtherDevices.length + existingWebPushSubs.length;
+
+      // Update with remaining tokens
+      const updates: any = {
+        pushTokens: tokensForOtherDevices,
+        // Disable push ONLY if no tokens remain
+        pushNotificationEnabled: totalTokensRemaining > 0,
+      };
+
+      // Clean up legacy fields if no tokens remain at all
+      if (totalTokensRemaining === 0) {
+        updates.pushToken = deleteField();
+        updates.pushTokenUpdatedAt = deleteField();
+      }
+
+      transaction.update(participantRef, updates);
+    });
+
+    logger.info('[removePushTokenFromFirestore] FCM token removed for device', {
+      participantId,
+      deviceId,
+    });
   } catch (error) {
     logger.error('[removePushTokenFromFirestore] Error removing push token', error);
     throw error;

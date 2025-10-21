@@ -36,6 +36,8 @@
     "batch:update-profiles": "tsx src/scripts/batch-update-profiles.ts",
     "debug:submissions": "tsx src/scripts/debug-submission-count.ts",
     "check:cohorts": "tsx src/scripts/check-cohort-participants.ts",
+    "check:yesterday-submissions": "tsx src/scripts/check-yesterday-submissions.ts",
+    "random-matching": "tsx src/scripts/random-matching.ts",
     "add:backdated-submission": "tsx src/scripts/add-backdated-submission.ts",
     "update:occupations": "tsx src/scripts/update-all-occupations.ts",
     "check:admin-fields": "tsx src/scripts/check-admin-fields.ts",
@@ -48,7 +50,10 @@
     "set:admin-claims": "tsx scripts/set-admin-claims.ts",
     "verify:admin-claims": "tsx scripts/verify-admin-claims.ts",
     "verify:firebaseuid": "tsx scripts/verify-firebaseuid-linking.ts",
-    "add:phone-user": "tsx scripts/register-phone-user.ts"
+    "add:phone-user": "tsx scripts/register-phone-user.ts",
+    "cleanup:push-tokens": "tsx scripts/cleanup-push-tokens.ts",
+    "test:push-system": "tsx scripts/test-push-notifications.ts",
+    "reset:admin-push": "tsx scripts/reset-admin-push-tokens.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.2",
