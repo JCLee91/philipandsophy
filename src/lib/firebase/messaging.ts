@@ -29,18 +29,21 @@ import {
   getCurrentWebPushSubscription,
 } from './webpush';
 
-// ✅ 메모리 캐시: 세션 동안 device-id 유지 (localStorage 의존성 제거)
+// ✅ 메모리 캐시: 반복 호출 최적화
 let cachedDeviceId: string | null = null;
 
 /**
  * Generate a stable device ID based on browser fingerprint
  *
  * 전략:
- * 1. 메모리 캐시 우선 (세션 동안 유지)
- * 2. sessionStorage 폴백 (탭 닫으면 초기화)
- * 3. 브라우저 fingerprint로 일관성 있는 hash 생성
+ * 1. 메모리 캐시 우선 (같은 페이지 로드 내에서 재사용)
+ * 2. localStorage 사용 (PWA 재실행 간에도 유지 - 필수!)
+ * 3. Fingerprint 기반 생성 (최초 1회)
  *
- * localStorage 사용 안 함 → 리셋 스크립트 후에도 문제 없음
+ * localStorage는 반드시 필요:
+ * - PWA 종료 후 재실행 시에도 동일 device-id 유지
+ * - 같은 기기의 토큰 중복 방지
+ * - 디바이스별 독립적 제어를 위한 핵심 요소
  *
  * @returns Device ID string
  */
@@ -50,16 +53,16 @@ function generateDeviceId(): string {
     return cachedDeviceId;
   }
 
-  // 2. sessionStorage 확인 (탭 유지 중이면 동일 ID)
+  // 2. localStorage 확인 (PWA 재실행 간에도 유지)
   try {
-    const sessionId = sessionStorage.getItem('device-id');
-    if (sessionId) {
-      cachedDeviceId = sessionId;
-      logger.debug('Device ID from sessionStorage', { deviceId: sessionId });
-      return sessionId;
+    const existingId = localStorage.getItem('device-id');
+    if (existingId) {
+      cachedDeviceId = existingId;
+      logger.debug('Device ID from localStorage', { deviceId: existingId });
+      return existingId;
     }
   } catch (error) {
-    logger.warn('sessionStorage read failed, generating new device ID', { error });
+    logger.warn('localStorage read failed (Safari Private Mode?)', { error });
   }
 
   // 3. 새로운 device ID 생성 (fingerprint 기반)
@@ -68,23 +71,26 @@ function generateDeviceId(): string {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const language = navigator.language;
 
-  // Fingerprint hash (일관성 있는 값)
+  // Fingerprint hash
   const fingerprint = `${ua}-${screen}-${timezone}-${language}`;
   const hash = Array.from(fingerprint).reduce(
     (acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0,
     0
   );
 
-  // Device ID: timestamp + hash (timestamp는 첫 생성 시에만)
+  // Device ID: timestamp + hash + random
   const deviceId = `${Date.now()}-${Math.abs(hash)}-${Math.random().toString(36).substring(2, 9)}`;
 
-  // 4. 메모리 + sessionStorage에 저장
+  // 4. 메모리 + localStorage에 저장
   cachedDeviceId = deviceId;
   try {
-    sessionStorage.setItem('device-id', deviceId);
-    logger.info('Generated new device ID (cached in memory + sessionStorage)', { deviceId });
+    localStorage.setItem('device-id', deviceId);
+    logger.info('Generated new device ID (cached in memory + localStorage)', { deviceId });
   } catch (error) {
-    logger.warn('sessionStorage write failed, using memory-only cache', { deviceId, error });
+    logger.warn('localStorage write failed (Safari Private Mode?), using memory-only cache', {
+      deviceId,
+      error,
+    });
   }
 
   return deviceId;
