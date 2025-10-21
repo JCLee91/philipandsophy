@@ -90,10 +90,13 @@ export async function POST(request: NextRequest) {
       lastUsedAt: admin.firestore.Timestamp.now(),
     };
 
-    // ✅ 배열에 1개만 (기존 전부 대체)
+    // ✅ 단일 디바이스 전략: FCM 토큰도 함께 삭제, Web Push만 저장
     await participantRef.update({
-      webPushSubscriptions: [newSubscription],
+      pushTokens: [], // ✅ Android FCM 토큰 삭제
+      webPushSubscriptions: [newSubscription], // iOS Web Push만 저장
       pushNotificationEnabled: true,
+      pushToken: subscription.endpoint, // Legacy 필드
+      pushTokenUpdatedAt: admin.firestore.Timestamp.now(),
     });
 
     return NextResponse.json({

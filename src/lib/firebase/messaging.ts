@@ -344,7 +344,8 @@ export async function savePushTokenToFirestore(
     };
 
     await updateDoc(participantRef, {
-      pushTokens: [newTokenEntry], // ✅ 배열에 1개만 (기존 전부 대체)
+      pushTokens: [newTokenEntry], // ✅ FCM 토큰만 저장
+      webPushSubscriptions: [], // ✅ iOS Web Push 구독 삭제
       pushToken: token,
       pushTokenUpdatedAt: Timestamp.now(),
       pushNotificationEnabled: true,
