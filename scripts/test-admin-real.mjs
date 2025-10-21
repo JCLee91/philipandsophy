@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 /**
- * Test Push to Participant (Real Production Logic)
+ * Test Push to All Enabled Users (Real Production Logic)
  *
  * Sends push notifications using ACTUAL production logic:
  * - Android: FCM tokens
  * - iOS: Web Push subscriptions
  *
  * Usage:
- *   node scripts/test-admin-real.mjs [participantId]
- *   Default: admin
+ *   node scripts/test-admin-real.mjs
  */
 
 import admin from 'firebase-admin';
@@ -188,51 +187,98 @@ async function sendPushToParticipant(participantId, title, body, url, type) {
 }
 
 /**
+ * Get all enabled participants
+ */
+async function getAllEnabledParticipants() {
+  const snapshot = await db.collection('participants').get();
+  const enabledParticipants = [];
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    const pushTokens = data.pushTokens || [];
+    const webPushSubs = data.webPushSubscriptions || [];
+
+    // Include if has any tokens/subscriptions
+    if (pushTokens.length > 0 || webPushSubs.length > 0) {
+      enabledParticipants.push({
+        id: doc.id,
+        name: data.name,
+        pushTokens: pushTokens.length,
+        webPushSubs: webPushSubs.length,
+      });
+    }
+  });
+
+  return enabledParticipants;
+}
+
+/**
  * Main
  */
-async function testParticipantReal(participantId) {
+async function testAllEnabledUsers() {
   try {
-    console.log(`🧪 Testing Real Push Logic to ${participantId}\n`);
+    console.log('🧪 Testing Real Push Logic to ALL Enabled Users\n');
     console.log('This uses the same logic as production:\n');
     console.log('  - Android: FCM tokens');
     console.log('  - iOS: Web Push (Apple Push Service)\n');
-    console.log('='.repeat(60));
+
+    // Get all enabled participants
+    const participants = await getAllEnabledParticipants();
+
+    if (participants.length === 0) {
+      console.error('❌ No participants with push enabled found\n');
+      process.exit(1);
+    }
+
+    console.log(`📱 Found ${participants.length} participant(s) with push enabled:\n`);
+    participants.forEach((p, index) => {
+      console.log(`   ${index + 1}. ${p.name} (${p.id})`);
+      console.log(`      FCM: ${p.pushTokens}, Web Push: ${p.webPushSubs}`);
+    });
+    console.log('\n' + '='.repeat(60));
     console.log('\n');
 
-    // 1. DM
-    await sendPushToParticipant(
-      participantId,
-      '💬 새 메시지',
-      '문준영님이 메시지를 보냈습니다',
-      '/app/chat',
-      'dm'
-    );
+    // Send to each participant
+    for (const participant of participants) {
+      console.log(`📤 Sending to ${participant.name} (${participant.id})...\n`);
 
-    await sleep(1000);
+      // 1. DM
+      await sendPushToParticipant(
+        participant.id,
+        '💬 새 메시지',
+        '문준영님이 메시지를 보냈습니다',
+        '/app/chat',
+        'dm'
+      );
 
-    // 2. Notice
-    await sendPushToParticipant(
-      participantId,
-      '📢 새 공지사항',
-      '10기 첫 모임 일정이 공지되었습니다',
-      '/app/chat',
-      'notice'
-    );
+      await sleep(1000);
 
-    await sleep(1000);
+      // 2. Notice
+      await sendPushToParticipant(
+        participant.id,
+        '📢 새 공지사항',
+        '10기 첫 모임 일정이 공지되었습니다',
+        '/app/chat',
+        'notice'
+      );
 
-    // 3. Matching
-    await sendPushToParticipant(
-      participantId,
-      '📖 프로필북 도착',
-      '새로운 매칭 상대가 공개되었습니다!',
-      '/app/chat',
-      'matching'
-    );
+      await sleep(1000);
+
+      // 3. Matching
+      await sendPushToParticipant(
+        participant.id,
+        '📖 프로필북 도착',
+        '새로운 매칭 상대가 공개되었습니다!',
+        '/app/chat',
+        'matching'
+      );
+
+      console.log('---\n');
+    }
 
     console.log('='.repeat(60));
-    console.log('\n✨ All test notifications sent!\n');
-    console.log(`Check ${participantId} device for 3 notifications 📱\n`);
+    console.log('\n✨ All test notifications sent to all enabled users!\n');
+    console.log('Check all devices for 3 notifications each 📱\n');
 
   } catch (error) {
     console.error('\n❌ Error:', error.message);
@@ -241,10 +287,7 @@ async function testParticipantReal(participantId) {
   }
 }
 
-// Get participant ID from command line (default: admin)
-const participantId = process.argv[2] || 'admin';
-
-testParticipantReal(participantId)
+testAllEnabledUsers()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);
