@@ -483,45 +483,29 @@ export async function removePushTokenFromFirestore(
       throw new Error(`Failed to remove Web Push subscription: ${errorData.error || 'Unknown error'}`);
     }
   } catch (error) {
-    logger.error('Error removing Web Push subscription via API', error);
-    throw error; // Re-throw to prevent FCM token removal
+    logger.error('Error removing Web Push subscription via API (continuing)', error);
+    // ✅ 에러가 나도 계속 진행 (Firestore는 직접 정리)
   }
-
-  // ✅ Step 2: Remove FCM token only if Web Push removal succeeded
-  if (webPushRemoved && deviceTokenEntry) {
-    await updateDoc(participantRef, {
-      pushTokens: arrayRemove(deviceTokenEntry),
-    });
-    logger.info('Removed FCM push token for device', { participantId, deviceId });
-  }
-
-  // ✅ Step 3: Check if there are any remaining tokens/subscriptions
-  const remainingTokens = existingTokens.filter((entry) => entry.deviceId !== deviceId);
-  referenceEndpoint =
-    subscriptionEndpoint || currentSubscription?.endpoint || referenceEndpoint || null;
-  const remainingSubscriptions = webPushSubscriptions.filter((sub) => {
-    if (referenceEndpoint && sub.endpoint === referenceEndpoint) {
-      return false;
-    }
-    if (sub.deviceId === deviceId) {
-      return false;
-    }
-    return true;
-  });
 
   // ✅ 토글 OFF = 모든 토큰/구독 완전 삭제
-  await updateDoc(participantRef, {
-    pushNotificationEnabled: false,
-    pushTokens: [], // FCM 토큰 전체 삭제
-    webPushSubscriptions: [], // Web Push 구독 전체 삭제
-    pushToken: deleteField(), // 레거시 필드 삭제
-    pushTokenUpdatedAt: deleteField(),
-  });
+  // API 호출 성공 여부와 관계없이 Firestore를 직접 정리
+  try {
+    await updateDoc(participantRef, {
+      pushNotificationEnabled: false,
+      pushTokens: [], // FCM 토큰 전체 삭제
+      webPushSubscriptions: [], // Web Push 구독 전체 삭제
+      pushToken: deleteField(), // 레거시 필드 삭제
+      pushTokenUpdatedAt: deleteField(),
+    });
 
-  logger.info('Push notifications disabled - all tokens/subscriptions removed', {
-    participantId,
-    deviceId,
-  });
+    logger.info('Push notifications disabled - all tokens/subscriptions removed', {
+      participantId,
+      deviceId,
+    });
+  } catch (updateError) {
+    logger.error('Failed to update Firestore after removing tokens', updateError);
+    throw updateError; // 최종 Firestore 업데이트 실패는 throw
+  }
 }
 
 /**
