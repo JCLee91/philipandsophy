@@ -59,7 +59,7 @@ function ParticipantRow({
 
   if (isAdmin && participant.id !== currentUserId) {
     return (
-      <div className="flex w-full items-center gap-2 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
+      <div className="flex w-full items-center gap-2 rounded-lg p-3">
         <div className="flex flex-1 items-center gap-3">
           <div className="relative">
             <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
@@ -88,10 +88,10 @@ function ParticipantRow({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:bg-muted"
+              className="flex h-11 w-11 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:bg-muted active:bg-muted/80"
               aria-label="참가자 옵션"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="h-5 w-5" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
