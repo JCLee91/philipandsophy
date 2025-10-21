@@ -509,30 +509,19 @@ export async function removePushTokenFromFirestore(
     return true;
   });
 
-  // ✅ 항상 pushNotificationEnabled를 false로 설정 (토글 OFF의 의미)
-  // 다른 디바이스 토큰이 남아있어도 사용자가 OFF 했으므로 false
+  // ✅ 토글 OFF = 모든 토큰/구독 완전 삭제
   await updateDoc(participantRef, {
     pushNotificationEnabled: false,
+    pushTokens: [], // FCM 토큰 전체 삭제
+    webPushSubscriptions: [], // Web Push 구독 전체 삭제
+    pushToken: deleteField(), // 레거시 필드 삭제
+    pushTokenUpdatedAt: deleteField(),
   });
 
-  // If no tokens/subscriptions remain, also remove legacy fields
-  if (remainingTokens.length === 0 && remainingSubscriptions.length === 0) {
-    await updateDoc(participantRef, {
-      pushToken: deleteField(),
-      pushTokenUpdatedAt: deleteField(),
-    });
-    logger.info('Removed all push tokens/subscriptions', {
-      participantId,
-      deviceId,
-    });
-  } else {
-    logger.info('Removed push token/subscription for current device', {
-      participantId,
-      deviceId,
-      remainingTokens: remainingTokens.length,
-      remainingSubscriptions: remainingSubscriptions.length,
-    });
-  }
+  logger.info('Push notifications disabled - all tokens/subscriptions removed', {
+    participantId,
+    deviceId,
+  });
 }
 
 /**
