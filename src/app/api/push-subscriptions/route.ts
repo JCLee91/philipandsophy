@@ -129,19 +129,13 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    // Make authentication optional for DELETE
-    const authHeader = request.headers.get('authorization');
-    let authenticatedUser = null;
-
-    if (authHeader?.startsWith('Bearer ')) {
-      // Try to authenticate if token is provided
-      const authResult = await requireWebAppAuth(request);
-      if (!('error' in authResult) || !authResult.error) {
-        authenticatedUser = authResult.user;
-      }
-      // Continue even if authentication fails (optional auth)
+    // CRITICAL: Authentication is REQUIRED (prevent unauthorized deletion)
+    const authResult = await requireWebAppAuth(request);
+    if ('error' in authResult && authResult.error) {
+      return authResult.error;
     }
 
+    const { user } = authResult;
     const body = await request.json();
     const { participantId, deviceId, subscriptionEndpoint } = body;
 
@@ -153,8 +147,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Check authorization only if authenticated
-    if (authenticatedUser && participantId !== authenticatedUser.id) {
+    // Check authorization (must be same user)
+    if (participantId !== user.id) {
       return NextResponse.json(
         { error: 'You are not authorized to modify this participant.' },
         { status: 403 }

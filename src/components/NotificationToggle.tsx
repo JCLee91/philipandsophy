@@ -180,21 +180,8 @@ export function NotificationToggle() {
           logger.warn('[disableNotifications] FCM delete failed (non-critical)', error);
         }
       } else if (channel === 'webpush') {
-        // Web Push: API 호출로 Firestore에서 구독 제거
-        const { getDeviceId } = await import('@/lib/firebase/messaging');
-        const deviceId = getDeviceId();
-
-        const headers = { 'Content-Type': 'application/json' };
-        await fetch('/api/push-subscriptions', {
-          method: 'DELETE',
-          headers,
-          body: JSON.stringify({
-            participantId,
-            deviceId,
-          }),
-        });
-
-        // PushSubscription unsubscribe (removePushTokenFromFirestore 내부에서 처리됨)
+        // Web Push: 로컬 Firestore + PushSubscription 제거
+        // (removePushTokenFromFirestore가 webPushSubscriptions도 제거)
         await removePushTokenFromFirestore(participantId);
       }
 

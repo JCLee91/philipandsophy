@@ -155,7 +155,7 @@ export function detectPushChannel(): PushChannel {
 /**
  * Build authorized JSON headers for push subscription API calls
  */
-async function buildAuthorizedJsonHeaders(): Promise<Record<string, string> | null> {
+export async function buildAuthorizedJsonHeaders(): Promise<Record<string, string> | null> {
   try {
     const auth = getFirebaseAuth();
 
@@ -455,21 +455,29 @@ export async function removePushTokenFromFirestore(
 
       const currentData = participantSnap.data();
       const existingTokens: PushTokenEntry[] = currentData.pushTokens || [];
+      const existingWebPushSubs = currentData.webPushSubscriptions || [];
 
-      // Filter out tokens for current device only
+      // Filter out tokens AND subscriptions for current device
       const tokensForOtherDevices = existingTokens.filter(
         (entry) => entry.deviceId !== deviceId
       );
+      const subsForOtherDevices = existingWebPushSubs.filter(
+        (sub: any) => sub.deviceId !== deviceId
+      );
 
-      // Update with remaining tokens
+      // Calculate total tokens across both arrays (FCM + Web Push)
+      const totalTokensRemaining = tokensForOtherDevices.length + subsForOtherDevices.length;
+
+      // Update with remaining tokens AND subscriptions
       const updates: any = {
         pushTokens: tokensForOtherDevices,
-        // Disable push if no tokens remain
-        pushNotificationEnabled: tokensForOtherDevices.length > 0,
+        webPushSubscriptions: subsForOtherDevices,
+        // Disable push ONLY if no tokens remain in BOTH arrays
+        pushNotificationEnabled: totalTokensRemaining > 0,
       };
 
-      // Clean up legacy fields if no tokens remain
-      if (tokensForOtherDevices.length === 0) {
+      // Clean up legacy fields if no tokens remain at all
+      if (totalTokensRemaining === 0) {
         updates.pushToken = deleteField();
         updates.pushTokenUpdatedAt = deleteField();
       }
