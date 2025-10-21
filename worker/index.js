@@ -210,22 +210,24 @@ self.addEventListener('push', (event) => {
     };
   }
 
-  // ✅ Data-only 메시지 처리
-  // notification 필드 없이 data만 전송됨
-  const data = payload?.data || payload;
+  // ✅ Data-only 메시지 파싱
+  // FCM data-only: { data: { title, body, ... } }
+  // Web Push: { title, body, data: { ... } }
+  const messageData = payload?.data || {};
 
-  const title = data?.title || '필립앤소피';
-  const body = data?.body || '';
-  const icon = data?.icon || '/image/app-icon-192.png';
-  const badge = data?.badge || '/image/badge-icon.webp';
-  const url = data?.url || '/app';
-  const type = data?.type || 'general';
-  const tag = data?.tag;
+  const title = messageData?.title || payload?.title || '필립앤소피';
+  const body = messageData?.body || payload?.body || '';
+  const icon = messageData?.icon || payload?.icon || '/image/app-icon-192.png';
+  const badge = messageData?.badge || payload?.badge || '/image/badge-icon.webp';
+  const url = messageData?.url || payload?.url || '/app';
+  const type = messageData?.type || payload?.type || 'general';
+  const tag = messageData?.tag || payload?.tag;
 
   console.log('[Unified SW] Showing notification (data-only message)', {
     title,
     type,
     tag,
+    hasData: !!messageData,
   });
 
   const options = {

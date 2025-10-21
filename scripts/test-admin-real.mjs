@@ -88,10 +88,24 @@ async function sendViaFCM(tokens, title, body, url, type) {
     },
   };
 
-  const response = await admin.messaging().sendEachForMulticast(message);
+  try {
+    const response = await admin.messaging().sendEachForMulticast(message);
 
-  console.log(`   FCM: ${response.successCount} sent, ${response.failureCount} failed`);
-  return response.successCount;
+    console.log(`   FCM: ${response.successCount} sent, ${response.failureCount} failed`);
+
+    if (response.failureCount > 0) {
+      response.responses.forEach((resp, index) => {
+        if (!resp.success) {
+          console.log(`      Token ${index + 1}: ${resp.error?.code} - ${resp.error?.message}`);
+        }
+      });
+    }
+
+    return response.successCount;
+  } catch (error) {
+    console.error(`   FCM Error: ${error.message}`);
+    return 0;
+  }
 }
 
 /**
@@ -169,12 +183,24 @@ async function sendPushToParticipant(participantId, title, body, url, type) {
     console.log(`   FCM tokens: ${pushTokens.length}`);
     console.log(`   Web Push subs: ${webPushSubs.length}`);
 
-    // Send via FCM
+    // ✅ 운영 로직과 동일: FCM 있으면 Web Push 건너뜀
     const tokens = pushTokens.map(entry => entry.token);
-    const fcmCount = await sendViaFCM(tokens, title, body, url, type);
+    const shouldSendWebPush = tokens.length === 0;
 
-    // Send via Web Push
-    const webPushCount = await sendViaWebPush(webPushSubs, title, body, url, type);
+    let fcmCount = 0;
+    let webPushCount = 0;
+
+    // Send via FCM
+    if (tokens.length > 0) {
+      fcmCount = await sendViaFCM(tokens, title, body, url, type);
+    }
+
+    // Send via Web Push (FCM 없을 때만)
+    if (shouldSendWebPush && webPushSubs.length > 0) {
+      webPushCount = await sendViaWebPush(webPushSubs, title, body, url, type);
+    } else if (webPushSubs.length > 0) {
+      console.log(`   Skipping Web Push (FCM already sent)\n`);
+    }
 
     const total = fcmCount + webPushCount;
     console.log(`   ✅ Total: ${total} notification(s) sent\n`);

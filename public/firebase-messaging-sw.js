@@ -38,16 +38,22 @@ const messaging = firebase.messaging();
 self.addEventListener('push', (event) => {
   try {
     // Parse push data
-    const data = event.data ? event.data.json() : {};
+    const payload = event.data ? event.data.json() : {};
 
-    // Extract notification content (works for both FCM and Web Push)
-    const title = data.notification?.title || data.title || '필립앤소피';
+    // ✅ Data-only 메시지 파싱
+    // FCM data-only: { data: { title, body, ... } }
+    const messageData = payload?.data || {};
+
+    const title = messageData?.title || payload?.title || '필립앤소피';
     const options = {
-      body: data.notification?.body || data.body || '',
-      icon: data.notification?.icon || data.icon || '/image/app-icon-192.png',
-      badge: '/image/badge-icon.webp',
-      tag: data.tag || 'default',
-      data: data.data || data,
+      body: messageData?.body || payload?.body || '',
+      icon: messageData?.icon || payload?.icon || '/image/app-icon-192.png',
+      badge: messageData?.badge || payload?.badge || '/image/badge-icon.webp',
+      tag: messageData?.tag || payload?.tag || 'default',
+      data: {
+        url: messageData?.url || payload?.url || '/app',
+        type: messageData?.type || payload?.type || 'general',
+      },
       requireInteraction: false,
       silent: false,
     };

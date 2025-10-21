@@ -267,7 +267,7 @@ export default function ParticipantsList({
           </div>
 
           {/* 로그아웃 버튼 - 하단 고정 */}
-          <div className="border-t px-4 pt-4 pb-8 sheet-footer-safe">
+          <div className="border-t px-4 pt-4 pb-[86px]">
             <button
               type="button"
               onClick={logout}
@@ -277,17 +277,6 @@ export default function ParticipantsList({
               로그아웃
             </button>
           </div>
-          <style jsx>{`
-            .sheet-footer-safe {
-              padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
-            }
-
-            @supports (padding-bottom: constant(safe-area-inset-bottom)) {
-              .sheet-footer-safe {
-                padding-bottom: calc(52px + constant(safe-area-inset-bottom));
-              }
-            }
-          `}</style>
         </SheetContent>
       </Sheet>
   );

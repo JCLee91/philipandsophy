@@ -241,14 +241,7 @@
 
 .app-footer {
   padding-top: 16px;
-  padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
-}
-
-/* iOS 11.2 이전 버전 호환성 */
-@supports (padding-bottom: constant(safe-area-inset-bottom)) {
-  .app-footer {
-    padding-bottom: calc(52px + constant(safe-area-inset-bottom));
-  }
+  padding-bottom: 86px;
 }
 
 /* 모든 버튼과 인터랙티브 요소에 cursor pointer 적용 - utilities 레이어로 최상위 우선순위 보장 */
