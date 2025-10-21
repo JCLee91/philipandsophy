@@ -285,31 +285,37 @@ export function NotificationToggle() {
     }
   };
 
+  // Check if running in PWA/standalone mode
+  const isStandalone =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true ||
+      document.referrer.includes('android-app://'));
+
+  // Browser tab - show install message (gray text only, no toggle)
+  if (!isStandalone) {
+    return (
+      <p className="text-sm text-gray-500">
+        홈 화면에 추가 후 알림 사용 가능
+      </p>
+    );
+  }
+
   // No user logged in
   if (!participantId) {
     return (
-      <div className="flex items-start gap-3 rounded-lg bg-gray-50 p-4">
-        <AlertCircle className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <p className="text-sm text-gray-600">
-            로그인 후 알림 설정이 가능합니다
-          </p>
-        </div>
-      </div>
+      <p className="text-sm text-gray-500">
+        로그인 후 알림 설정이 가능합니다
+      </p>
     );
   }
 
   // Push notification not supported
   if (!isPushNotificationSupported()) {
     return (
-      <div className="flex items-start gap-3 rounded-lg bg-gray-50 p-4">
-        <AlertCircle className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <p className="text-sm text-gray-600">
-            이 브라우저는 알림을 지원하지 않습니다
-          </p>
-        </div>
-      </div>
+      <p className="text-sm text-gray-500">
+        홈 화면에 추가 후 알림 사용 가능
+      </p>
     );
   }
 
