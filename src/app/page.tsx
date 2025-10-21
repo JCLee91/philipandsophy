@@ -107,13 +107,13 @@ export default function LandingPage() {
       </div>
 
       <div className="container">
-        <img src="/image/PnS_1.webp?v=1.1" alt="필립앤소피(P&S) 승인제 독서소셜클럽 - 깊이 있는 대화가 설레는 만남으로" className="main-image" fetchPriority="high" />
+        <img src="/image/PnS_1.webp?v=2.0" alt="필립앤소피(P&S) 승인제 독서소셜클럽 - 깊이 있는 대화가 설레는 만남으로" className="main-image" fetchPriority="high" />
 
-        <img src="/image/PnS_2.webp?v=1.6" alt="필립앤소피 소셜클럽 소개" className="main-image" fetchPriority="high" loading="eager" />
+        <img src="/image/PnS_2.webp?v=2.0" alt="필립앤소피 소셜클럽 소개" className="main-image" fetchPriority="high" loading="eager" />
 
-        <img src="/image/PnS_3.webp?v=1.3" alt="필립앤소피 서비스 특징" className="main-image" />
+        <img src="/image/PnS_3.webp?v=2.0" alt="필립앤소피 서비스 특징" className="main-image" />
 
-        <img src="/image/PnS_4_nofooter.webp?v=4.0" alt="필립앤소피 가입 안내" className="main-image" />
+        <img src="/image/PnS_4_nofooter.webp?v=2.0" alt="필립앤소피 가입 안내" className="main-image" />
 
         <div className="cta-section">
           <Tooltip />

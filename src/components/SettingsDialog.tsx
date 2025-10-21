@@ -56,10 +56,10 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              className="flex items-center justify-center h-11 w-11 -mr-2 rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:bg-gray-200"
               aria-label="닫기"
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 

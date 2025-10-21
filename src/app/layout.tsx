@@ -8,7 +8,7 @@ export const viewport: Viewport = {
   initialScale: 1.0,
   maximumScale: 1.0,
   userScalable: false,
-  viewportFit: 'cover',
+  // viewportFit 제거: iOS PWA에서 safe area 안정성 확보
 };
 
 export const metadata: Metadata = {
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'default',
     title: '필립앤소피',
   },
   openGraph: {

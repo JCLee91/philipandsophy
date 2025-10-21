@@ -37,6 +37,7 @@
     "debug:submissions": "tsx src/scripts/debug-submission-count.ts",
     "check:cohorts": "tsx src/scripts/check-cohort-participants.ts",
     "check:yesterday-submissions": "tsx src/scripts/check-yesterday-submissions.ts",
+    "fix:yesterday-books": "tsx src/scripts/fix-yesterday-books.ts",
     "random-matching": "tsx src/scripts/random-matching.ts",
     "add:backdated-submission": "tsx src/scripts/add-backdated-submission.ts",
     "update:occupations": "tsx src/scripts/update-all-occupations.ts",

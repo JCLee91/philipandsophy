@@ -50,22 +50,36 @@ export default function DirectMessageDialog({
 
   // conversationId 생성 로직
   const conversationId = useMemo(() => {
-    if (!otherUser) return '';
+    if (!otherUser || !currentUserId) {
+      logger.warn('[DirectMessageDialog] Missing required data', { otherUser: !!otherUser, currentUserId });
+      return '';
+    }
+
+    let result = '';
 
     // admin과의 대화는 항상 현재 유저의 ID 사용
     // (관리자 권한을 가진 참가자가 admin과 대화할 때 "admin-admin" 방지)
     if (otherUser.id === 'admin') {
-      return getConversationId(currentUserId);
+      result = getConversationId(currentUserId);
     }
-
     // 참가자 간 대화
-    if (currentUser?.isSuperAdmin || currentUser?.isAdministrator) {
+    else if (currentUser?.isSuperAdmin || currentUser?.isAdministrator) {
       // 관리자가 다른 참가자와 대화: 상대방 ID 사용
-      return getConversationId(otherUser.id);
+      result = getConversationId(otherUser.id);
+    }
+    // 일반 참가자: 자신의 ID 사용
+    else {
+      result = getConversationId(currentUserId);
     }
 
-    // 일반 참가자: 자신의 ID 사용
-    return getConversationId(currentUserId);
+    logger.info('[DirectMessageDialog] conversationId generated', {
+      currentUserId,
+      otherUserId: otherUser.id,
+      isAdmin: currentUser?.isAdministrator || currentUser?.isSuperAdmin,
+      conversationId: result,
+    });
+
+    return result;
   }, [otherUser, currentUser, currentUserId]);
 
   const { data: messages = [], isLoading } = useMessages(conversationId);

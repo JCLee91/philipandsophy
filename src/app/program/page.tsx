@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 
 export default function ProgramPage() {
   // Program_01.webp ~ Program_18.webp 경로 생성
-  const version = '3.0'; // 정적 버전 번호로 효율적인 캐시 관리 (2025.10.11 업데이트)
+  const version = '4.0'; // 무손실 WebP 업데이트 (2025.10.21)
   const images = Array.from({ length: 18 }, (_, i) => ({
     src: `/image/Program/Program_${String(i + 1).padStart(2, '0')}.webp?v=${version}`,
     alt: `필립앤소피 프로그램 소개 ${i + 1}`,

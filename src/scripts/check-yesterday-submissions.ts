@@ -5,6 +5,9 @@
  * 어제 제출된 데이터의 필드값들을 확인합니다.
  */
 
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { getAdminDb } from '@/lib/firebase/admin';
 import { getYesterdayString } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';

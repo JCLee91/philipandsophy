@@ -116,7 +116,9 @@ export function getAdminDb() {
   if (!app) {
     throw new Error('Firebase Admin is not initialized. Check your credentials.');
   }
-  return app.firestore();
+  const db = app.firestore();
+  db.settings({ ignoreUndefinedProperties: true });
+  return db;
 }
 
 /**
