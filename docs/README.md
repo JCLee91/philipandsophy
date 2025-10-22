@@ -27,6 +27,13 @@ docs/
 3. **[Internal Service Secret 설정](./setup/internal-service-secret.md)** ✨ NEW - Cron ↔ Next.js API 내부 인증
 4. **[iOS PWA Web Push 구현](./setup/web-push-implementation.md)** ✨ NEW - iOS Safari PWA 푸시 알림 완전 가이드
 
+### 개발 워크플로우
+
+프로젝트 개발 방법론 및 Git 사용법:
+
+5. **[GitHub Flow 가이드](./development/github-flow-guide.md)** ✨ NEW - 브랜치 전략 및 PR 기반 개발 워크플로우
+6. **[Branch Protection 설정](./development/branch-protection-guide.md)** ✨ NEW - main 브랜치 보호 및 안전한 배포
+
 ---
 
 ## 🗄️ 데이터베이스
