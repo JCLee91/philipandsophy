@@ -124,7 +124,8 @@ export default function DirectMessageDialog({
       return;
     }
 
-    const userId = (currentUser.isSuperAdmin || currentUser.isAdministrator) ? 'admin' : currentUserId;
+    // 관리자도 자신의 실제 participantId 사용 (receiverId와 매칭되도록)
+    const userId = currentUserId;
     const hasUnread = messages.some((message) => !message.isRead && message.receiverId === userId);
 
     console.log('[DM Dialog] 📬 읽음 처리 체크', {
