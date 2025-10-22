@@ -322,6 +322,125 @@ match /messages/{messageId} {
 
 ---
 
+### Case Study #4: 2025-10-22 Legacy pushToken 필드로 인한 푸시 알림 실패
+
+**상황:**
+- 관리자 권한 사용자(이윤지-4321)가 iOS PWA에서 DM 수신
+- 푸시 알림이 전혀 오지 않음
+- Firestore에 `webPushSubscriptions` 정상 등록됨
+- `pushNotificationEnabled: true`
+- 2가지 문제 동시 발생:
+  1. DM 읽음 표시가 사라지지 않음
+  2. 푸시 알림이 오지 않음
+
+**문제 #1: 관리자 권한 사용자의 읽음 처리 실패**
+
+```typescript
+// DirectMessageDialog.tsx (원래 코드)
+const userId = (currentUser.isAdministrator) ? 'admin' : currentUserId;
+// → userId = "admin"
+
+// 하지만 실제 메시지:
+receiverId: "이윤지-4321"
+
+// 읽음 처리 쿼리:
+where('receiverId', '==', 'admin')  // ❌ 매칭 안됨!
+```
+
+**원인:**
+- 이윤지-4321이 `isAdministrator: true` 가짐
+- 하지만 메시지 데이터는 실제 participantId로 저장됨
+- userId 변환 로직 때문에 매칭 실패
+- 읽음 처리 안됨 → 붉은 배지 안 사라짐
+
+**해결:**
+```typescript
+// 관리자도 자신의 실제 participantId 사용
+const userId = currentUserId;  // 항상 실제 ID
+```
+
+---
+
+**문제 #2: Legacy pushToken 필드가 Web Push 차단**
+
+**Firebase Functions 로그:**
+```
+Using legacy pushToken for participant: 이윤지-4321
+FCM push notification multicast sent
+→ successCount: 0, failureCount: 1  // 만료된 legacy FCM 토큰
+
+Skipping Web Push (FCM already sent)  // ← Web Push 건너뜀!
+
+DM push notification processed
+→ successCount: 0  // 알림 안 옴!
+```
+
+**원인:**
+
+Firestore 데이터:
+```javascript
+{
+  pushTokens: [],  // 비어있음
+  pushToken: "old-expired-fcm-token",  // Legacy 필드 (만료됨)
+  webPushSubscriptions: [{ endpoint: "https://web.push.apple.com/..." }]
+}
+```
+
+Functions 로직:
+```typescript
+// functions/src/index.ts (원래 코드)
+if (tokens.length === 0 && participantData?.pushToken) {
+  tokens.push(participantData.pushToken);  // Legacy 사용!
+}
+
+// 결과:
+tokens.length = 1 (legacy)
+
+const shouldSendWebPush = tokens.length === 0;  // false!
+// → Web Push 건너뜀!
+```
+
+**흐름:**
+1. `pushTokens[]` 비어있음 → legacy `pushToken` 사용
+2. Legacy FCM 토큰으로 전송 시도 → 만료되어 실패
+3. `tokens.length > 0` → Web Push 건너뜀
+4. iOS 알림 안 옴!
+
+**해결:**
+
+1. **코드에서 legacy 필드 쓰기 제거:**
+   - `messaging.ts`: `pushToken`, `pushTokenUpdatedAt` 저장 안함
+   - `push-subscriptions/route.ts`: 저장 안함
+
+2. **코드에서 legacy 필드 읽기 제거:**
+   - `messaging.ts`: fallback 로직 제거
+   - `functions/src/index.ts`: fallback 로직 제거
+   - `helpers.ts`: fallback 로직 제거
+
+3. **DB에서 기존 legacy 필드 삭제:**
+   - `scripts/remove-legacy-push-fields.ts` 실행
+   - 4명의 legacy 필드 제거 완료
+
+**개선 효과:**
+- ✅ Web Push 차단 완전 해결
+- ✅ iOS 푸시 알림 정상 작동
+- ✅ 관리자 권한 사용자 읽음 처리 정상화
+- ✅ 코드 간소화 (fallback 로직 제거)
+- ✅ 최신 방식만 사용 (명확한 아키텍처)
+
+**부수 효과:**
+- ⚠️ 최종호-1801: 푸시 토큰 재설정 필요 (수동 안내 예정)
+
+**타임라인:**
+- 오전: AI 매칭 401 (db.settings 중복)
+- 오후: iOS 푸시 알림 401 (같은 원인)
+- 저녁 1: DM 조회 400 (Security Rules 복잡도)
+- 저녁 2: DM 읽음 처리 실패 (관리자 userId 변환)
+- 저녁 3: 푸시 알림 안 옴 (legacy 필드 차단)
+- → **5개 문제, 3개 근본 원인, 모두 해결!**
+
+---
+
 ## ⚠️ 기타 일반적인 문제
 
 ### 1. Firebase Admin 초기화 실패
