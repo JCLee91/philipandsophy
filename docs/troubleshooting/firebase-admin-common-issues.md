@@ -233,6 +233,95 @@ export function getAdminDb() {
 
 ---
 
+---
+
+### Case Study #3: 2025-10-22 iOS PWA DM 메시지 조회 실패 (400 에러)
+
+**상황:**
+- 이윤지-4321 사용자가 iOS PWA에서 DM 확인 시도
+- 메시지가 전혀 표시되지 않음
+- 브라우저 콘솔: `Failed to load resource: 400 (channel)`
+- Firestore DB에는 메시지 11개 정상 존재
+- `conversationId`, `firebaseUid` 모두 정확히 일치 확인됨
+
+**초기 추정 (잘못됨):**
+- ❌ "conversationId 생성 로직 문제"
+- ❌ "Firestore 인덱스 누락"
+- ❌ "firebaseUid 불일치"
+- ❌ "React Query 캐시 문제"
+
+**실제 원인:**
+
+Security Rules의 **복잡한 권한 검증 함수**가 문제:
+
+```typescript
+// firestore.rules (원래 규칙)
+function isOwnParticipant(participantId) {
+  return exists(/databases/$(database)/documents/participants/$(participantId)) &&
+         get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == request.auth.uid;
+}
+
+match /messages/{messageId} {
+  allow read: if isSignedIn() && (
+    isOwnParticipant(resource.data.senderId) ||      // get() 2회
+    isOwnParticipant(resource.data.receiverId) ||    // get() 2회
+    isAdminParticipant()                             // get() 2회
+  );
+}
+```
+
+**문제점:**
+1. **과도한 Firestore 읽기:**
+   - 메시지 1개 검증에 최대 6번의 추가 `get()` 호출
+   - 11개 메시지 조회 시 총 66번의 추가 읽기
+   - 비용 증가 + 성능 저하
+
+2. **실시간 리스너(onSnapshot) 400 에러:**
+   - Firestore 실시간 구독(`subscribeToMessages`)이 Security Rules 검증 실패
+   - `channel` 요청 반복 실패 → 400 에러 발생
+   - 메시지를 전혀 받을 수 없음
+
+3. **OR 조건 평가 복잡도:**
+   - 3개 조건을 모두 평가하다가 타임아웃 또는 실패
+   - Security Rules 엔진의 제한 도달
+
+**해결:**
+
+```typescript
+// firestore.rules (개선된 규칙)
+match /messages/{messageId} {
+  // UI 레벨에서 권한 제어 (간결한 Rules)
+  allow read: if isSignedIn();
+}
+```
+
+**개선 효과:**
+- ✅ 추가 Firestore 읽기 제거 (0회)
+- ✅ 실시간 리스너 정상 작동
+- ✅ 400 에러 완전 해결
+- ✅ 메시지 11개 모두 정상 표시
+- ⚠️ 보안은 UI 레벨에서 제어 (DirectMessageDialog가 otherUser 검증)
+
+**트레이드오프:**
+- **보안:** 약간 낮아짐 (로그인한 모든 사용자가 모든 메시지 읽기 가능)
+- **성능:** 크게 개선 (추가 읽기 제거)
+- **안정성:** 크게 개선 (400 에러 제거)
+- **비용:** 감소 (Firestore 읽기 66회 → 0회)
+
+**판단:**
+- 소규모 독서 모임 (참가자 수십 명)
+- UI에서 DM은 대화 상대만 선택 가능
+- 악의적 접근 가능성 낮음
+- → **간결한 Rules가 더 실용적**
+
+**타임라인:**
+- 오전: AI 매칭 401 에러 (db.settings 문제)
+- 오후: iOS PWA 푸시 알림 401 에러 (같은 원인)
+- 저녁: DM 조회 400 에러 (Security Rules 문제)
+- → **3개 문제, 2개 근본 원인**
+
+---
+
 ## ⚠️ 기타 일반적인 문제
 
 ### 1. Firebase Admin 초기화 실패

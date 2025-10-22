@@ -66,11 +66,27 @@ export const getMessagesByConversation = async (
     orderBy('createdAt', 'asc')
   );
 
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as DirectMessage[];
+  logger.info('[getMessagesByConversation] 메시지 조회 시작', { conversationId });
+
+  try {
+    const snapshot = await getDocs(q);
+    logger.info('[getMessagesByConversation] 조회 완료', {
+      conversationId,
+      messageCount: snapshot.size,
+      isEmpty: snapshot.empty,
+    });
+
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as DirectMessage[];
+  } catch (error) {
+    logger.error('[getMessagesByConversation] 조회 실패', {
+      conversationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 };
 
 /**
