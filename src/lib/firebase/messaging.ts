@@ -124,7 +124,7 @@ export type PushChannel = 'fcm' | 'webpush' | 'unsupported';
  * Strategy:
  * - Android PWA → FCM only
  * - iOS PWA → Web Push only
- * - Chrome browser tabs → unsupported
+ * - Chrome browser tabs → unsupported (EXCEPT in development mode)
  * - Other browsers → unsupported
  *
  * @returns Push channel type
@@ -146,7 +146,10 @@ export function detectPushChannel(): PushChannel {
     (window.navigator as any).standalone === true || // iOS Safari
     document.referrer.includes('android-app://'); // Android TWA
 
-  if (!isStandalone) {
+  // Development mode: Allow FCM in browser tab
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  if (!isStandalone && !isDevelopment) {
     logger.info('[detectPushChannel] Not in PWA/standalone mode - push unsupported');
     return 'unsupported';
   }
@@ -162,8 +165,12 @@ export function detectPushChannel(): PushChannel {
     return 'webpush';
   }
 
-  // Android PWA → FCM only
-  logger.info('[detectPushChannel] Android PWA detected - using FCM');
+  // Android PWA or Development browser → FCM
+  if (isDevelopment && !isStandalone) {
+    logger.info('[detectPushChannel] Development mode browser - using FCM');
+  } else {
+    logger.info('[detectPushChannel] Android PWA detected - using FCM');
+  }
   return 'fcm';
 }
 

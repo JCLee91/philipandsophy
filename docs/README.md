@@ -320,12 +320,14 @@ docs/
 
 #### 문제 해결
 - **iOS PWA 버그**: [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
+- **Firebase Admin 일반 이슈**: [troubleshooting/firebase-admin-common-issues.md](./troubleshooting/firebase-admin-common-issues.md) ✨ NEW
 
 ### 문제 해결 가이드
 
 #### 개발 환경
 - 프로젝트 초기 설정 → [development/setup-guide.md](./development/setup-guide.md) ✨ NEW
 - Firebase 연결 문제 → [setup/firebase.md](./setup/firebase.md)
+- Firebase Admin SDK 이슈 → [troubleshooting/firebase-admin-common-issues.md](./troubleshooting/firebase-admin-common-issues.md) ✨ NEW
 - iOS PWA 푸시 알림 → [setup/web-push-implementation.md](./setup/web-push-implementation.md) ✨ NEW
 - 환경 변수 설정 → [development/setup-guide.md](./development/setup-guide.md#환경-변수) ✨ NEW
 
@@ -345,10 +347,13 @@ docs/
 - UI 일관성 → [design/design-system.md](./design/design-system.md) ✨ NEW
 - 반응형 디자인 → [design/design-system.md#레이아웃-시스템](./design/design-system.md) ✨ NEW
 
+#### 플랫폼별 이슈
+- iOS PWA 스크롤 문제 → [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
+- Firebase Admin SDK → [troubleshooting/firebase-admin-common-issues.md](./troubleshooting/firebase-admin-common-issues.md) ✨ NEW
+
 #### 기타
 - 날짜 관련 버그 → [architecture/date-logic.md](./architecture/date-logic.md)
 - 성능 이슈 → [optimization/performance.md](./optimization/performance.md)
-- iOS PWA 스크롤 문제 → [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
 
 ---
 
@@ -373,6 +378,6 @@ docs/
 
 ---
 
-**마지막 업데이트**: 2025-10-21
+**마지막 업데이트**: 2025-10-22
 **프로젝트 버전**: V1.0 (프로덕션 배포 완료)
-**문서 상태**: ✅ 종합 문서화 완료 (PRD, TRD, System Architecture, API Reference, Setup Guide, Database Docs, Design System, iOS PWA Web Push)
+**문서 상태**: ✅ 종합 문서화 완료 (PRD, TRD, System Architecture, API Reference, Setup Guide, Database Docs, Design System, iOS PWA Web Push, Firebase Admin Troubleshooting)

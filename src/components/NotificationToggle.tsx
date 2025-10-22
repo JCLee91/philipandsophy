@@ -142,6 +142,11 @@ export function NotificationToggle() {
 
         const initResult = await initializePushNotifications(messaging, participantId);
         if (!initResult) {
+          logger.error('[enableNotifications] initializePushNotifications returned null', {
+            participantId,
+            hasMessaging: !!messaging,
+            permission: Notification.permission,
+          });
           throw new Error('Push initialization failed');
         }
 
@@ -231,8 +236,11 @@ export function NotificationToggle() {
       (window.navigator as any).standalone === true ||
       document.referrer.includes('android-app://'));
 
-  // Browser tab - show install message (gray text only, no toggle)
-  if (!isStandalone) {
+  // Development mode: Show toggle even in browser tab
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  // Browser tab - show install message (gray text only, no toggle) - EXCEPT in dev mode
+  if (!isStandalone && !isDevelopment) {
     return (
       <p className="text-sm text-gray-500">
         홈 화면에 추가 후 알림 사용 가능
