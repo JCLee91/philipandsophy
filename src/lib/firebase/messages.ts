@@ -185,10 +185,21 @@ export const markConversationAsRead = async (
     where('isRead', '==', false)
   );
 
+  console.log('[DM] 📖 읽음 처리 시작', { conversationId, userId });
+
   const snapshot = await getDocs(q);
 
+  console.log('[DM] 📊 안 읽은 메시지 조회', {
+    conversationId,
+    userId,
+    unreadCount: snapshot.size,
+  });
+
   // 업데이트할 메시지가 없으면 early return (빈 배치 방지)
-  if (snapshot.empty) return;
+  if (snapshot.empty) {
+    console.log('[DM] ✅ 안 읽은 메시지 없음');
+    return;
+  }
 
   const batch = writeBatch(db);
 
@@ -197,6 +208,12 @@ export const markConversationAsRead = async (
   });
 
   await batch.commit();
+
+  console.log('[DM] ✅ 읽음 처리 완료', {
+    conversationId,
+    userId,
+    updatedCount: snapshot.size,
+  });
 };
 
 /**

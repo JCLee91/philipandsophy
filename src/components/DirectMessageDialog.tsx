@@ -127,7 +127,16 @@ export default function DirectMessageDialog({
     const userId = (currentUser.isSuperAdmin || currentUser.isAdministrator) ? 'admin' : currentUserId;
     const hasUnread = messages.some((message) => !message.isRead && message.receiverId === userId);
 
+    console.log('[DM Dialog] 📬 읽음 처리 체크', {
+      open,
+      conversationId,
+      userId,
+      messagesCount: messages.length,
+      hasUnread,
+    });
+
     if (hasUnread) {
+      console.log('[DM Dialog] ⚡ markConversationAsRead 호출');
       markConversationAsRead({
         conversationId,
         userId,

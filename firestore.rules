@@ -121,9 +121,9 @@ service cloud.firestore {
         ((request.resource.data.content is string && request.resource.data.content.size() > 0) ||
          (request.resource.data.imageUrl is string && request.resource.data.imageUrl.size() > 0));
 
-      // 수정: 수신자만 isRead 변경 가능
+      // 수정: isRead 필드만 변경 가능 (로그인한 사용자)
+      // 이전 규칙의 isOwnParticipant() 제거 (read 규칙과 동일한 이유)
       allow update: if isSignedIn() &&
-        isOwnParticipant(resource.data.receiverId) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
 
       allow delete: if false;
