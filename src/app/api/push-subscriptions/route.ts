@@ -95,8 +95,6 @@ export async function POST(request: NextRequest) {
       pushTokens: [], // ✅ Android FCM 토큰 삭제
       webPushSubscriptions: [newSubscription], // iOS Web Push만 저장
       pushNotificationEnabled: true,
-      pushToken: subscription.endpoint, // Legacy 필드
-      pushTokenUpdatedAt: admin.firestore.Timestamp.now(),
     });
 
     return NextResponse.json({
@@ -167,8 +165,6 @@ export async function DELETE(request: NextRequest) {
       pushTokens: [],
       webPushSubscriptions: [],
       pushNotificationEnabled: false,
-      pushToken: admin.firestore.FieldValue.delete(),
-      pushTokenUpdatedAt: admin.firestore.FieldValue.delete(),
     });
 
     return NextResponse.json({

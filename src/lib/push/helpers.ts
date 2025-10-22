@@ -40,18 +40,7 @@ export function hasAnyPushSubscription(data: any): boolean {
       (sub: any) => typeof sub?.endpoint === 'string' && sub.endpoint.trim().length > 0
     );
 
-  // ✅ Priority 2: Fallback to legacy field ONLY if arrays don't exist
-  // If arrays exist but are empty, ignore legacy field (data migration complete)
-  const arraysExist =
-    (Array.isArray(data.pushTokens) && data.pushTokens.length > 0) ||
-    (Array.isArray(data.webPushSubscriptions) && data.webPushSubscriptions.length > 0);
-
-  const hasLegacyToken =
-    !arraysExist &&
-    typeof data.pushToken === 'string' &&
-    data.pushToken.trim().length > 0;
-
-  return hasMultiDeviceToken || hasWebPushSubscription || hasLegacyToken;
+  return hasMultiDeviceToken || hasWebPushSubscription;
 }
 
 /**

@@ -46,6 +46,7 @@
     "update:admin-to-administrator": "tsx src/scripts/update-admin-to-administrator.ts",
     "debug:participants-cohort": "tsx src/scripts/debug-participants-by-cohort.ts",
     "check:push-notifications": "tsx src/scripts/check-push-notifications.ts",
+    "cleanup:legacy-push-fields": "tsx scripts/remove-legacy-push-fields.ts",
     "migrate:firebase-auth": "tsx src/scripts/migrate-users-to-firebase-phone-auth.ts",
     "verify:firebase-auth": "tsx src/scripts/verify-firebase-uid-linking.ts",
     "set:admin-claims": "tsx scripts/set-admin-claims.ts",

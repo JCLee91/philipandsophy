@@ -363,8 +363,6 @@ export async function savePushTokenToFirestore(
       transaction.update(participantRef, {
         pushTokens: [newTokenEntry], // FCM 토큰만 저장
         webPushSubscriptions: [], // Web Push 구독 삭제
-        pushToken: token,
-        pushTokenUpdatedAt: Timestamp.now(),
         pushNotificationEnabled: true,
       });
     });
@@ -424,26 +422,6 @@ export async function getPushTokenFromFirestore(
       return deviceToken.token;
     }
 
-    // ✅ Priority 2: Fallback to legacy pushToken field
-    // pushTokens 배열이 존재하지만 현재 디바이스가 없다면 구버전 토큰은 무시
-    if (pushTokens.length > 0) {
-      logger.debug('No token for current device; pushTokens array present, skipping legacy token', {
-        participantId,
-        deviceId,
-        tokenEntries: pushTokens.length,
-      });
-      return null;
-    }
-
-    const legacyToken = data.pushToken;
-    if (legacyToken && typeof legacyToken === 'string' && legacyToken.trim().length > 0) {
-      logger.debug('Found legacy push token (not in pushTokens array)', {
-        participantId,
-        tokenPrefix: legacyToken.substring(0, 20) + '...',
-      });
-      return legacyToken;
-    }
-
     logger.debug('No push token found for participant', { participantId, deviceId });
     return null;
   } catch (error) {
@@ -483,8 +461,6 @@ export async function removePushTokenFromFirestore(
         pushTokens: [],
         webPushSubscriptions: [],
         pushNotificationEnabled: false,
-        pushToken: deleteField(),
-        pushTokenUpdatedAt: deleteField(),
       });
     });
 
@@ -783,10 +759,21 @@ export async function shouldRefreshPushToken(participantId: string): Promise<boo
       });
       return false;
     }
-    const pushTokenUpdatedAt = data?.pushTokenUpdatedAt?.toDate();
+    // pushTokens 배열에서 가장 오래된 토큰 확인
+    const pushTokens: PushTokenEntry[] = Array.isArray(data.pushTokens) ? data.pushTokens : [];
 
-    if (!pushTokenUpdatedAt) {
+    if (pushTokens.length === 0) {
       // No token saved yet, should initialize
+      return true;
+    }
+
+    // 가장 최근 업데이트된 토큰 찾기
+    const latestUpdate = pushTokens.reduce((latest, entry) => {
+      const entryDate = entry.updatedAt?.toDate();
+      return entryDate && (!latest || entryDate > latest) ? entryDate : latest;
+    }, null as Date | null);
+
+    if (!latestUpdate) {
       return true;
     }
 
@@ -794,7 +781,7 @@ export async function shouldRefreshPushToken(participantId: string): Promise<boo
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    return pushTokenUpdatedAt < sevenDaysAgo;
+    return latestUpdate < sevenDaysAgo;
   } catch (error) {
     logger.error('Error checking push token refresh status', error);
     return false;

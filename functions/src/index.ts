@@ -175,13 +175,6 @@ async function getPushTokens(participantId: string): Promise<{
       entriesMap.set(entry.token, entry); // Store actual Firestore entry
     });
 
-    // ✅ Priority 2: Fallback to legacy pushToken if array is empty
-    if (tokens.length === 0 && participantData?.pushToken) {
-      tokens.push(participantData.pushToken);
-      entriesMap.set(participantData.pushToken, null); // Legacy token has no entry
-      logger.debug(`Using legacy pushToken for participant: ${participantId}`);
-    }
-
     // ✅ Priority 3: Get Web Push subscriptions
     const webPushSubscriptions: WebPushSubscriptionData[] =
       participantData?.webPushSubscriptions || [];
@@ -511,40 +504,24 @@ async function removeExpiredTokens(
     const participantData = participantSnap.data();
     const pushTokens: Array<{ deviceId: string; token: string; updatedAt: admin.firestore.Timestamp }> =
       participantData?.pushTokens || [];
-    const legacyPushToken: string | undefined = participantData?.pushToken;
 
     // Find token entries to remove from pushTokens array
     const tokensToRemove = pushTokens.filter((entry) =>
       failedTokens.includes(entry.token)
     );
 
-    // Check if legacy pushToken is in failedTokens
-    const shouldRemoveLegacyToken = legacyPushToken && failedTokens.includes(legacyPushToken);
-
     // If nothing to remove, return early
-    if (tokensToRemove.length === 0 && !shouldRemoveLegacyToken) {
+    if (tokensToRemove.length === 0) {
       return;
     }
 
-    // Prepare update object
-    const updateData: Record<string, any> = {};
-
     // Remove failed tokens from pushTokens array
-    if (tokensToRemove.length > 0) {
-      updateData.pushTokens = admin.firestore.FieldValue.arrayRemove(...tokensToRemove);
-    }
-
-    // ✅ Remove legacy pushToken field if it's invalid
-    if (shouldRemoveLegacyToken) {
-      updateData.pushToken = admin.firestore.FieldValue.delete();
-      logger.info(`Removing legacy pushToken field for participant: ${participantId}`);
-    }
-
-    await participantRef.update(updateData);
+    await participantRef.update({
+      pushTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove),
+    });
 
     logger.info(`Removed expired tokens for participant: ${participantId}`, {
       arrayTokensRemoved: tokensToRemove.length,
-      legacyTokenRemoved: shouldRemoveLegacyToken,
     });
 
     // ✅ If all tokens removed, disable push notifications
@@ -552,8 +529,7 @@ async function removeExpiredTokens(
       (entry) => !tokensToRemove.some((failed) => failed.token === entry.token)
     );
 
-    // No tokens left in array AND no legacy token (or legacy token was removed)
-    if (remainingTokens.length === 0 && (!legacyPushToken || shouldRemoveLegacyToken)) {
+    if (remainingTokens.length === 0) {
       await participantRef.update({
         pushNotificationEnabled: false,
       });
