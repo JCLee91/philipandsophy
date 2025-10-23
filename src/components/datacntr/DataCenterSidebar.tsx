@@ -11,7 +11,8 @@ import {
   Settings,
   FolderKanban,
   Menu,
-  X
+  X,
+  Table
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,11 @@ const navItems: NavItem[] = [
     href: '/datacntr/submissions',
     label: '독서 인증',
     icon: <BookOpen className="h-5 w-5" />,
+  },
+  {
+    href: '/datacntr/board',
+    label: '독서 인증 현황판',
+    icon: <Table className="h-5 w-5" />,
   },
   {
     href: '/datacntr/notices',
