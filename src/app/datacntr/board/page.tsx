@@ -53,22 +53,22 @@ export default function DataCenterBoardPage() {
         const dateStrings = dateRange.map((date) => format(date, 'yyyy-MM-dd'));
         setDates(dateStrings);
 
-        // 3. Get all participants (exclude admins)
+        // 3. Get all participants (exclude only super admins, include general admins)
         const participantsRef = collection(db, 'participants');
         const participantsQuery = query(
           participantsRef,
           where('cohortId', '==', activeCohort.id),
-          where('isAdministrator', '!=', true),
-          orderBy('isAdministrator'),
           orderBy('name')
         );
         const participantsSnapshot = await getDocs(participantsQuery);
 
-        const participants = participantsSnapshot.docs.map((doc) => {
-          const data = doc.data() as Participant;
-          data.id = doc.id;
-          return data;
-        });
+        const participants = participantsSnapshot.docs
+          .map((doc) => {
+            const data = doc.data() as Participant;
+            data.id = doc.id;
+            return data;
+          })
+          .filter((p) => !p.isSuperAdmin); // Exclude only super admins
 
         // 4. Get all submissions for this cohort
         const submissionsRef = collection(db, 'reading_submissions');

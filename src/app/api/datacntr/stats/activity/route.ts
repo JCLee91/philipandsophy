@@ -50,12 +50,12 @@ export async function GET(request: NextRequest) {
       db.collection(COLLECTIONS.PARTICIPANTS).get(), // 푸시 허용 수 계산용
     ]);
 
-    // 관리자 ID 목록 생성
-    const adminIds = new Set(
+    // 슈퍼관리자 ID 목록 생성 (일반 관리자는 포함)
+    const superAdminIds = new Set(
       allParticipantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isSuperAdmin === true || data.isAdministrator === true;
+          return data.isSuperAdmin === true;
         })
         .map((doc) => doc.id)
     );
@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
       // 그날까지 푸시 허용한 참가자 수 (누적)
       const pushEnabledCount = allParticipantsSnapshot.docs.filter((doc) => {
         const data = doc.data();
-        // 관리자 제외
-        if (data.isAdministrator || data.isSuperAdmin) return false;
+        // 슈퍼관리자만 제외 (일반 관리자는 포함)
+        if (data.isSuperAdmin) return false;
         // 푸시 구독/토큰 확인
         if (!hasAnyPushSubscription(data)) return false;
         // 그날까지 가입한 참가자 (그날 늦게 가입한 사용자도 포함)
@@ -102,11 +102,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 독서 인증 집계 (관리자 제외)
+    // 독서 인증 집계 (슈퍼관리자만 제외)
     submissionsSnapshot.forEach((doc) => {
       const data = doc.data();
-      // 관리자 인증 제외
-      if (adminIds.has(data.participantId)) return;
+      // 슈퍼관리자 인증만 제외 (일반 관리자는 포함)
+      if (superAdminIds.has(data.participantId)) return;
 
       const submittedAt = safeTimestampToDate(data.submittedAt);
       const date = format(submittedAt, 'yyyy-MM-dd');
