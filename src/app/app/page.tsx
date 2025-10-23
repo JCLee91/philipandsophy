@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PhoneAuthCard from '@/features/auth/components/PhoneAuthCard';
+import SplashScreen from '@/features/auth/components/SplashScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 import { appRoutes } from '@/lib/navigation';
@@ -10,6 +11,7 @@ import { appRoutes } from '@/lib/navigation';
 export default function Home() {
   const router = useRouter();
   const { participant, participantStatus, isLoading } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
 
   // ✅ participant가 ready 상태이면 채팅으로 이동
   useEffect(() => {
@@ -22,16 +24,14 @@ export default function Home() {
     }
   }, [isLoading, participantStatus, participant, router]);
 
-  // ✅ 하나의 통합된 로딩 상태
-  if (isLoading || (participantStatus === 'ready' && participant)) {
-    return (
-      <div className="app-shell flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center space-y-4">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          <p className="text-gray-600">로그인 확인 중...</p>
-        </div>
-      </div>
-    );
+  // ✅ 스플래시 화면 표시 (로딩 중이거나 초기 진입 시)
+  if (showSplash || isLoading) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
+  // ✅ 로그인 한 상태면 리다이렉트
+  if (participantStatus === 'ready' && participant) {
+    return null;
   }
 
   // ✅ 로그인 필요
