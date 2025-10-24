@@ -20,7 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Participant } from '@/types/database';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
-import { getTodayString, getMatchingAccessDates, canViewAllProfiles } from '@/lib/date-utils';
+import { getTodayString, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth } from '@/lib/date-utils';
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 
@@ -86,6 +86,7 @@ function TodayLibraryContent() {
 
   // Step 2-2: 마지막 날 체크
   const showAllProfiles = cohort ? canViewAllProfiles(cohort) : false;
+  const showAllProfilesWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
 
   // 추천 참가자들의 정보 가져오기
   // 마지막 날이면 전체 참가자 쿼리, 아니면 매칭된 4명만
@@ -150,8 +151,9 @@ function TodayLibraryContent() {
       });
     },
     // 🔒 보안 수정: 인증된 유저(또는 관리자)만 개인정보 다운로드 가능
+    // 단, 마지막 날부터 7일간은 인증 없이도 전체 프로필 조회 가능
     enabled: showAllProfiles
-      ? !isLocked && !!cohort && !!currentUserId
+      ? !!cohort && !!currentUserId
       : !isLocked && allFeaturedIds.length > 0 && !!activeMatchingDate,
     gcTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결) - React Query v5: cacheTime → gcTime
     staleTime: 0, // 항상 신선한 데이터 fetch
@@ -266,8 +268,9 @@ function TodayLibraryContent() {
     router.push(profileUrl);
   };
 
-  // 1단계: 미인증 유저는 무조건 자물쇠 더미 카드 표시
-  if (isLocked) {
+  // 1단계: 미인증 유저는 자물쇠 더미 카드 표시
+  // 단, 15일차부터 21일차까지는 인증 없이도 전체 프로필 공개
+  if (isLocked && !showAllProfilesWithoutAuth) {
     // 미인증 유저를 위한 더미 카드 (자물쇠 표시용)
     const lockedPlaceholders = {
       similar: [

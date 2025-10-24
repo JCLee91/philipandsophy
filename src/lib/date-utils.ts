@@ -223,3 +223,26 @@ export function canViewAllProfiles(cohort: Cohort): boolean {
 
   return today <= viewDeadline;
 }
+
+/**
+ * 인증 없이도 전체 프로필을 볼 수 있는 날인지 체크
+ * (15일차부터 21일차까지, 즉 프로그램 종료 다음날부터 7일간)
+ *
+ * @param cohort - 기수 정보
+ * @returns true if 인증 없이 전체 공개 가능 (endDate + 1일 ~ endDate + 7일)
+ */
+export function canViewAllProfilesWithoutAuth(cohort: Cohort): boolean {
+  if (!cohort?.endDate) return false;
+
+  const today = parseISO(getTodayString());
+  const endDate = parseISO(cohort.endDate);
+
+  // 15일차 (마지막 날 + 1일)부터 시작
+  const startDate = addDays(endDate, 1);
+  if (today < startDate) return false;
+
+  // 21일차 (마지막 날 + 7일)까지
+  const viewDeadline = addDays(endDate, 7);
+
+  return today <= viewDeadline;
+}
