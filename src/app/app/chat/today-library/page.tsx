@@ -466,12 +466,17 @@ function TodayLibraryContent() {
                         남자 ({maleParticipants.length}명)
                       </h3>
                       <div className="flex flex-col w-full max-h-[800px] overflow-y-auto pr-2">
-                        <BookmarkRow
-                          participants={maleParticipants}
-                          theme="blue"
-                          isLocked={false}
-                          onCardClick={handleProfileClickWithAuth}
-                        />
+                        {maleParticipants.map((p, index) => (
+                          <div key={p.id}>
+                            <BookmarkRow
+                              participants={[p]}
+                              theme="blue"
+                              isLocked={false}
+                              onCardClick={handleProfileClickWithAuth}
+                            />
+                            {index < maleParticipants.length - 1 && <BlurDivider />}
+                          </div>
+                        ))}
                       </div>
                     </div>
 
@@ -481,12 +486,17 @@ function TodayLibraryContent() {
                         여자 ({femaleParticipants.length}명)
                       </h3>
                       <div className="flex flex-col w-full max-h-[800px] overflow-y-auto pr-2">
-                        <BookmarkRow
-                          participants={femaleParticipants}
-                          theme="yellow"
-                          isLocked={false}
-                          onCardClick={handleProfileClickWithAuth}
-                        />
+                        {femaleParticipants.map((p, index) => (
+                          <div key={p.id}>
+                            <BookmarkRow
+                              participants={[p]}
+                              theme="yellow"
+                              isLocked={false}
+                              onCardClick={handleProfileClickWithAuth}
+                            />
+                            {index < femaleParticipants.length - 1 && <BlurDivider />}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -517,12 +527,17 @@ function TodayLibraryContent() {
                       기타 ({otherParticipants.length}명)
                     </h3>
                     <div className="flex flex-col w-full">
-                      <BookmarkRow
-                        participants={otherParticipants}
-                        theme="blue"
-                        isLocked={false}
-                        onCardClick={handleProfileClickWithAuth}
-                      />
+                      {otherParticipants.map((p, index) => (
+                        <div key={p.id}>
+                          <BookmarkRow
+                            participants={[p]}
+                            theme="blue"
+                            isLocked={false}
+                            onCardClick={handleProfileClickWithAuth}
+                          />
+                          {index < otherParticipants.length - 1 && <BlurDivider />}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
