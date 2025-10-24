@@ -136,30 +136,30 @@ export default function AIChatPanel() {
             <Bot className="h-5 w-5" />
             AI 데이터 분석
           </CardTitle>
-          <div className="flex items-center gap-2">
-            {lastUpdated && (
+          {dataContext && (
+            <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">
-                {Math.floor((Date.now() - lastUpdated.getTime()) / 60000)}분 전 업데이트
+                {Math.floor((Date.now() - (lastUpdated?.getTime() || Date.now())) / 60000)}분 전 업데이트
               </span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefreshData}
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                  로딩중
-                </>
-              ) : (
-                <>
-                  📥 데이터 불러오기 (작업 전 필수)
-                </>
-              )}
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshData}
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    로딩중
+                  </>
+                ) : (
+                  <>
+                    🔄 새로고침
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>

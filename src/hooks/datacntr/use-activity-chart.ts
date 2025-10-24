@@ -6,17 +6,22 @@ import { DATACNTR_QUERY_CONFIG } from '@/constants/datacntr';
 import { fetchWithTokenRefresh } from '@/lib/auth-utils';
 import type { DailyActivity } from '@/types/datacntr';
 
-export function useActivityChart(days: number = DATACNTR_QUERY_CONFIG.DEFAULT_ACTIVITY_DAYS) {
+export function useActivityChart(days: number = DATACNTR_QUERY_CONFIG.DEFAULT_ACTIVITY_DAYS, cohortId?: string) {
   const { user } = useAuth();
 
   return useQuery<DailyActivity[]>({
-    queryKey: ['datacntr', 'stats', 'activity', days],
+    queryKey: ['datacntr', 'stats', 'activity', days, cohortId],
     queryFn: async () => {
       if (!user) {
         throw new Error('로그인이 필요합니다');
       }
 
-      const response = await fetchWithTokenRefresh(`/api/datacntr/stats/activity?days=${days}`);
+      const params = new URLSearchParams({ days: days.toString() });
+      if (cohortId) {
+        params.append('cohortId', cohortId);
+      }
+
+      const response = await fetchWithTokenRefresh(`/api/datacntr/stats/activity?${params}`);
 
       if (!response.ok) {
         throw new Error('활동 지표 조회 실패');
@@ -24,7 +29,7 @@ export function useActivityChart(days: number = DATACNTR_QUERY_CONFIG.DEFAULT_AC
 
       return response.json();
     },
-    enabled: !!user,
+    enabled: !!user && !!cohortId,
     staleTime: DATACNTR_QUERY_CONFIG.ACTIVITY_STALE_TIME,
   });
 }

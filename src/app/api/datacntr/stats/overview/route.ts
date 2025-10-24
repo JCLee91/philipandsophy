@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     }
 
     const db = getAdminDb();
+    const { searchParams } = new URL(request.url);
+    const cohortId = searchParams.get('cohortId');
 
     // 오늘 날짜 (KST) - submissionDate 필드를 사용해 타임존 이슈 제거
     const todayString = getTodayString();
@@ -25,13 +27,30 @@ export async function GET(request: NextRequest) {
     // 병렬로 통계 조회 (Admin SDK)
     const [cohortsSnapshot, participantsSnapshot, submissionsSnapshot, todaySubmissionsSnapshot, noticesSnapshot, messagesSnapshot] = await Promise.all([
       db.collection(COLLECTIONS.COHORTS).get(),
-      db.collection(COLLECTIONS.PARTICIPANTS).get(),
-      db.collection(COLLECTIONS.READING_SUBMISSIONS).get(),
-      db
-        .collection(COLLECTIONS.READING_SUBMISSIONS)
-        .where('submissionDate', '==', todayString)
-        .get(),
-      db.collection(COLLECTIONS.NOTICES).get(),
+      cohortId
+        ? db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
+        : db.collection(COLLECTIONS.PARTICIPANTS).get(),
+      cohortId
+        ? db.collection(COLLECTIONS.READING_SUBMISSIONS).get().then(async snap => {
+            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
+            const participantIds = participants.docs.map(d => d.id);
+            return {
+              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
+            };
+          })
+        : db.collection(COLLECTIONS.READING_SUBMISSIONS).get(),
+      cohortId
+        ? db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submissionDate', '==', todayString).get().then(async snap => {
+            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
+            const participantIds = participants.docs.map(d => d.id);
+            return {
+              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
+            };
+          })
+        : db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submissionDate', '==', todayString).get(),
+      cohortId
+        ? db.collection(COLLECTIONS.NOTICES).where('cohortId', '==', cohortId).get()
+        : db.collection(COLLECTIONS.NOTICES).get(),
       db.collection(COLLECTIONS.MESSAGES).get(),
     ]);
 

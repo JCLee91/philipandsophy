@@ -6,17 +6,21 @@ import { DATACNTR_QUERY_CONFIG } from '@/constants/datacntr';
 import { fetchWithTokenRefresh } from '@/lib/auth-utils';
 import type { OverviewStats } from '@/types/datacntr';
 
-export function useDataCenterStats() {
+export function useDataCenterStats(cohortId?: string) {
   const { user } = useAuth();
 
   return useQuery<OverviewStats>({
-    queryKey: ['datacntr', 'stats', 'overview'],
+    queryKey: ['datacntr', 'stats', 'overview', cohortId],
     queryFn: async () => {
       if (!user) {
         throw new Error('로그인이 필요합니다');
       }
 
-      const response = await fetchWithTokenRefresh('/api/datacntr/stats/overview');
+      const url = cohortId
+        ? `/api/datacntr/stats/overview?cohortId=${cohortId}`
+        : '/api/datacntr/stats/overview';
+
+      const response = await fetchWithTokenRefresh(url);
 
       if (!response.ok) {
         throw new Error('통계 조회 실패');
@@ -24,7 +28,7 @@ export function useDataCenterStats() {
 
       return response.json();
     },
-    enabled: !!user,
+    enabled: !!user && !!cohortId,
     staleTime: DATACNTR_QUERY_CONFIG.STATS_STALE_TIME,
     refetchInterval: DATACNTR_QUERY_CONFIG.STATS_REFETCH_INTERVAL,
   });

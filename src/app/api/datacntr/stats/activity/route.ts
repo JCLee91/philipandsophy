@@ -33,9 +33,10 @@ export async function GET(request: NextRequest) {
       return auth.error;
     }
 
-    // days 파라미터 (기본 7일)
+    // days, cohortId 파라미터
     const searchParams = request.nextUrl.searchParams;
     const days = parseInt(searchParams.get('days') || '7', 10);
+    const cohortId = searchParams.get('cohortId');
 
     const db = getAdminDb();
     const now = new Date();
@@ -44,10 +45,20 @@ export async function GET(request: NextRequest) {
     const startDate = subDays(now, days);
     startDate.setHours(0, 0, 0, 0);
 
-    // 독서 인증 & 전체 참가자 조회 (Admin SDK)
+    // 독서 인증 & 전체 참가자 조회 (cohortId 필터링)
     const [submissionsSnapshot, allParticipantsSnapshot] = await Promise.all([
-      db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get(),
-      db.collection(COLLECTIONS.PARTICIPANTS).get(), // 푸시 허용 수 계산용
+      cohortId
+        ? db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get().then(async snap => {
+            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
+            const participantIds = participants.docs.map(d => d.id);
+            return {
+              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
+            };
+          })
+        : db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get(),
+      cohortId
+        ? db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
+        : db.collection(COLLECTIONS.PARTICIPANTS).get(),
     ]);
 
     // 슈퍼관리자 ID 목록 생성 (일반 관리자는 포함)
@@ -103,7 +114,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 독서 인증 집계 (슈퍼관리자만 제외)
-    submissionsSnapshot.forEach((doc) => {
+    submissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
       // 슈퍼관리자 인증만 제외 (일반 관리자는 포함)
       if (superAdminIds.has(data.participantId)) return;
