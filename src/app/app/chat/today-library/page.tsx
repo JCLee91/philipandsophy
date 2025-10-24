@@ -442,7 +442,7 @@ function TodayLibraryContent() {
         {/* Main Content */}
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-4 w-full">
-            <div className="pb-6">
+            <div className="pt-6 pb-6">
               <div className="flex flex-col gap-12">
                 {/* Header Section */}
                 <div className="flex flex-col gap-3">
@@ -452,7 +452,10 @@ function TodayLibraryContent() {
                     확인해보세요
                   </h1>
                   <p className="font-medium text-body-base text-text-secondary">
-                    밤 12시까지만 읽을 수 있어요
+                    {showAllProfiles
+                      ? '14일간의 여정을 마치며 모든 멤버의 프로필을 공개합니다'
+                      : '밤 12시까지만 읽을 수 있어요'
+                    }
                   </p>
                 </div>
 
