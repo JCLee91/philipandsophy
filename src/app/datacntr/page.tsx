@@ -4,11 +4,12 @@ import { useDataCenterStats } from '@/hooks/datacntr/use-datacntr-stats';
 import { useActivityChart } from '@/hooks/datacntr/use-activity-chart';
 import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
+import AIChatPanel from '@/components/datacntr/AIChatPanel';
 import { Users, BookOpen, Bell, FolderKanban, FileText, BellRing } from 'lucide-react';
 
 export default function DataCenterPage() {
   const { data: stats, isLoading: statsLoading } = useDataCenterStats();
-  const { data: activities, isLoading: activityLoading } = useActivityChart(7);
+  const { data: activities, isLoading: activityLoading } = useActivityChart(14);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -65,6 +66,11 @@ export default function DataCenterPage() {
 
       {/* 활동 추이 그래프 */}
       <ActivityChart data={activities ?? []} isLoading={activityLoading} />
+
+      {/* AI 데이터 분석 챗봇 */}
+      <div className="mt-8">
+        <AIChatPanel />
+      </div>
     </div>
   );
 }

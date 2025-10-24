@@ -253,14 +253,14 @@ JSON만 반환하세요.
 `;
 
     logger.info('🤖 OpenAI API 호출 시작', {
-      model: 'gpt-5-nano',
+      model: 'gpt-5-mini',
       participantCount: participants.length,
       promptLength: prompt.length,
     });
 
     const apiStartTime = Date.now();
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5-nano-2025-08-07',
+      model: 'gpt-5-mini',
       messages: [
         {
           role: 'system',
