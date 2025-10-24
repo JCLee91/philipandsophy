@@ -21,7 +21,7 @@ import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString } from '@/lib/date-utils';
+import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, canViewAllProfiles, canViewAllProfilesWithoutAuth, getTodayString } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
@@ -127,9 +127,19 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 매칭 날짜 (접근 권한 체크용)
   const effectiveMatchingDate = matchingLookup?.date ?? preferredMatchingDate ?? null;
 
-  // 프로필북 표시 규칙: "어제 답변 → 오늘 공개"
-  // 10월 17일 매칭 → 10월 16일까지의 인증만 표시
-  const submissionCutoffDate = effectiveMatchingDate ? getPreviousDayString(effectiveMatchingDate) : null;
+  // 14일차(마지막 날) 및 15일차 이후 체크
+  const isFinalDayOrAfter = cohort ? canViewAllProfiles(cohort) : false;
+  const isAfterProgramWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
+
+  // 14일차나 15일차 이후인지 확인 (특별 파라미터로 전달됨)
+  const isFinalDayAccess = matchingDate === getTodayString() && isFinalDayOrAfter;
+
+  // 프로필북 표시 규칙:
+  // - 14일차 또는 15일차 이후: 최신 제출물 모두 표시 (cutoff 없음)
+  // - 평소: "어제 답변 → 오늘 공개" (10월 17일 매칭 → 10월 16일까지만)
+  const submissionCutoffDate = (isFinalDayAccess || isAfterProgramWithoutAuth || isSuperAdmin)
+    ? null  // 최신 제출물 모두 표시
+    : effectiveMatchingDate ? getPreviousDayString(effectiveMatchingDate) : null;
 
   const viewerHasAccessForDate = isSuperAdmin
     ? true
@@ -255,8 +265,16 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     return null;
   }, [viewerAssignment, isFeatured, participantId]);
 
-  // 최종 접근 권한: 본인 OR 슈퍼관리자 OR (매칭 날짜에 인증 완료 AND 추천 4명 중 하나)
-  const hasAccess = isSelf || isSuperAdmin || (isVerifiedToday && viewerHasAccessForDate && isFeatured);
+  // 최종 접근 권한:
+  // - 본인 OR 슈퍼관리자: 항상 가능
+  // - 14일차 + 인증 완료: 모든 프로필 접근 가능
+  // - 15일차 이후: 인증 없이도 모든 프로필 접근 가능
+  // - 평소: 매칭된 4명만 (인증 완료 + 추천 멤버)
+  const hasAccess = isSelf ||
+    isSuperAdmin ||
+    (isAfterProgramWithoutAuth) ||  // 15일차 이후 (인증 불필요)
+    (isFinalDayAccess && isVerifiedToday) ||  // 14일차 (인증 필요)
+    (isVerifiedToday && viewerHasAccessForDate && isFeatured);  // 평소 (매칭된 4명만)
 
   // 디버깅 로그
   logger.info('프로필북 접근 권한 체크', {
