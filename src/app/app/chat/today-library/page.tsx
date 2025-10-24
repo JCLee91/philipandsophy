@@ -85,7 +85,8 @@ function TodayLibraryContent() {
   );
 
   // Step 2-2: 마지막 날 체크
-  const showAllProfiles = cohort ? canViewAllProfiles(cohort) : false;
+  // 슈퍼관리자는 1일차부터 항상 전체 프로필 볼 수 있음 (인증 불필요)
+  const showAllProfiles = isSuperAdmin || (cohort ? canViewAllProfiles(cohort) : false);
   const showAllProfilesWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
 
   // 추천 참가자들의 정보 가져오기
@@ -269,8 +270,10 @@ function TodayLibraryContent() {
   };
 
   // 1단계: 미인증 유저는 자물쇠 더미 카드 표시
-  // 단, 15일차부터 21일차까지는 인증 없이도 전체 프로필 공개
-  if (isLocked && !showAllProfilesWithoutAuth) {
+  // 단, 다음 경우는 인증 없이도 전체 프로필 공개:
+  // - 슈퍼관리자 (언제든지)
+  // - 15일차부터 21일차까지 (일반 유저)
+  if (isLocked && !isSuperAdmin && !showAllProfilesWithoutAuth) {
     // 미인증 유저를 위한 더미 카드 (자물쇠 표시용)
     const lockedPlaceholders = {
       similar: [

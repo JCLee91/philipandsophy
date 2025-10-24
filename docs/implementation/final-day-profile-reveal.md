@@ -49,8 +49,9 @@
 - **공개 기간: 14일차 ~ 21일차 (총 8일간)**
 
 **인증 조건**:
-- 14일차: `canViewAllProfiles()` = true + 인증 필수 (`!isLocked`)
-- 15일차~21일차: `canViewAllProfilesWithoutAuth()` = true + 인증 불필요
+- **슈퍼관리자**: 1일차부터 항상 전체 프로필 공개 (인증 불필요)
+- **일반 유저 14일차**: `canViewAllProfiles()` = true + 인증 필수 (`!isLocked`)
+- **일반 유저 15일차~21일차**: `canViewAllProfilesWithoutAuth()` = true + 인증 불필요
 
 ### 2. 표시 대상
 **포함:**
