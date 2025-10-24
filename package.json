@@ -57,6 +57,7 @@
     "reset:push-tokens": "tsx scripts/reset-all-push-tokens.ts",
     "test:push-system": "tsx scripts/test-push-notifications.ts",
     "reset:admin-push": "tsx scripts/reset-admin-push-tokens.ts",
+    "migrate:program-start-date": "tsx src/scripts/migrate-add-program-start-date.ts",
     "test:send-push-admin": "tsx scripts/send-test-push-to-admin.ts"
   },
   "dependencies": {
