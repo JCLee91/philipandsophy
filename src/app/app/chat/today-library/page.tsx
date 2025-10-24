@@ -445,36 +445,17 @@ function TodayLibraryContent() {
           <div className="mx-auto max-w-md px-4 w-full">
             <div className="pt-12 pb-6">
               <div className="flex flex-col gap-12">
-                {/* Step 3-1: 마지막 날 배너 */}
-                {showAllProfiles && (
-                  <div className="p-6 bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-2 border-purple-200 rounded-xl">
-                    <div className="text-center">
-                      <h2 className="text-2xl font-bold text-purple-800 mb-2">
-                        🎉 피날레 - 전체 프로필 공개!
-                      </h2>
-                      <p className="text-purple-600">
-                        14일간의 여정을 마치며, 모든 참가자의 프로필을 공개합니다
-                      </p>
-                      <p className="text-sm text-purple-500 mt-2">
-                        총 {featuredParticipants.length}명의 이야기를 만나보세요
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Header Section */}
-                {!showAllProfiles && (
-                  <div className="flex flex-col gap-3">
-                    <h1 className="font-bold text-heading-xl text-black">
-                      프로필 북을
-                      <br />
-                      확인해보세요
-                    </h1>
-                    <p className="font-medium text-body-base text-text-secondary">
-                      밤 12시까지만 읽을 수 있어요
-                    </p>
-                  </div>
-                )}
+                <div className="flex flex-col gap-3">
+                  <h1 className="font-bold text-heading-xl text-black">
+                    프로필 북을
+                    <br />
+                    확인해보세요
+                  </h1>
+                  <p className="font-medium text-body-base text-text-secondary">
+                    밤 12시까지만 읽을 수 있어요
+                  </p>
+                </div>
 
                 {/* Step 3-2, 3-3: 마지막 날 좌우 2열 레이아웃 */}
                 {showAllProfiles ? (
