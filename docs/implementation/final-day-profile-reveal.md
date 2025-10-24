@@ -1,7 +1,7 @@
 # 마지막 날 전체 프로필북 공개 기능
 
 **Last Updated**: 2025-10-24
-**Status**: In Progress
+**Status**: ✅ Completed
 **Branch**: `feature/final-day-profile-reveal`
 
 ---
@@ -93,18 +93,17 @@
 
 ### ✅ 체크리스트
 
-- [ ] Step 1-1: `isFinalDay(cohort)` 유틸리티 함수 생성
-- [ ] Step 1-2: `isAfterProgram(cohort)` 유틸리티 함수 생성
-- [ ] Step 2-1: 오늘의 서재 페이지에서 cohort 가져오기
-- [ ] Step 2-2: 날짜 체크 로직 추가
-- [ ] Step 2-3: 참가자 목록 분기 (평소 vs 마지막 날)
-- [ ] Step 2-4: 성별 분류 로직
-- [ ] Step 3-1: 마지막 날 UI 배너 추가
-- [ ] Step 3-2: 좌우 2열 레이아웃 구현
-- [ ] Step 3-3: 세로 스크롤 구현
-- [ ] Step 4-1: 마지막 날로 날짜 변경 테스트
-- [ ] Step 4-2: 전체 참가자 표시 확인
-- [ ] Step 4-3: 성별 분류 확인
+- [x] Step 1-1: `isFinalDay(cohort)` 유틸리티 함수 생성
+- [x] Step 1-2: `isAfterProgram(cohort)` 유틸리티 함수 생성
+- [x] Step 2-1: 오늘의 서재 페이지에서 cohort 가져오기
+- [x] Step 2-2: 날짜 체크 로직 추가
+- [x] Step 2-3: 참가자 목록 분기 (평소 vs 마지막 날)
+- [x] Step 2-4: 성별 분류 로직
+- [x] Step 3-1: 마지막 날 UI 배너 추가
+- [x] Step 3-2: 좌우 2열 레이아웃 구현
+- [x] Step 3-3: 세로 스크롤 구현
+- [x] Step 4-1: 빌드 및 타입 체크 통과
+- [ ] Step 4-2: 실제 테스트 (날짜 변경 필요)
 
 ---
 

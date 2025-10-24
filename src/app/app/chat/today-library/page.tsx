@@ -84,25 +84,48 @@ function TodayLibraryContent() {
     new Set([...similarFeaturedIds, ...oppositeFeaturedIds])
   );
 
-  // 추천 참가자들의 정보 가져오기
-  const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
-    queryKey: ['featured-participants-v3', activeMatchingDate, allFeaturedIds],
-    queryFn: async () => {
-      if (allFeaturedIds.length === 0) return [];
+  // Step 2-2: 마지막 날 체크
+  const showAllProfiles = cohort ? canViewAllProfiles(cohort) : false;
 
+  // 추천 참가자들의 정보 가져오기
+  // 마지막 날이면 전체 참가자 쿼리, 아니면 매칭된 4명만
+  const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
+    queryKey: showAllProfiles
+      ? ['all-participants-final-day', cohortId, currentUserId]
+      : ['featured-participants-v3', activeMatchingDate, allFeaturedIds],
+    queryFn: async () => {
       const db = getDb();
       const participantsRef = collection(db, 'participants');
 
-      // 단일 쿼리 (Featured는 항상 4명 이하이므로 Firestore 'in' 제한 10개 이하)
-      const q = query(participantsRef, where('__name__', 'in', allFeaturedIds));
-      const snapshot = await getDocs(q);
+      let participants: Participant[] = [];
 
-      const participants = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Participant[];
+      if (showAllProfiles) {
+        // Step 2-3: 마지막 날 - 전체 참가자 로드 (본인 + 슈퍼관리자 제외)
+        const allSnapshot = await getDocs(participantsRef);
+        participants = allSnapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Participant[];
 
-      // 각 참가자에 theme 정보 추가
+        // 본인과 슈퍼관리자 제외
+        participants = participants.filter(
+          (p) => p.id !== currentUserId && !p.isSuperAdmin
+        );
+      } else {
+        // 평소 - 매칭된 4명만
+        if (allFeaturedIds.length === 0) return [];
+
+        const q = query(participantsRef, where('__name__', 'in', allFeaturedIds));
+        const snapshot = await getDocs(q);
+
+        participants = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Participant[];
+      }
+
+      // 각 참가자에 theme 정보 추가 (원형 이미지 처리 포함)
       return participants.map((participant) => {
         const inferCircleUrl = (url?: string) => {
           if (!url) return undefined;
@@ -120,15 +143,16 @@ function TodayLibraryContent() {
           ...participant,
           profileImage: circleImage || participant.profileImage, // 원형 이미지로 교체
           profileImageCircle: circleImage,
-          theme: similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite',
+          theme: showAllProfiles
+            ? 'similar' // 마지막 날은 theme 구분 없음 (나중에 성별로 분류)
+            : (similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite'),
         };
       });
     },
     // 🔒 보안 수정: 인증된 유저(또는 관리자)만 개인정보 다운로드 가능
-    enabled:
-      !isLocked &&
-      allFeaturedIds.length > 0 &&
-      !!activeMatchingDate,
+    enabled: showAllProfiles
+      ? !isLocked && !!cohort && !!currentUserId
+      : !isLocked && allFeaturedIds.length > 0 && !!activeMatchingDate,
     gcTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결) - React Query v5: cacheTime → gcTime
     staleTime: 0, // 항상 신선한 데이터 fetch
   });
@@ -386,9 +410,23 @@ function TodayLibraryContent() {
   }
 
   // 3단계: 인증 완료 + 매칭 데이터 있음 → 실제 프로필 카드 표시
-  // 참가자를 theme별로 분리
-  const similarParticipants = featuredParticipants.filter(p => p.theme === 'similar');
-  const oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
+  // Step 2-4: 성별 분류 (마지막 날에만 적용)
+  let maleParticipants: FeaturedParticipant[] = [];
+  let femaleParticipants: FeaturedParticipant[] = [];
+  let otherParticipants: FeaturedParticipant[] = [];
+  let similarParticipants: FeaturedParticipant[] = [];
+  let oppositeParticipants: FeaturedParticipant[] = [];
+
+  if (showAllProfiles) {
+    // 마지막 날: 성별로 분류
+    maleParticipants = featuredParticipants.filter(p => p.gender === 'male');
+    femaleParticipants = featuredParticipants.filter(p => p.gender === 'female');
+    otherParticipants = featuredParticipants.filter(p => !p.gender || p.gender === 'other');
+  } else {
+    // 평소: theme별로 분류
+    similarParticipants = featuredParticipants.filter(p => p.theme === 'similar');
+    oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
+  }
 
   return (
     <PageTransition>
@@ -399,36 +437,116 @@ function TodayLibraryContent() {
         <main className="flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-4 w-full">
             <div className="pt-12 pb-6">
-              {/* Header Section */}
               <div className="flex flex-col gap-12">
-              <div className="flex flex-col gap-3">
-                <h1 className="font-bold text-heading-xl text-black">
-                  프로필 북을
-                  <br />
-                  확인해보세요
-                </h1>
-                <p className="font-medium text-body-base text-text-secondary">
-                  밤 12시까지만 읽을 수 있어요
-                </p>
-              </div>
+                {/* Step 3-1: 마지막 날 배너 */}
+                {showAllProfiles && (
+                  <div className="p-6 bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-2 border-purple-200 rounded-xl">
+                    <div className="text-center">
+                      <h2 className="text-2xl font-bold text-purple-800 mb-2">
+                        🎉 피날레 - 전체 프로필 공개!
+                      </h2>
+                      <p className="text-purple-600">
+                        14일간의 여정을 마치며, 모든 참가자의 프로필을 공개합니다
+                      </p>
+                      <p className="text-sm text-purple-500 mt-2">
+                        총 {featuredParticipants.length}명의 이야기를 만나보세요
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-              {/* Bookmark Cards Section */}
-              <div className="flex flex-col w-full">
-                <BookmarkRow
-                  participants={similarParticipants}
-                  theme="blue"
-                  isLocked={false}
-                  onCardClick={handleProfileClickWithAuth}
-                />
-                <BlurDivider />
-                <BookmarkRow
-                  participants={oppositeParticipants}
-                  theme="yellow"
-                  isLocked={false}
-                  onCardClick={handleProfileClickWithAuth}
-                />
-                <BlurDivider />
-              </div>
+                {/* Header Section */}
+                {!showAllProfiles && (
+                  <div className="flex flex-col gap-3">
+                    <h1 className="font-bold text-heading-xl text-black">
+                      프로필 북을
+                      <br />
+                      확인해보세요
+                    </h1>
+                    <p className="font-medium text-body-base text-text-secondary">
+                      밤 12시까지만 읽을 수 있어요
+                    </p>
+                  </div>
+                )}
+
+                {/* Step 3-2, 3-3: 마지막 날 좌우 2열 레이아웃 */}
+                {showAllProfiles ? (
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* 왼쪽: 남자 */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                        남자 ({maleParticipants.length}명)
+                      </h3>
+                      <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
+                        {maleParticipants.map(p => (
+                          <BookmarkRow
+                            key={p.id}
+                            participants={[p]}
+                            theme="blue"
+                            isLocked={false}
+                            onCardClick={handleProfileClickWithAuth}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 오른쪽: 여자 */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                        여자 ({femaleParticipants.length}명)
+                      </h3>
+                      <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
+                        {femaleParticipants.map(p => (
+                          <BookmarkRow
+                            key={p.id}
+                            participants={[p]}
+                            theme="yellow"
+                            isLocked={false}
+                            onCardClick={handleProfileClickWithAuth}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* 평소: 기존 2x2 그리드 레이아웃 */
+                  <div className="flex flex-col w-full">
+                    <BookmarkRow
+                      participants={similarParticipants}
+                      theme="blue"
+                      isLocked={false}
+                      onCardClick={handleProfileClickWithAuth}
+                    />
+                    <BlurDivider />
+                    <BookmarkRow
+                      participants={oppositeParticipants}
+                      theme="yellow"
+                      isLocked={false}
+                      onCardClick={handleProfileClickWithAuth}
+                    />
+                    <BlurDivider />
+                  </div>
+                )}
+
+                {/* 성별 미지정 참가자 (마지막 날에만, 있는 경우만) */}
+                {showAllProfiles && otherParticipants.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                      기타 ({otherParticipants.length}명)
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {otherParticipants.map(p => (
+                        <BookmarkRow
+                          key={p.id}
+                          participants={[p]}
+                          theme="blue"
+                          isLocked={false}
+                          onCardClick={handleProfileClickWithAuth}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
