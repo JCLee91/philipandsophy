@@ -421,7 +421,6 @@ function TodayLibraryContent() {
   // Step 2-4: 성별 분류 (마지막 날에만 적용)
   let maleParticipants: FeaturedParticipant[] = [];
   let femaleParticipants: FeaturedParticipant[] = [];
-  let otherParticipants: FeaturedParticipant[] = [];
   let similarParticipants: FeaturedParticipant[] = [];
   let oppositeParticipants: FeaturedParticipant[] = [];
 
@@ -429,7 +428,6 @@ function TodayLibraryContent() {
     // 마지막 날: 성별로 분류
     maleParticipants = featuredParticipants.filter(p => p.gender === 'male');
     femaleParticipants = featuredParticipants.filter(p => p.gender === 'female');
-    otherParticipants = featuredParticipants.filter(p => !p.gender || p.gender === 'other');
   } else {
     // 평소: theme별로 분류
     similarParticipants = featuredParticipants.filter(p => p.theme === 'similar');
@@ -517,25 +515,6 @@ function TodayLibraryContent() {
                   </div>
                 )}
 
-                {/* 성별 미지정 참가자 (마지막 날에만, 있는 경우만) */}
-                {showAllProfiles && otherParticipants.length > 0 && (
-                  <div className="col-span-2 flex flex-col gap-4">
-                    {otherParticipants.map((p, index) => (
-                      <div key={p.id} className="flex flex-col">
-                        <div className="flex justify-center">
-                          <BookmarkCard
-                            profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
-                            name={p.name}
-                            theme="blue"
-                            isLocked={false}
-                            onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
-                          />
-                        </div>
-                        {index < otherParticipants.length - 1 && <BlurDivider />}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>
