@@ -45,7 +45,13 @@ export const useVerifiedTodayStore = create<VerifiedTodayState>((set, get) => ({
       const currentDate = state.currentDate;
 
       // Firebase 실시간 구독
+      console.log('🔍 [VerifiedToday] 구독 시작:', { currentDate });
       const unsubscribeFn = subscribeTodayVerified((ids) => {
+        console.log('🔍 [VerifiedToday] 데이터 수신:', {
+          date: currentDate,
+          count: ids.size,
+          ids: Array.from(ids)
+        });
         set({ verifiedIds: ids, isLoading: false });
       }, currentDate);
 
