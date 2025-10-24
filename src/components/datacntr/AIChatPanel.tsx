@@ -155,7 +155,7 @@ export default function AIChatPanel() {
                 </>
               ) : (
                 <>
-                  🔄 새로고침
+                  📥 데이터 불러오기 (작업 전 필수)
                 </>
               )}
             </Button>
@@ -163,21 +163,57 @@ export default function AIChatPanel() {
         </div>
       </CardHeader>
       <CardContent>
-        {/* 채팅 메시지 영역 */}
-        <ScrollArea className="h-[400px] pr-4 mb-4">
-          <div className="space-y-4">
-            {messages.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
-                <Bot className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p className="font-semibold mb-2">AI 데이터 분석 어시스턴트</p>
-                <p className="text-sm">궁금한 데이터를 물어보세요</p>
-                <div className="mt-4 text-xs text-gray-400 space-y-1">
-                  <p>예: "1기 참가자 몇 명?"</p>
-                  <p>예: "오늘 제출 현황 알려줘"</p>
-                  <p>예: "가장 활발한 참가자는?"</p>
-                </div>
+        {!dataContext ? (
+          /* 데이터 미로드 상태: 중앙 버튼 */
+          <div className="h-[400px] flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <Bot className="h-16 w-16 mx-auto text-gray-400" />
+              <div>
+                <p className="font-semibold text-gray-700 mb-2">AI 데이터 분석</p>
+                <p className="text-sm text-gray-500 mb-6">
+                  먼저 데이터를 불러와야 분석을 시작할 수 있어요
+                </p>
               </div>
-            )}
+              <Button
+                size="lg"
+                onClick={handleRefreshData}
+                disabled={isRefreshing}
+                className="px-8"
+              >
+                {isRefreshing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    데이터 로딩 중...
+                  </>
+                ) : (
+                  <>
+                    📥 데이터 불러오기 (분석 시작)
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-gray-400 mt-2">
+                전체 DB를 불러와서 질문에 답변합니다
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* 데이터 로드 완료: 채팅 UI */
+          <>
+            {/* 채팅 메시지 영역 */}
+            <ScrollArea className="h-[400px] pr-4 mb-4">
+              <div className="space-y-4">
+                {messages.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">
+                    <Bot className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="font-semibold mb-2">AI 데이터 분석 준비 완료!</p>
+                    <p className="text-sm">궁금한 데이터를 물어보세요</p>
+                    <div className="mt-4 text-xs text-gray-400 space-y-1">
+                      <p>예: "1기 참가자 몇 명?"</p>
+                      <p>예: "오늘 제출 현황 알려줘"</p>
+                      <p>예: "가장 활발한 참가자는?"</p>
+                    </div>
+                  </div>
+                )}
 
             {messages.map((message, i) => (
               <div
@@ -242,6 +278,8 @@ export default function AIChatPanel() {
             )}
           </Button>
         </form>
+      </>
+        )}
       </CardContent>
     </Card>
   );
