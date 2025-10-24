@@ -105,7 +105,7 @@ export default function DataCenterPage() {
 
       {/* AI 데이터 분석 챗봇 */}
       <div className="mt-8">
-        <AIChatPanel />
+        <AIChatPanel selectedCohortId={selectedCohortId} />
       </div>
     </div>
   );

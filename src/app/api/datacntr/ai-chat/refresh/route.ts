@@ -11,19 +11,44 @@ export async function GET(req: NextRequest) {
       return auth.error;
     }
 
+    const { searchParams } = new URL(req.url);
+    const cohortId = searchParams.get('cohortId');
+
+    if (!cohortId) {
+      return NextResponse.json(
+        { error: 'cohortId 파라미터가 필요합니다' },
+        { status: 400 }
+      );
+    }
+
     const db = getAdminDb();
 
-    // 모든 데이터 조회
-    const [cohortsSnap, participantsSnap, submissionsSnap, noticesSnap] = await Promise.all([
-      db.collection(COLLECTIONS.COHORTS).get(),
-      db.collection(COLLECTIONS.PARTICIPANTS).get(),
+    // 선택한 기수의 데이터만 조회
+    const [cohortDoc, participantsSnap, allSubmissionsSnap, noticesSnap] = await Promise.all([
+      db.collection(COLLECTIONS.COHORTS).doc(cohortId).get(),
+      db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get(),
       db.collection(COLLECTIONS.READING_SUBMISSIONS).get(),
-      db.collection(COLLECTIONS.NOTICES).get(),
+      db.collection(COLLECTIONS.NOTICES).where('cohortId', '==', cohortId).get(),
     ]);
+
+    if (!cohortDoc.exists) {
+      return NextResponse.json(
+        { error: '기수를 찾을 수 없습니다' },
+        { status: 404 }
+      );
+    }
+
+    // 참가자 ID 목록
+    const participantIds = participantsSnap.docs.map(d => d.id);
+
+    // 해당 기수 참가자의 submissions만 필터링
+    const submissionsSnap = {
+      docs: allSubmissionsSnap.docs.filter(d => participantIds.includes(d.data().participantId))
+    };
 
     // 전체 데이터를 JSON으로 변환
     const allData = {
-      cohorts: cohortsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      cohort: { id: cohortDoc.id, ...cohortDoc.data() },
       participants: participantsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
       submissions: submissionsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
       notices: noticesSnap.docs.map(d => ({ id: d.id, ...d.data() })),

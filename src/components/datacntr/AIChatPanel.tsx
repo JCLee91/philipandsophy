@@ -13,7 +13,11 @@ interface Message {
   content: string;
 }
 
-export default function AIChatPanel() {
+interface AIChatPanelProps {
+  selectedCohortId?: string;
+}
+
+export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -35,12 +39,12 @@ export default function AIChatPanel() {
 
   // 데이터 새로고침
   const handleRefreshData = async () => {
-    if (!user || isRefreshing) return;
+    if (!user || isRefreshing || !selectedCohortId) return;
 
     setIsRefreshing(true);
     try {
       const idToken = await user.getIdToken();
-      const response = await fetch('/api/datacntr/ai-chat/refresh', {
+      const response = await fetch(`/api/datacntr/ai-chat/refresh?cohortId=${selectedCohortId}`, {
         headers: { 'Authorization': `Bearer ${idToken}` },
       });
 
