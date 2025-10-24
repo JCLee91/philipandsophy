@@ -276,7 +276,8 @@ function TodayLibraryContent() {
   // 1단계: 미인증 유저는 자물쇠 더미 카드 표시
   // 단, 다음 경우는 인증 없이도 전체 프로필 공개:
   // - 슈퍼관리자 (언제든지)
-  // - 15일차부터 21일차까지 (일반 유저)
+  // - 15일차 이후 (일반 유저, 인증 불필요)
+  // 14일차는 showAllProfiles = true 이지만 인증 필요 (isLocked 체크 필요)
   if (isLocked && !isSuperAdmin && !showAllProfilesWithoutAuth) {
     // 미인증 유저를 위한 더미 카드 (자물쇠 표시용)
     const lockedPlaceholders = {

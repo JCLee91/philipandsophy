@@ -223,6 +223,12 @@ export function subscribeTodayVerified(
 ): () => void {
   const db = getDb();
 
+  console.log('🔍 [subscribeTodayVerified] 쿼리 시작:', {
+    targetDate,
+    collection: COLLECTIONS.READING_SUBMISSIONS,
+    statusFilter: ['pending', 'approved']
+  });
+
   const q = query(
     collection(db, COLLECTIONS.READING_SUBMISSIONS),
     where('submissionDate', '==', targetDate),
@@ -234,13 +240,31 @@ export function subscribeTodayVerified(
     q,
     (snapshot) => {
       const participantIds = new Set<string>();
+      const submissions: any[] = [];
+
       snapshot.forEach((doc) => {
-        participantIds.add(doc.data().participantId);
+        const data = doc.data();
+        participantIds.add(data.participantId);
+        submissions.push({
+          id: doc.id,
+          participantId: data.participantId,
+          submissionDate: data.submissionDate,
+          status: data.status
+        });
       });
+
+      console.log('🔍 [subscribeTodayVerified] 결과:', {
+        targetDate,
+        count: participantIds.size,
+        participantIds: Array.from(participantIds),
+        submissions
+      });
+
       callback(participantIds);
     },
     (error) => {
       // Firebase 에러 처리 (네트워크, 권한 등)
+      console.error('🔍 [subscribeTodayVerified] Firebase 에러:', error);
       logger.error('Firebase 실시간 구독 에러:', error);
       // 에러 발생 시 빈 Set 반환 (fallback)
       callback(new Set());
