@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
 import BookmarkRow from '@/components/BookmarkRow';
+import BookmarkCard from '@/components/BookmarkCard';
 import HeaderNavigation from '@/components/HeaderNavigation';
 import FooterActions from '@/components/FooterActions';
 import BlurDivider from '@/components/BlurDivider';
@@ -465,15 +466,18 @@ function TodayLibraryContent() {
                       <h3 className="text-lg font-semibold mb-4 text-gray-700">
                         남자 ({maleParticipants.length}명)
                       </h3>
-                      <div className="flex flex-col w-full max-h-[800px] overflow-y-auto pr-2">
+                      <div className="flex flex-col gap-4 max-h-[800px] overflow-y-auto pr-2">
                         {maleParticipants.map((p, index) => (
-                          <div key={p.id}>
-                            <BookmarkRow
-                              participants={[p]}
-                              theme="blue"
-                              isLocked={false}
-                              onCardClick={handleProfileClickWithAuth}
-                            />
+                          <div key={p.id} className="flex flex-col">
+                            <div className="flex justify-center">
+                              <BookmarkCard
+                                profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                                name={p.name}
+                                theme="blue"
+                                isLocked={false}
+                                onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                              />
+                            </div>
                             {index < maleParticipants.length - 1 && <BlurDivider />}
                           </div>
                         ))}
@@ -485,15 +489,18 @@ function TodayLibraryContent() {
                       <h3 className="text-lg font-semibold mb-4 text-gray-700">
                         여자 ({femaleParticipants.length}명)
                       </h3>
-                      <div className="flex flex-col w-full max-h-[800px] overflow-y-auto pr-2">
+                      <div className="flex flex-col gap-4 max-h-[800px] overflow-y-auto pr-2">
                         {femaleParticipants.map((p, index) => (
-                          <div key={p.id}>
-                            <BookmarkRow
-                              participants={[p]}
-                              theme="yellow"
-                              isLocked={false}
-                              onCardClick={handleProfileClickWithAuth}
-                            />
+                          <div key={p.id} className="flex flex-col">
+                            <div className="flex justify-center">
+                              <BookmarkCard
+                                profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                                name={p.name}
+                                theme="yellow"
+                                isLocked={false}
+                                onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                              />
+                            </div>
                             {index < femaleParticipants.length - 1 && <BlurDivider />}
                           </div>
                         ))}
@@ -522,19 +529,22 @@ function TodayLibraryContent() {
 
                 {/* 성별 미지정 참가자 (마지막 날에만, 있는 경우만) */}
                 {showAllProfiles && otherParticipants.length > 0 && (
-                  <div className="mt-6">
+                  <div className="col-span-2">
                     <h3 className="text-lg font-semibold mb-4 text-gray-700">
                       기타 ({otherParticipants.length}명)
                     </h3>
-                    <div className="flex flex-col w-full">
+                    <div className="flex flex-col gap-4">
                       {otherParticipants.map((p, index) => (
-                        <div key={p.id}>
-                          <BookmarkRow
-                            participants={[p]}
-                            theme="blue"
-                            isLocked={false}
-                            onCardClick={handleProfileClickWithAuth}
-                          />
+                        <div key={p.id} className="flex flex-col">
+                          <div className="flex justify-center">
+                            <BookmarkCard
+                              profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                              name={p.name}
+                              theme="blue"
+                              isLocked={false}
+                              onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                            />
+                          </div>
                           {index < otherParticipants.length - 1 && <BlurDivider />}
                         </div>
                       ))}
