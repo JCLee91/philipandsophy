@@ -204,11 +204,22 @@ export function isAfterProgram(cohort: Cohort): boolean {
 
 /**
  * 전체 프로필을 공개할 수 있는 날인지 체크
- * (마지막 날 또는 프로그램 종료 후)
+ * (마지막 날부터 7일 동안)
  *
  * @param cohort - 기수 정보
- * @returns true if 전체 공개 가능
+ * @returns true if 전체 공개 가능 (마지막 날 ~ 마지막 날 + 7일)
  */
 export function canViewAllProfiles(cohort: Cohort): boolean {
-  return isFinalDay(cohort) || isAfterProgram(cohort);
+  if (!cohort?.endDate) return false;
+
+  const today = parseISO(getTodayString());
+  const endDate = parseISO(cohort.endDate);
+
+  // 마지막 날부터 시작
+  if (today < endDate) return false;
+
+  // 마지막 날 + 7일까지
+  const viewDeadline = addDays(endDate, 7);
+
+  return today <= viewDeadline;
 }
