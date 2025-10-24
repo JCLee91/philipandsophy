@@ -257,7 +257,9 @@ function TodayLibraryContent() {
       });
       return;
     }
-    if (!activeMatchingDate) {
+
+    // 마지막 날에는 매칭 날짜 체크 건너뛰기 (전체 프로필 공개)
+    if (!showAllProfiles && !activeMatchingDate) {
       toast({
         title: '프로필북 정보를 불러올 수 없습니다',
         description: '잠시 후 다시 시도해주세요.',
@@ -265,8 +267,9 @@ function TodayLibraryContent() {
       return;
     }
 
-    // 매칭 날짜를 URL에 포함하여 스포일러 방지 (미공개 데이터 차단)
-    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(activeMatchingDate)}`;
+    // 매칭 날짜를 URL에 포함하여 스포일러 방지 (마지막 날에는 오늘 날짜 사용)
+    const matchingDate = showAllProfiles ? getTodayString() : activeMatchingDate!;
+    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
     router.push(profileUrl);
   };
 
