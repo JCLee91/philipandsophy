@@ -51,6 +51,12 @@ service cloud.firestore {
     match /cohorts/{cohortId} {
       allow read: if true;              // MVP: 공개 (접근 코드 검증용)
       allow write: if isAdminClaim();   // 관리자만
+
+      // Daily Questions 서브컬렉션
+      match /daily_questions/{questionId} {
+        allow read: if isSignedIn();    // 로그인한 사용자는 읽기 가능
+        allow write: if isAdminClaim(); // 관리자만 쓰기 가능
+      }
     }
 
     // ============================================
