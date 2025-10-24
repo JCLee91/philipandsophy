@@ -20,7 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Participant } from '@/types/database';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
-import { getTodayString, getMatchingAccessDates } from '@/lib/date-utils';
+import { getTodayString, getMatchingAccessDates, canViewAllProfiles } from '@/lib/date-utils';
 
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };
 

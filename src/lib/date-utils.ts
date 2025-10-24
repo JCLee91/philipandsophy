@@ -1,6 +1,7 @@
-import { format, subDays, parseISO, isValid, isFuture, addDays } from 'date-fns';
+import { format, subDays, parseISO, isValid, isFuture, addDays, isSameDay, isAfter } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import type { Timestamp } from 'firebase/firestore';
+import type { Cohort } from '@/types/database';
 import { logger } from './logger';
 
 const KOREA_TIMEZONE = 'Asia/Seoul';
@@ -171,4 +172,43 @@ export function getMatchingAccessDates(submissionDates: Iterable<string>): Set<s
   }
 
   return accessDates;
+}
+
+/**
+ * 오늘이 프로그램 마지막 날인지 체크
+ *
+ * @param cohort - 기수 정보
+ * @returns true if 오늘 = endDate (KST 기준)
+ */
+export function isFinalDay(cohort: Cohort): boolean {
+  if (!cohort?.endDate) return false;
+
+  const today = getTodayString();
+  return today === cohort.endDate;
+}
+
+/**
+ * 프로그램 종료 후인지 체크
+ *
+ * @param cohort - 기수 정보
+ * @returns true if 오늘 > endDate
+ */
+export function isAfterProgram(cohort: Cohort): boolean {
+  if (!cohort?.endDate) return false;
+
+  const today = parseISO(getTodayString());
+  const endDate = parseISO(cohort.endDate);
+
+  return isAfter(today, endDate);
+}
+
+/**
+ * 전체 프로필을 공개할 수 있는 날인지 체크
+ * (마지막 날 또는 프로그램 종료 후)
+ *
+ * @param cohort - 기수 정보
+ * @returns true if 전체 공개 가능
+ */
+export function canViewAllProfiles(cohort: Cohort): boolean {
+  return isFinalDay(cohort) || isAfterProgram(cohort);
 }

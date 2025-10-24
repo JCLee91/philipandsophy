@@ -123,13 +123,18 @@ export function usePushNotifications(
   };
 
   /**
-   * Auto-initialize on mount (only if user has enabled notifications)
+   * ❌ 자동 초기화 제거
+   *
+   * 이유:
+   * - iOS에서 푸시 ON 후 데스크톱 로그인 시 FCM 토큰이 자동 발급되어 iOS Web Push 토큰 손실
+   * - 데스크톱은 푸시 기능을 사용하지 않으므로 자동 초기화 불필요
+   * - 사용자가 설정 토글을 명시적으로 ON 했을 때만 initialize() 호출됨
    */
-  useEffect(() => {
-    if (userEnabled && participantId && permission === 'granted' && !isInitialized) {
-      initialize();
-    }
-  }, [userEnabled, participantId, permission, isInitialized]);
+  // useEffect(() => {
+  //   if (userEnabled && participantId && permission === 'granted' && !isInitialized) {
+  //     initialize();
+  //   }
+  // }, [userEnabled, participantId, permission, isInitialized]);
 
   /**
    * Auto-refresh token on mount and periodically (iOS fix)
