@@ -365,7 +365,8 @@ function TodayLibraryContent() {
   }
 
   // 2단계: 인증 완료 유저 중 매칭 데이터가 없는 경우
-  if (allFeaturedIds.length === 0) {
+  // 단, 슈퍼관리자나 전체 프로필 공개 기간에는 이 화면을 건너뛰고 바로 전체 프로필 표시
+  if (allFeaturedIds.length === 0 && !showAllProfiles) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
