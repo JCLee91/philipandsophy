@@ -17,7 +17,8 @@ import { useCreateSubmission, useUpdateSubmission, useSubmissionsByParticipant }
 import { uploadReadingImage, getParticipantById, updateParticipantBookInfo } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X, AlertCircle } from 'lucide-react';
-import { getDailyQuestion, type DailyQuestion as DailyQuestionType } from '@/constants/daily-questions';
+import { getDailyQuestion } from '@/lib/firebase/daily-questions';
+import type { DailyQuestion as DailyQuestionType } from '@/types/database';
 import Image from 'next/image';
 import BookSearchAutocomplete from '@/components/BookSearchAutocomplete';
 import type { NaverBook } from '@/lib/naver-book-api';
@@ -34,6 +35,7 @@ interface ReadingSubmissionDialogProps {
   onOpenChange: (open: boolean) => void;
   participantId: string;
   participationCode: string;
+  cohortId: string; // 🆕 기수 ID
   existingSubmission?: ReadingSubmission; // 수정 모드: 기존 제출물
 }
 
@@ -42,6 +44,7 @@ export default function ReadingSubmissionDialog({
   onOpenChange,
   participantId,
   participationCode,
+  cohortId,
   existingSubmission,
 }: ReadingSubmissionDialogProps) {
   useModalCleanup(open);
@@ -62,7 +65,7 @@ export default function ReadingSubmissionDialog({
 
           // 2. body 강제 리플로우
           document.body.style.display = 'none';
-          document.body.offsetHeight; // 리플로우 트리거
+          void document.body.offsetHeight; // 리플로우 트리거
           document.body.style.display = '';
 
           // 3. viewport 재계산 이벤트 발생
@@ -101,6 +104,7 @@ export default function ReadingSubmissionDialog({
   useEffect(() => {
     const justOpened = open && !previousOpenRef.current;
     previousOpenRef.current = open;
+    let isMounted = true; // Race condition 방지
 
     if (open) {
       if (justOpened) {
@@ -116,37 +120,53 @@ export default function ReadingSubmissionDialog({
         setDailyAnswer(existingSubmission.dailyAnswer || '');
         setBookImagePreview(existingSubmission.bookImageUrl || '');
         setIsAutoFilled(true);
-        
+
         // 기존 질문 로드
         if (existingSubmission.dailyQuestion) {
           setDailyQuestion({
+            id: '0',
+            dayNumber: 0,
+            date: '',
             question: existingSubmission.dailyQuestion,
             category: '가치관 & 삶', // 기본 카테고리
+            order: 0,
+            createdAt: null as any,
+            updatedAt: null as any,
           });
         }
-        
+
         setAlreadySubmittedToday(false); // 수정 모드에서는 경고 표시 안 함
         return; // 수정 모드에서는 추가 로드 불필요
       }
-      
-      // 신규 제출 모드: 기존 로직
-      const question = getDailyQuestion();
-      setDailyQuestion(question);
 
-      // 오늘 이미 제출했는지 확인
-      const today = getTodayString();
-      const todaySubmission = allSubmissions.find(
-        (sub) => sub.submissionDate === today
-      );
-      setAlreadySubmittedToday(!!todaySubmission);
+      // 신규 제출 모드: 오늘의 질문 동적 로딩
+      const loadDailyQuestion = async () => {
+        const today = getTodayString();
+        const question = await getDailyQuestion(cohortId, today);
+        if (question && isMounted) {
+          setDailyQuestion(question);
+        }
+
+        // 오늘 이미 제출했는지 확인
+        const todaySubmission = allSubmissions.find(
+          (sub) => sub.submissionDate === today
+        );
+        if (isMounted) {
+          setAlreadySubmittedToday(!!todaySubmission);
+        }
+      };
+
+      loadDailyQuestion();
 
       // 참가자의 현재 책 정보 로드
       const loadCurrentBook = async () => {
-        setIsLoadingBookTitle(true);
+        if (isMounted) {
+          setIsLoadingBookTitle(true);
+        }
         try {
           const participant = await getParticipantById(participantId);
 
-          if (!userModifiedBookRef.current && participant?.currentBookTitle) {
+          if (!userModifiedBookRef.current && participant?.currentBookTitle && isMounted) {
             setBookTitle(participant.currentBookTitle);
             setBookAuthor(participant.currentBookAuthor || '');
             setBookCoverUrl(participant.currentBookCoverUrl || '');
@@ -154,19 +174,27 @@ export default function ReadingSubmissionDialog({
           }
         } catch (error) {
           logger.error('Failed to load current book info:', error);
-          toast({
-            title: '책 정보 로드 실패',
-            description: '이전 독서 정보를 불러오지 못했습니다. 새로 검색해주세요.',
-            variant: 'destructive',
-          });
+          if (isMounted) {
+            toast({
+              title: '책 정보 로드 실패',
+              description: '이전 독서 정보를 불러오지 못했습니다. 새로 검색해주세요.',
+              variant: 'destructive',
+            });
+          }
         } finally {
-          setIsLoadingBookTitle(false);
+          if (isMounted) {
+            setIsLoadingBookTitle(false);
+          }
         }
       };
 
       loadCurrentBook();
     }
-  }, [open, participantId, allSubmissions, isEditMode, existingSubmission]); // 의존성 추가
+
+    return () => {
+      isMounted = false; // Cleanup
+    };
+  }, [open, participantId, cohortId, allSubmissions, isEditMode, existingSubmission, toast]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

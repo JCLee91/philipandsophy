@@ -57,8 +57,11 @@ export interface Cohort {
   name: string; // 기수 이름 (예: '1기')
   startDate: string; // 시작일 (ISO 8601)
   endDate: string; // 종료일 (ISO 8601)
+  programStartDate: string; // 🆕 Daily Questions 시작일 (ISO 8601)
   isActive: boolean; // 활성화 여부
   dailyFeaturedParticipants?: Record<string, DailyMatchingEntry>; // 날짜별 추천 참가자 및 매칭 결과
+  participantCount?: number; // 🆕 참가자 수 (계산 필드, optional)
+  totalDays?: number; // 🆕 프로그램 총 일수 (계산 필드, optional)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
@@ -70,6 +73,21 @@ export interface BookHistoryEntry {
   title: string; // 책 제목
   startedAt: Timestamp; // 읽기 시작 일시
   endedAt: Timestamp | null; // 읽기 종료 일시 (null: 현재 읽는 중)
+}
+
+/**
+ * Daily Question (기수별 서브컬렉션)
+ * Firestore 경로: cohorts/{cohortId}/daily_questions/{dayNumber}
+ */
+export interface DailyQuestion {
+  id: string; // 문서 ID (dayNumber와 동일, 문자열)
+  dayNumber: number; // Day 번호 (1, 2, 3, ..., 14)
+  date: string; // 해당 날짜 (ISO 8601: "2025-10-11")
+  category: string; // 질문 카테고리 (예: "생활 패턴", "가치관 & 삶")
+  question: string; // 질문 내용
+  order: number; // 정렬용 (dayNumber와 동일)
+  createdAt: Timestamp; // 생성 일시
+  updatedAt: Timestamp; // 수정 일시
 }
 
 /**
@@ -119,7 +137,7 @@ export interface Participant {
   currentBookAuthor?: string; // 현재 읽고 있는 책 저자 (자동 채움용)
   currentBookCoverUrl?: string; // 현재 읽고 있는 책 표지 URL (자동 채움용)
   bookHistory?: BookHistoryEntry[]; // 책 읽기 이력 (관리자용)
-  firebaseUid?: string; // Firebase Auth UID (Phone Auth 연동용)
+  firebaseUid: string | null; // 🔄 Firebase Auth UID (Phone Auth 연동용, null 허용 - 첫 로그인 전)
   pushToken?: string; // 푸시 알림 토큰 (FCM) - DEPRECATED: pushTokens 배열 사용 권장
   pushNotificationEnabled?: boolean; // 푸시 알림 활성화 여부 (사용자 설정)
   pushTokenUpdatedAt?: Timestamp; // 푸시 토큰 마지막 갱신 시간 - DEPRECATED: pushTokens[].updatedAt 사용 권장
