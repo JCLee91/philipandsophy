@@ -465,16 +465,13 @@ function TodayLibraryContent() {
                       <h3 className="text-lg font-semibold mb-4 text-gray-700">
                         남자 ({maleParticipants.length}명)
                       </h3>
-                      <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
-                        {maleParticipants.map(p => (
-                          <BookmarkRow
-                            key={p.id}
-                            participants={[p]}
-                            theme="blue"
-                            isLocked={false}
-                            onCardClick={handleProfileClickWithAuth}
-                          />
-                        ))}
+                      <div className="flex flex-col w-full max-h-[800px] overflow-y-auto pr-2">
+                        <BookmarkRow
+                          participants={maleParticipants}
+                          theme="blue"
+                          isLocked={false}
+                          onCardClick={handleProfileClickWithAuth}
+                        />
                       </div>
                     </div>
 
@@ -483,16 +480,13 @@ function TodayLibraryContent() {
                       <h3 className="text-lg font-semibold mb-4 text-gray-700">
                         여자 ({femaleParticipants.length}명)
                       </h3>
-                      <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
-                        {femaleParticipants.map(p => (
-                          <BookmarkRow
-                            key={p.id}
-                            participants={[p]}
-                            theme="yellow"
-                            isLocked={false}
-                            onCardClick={handleProfileClickWithAuth}
-                          />
-                        ))}
+                      <div className="flex flex-col w-full max-h-[800px] overflow-y-auto pr-2">
+                        <BookmarkRow
+                          participants={femaleParticipants}
+                          theme="yellow"
+                          isLocked={false}
+                          onCardClick={handleProfileClickWithAuth}
+                        />
                       </div>
                     </div>
                   </div>
@@ -522,16 +516,13 @@ function TodayLibraryContent() {
                     <h3 className="text-lg font-semibold mb-4 text-gray-700">
                       기타 ({otherParticipants.length}명)
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {otherParticipants.map(p => (
-                        <BookmarkRow
-                          key={p.id}
-                          participants={[p]}
-                          theme="blue"
-                          isLocked={false}
-                          onCardClick={handleProfileClickWithAuth}
-                        />
-                      ))}
+                    <div className="flex flex-col w-full">
+                      <BookmarkRow
+                        participants={otherParticipants}
+                        theme="blue"
+                        isLocked={false}
+                        onCardClick={handleProfileClickWithAuth}
+                      />
                     </div>
                   </div>
                 )}
