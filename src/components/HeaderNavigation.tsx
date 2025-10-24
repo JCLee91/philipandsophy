@@ -26,7 +26,7 @@ export default function HeaderNavigation({
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 border-b bg-white safe-area-header">
-      <div className="flex gap-3 items-center px-4 py-6">
+      <div className="flex gap-3 items-center px-4 h-14">
         {showBackButton ? (
           <button
             onClick={handleBackClick}
