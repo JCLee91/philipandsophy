@@ -101,6 +101,15 @@ export {
   getConversationId,
 } from './messages';
 
+// Daily Questions operations
+export {
+  getDailyQuestion,
+  getDailyQuestionText,
+  getAllDailyQuestions,
+  createDailyQuestions,
+  copyDailyQuestions,
+} from './daily-questions';
+
 // Types
-export type { Cohort, Participant, ReadingSubmission, Notice, DirectMessage } from '@/types/database';
+export type { Cohort, Participant, ReadingSubmission, Notice, DirectMessage, DailyQuestion } from '@/types/database';
 export { COLLECTIONS } from '@/types/database';

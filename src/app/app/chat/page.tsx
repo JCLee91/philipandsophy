@@ -129,6 +129,7 @@ function ChatPageContent() {
       phoneNumber: '01000000001',
       profileImage: '/favicon.webp',
       isAdministrator: true,
+      firebaseUid: null, // Admin은 firebaseUid 불필요
       createdAt: new Date() as any,
       updatedAt: new Date() as any,
     };
@@ -305,10 +306,11 @@ function ChatPageContent() {
           otherUser={dmTarget}
         />
         <ReadingSubmissionDialog
-          open={submissionDialogOpen}
+          open={submissionDialogOpen && !!cohortId}
           onOpenChange={setSubmissionDialogOpen}
           participantId={currentUserId || ''}
           participationCode={currentUserId || ''}
+          cohortId={cohortId || ''}
           existingSubmission={todaySubmission || undefined}
         />
         <ProfileImageDialog

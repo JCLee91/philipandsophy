@@ -159,18 +159,15 @@ export interface SubmissionAnalytics {
     count: number;
     percentage: number;
   }>;
-  bookDiversity: {
+  participation: {
     totalSubmissions: number;
-    uniqueBookCount: number;
-    averageDuplication: number;
-    topBooks: Array<{
-      title: string;
-      count: number;
-    }>;
+    totalActiveParticipants: number;
+    dailyAverage: number;
+    activeDays: number;
   };
   reviewQuality: {
     averageReviewLength: number;
     longReviewPercentage: number;
-    coverImagePercentage: number;
+    dailyAnswerPercentage: number;
   };
 }

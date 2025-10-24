@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Calendar, User, BookOpen, BarChart3, MessageSquare } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TimeDistributionChart from '@/components/datacntr/dashboard/TimeDistributionChart';
-import BookDiversityPanel from '@/components/datacntr/dashboard/BookDiversityPanel';
+import ParticipationPanel from '@/components/datacntr/dashboard/ParticipationPanel';
 import ReviewQualityPanel from '@/components/datacntr/dashboard/ReviewQualityPanel';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
@@ -116,7 +119,7 @@ export default function SubmissionsPage() {
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -126,18 +129,17 @@ export default function SubmissionsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">독서 인증 관리</h1>
-          <p className="text-gray-600 mt-2">전체 독서 인증 내역 및 분석</p>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">독서 인증 관리</h1>
+          <p className="text-muted-foreground">전체 독서 인증 내역 및 분석</p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="outline"
           onClick={() => setShowAnalytics(!showAnalytics)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors font-semibold text-gray-700"
         >
-          <BarChart3 className="h-4 w-4" />
+          <BarChart3 className="h-4 w-4 mr-2" />
           {showAnalytics ? '분석 숨기기' : '분석 보기'}
-        </button>
+        </Button>
       </div>
 
       {/* 분석 섹션 */}
@@ -152,9 +154,9 @@ export default function SubmissionsPage() {
               />
             </div>
 
-            {/* 책 다양성 */}
-            <BookDiversityPanel
-              data={analytics.bookDiversity}
+            {/* 참여 지표 */}
+            <ParticipationPanel
+              data={analytics.participation}
               isLoading={analyticsLoading}
             />
 
@@ -180,13 +182,10 @@ export default function SubmissionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredSubmissions.map((submission) => {
           return (
-            <div
-              key={submission.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            >
+            <Card key={submission.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               {/* 인증 사진 */}
               {submission.bookImageUrl && (
-                <div className="aspect-video bg-gray-100 relative">
+                <div className="aspect-video bg-muted relative">
                   <img
                     src={submission.bookImageUrl}
                     alt={submission.bookTitle}
@@ -195,72 +194,80 @@ export default function SubmissionsPage() {
                 </div>
               )}
 
-              {/* 내용 */}
-              <div className="p-4 space-y-3">
+              <CardHeader className="space-y-3">
                 {/* 참가자 정보 */}
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User className="h-4 w-4" />
-                  <span>{submission.participantName}</span>
-                  <span className="text-gray-400">·</span>
-                  <span>{submission.cohortName}</span>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="font-normal">
+                    <User className="h-3 w-3 mr-1" />
+                    {submission.participantName}
+                  </Badge>
+                  <Badge variant="outline" className="font-normal">
+                    {submission.cohortName}
+                  </Badge>
                 </div>
 
                 {/* 책 정보 */}
-                <div>
-                  <div className="flex items-start gap-2">
-                    <BookOpen className="h-4 w-4 text-gray-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-gray-900">{submission.bookTitle}</p>
-                      {submission.bookAuthor && (
-                        <p className="text-sm text-gray-500">{submission.bookAuthor}</p>
-                      )}
-                    </div>
+                <div className="flex items-start gap-2">
+                  <BookOpen className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                  <div>
+                    <CardTitle className="text-base leading-tight">
+                      {submission.bookTitle}
+                    </CardTitle>
+                    {submission.bookAuthor && (
+                      <CardDescription className="text-sm mt-1">
+                        {submission.bookAuthor}
+                      </CardDescription>
+                    )}
                   </div>
                 </div>
+              </CardHeader>
 
+              <CardContent className="space-y-3">
                 {/* 리뷰 */}
-                <div className="pt-2 border-t border-gray-100">
-                  <p className="text-sm text-gray-700 line-clamp-3">{submission.review}</p>
+                <div className="pt-2 border-t">
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {submission.review}
+                  </p>
                 </div>
 
                 {/* 가치관 질문 & 답변 */}
                 {submission.dailyQuestion && submission.dailyAnswer && (
-                  <div className="pt-3 border-t border-gray-100">
-                    <div className="space-y-2">
-                      <div className="flex items-start gap-2">
-                        <MessageSquare className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-primary mb-1.5">
-                            {submission.dailyQuestion}
-                          </p>
-                          <p className="text-sm text-gray-700 line-clamp-2">
-                            {submission.dailyAnswer}
-                          </p>
-                        </div>
+                  <div className="pt-3 border-t">
+                    <div className="flex items-start gap-2">
+                      <MessageSquare className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 space-y-1">
+                        <p className="text-xs font-semibold text-primary">
+                          {submission.dailyQuestion}
+                        </p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {submission.dailyAnswer}
+                        </p>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* 날짜 */}
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
                   <Calendar className="h-3 w-3" />
                   <span>
                     {formatTimestampKST(submission.submittedAt, 'yyyy년 M월 d일 HH:mm')}
                   </span>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
 
       {filteredSubmissions.length === 0 && !isLoading && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <p className="text-gray-500">
-            {searchQuery ? '검색 결과가 없습니다' : '등록된 독서 인증이 없습니다'}
-          </p>
-        </div>
+        <Card className="p-12">
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">
+              {searchQuery ? '검색 결과가 없습니다' : '등록된 독서 인증이 없습니다'}
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

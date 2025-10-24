@@ -33,9 +33,10 @@ export async function GET(request: NextRequest) {
       return auth.error;
     }
 
-    // days 파라미터 (기본 7일)
+    // days, cohortId 파라미터
     const searchParams = request.nextUrl.searchParams;
     const days = parseInt(searchParams.get('days') || '7', 10);
+    const cohortId = searchParams.get('cohortId');
 
     const db = getAdminDb();
     const now = new Date();
@@ -44,18 +45,28 @@ export async function GET(request: NextRequest) {
     const startDate = subDays(now, days);
     startDate.setHours(0, 0, 0, 0);
 
-    // 독서 인증 & 전체 참가자 조회 (Admin SDK)
+    // 독서 인증 & 전체 참가자 조회 (cohortId 필터링)
     const [submissionsSnapshot, allParticipantsSnapshot] = await Promise.all([
-      db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get(),
-      db.collection(COLLECTIONS.PARTICIPANTS).get(), // 푸시 허용 수 계산용
+      cohortId
+        ? db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get().then(async snap => {
+            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
+            const participantIds = participants.docs.map(d => d.id);
+            return {
+              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
+            };
+          })
+        : db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get(),
+      cohortId
+        ? db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
+        : db.collection(COLLECTIONS.PARTICIPANTS).get(),
     ]);
 
-    // 관리자 ID 목록 생성
-    const adminIds = new Set(
+    // 슈퍼관리자 ID 목록 생성 (일반 관리자는 포함)
+    const superAdminIds = new Set(
       allParticipantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isSuperAdmin === true || data.isAdministrator === true;
+          return data.isSuperAdmin === true;
         })
         .map((doc) => doc.id)
     );
@@ -80,8 +91,8 @@ export async function GET(request: NextRequest) {
       // 그날까지 푸시 허용한 참가자 수 (누적)
       const pushEnabledCount = allParticipantsSnapshot.docs.filter((doc) => {
         const data = doc.data();
-        // 관리자 제외
-        if (data.isAdministrator || data.isSuperAdmin) return false;
+        // 슈퍼관리자만 제외 (일반 관리자는 포함)
+        if (data.isSuperAdmin) return false;
         // 푸시 구독/토큰 확인
         if (!hasAnyPushSubscription(data)) return false;
         // 그날까지 가입한 참가자 (그날 늦게 가입한 사용자도 포함)
@@ -102,11 +113,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 독서 인증 집계 (관리자 제외)
-    submissionsSnapshot.forEach((doc) => {
+    // 독서 인증 집계 (슈퍼관리자만 제외)
+    submissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      // 관리자 인증 제외
-      if (adminIds.has(data.participantId)) return;
+      // 슈퍼관리자 인증만 제외 (일반 관리자는 포함)
+      if (superAdminIds.has(data.participantId)) return;
 
       const submittedAt = safeTimestampToDate(data.submittedAt);
       const date = format(submittedAt, 'yyyy-MM-dd');

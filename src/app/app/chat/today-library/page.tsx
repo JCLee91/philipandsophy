@@ -323,10 +323,11 @@ function TodayLibraryContent() {
 
           {/* 독서 인증 다이얼로그 */}
           <ReadingSubmissionDialog
-            open={submissionDialogOpen}
+            open={submissionDialogOpen && !!cohortId}
             onOpenChange={setSubmissionDialogOpen}
             participantId={currentUserId || ''}
             participationCode={currentUserId || ''}
+            cohortId={cohortId || ''}
           />
         </div>
       </PageTransition>

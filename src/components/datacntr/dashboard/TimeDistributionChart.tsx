@@ -1,6 +1,7 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface TimeDistributionData {
   timeRange: string;
@@ -22,18 +23,24 @@ const COLORS = {
 export default function TimeDistributionChart({ data, isLoading }: TimeDistributionChartProps) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <div className="h-8 w-48 shimmer rounded mb-4" />
-        <div className="h-[300px] shimmer rounded" />
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="h-6 w-48 shimmer rounded" />
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] shimmer rounded" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center">
-        <p className="text-gray-500">인증 데이터가 없습니다</p>
-      </div>
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-muted-foreground">인증 데이터가 없습니다</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -48,15 +55,16 @@ export default function TimeDistributionChart({ data, isLoading }: TimeDistribut
   const peakTime = sortedData.find((d) => d.percentage === maxPercentage);
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-      <div className="mb-4">
-        <h3 className="text-lg font-bold text-gray-900">시간대별 인증 제출</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle>시간대별 인증 제출</CardTitle>
         {peakTime && (
-          <p className="text-sm text-gray-600 mt-1">
+          <CardDescription>
             📊 <span className="font-semibold">{peakTime.timeRange}시</span> 제출이 가장 많습니다 ({peakTime.percentage}%)
-          </p>
+          </CardDescription>
         )}
-      </div>
+      </CardHeader>
+      <CardContent>
 
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={sortedData}>
@@ -93,7 +101,7 @@ export default function TimeDistributionChart({ data, isLoading }: TimeDistribut
       </ResponsiveContainer>
 
       {/* 범례 */}
-      <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-600">
+      <div className="mt-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.high }} />
           <span>높음 (30%+)</span>
@@ -107,6 +115,7 @@ export default function TimeDistributionChart({ data, isLoading }: TimeDistribut
           <span>낮음 (0-15%)</span>
         </div>
       </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

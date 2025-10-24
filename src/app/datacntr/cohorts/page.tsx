@@ -73,9 +73,17 @@ export default function CohortsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">코호트 관리</h1>
-        <p className="text-gray-600 mt-2">기수별 참가자 및 활동 현황</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">코호트 관리</h1>
+          <p className="text-gray-600 mt-2">기수별 참가자 및 활동 현황</p>
+        </div>
+        <button
+          onClick={() => router.push('/datacntr/cohorts/new')}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+        >
+          + 새 기수 생성
+        </button>
       </div>
 
       {/* 코호트 카드 그리드 */}

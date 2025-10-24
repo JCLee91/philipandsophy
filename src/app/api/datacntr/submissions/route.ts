@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // 참가자 정보 맵 생성
     const participantsSnapshot = await db.collection(COLLECTIONS.PARTICIPANTS).get();
     const participantsMap = new Map();
-    const adminIds = new Set<string>();
+    const superAdminIds = new Set<string>();
 
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
         cohortId: data.cohortId,
       });
 
-      // 관리자 ID 수집
-      if (data.isAdministrator) {
-        adminIds.add(doc.id);
+      // 슈퍼관리자 ID만 수집 (일반 관리자는 포함)
+      if (data.isSuperAdmin) {
+        superAdminIds.add(doc.id);
       }
     });
 
@@ -46,12 +46,12 @@ export async function GET(request: NextRequest) {
       cohortsMap.set(doc.id, doc.data().name);
     });
 
-    // 인증 데이터에 참가자명 및 코호트명 추가 (관리자 인증 제외)
+    // 인증 데이터에 참가자명 및 코호트명 추가 (슈퍼관리자 인증만 제외)
     const submissionsWithParticipant = submissionsSnapshot.docs
       .filter((doc) => {
         const submissionData = doc.data();
-        // 관리자 인증 제외
-        return !adminIds.has(submissionData.participantId);
+        // 슈퍼관리자 인증만 제외 (일반 관리자는 포함)
+        return !superAdminIds.has(submissionData.participantId);
       })
       .map((doc) => {
         const submissionData = doc.data();
