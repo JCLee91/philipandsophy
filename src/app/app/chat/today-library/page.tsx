@@ -201,7 +201,7 @@ function TodayLibraryContent() {
 
           <main className="app-main-content flex-1 overflow-y-auto bg-background">
             <div className="mx-auto max-w-md px-4 w-full">
-              <div className="pt-12 pb-6">
+              <div className="pb-6">
                 <div className="flex flex-col gap-12">
                   <div className="flex flex-col gap-3">
                     {/* Title Skeleton */}
@@ -294,7 +294,7 @@ function TodayLibraryContent() {
           {/* Main Content */}
           <main className="app-main-content flex-1 overflow-y-auto bg-background">
             <div className="mx-auto max-w-md px-4 w-full">
-              <div className="pt-12 pb-6">
+              <div className="pb-6">
                 {/* Header Section */}
                 <div className="flex flex-col gap-12">
                 <div className="flex flex-col gap-3">
@@ -442,9 +442,9 @@ function TodayLibraryContent() {
         <HeaderNavigation title="오늘의 서재" />
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="app-main-content flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-4 w-full">
-            <div className="pt-12 pb-6">
+            <div className="pb-6">
               <div className="flex flex-col gap-12">
                 {/* Header Section */}
                 <div className="flex flex-col gap-3">
@@ -458,7 +458,7 @@ function TodayLibraryContent() {
                   </p>
                 </div>
 
-                {/* Step 3-2, 3-3: 마지막 날 좌우 2열 레이아웃 */}
+                {/* Step 3-2, 3-3: 마지막 날 좌우 2열 레이아웃 (전체 스크롤) */}
                 {showAllProfiles ? (
                   <div className="grid grid-cols-2 gap-6">
                     {/* 왼쪽: 남자 */}
@@ -466,7 +466,7 @@ function TodayLibraryContent() {
                       <h3 className="text-lg font-semibold mb-4 text-gray-700">
                         남자 ({maleParticipants.length}명)
                       </h3>
-                      <div className="flex flex-col gap-4 max-h-[800px] overflow-y-auto pr-2">
+                      <div className="flex flex-col gap-4">
                         {maleParticipants.map((p, index) => (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -489,7 +489,7 @@ function TodayLibraryContent() {
                       <h3 className="text-lg font-semibold mb-4 text-gray-700">
                         여자 ({femaleParticipants.length}명)
                       </h3>
-                      <div className="flex flex-col gap-4 max-h-[800px] overflow-y-auto pr-2">
+                      <div className="flex flex-col gap-4">
                         {femaleParticipants.map((p, index) => (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -575,9 +575,9 @@ function LoadingSkeleton() {
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden">
         <HeaderNavigation title="오늘의 서재" />
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="app-main-content flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-4 w-full">
-            <div className="pt-12 pb-6">
+            <div className="pb-6">
               <div className="flex flex-col gap-12">
                 <div className="flex flex-col gap-3">
                   <div className="h-8 w-48 shimmer rounded" />
