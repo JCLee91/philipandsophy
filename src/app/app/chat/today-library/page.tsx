@@ -462,49 +462,39 @@ function TodayLibraryContent() {
                 {showAllProfiles ? (
                   <div className="grid grid-cols-2 gap-6">
                     {/* 왼쪽: 남자 */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4 text-gray-700">
-                        남자 ({maleParticipants.length}명)
-                      </h3>
-                      <div className="flex flex-col gap-4">
-                        {maleParticipants.map((p, index) => (
-                          <div key={p.id} className="flex flex-col">
-                            <div className="flex justify-center">
-                              <BookmarkCard
-                                profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
-                                name={p.name}
-                                theme="blue"
-                                isLocked={false}
-                                onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
-                              />
-                            </div>
-                            {index < maleParticipants.length - 1 && <BlurDivider />}
+                    <div className="flex flex-col gap-4">
+                      {maleParticipants.map((p, index) => (
+                        <div key={p.id} className="flex flex-col">
+                          <div className="flex justify-center">
+                            <BookmarkCard
+                              profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                              name={p.name}
+                              theme="blue"
+                              isLocked={false}
+                              onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                            />
                           </div>
-                        ))}
-                      </div>
+                          {index < maleParticipants.length - 1 && <BlurDivider />}
+                        </div>
+                      ))}
                     </div>
 
                     {/* 오른쪽: 여자 */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4 text-gray-700">
-                        여자 ({femaleParticipants.length}명)
-                      </h3>
-                      <div className="flex flex-col gap-4">
-                        {femaleParticipants.map((p, index) => (
-                          <div key={p.id} className="flex flex-col">
-                            <div className="flex justify-center">
-                              <BookmarkCard
-                                profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
-                                name={p.name}
-                                theme="yellow"
-                                isLocked={false}
-                                onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
-                              />
-                            </div>
-                            {index < femaleParticipants.length - 1 && <BlurDivider />}
+                    <div className="flex flex-col gap-4">
+                      {femaleParticipants.map((p, index) => (
+                        <div key={p.id} className="flex flex-col">
+                          <div className="flex justify-center">
+                            <BookmarkCard
+                              profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                              name={p.name}
+                              theme="yellow"
+                              isLocked={false}
+                              onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                            />
                           </div>
-                        ))}
-                      </div>
+                          {index < femaleParticipants.length - 1 && <BlurDivider />}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ) : (
@@ -529,26 +519,21 @@ function TodayLibraryContent() {
 
                 {/* 성별 미지정 참가자 (마지막 날에만, 있는 경우만) */}
                 {showAllProfiles && otherParticipants.length > 0 && (
-                  <div className="col-span-2">
-                    <h3 className="text-lg font-semibold mb-4 text-gray-700">
-                      기타 ({otherParticipants.length}명)
-                    </h3>
-                    <div className="flex flex-col gap-4">
-                      {otherParticipants.map((p, index) => (
-                        <div key={p.id} className="flex flex-col">
-                          <div className="flex justify-center">
-                            <BookmarkCard
-                              profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
-                              name={p.name}
-                              theme="blue"
-                              isLocked={false}
-                              onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
-                            />
-                          </div>
-                          {index < otherParticipants.length - 1 && <BlurDivider />}
+                  <div className="col-span-2 flex flex-col gap-4">
+                    {otherParticipants.map((p, index) => (
+                      <div key={p.id} className="flex flex-col">
+                        <div className="flex justify-center">
+                          <BookmarkCard
+                            profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                            name={p.name}
+                            theme="blue"
+                            isLocked={false}
+                            onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                          />
                         </div>
-                      ))}
-                    </div>
+                        {index < otherParticipants.length - 1 && <BlurDivider />}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
