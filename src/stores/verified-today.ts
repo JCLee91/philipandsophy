@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { useEffect } from 'react';
 import { subscribeTodayVerified } from '@/lib/firebase';
-import { format } from 'date-fns';
+import { getTodayString } from '@/lib/date-utils';
 import { APP_CONSTANTS } from '@/constants/app';
 
 interface VerifiedTodayState {
@@ -28,7 +28,7 @@ interface VerifiedTodayState {
 export const useVerifiedTodayStore = create<VerifiedTodayState>((set, get) => ({
   verifiedIds: new Set(),
   isLoading: true,
-  currentDate: format(new Date(), APP_CONSTANTS.DATE_FORMAT),
+  currentDate: getTodayString(), // KST 타임존 사용
   subscriberCount: 0,
   unsubscribe: null,
   dateCheckInterval: null,
@@ -91,7 +91,7 @@ export const useVerifiedTodayStore = create<VerifiedTodayState>((set, get) => ({
   // 날짜 변화 체크 (자정 감지)
   checkDateChange: () => {
     const state = get();
-    const today = format(new Date(), APP_CONSTANTS.DATE_FORMAT);
+    const today = getTodayString(); // KST 타임존 사용
 
     if (today !== state.currentDate) {
       // 날짜가 바뀌면 기존 구독 해제하고 새로 구독

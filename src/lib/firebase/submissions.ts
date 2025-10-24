@@ -16,7 +16,7 @@ import {
   onSnapshot,
   QuerySnapshot,
 } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { getTodayString } from '@/lib/date-utils';
 import { getDb } from './client';
 import { ReadingSubmission, COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
@@ -43,7 +43,13 @@ export async function createSubmission(
 ): Promise<string> {
   const db = getDb();
   const now = Timestamp.now();
-  const submissionDate = format(now.toDate(), 'yyyy-MM-dd');
+  const submissionDate = getTodayString(); // KST 타임존 사용
+
+  console.log('🔍 [createSubmission] 제출 생성:', {
+    submissionDate,
+    participantId: data.participantId,
+    status: data.status
+  });
 
   const docRef = await addDoc(collection(db, COLLECTIONS.READING_SUBMISSIONS), {
     ...data,
