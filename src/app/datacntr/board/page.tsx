@@ -8,6 +8,10 @@ import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { ReadingSubmission, Participant, Cohort } from '@/types/database';
 import { logger } from '@/lib/logger';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Users, BookCheck } from 'lucide-react';
 
 interface BoardData {
   participant: Participant;
@@ -115,10 +119,10 @@ export default function DataCenterBoardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div className="shimmer h-12 w-12 rounded-full mx-auto mb-4" />
-          <p className="text-gray-600">독서 인증 현황을 불러오는 중...</p>
+          <p className="text-muted-foreground">독서 인증 현황을 불러오는 중...</p>
         </div>
       </div>
     );
@@ -126,94 +130,128 @@ export default function DataCenterBoardPage() {
 
   if (!cohort) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-gray-600">활성화된 기수가 없습니다.</p>
+          <p className="text-muted-foreground">활성화된 기수가 없습니다.</p>
         </div>
       </div>
     );
   }
 
+  // Calculate statistics
+  const totalParticipants = boardData.length;
+  const totalDays = dates.length;
+  const totalSubmissions = boardData.reduce((sum, row) => sum + row.submissions.size, 0);
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">독서 인증 현황판</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            {cohort.name} ({format(parseISO(cohort.startDate), 'M월 d일', { locale: ko })} -{' '}
-            {format(parseISO(cohort.endDate), 'M월 d일', { locale: ko })})
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">독서 인증 현황판</h1>
+          <p className="text-muted-foreground">
+            {cohort.name} • {format(parseISO(cohort.startDate), 'M월 d일', { locale: ko })} -{' '}
+            {format(parseISO(cohort.endDate), 'M월 d일', { locale: ko })}
           </p>
         </div>
 
-        {/* Board Table */}
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  참가자
-                </th>
-                {dates.map((date) => (
-                  <th
-                    key={date}
-                    scope="col"
-                    className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    {format(parseISO(date), 'M/d', { locale: ko })}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {boardData.map((row) => (
-                <tr key={row.participant.id} className="hover:bg-gray-50">
-                  <td className="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {row.participant.name}
-                  </td>
-                  {dates.map((date) => {
-                    const submission = row.submissions.get(date);
-                    return (
-                      <td
-                        key={date}
-                        className="px-3 py-4 whitespace-nowrap text-center text-2xl"
-                      >
-                        {submission ? (
-                          <span className="text-green-500" title={submission.bookTitle}>
-                            ✅
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">❌</span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Statistics Cards */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">총 참가자</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalParticipants}명</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">프로그램 기간</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalDays}일</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">총 인증 수</CardTitle>
+              <BookCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalSubmissions}건</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                평균 {(totalSubmissions / totalParticipants).toFixed(1)}건/인
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Statistics */}
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm text-gray-600">총 참가자</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{boardData.length}명</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm text-gray-600">프로그램 기간</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{dates.length}일</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm text-gray-600">총 인증 수</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">
-              {boardData.reduce((sum, row) => sum + row.submissions.size, 0)}건
-            </p>
-          </div>
-        </div>
+        {/* Board Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>일별 인증 현황</CardTitle>
+            <CardDescription>
+              체크 표시를 클릭하면 해당 책 제목을 확인할 수 있습니다
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="sticky left-0 z-10 bg-background min-w-[120px]">
+                      참가자
+                    </TableHead>
+                    {dates.map((date) => (
+                      <TableHead key={date} className="text-center whitespace-nowrap px-2">
+                        {format(parseISO(date), 'M/d', { locale: ko })}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {boardData.map((row) => {
+                    const completionRate = (row.submissions.size / dates.length) * 100;
+                    return (
+                      <TableRow key={row.participant.id}>
+                        <TableCell className="sticky left-0 z-10 bg-background font-medium">
+                          <div className="flex items-center gap-2">
+                            <span>{row.participant.name}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {completionRate.toFixed(0)}%
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        {dates.map((date) => {
+                          const submission = row.submissions.get(date);
+                          return (
+                            <TableCell key={date} className="text-center px-2">
+                              {submission ? (
+                                <span
+                                  className="inline-block text-green-600 font-bold text-xl cursor-help"
+                                  title={submission.bookTitle}
+                                >
+                                  ✓
+                                </span>
+                              ) : (
+                                <span className="inline-block text-red-500 font-bold text-sm">✕</span>
+                              )}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

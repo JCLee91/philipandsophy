@@ -49,13 +49,14 @@ export async function GET(request: NextRequest) {
       '00-06': 0, // 자정~새벽
     };
 
-    // 2. 책 정보 수집 (읽은 사람 수 기준)
-    const bookReaders = new Map<string, Set<string>>(); // bookTitle -> Set<participantId>
+    // 2. 참가자별 인증 수 집계
+    const participantSubmissions = new Map<string, number>();
 
     // 3. 리뷰 품질 데이터
     let totalReviewLength = 0;
     let longReviewCount = 0; // 200자 이상
-    let hasCoverImageCount = 0; // 책 표지 이미지 있음
+    let hasDailyAnswerCount = 0; // 가치관 답변 작성
+    const uniqueDates = new Set<string>();
 
     nonAdminSubmissions.forEach((doc) => {
       const data = doc.data();
@@ -71,15 +72,19 @@ export async function GET(request: NextRequest) {
         else if (hour >= 18 && hour < 21) timeDistribution['18-21']++;
         else if (hour >= 21 && hour < 24) timeDistribution['21-24']++;
         else timeDistribution['00-06']++;
+
+        // 날짜 수집 (일일 평균 계산용)
+        const dateKey = submittedAt.toISOString().split('T')[0];
+        uniqueDates.add(dateKey);
       }
 
-      // 책별 읽은 사람 수집 (같은 사람이 여러 번 인증해도 1명으로)
-      if (data.bookTitle && data.participantId) {
-        const title = data.bookTitle.trim();
-        if (!bookReaders.has(title)) {
-          bookReaders.set(title, new Set());
-        }
-        bookReaders.get(title)!.add(data.participantId);
+      // 참가자별 인증 수
+      const participantId = data.participantId;
+      if (participantId) {
+        participantSubmissions.set(
+          participantId,
+          (participantSubmissions.get(participantId) || 0) + 1
+        );
       }
 
       // 리뷰 품질
@@ -89,9 +94,9 @@ export async function GET(request: NextRequest) {
         longReviewCount++;
       }
 
-      // 책 표지 이미지 (bookCoverUrl 또는 bookImageUrl이 있으면)
-      if (data.bookCoverUrl || data.bookImageUrl) {
-        hasCoverImageCount++;
+      // 가치관 답변 작성 여부
+      if (data.dailyAnswer && data.dailyAnswer.trim().length > 0) {
+        hasDailyAnswerCount++;
       }
     });
 
@@ -104,44 +109,29 @@ export async function GET(request: NextRequest) {
       percentage: totalSubmissions > 0 ? Math.round((count / totalSubmissions) * 100) : 0,
     }));
 
-    // 책 다양성 지표
-    const uniqueBookCount = bookReaders.size;
-
-    // 평균 중복도 = 책당 평균 읽은 사람 수
-    const totalReaders = Array.from(bookReaders.values()).reduce(
-      (sum, readers) => sum + readers.size,
-      0
-    );
-    const averageDuplication = uniqueBookCount > 0
-      ? Number((totalReaders / uniqueBookCount).toFixed(1))
+    // 참여 지표
+    const totalActiveParticipants = participantSubmissions.size;
+    const dailyAverage = uniqueDates.size > 0
+      ? Number((totalSubmissions / uniqueDates.size).toFixed(1))
       : 0;
-
-    // 인기 책 Top 5 (읽은 사람 수 기준)
-    const topBooks = Array.from(bookReaders.entries())
-      .map(([title, readers]) => ({
-        title,
-        count: readers.size // 읽은 사람 수
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
 
     // 리뷰 품질 지표
     const averageReviewLength = totalSubmissions > 0 ? Math.round(totalReviewLength / totalSubmissions) : 0;
     const longReviewPercentage = totalSubmissions > 0 ? Math.round((longReviewCount / totalSubmissions) * 100) : 0;
-    const coverImagePercentage = totalSubmissions > 0 ? Math.round((hasCoverImageCount / totalSubmissions) * 100) : 0;
+    const dailyAnswerPercentage = totalSubmissions > 0 ? Math.round((hasDailyAnswerCount / totalSubmissions) * 100) : 0;
 
     return NextResponse.json({
       timeDistribution: timeDistributionPercent,
-      bookDiversity: {
+      participation: {
         totalSubmissions,
-        uniqueBookCount,
-        averageDuplication,
-        topBooks,
+        totalActiveParticipants,
+        dailyAverage,
+        activeDays: uniqueDates.size,
       },
       reviewQuality: {
         averageReviewLength,
         longReviewPercentage,
-        coverImagePercentage,
+        dailyAnswerPercentage,
       },
     });
   } catch (error) {
