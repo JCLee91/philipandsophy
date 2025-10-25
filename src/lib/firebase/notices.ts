@@ -36,8 +36,8 @@ export async function createNotice(
     content: string;
     templateId: string | null;
     isCustom: boolean;
-    createdAt: typeof Timestamp;
-    updatedAt: typeof Timestamp;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
     imageUrl?: string;
   } = {
     cohortId: data.cohortId,

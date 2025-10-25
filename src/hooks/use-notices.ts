@@ -73,6 +73,8 @@ export function useCreateNotice() {
       author: string;
       content: string;
       imageUrl?: string;
+      isCustom?: boolean;
+      templateId?: string;
     }) => createNotice(data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: NOTICE_KEYS.lists() });
