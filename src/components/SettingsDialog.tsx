@@ -82,41 +82,44 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
             {canSwitchMode && (
               <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-3">모드 전환</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {viewMode === 'admin' ? (
-                        <Shield className="h-5 w-5 text-blue-600" />
-                      ) : (
-                        <User className="h-5 w-5 text-gray-600" />
-                      )}
-                      <span className="font-medium">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {viewMode === 'admin' ? (
+                      <Shield className="h-5 w-5 text-gray-900" />
+                    ) : (
+                      <User className="h-5 w-5 text-gray-400" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
                         {viewMode === 'admin' ? '관리자 모드' : '참가자 모드'}
-                      </span>
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {viewMode === 'admin'
+                          ? '공지 작성, 수정, 삭제 가능'
+                          : '일반 참가자 화면으로 이용'}
+                      </p>
                     </div>
+                  </div>
+
+                  {/* Toggle Switch */}
+                  <div className="relative h-6 w-11">
                     <button
                       type="button"
                       onClick={toggleViewMode}
-                      className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                      style={{
-                        backgroundColor: viewMode === 'admin' ? '#3B82F6' : '#9CA3AF'
-                      }}
-                      aria-pressed={viewMode === 'admin'}
+                      className={`absolute inset-0 inline-flex h-6 w-11 items-center rounded-full transition-colors duration-normal ${
+                        viewMode === 'admin' ? 'bg-black' : 'bg-gray-200'
+                      } cursor-pointer`}
+                      role="switch"
+                      aria-checked={viewMode === 'admin'}
                       aria-label="모드 전환"
                     >
                       <span
-                        className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                        style={{
-                          transform: viewMode === 'admin' ? 'translateX(20px)' : 'translateX(0)'
-                        }}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-normal ${
+                          viewMode === 'admin' ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                       />
                     </button>
                   </div>
-                  <p className="text-xs text-gray-600">
-                    {viewMode === 'admin'
-                      ? '관리자 권한으로 공지 작성, 수정, 삭제가 가능합니다.'
-                      : '일반 참가자 화면으로 서비스를 이용합니다.'}
-                  </p>
                 </div>
               </div>
             )}
