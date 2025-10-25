@@ -113,14 +113,8 @@ export async function GET(request: NextRequest) {
       submissionCount: number;
     }>();
 
-    // 날짜 초기화 (startDate ~ min(endDate, 오늘) 기간)
-    // 미래 날짜는 표시하지 않음
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const displayEndDate = endDate > today ? today : endDate;
-    const displayDays = differenceInDays(displayEndDate, startDate) + 1;
-
-    for (let i = 0; i < displayDays; i++) {
+    // 날짜 초기화 (startDate ~ endDate 기간)
+    for (let i = 0; i < totalDays; i++) {
       const date = addDays(startDate, i);
       const dateStr = format(date, 'yyyy-MM-dd');
       // 그날의 마지막 시각 (23:59:59)까지 포함

@@ -79,11 +79,35 @@ export async function GET(request: NextRequest) {
       db.collection(COLLECTIONS.MESSAGES).get(),
     ]);
 
-    // 오늘 인증은 중복 제출을 방지하기 위해 참가자 기준으로 집계
-    const todaySubmissionParticipantIds = new Set<string>();
-    todaySubmissions.forEach((doc) => {
+    // 슈퍼관리자만 제외 (일반 관리자는 통계에 포함)
+    const nonSuperAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      todaySubmissionParticipantIds.add(data.participantId);
+      return !data.isSuperAdmin;
+    });
+
+    // 슈퍼관리자 ID 목록 생성 (일반 관리자는 포함 안함)
+    const superAdminIds = new Set(
+      participantsSnapshot.docs
+        .filter((doc) => {
+          const data = doc.data();
+          return data.isSuperAdmin === true;
+        })
+        .map((doc) => doc.id)
+    );
+
+    // 슈퍼관리자의 인증만 제외 (일반 관리자 인증은 포함)
+    const nonSuperAdminSubmissions = submissionsSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !superAdminIds.has(data.participantId);
+    });
+
+    // 오늘 인증은 중복 제출을 방지하기 위해 참가자 기준으로 집계
+    const nonSuperAdminTodaySubmissionIds = new Set<string>();
+    todaySubmissionsSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      if (!superAdminIds.has(data.participantId)) {
+        nonSuperAdminTodaySubmissionIds.add(data.participantId);
+      }
     });
 
     // 푸시 알림 허용 인원 (슈퍼관리자만 제외)
@@ -123,25 +147,28 @@ export async function GET(request: NextRequest) {
     weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // 이번 주 일요일
     weekStart.setHours(0, 0, 0, 0);
 
-    let weekSubmissions: any[] = [];
-    if (targetParticipantIds.length > 0) {
-      const chunkSize = 10;
-      for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
-        const chunk = targetParticipantIds.slice(i, i + chunkSize);
-        const weekChunk = await db
-          .collection(COLLECTIONS.READING_SUBMISSIONS)
-          .where('participantId', 'in', chunk)
+    const weekSubmissionsSnapshot = cohortId
+      ? await db.collection(COLLECTIONS.READING_SUBMISSIONS)
+          .where('submittedAt', '>=', weekStart)
+          .get()
+          .then(async snap => {
+            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
+            const participantIds = participants.docs.map(d => d.id);
+            return {
+              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
+            };
+          })
+      : await db.collection(COLLECTIONS.READING_SUBMISSIONS)
           .where('submittedAt', '>=', weekStart)
           .get();
-        weekSubmissions.push(...weekChunk.docs);
-      }
-    }
 
-    // 이번 주 인증한 참가자 ID (중복 제거)
+    // 이번 주 인증한 참가자 ID (슈퍼관리자만 제외, 중복 제거)
     const weekParticipantIds = new Set<string>();
-    weekSubmissions.forEach((doc) => {
+    weekSubmissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      weekParticipantIds.add(data.participantId);
+      if (!superAdminIds.has(data.participantId)) {
+        weekParticipantIds.add(data.participantId);
+      }
     });
 
     const weeklyParticipationRate = nonSuperAdminParticipants.length > 0
@@ -150,14 +177,14 @@ export async function GET(request: NextRequest) {
 
     // 참가자당 평균 독서 인증 횟수 계산
     const averageSubmissionsPerParticipant = nonSuperAdminParticipants.length > 0
-      ? Math.round((allSubmissions.length / nonSuperAdminParticipants.length) * 10) / 10 // 소수점 1자리
+      ? Math.round((nonSuperAdminSubmissions.length / nonSuperAdminParticipants.length) * 10) / 10 // 소수점 1자리
       : 0;
 
     const stats: OverviewStats = {
       averageSubmissionsPerParticipant,
       totalParticipants: nonSuperAdminParticipants.length,
-      todaySubmissions: todaySubmissionParticipantIds.size,
-      totalSubmissions: allSubmissions.length,
+      todaySubmissions: nonSuperAdminTodaySubmissionIds.size,
+      totalSubmissions: nonSuperAdminSubmissions.length,
       totalNotices: noticesSnapshot.size,
       totalMessages: messagesSnapshot.size,
       pushEnabledCount,
