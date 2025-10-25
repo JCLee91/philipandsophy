@@ -25,8 +25,7 @@ export async function GET(request: NextRequest) {
     const todayString = getTodayString();
 
     // 병렬로 통계 조회 (Admin SDK)
-    const [cohortsSnapshot, participantsSnapshot, submissionsSnapshot, todaySubmissionsSnapshot, noticesSnapshot, messagesSnapshot] = await Promise.all([
-      db.collection(COLLECTIONS.COHORTS).get(),
+    const [participantsSnapshot, submissionsSnapshot, todaySubmissionsSnapshot, noticesSnapshot, messagesSnapshot] = await Promise.all([
       cohortId
         ? db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
         : db.collection(COLLECTIONS.PARTICIPANTS).get(),

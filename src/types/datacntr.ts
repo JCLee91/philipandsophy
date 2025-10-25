@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 // 통계 메트릭
 export interface OverviewStats {
-  totalCohorts: number;
+  averageSubmissionsPerParticipant: number; // 참가자당 평균 독서 인증 횟수
   totalParticipants: number;
   todaySubmissions: number;
   totalSubmissions: number;
