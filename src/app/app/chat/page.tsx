@@ -404,13 +404,15 @@ function ChatPageContent() {
                 </p>
               </div>
             ) : isAfterDay14 ? (
-              /* 15일 이후: 프로그램 종료 메시지 */
-              <div className="col-span-2 rounded-lg border bg-card p-4 text-center shadow-sm">
-                <p className="text-lg font-bold text-foreground mb-1">프로그램이 종료되었습니다</p>
-                <p className="text-sm text-muted-foreground">
-                  14일간의 독서 여정을 함께해주셔서 감사합니다
-                </p>
-              </div>
+              /* 15일 이후: 오늘의 서재 버튼만 표시 */
+              <UnifiedButton
+                variant="secondary"
+                onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
+                icon={<BookLibraryIcon className="h-5 w-5" />}
+                className="col-span-2"
+              >
+                10월 멤버의 서재
+              </UnifiedButton>
             ) : (
               <>
                 {/* 2~14일차: 독서 인증 버튼 */}
