@@ -101,18 +101,21 @@ export default function DataCenterBoardPage() {
         const chunkSize = 10;
         for (let i = 0; i < participantIds.length; i += chunkSize) {
           const chunk = participantIds.slice(i, i + chunkSize);
+          // Query with IN + single range filter, then filter in memory for end date
           const submissionsQuery = query(
             submissionsRef,
             where('participantId', 'in', chunk),
-            where('submissionDate', '>=', targetCohort.startDate),
-            where('submissionDate', '<=', targetCohort.endDate)
+            where('submissionDate', '>=', targetCohort.startDate)
           );
           const snapshot = await getDocs(submissionsQuery);
-          const chunkSubmissions = snapshot.docs.map((doc) => {
-            const data = doc.data() as ReadingSubmission;
-            data.id = doc.id;
-            return data;
-          });
+          const chunkSubmissions = snapshot.docs
+            .map((doc) => {
+              const data = doc.data() as ReadingSubmission;
+              data.id = doc.id;
+              return data;
+            })
+            // Filter end date in memory to avoid complex index requirement
+            .filter((sub) => sub.submissionDate <= targetCohort.endDate);
           submissions.push(...chunkSubmissions);
         }
 
