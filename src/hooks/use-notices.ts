@@ -72,9 +72,10 @@ export function useCreateNotice() {
       cohortId: string;
       author: string;
       content: string;
+      isCustom: boolean;
       imageUrl?: string;
-      isCustom?: boolean;
       templateId?: string;
+      order?: number;
     }) => createNotice(data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: NOTICE_KEYS.lists() });
