@@ -22,46 +22,41 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const cohortId = searchParams.get('cohortId');
 
-    // 참가자 정보 조회 (관리자 필터링 + cohortId 맵핑)
-    const participantsSnapshot = await db.collection(COLLECTIONS.PARTICIPANTS).get();
+    // 1. 참가자 정보 조회 (cohortId 필터링)
+    let participantsQuery = db.collection(COLLECTIONS.PARTICIPANTS);
+    if (cohortId) {
+      participantsQuery = participantsQuery.where('cohortId', '==', cohortId);
+    }
+    const participantsSnapshot = await participantsQuery.get();
+
     const adminIds = new Set<string>();
-    const participantCohortMap = new Map<string, string>();
+    const targetParticipantIds: string[] = [];
 
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
       if (data.isSuperAdmin) {
         adminIds.add(doc.id);
+      } else {
+        targetParticipantIds.push(doc.id);
       }
-      participantCohortMap.set(doc.id, data.cohortId);
     });
 
-    // 모든 독서 인증 조회
-    const submissionsSnapshot = await db
-      .collection(COLLECTIONS.READING_SUBMISSIONS)
-      .get();
-
-    // 관리자 제외 + cohortId 필터링
-    const nonAdminSubmissions = submissionsSnapshot.docs.filter((doc) => {
-      const data = doc.data();
-      const participantId = data.participantId;
-
-      // 슈퍼관리자 제외
-      if (adminIds.has(participantId)) {
-        return false;
+    // 2. 독서 인증 조회 (participantId IN 쿼리로 필터링)
+    let nonAdminSubmissions: any[] = [];
+    if (targetParticipantIds.length > 0) {
+      // Firestore IN 제약: 최대 10개씩 분할 쿼리
+      const chunkSize = 10;
+      for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
+        const chunk = targetParticipantIds.slice(i, i + chunkSize);
+        const chunkSnapshot = await db
+          .collection(COLLECTIONS.READING_SUBMISSIONS)
+          .where('participantId', 'in', chunk)
+          .get();
+        nonAdminSubmissions.push(...chunkSnapshot.docs);
       }
+    }
 
-      // cohortId 필터링 (있을 경우)
-      if (cohortId) {
-        const participantCohortId = participantCohortMap.get(participantId);
-        if (participantCohortId !== cohortId) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    // 1. 시간대별 제출 분포
+    // 3. 시간대별 제출 분포
     const timeDistribution = {
       '06-09': 0,
       '09-12': 0,
@@ -72,10 +67,10 @@ export async function GET(request: NextRequest) {
       '00-06': 0, // 자정~새벽
     };
 
-    // 2. 참가자별 인증 수 집계
+    // 4. 참가자별 인증 수 집계
     const participantSubmissions = new Map<string, number>();
 
-    // 3. 리뷰 품질 데이터
+    // 5. 리뷰 품질 데이터
     let totalReviewLength = 0;
     let longReviewCount = 0; // 200자 이상
     let hasDailyAnswerCount = 0; // 가치관 답변 작성

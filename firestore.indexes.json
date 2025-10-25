@@ -117,6 +117,20 @@
       ]
     },
     {
+      "collectionGroup": "reading_submissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cohortId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "submissionDate",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "notice_templates",
       "queryScope": "COLLECTION",
       "fields": [
