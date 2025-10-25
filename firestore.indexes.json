@@ -121,7 +121,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "cohortId",
+          "fieldPath": "participantId",
           "order": "ASCENDING"
         },
         {
