@@ -39,7 +39,13 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
 
   // 데이터 새로고침
   const handleRefreshData = async () => {
-    if (!user || isRefreshing || !selectedCohortId) return;
+    if (!user || isRefreshing) return;
+
+    // 'all'이거나 유효하지 않은 cohortId는 거부
+    if (!selectedCohortId || selectedCohortId === 'all') {
+      alert('특정 기수를 선택해주세요.');
+      return;
+    }
 
     setIsRefreshing(true);
     try {

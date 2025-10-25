@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminDb, getAdminAuth } from '@/lib/firebase/admin';
+import { requireWebAppAdmin } from '@/lib/api-auth';
+import { getAdminDb } from '@/lib/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/datacntr/cohorts/[cohortId]/toggle-active
@@ -13,23 +15,10 @@ export async function POST(
   try {
     const { cohortId } = await context.params;
 
-    // 인증 확인
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
-    }
-
-    const idToken = authHeader.split('Bearer ')[1];
-    const auth = getAdminAuth();
-    const decodedToken = await auth.verifyIdToken(idToken);
-
-    if (!decodedToken) {
-      return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 });
-    }
-
-    // 관리자 권한 확인
-    if (!decodedToken.admin && !(decodedToken as any).isAdministrator) {
-      return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 403 });
+    // Firebase Auth 검증 (통일된 관리자 권한 확인)
+    const auth = await requireWebAppAdmin(request);
+    if (auth.error) {
+      return auth.error;
     }
 
     // 요청 본문 파싱
@@ -55,7 +44,7 @@ export async function POST(
       isActive,
     });
   } catch (error) {
-    console.error('기수 활성화 상태 변경 실패:', error);
+    logger.error('기수 활성화 상태 변경 실패', error);
     return NextResponse.json(
       { error: '기수 활성화 상태 변경에 실패했습니다' },
       { status: 500 }

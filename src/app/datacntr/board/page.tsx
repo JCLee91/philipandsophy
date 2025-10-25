@@ -242,7 +242,7 @@ export default function DataCenterBoardPage() {
                           <div className="flex items-center gap-2">
                             <span>{row.participant.name}</span>
                             <Badge variant="outline" className="text-xs">
-                              {completionRate.toFixed(0)}%
+                              {row.submissions.size}회
                             </Badge>
                           </div>
                         </TableCell>
