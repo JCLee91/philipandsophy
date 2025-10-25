@@ -108,9 +108,9 @@ export default function NoticeItem({
                       className="text-[#1264a3] hover:underline"
                       onClick={(e) => {
                         e.preventDefault();
-                        window.open(part, '_blank', 'noopener,noreferrer');
+                        // iOS PWA에서 외부 브라우저로 열기
+                        window.location.href = part;
                       }}
-                      target="_blank"
                       rel="noopener noreferrer"
                     >
                       {part}
