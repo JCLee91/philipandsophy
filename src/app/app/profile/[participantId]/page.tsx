@@ -318,8 +318,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 이름에서 성 제거 (예: "김철수" -> "철수")
   const firstName = participant.name.length > 2 ? participant.name.slice(1) : participant.name;
 
-  // 각 날짜에 대한 제출물 찾기
-  const dailySubmissions = fourteenDays.map((date) => {
+  // 코호트 번호 추출 (예: "1기" → 1, "2기" → 2)
+  const cohortNumber = cohort?.name ? parseInt(cohort.name.match(/\d+/)?.[0] || '0', 10) : undefined;
+
+  // 각 날짜에 대한 제출물 찾기 (dayNumber 추가)
+  const dailySubmissions = fourteenDays.map((date, index) => {
     const submission = submissions.find((sub) =>
       isSameDay(sub.submittedAt.toDate(), date)
     );
@@ -327,6 +330,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
       date,
       submission,
       hasSubmission: !!submission,
+      dayNumber: index + 1, // 1~14
     };
   });
 
@@ -455,12 +459,14 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                       onSubmissionClick={setSelectedSubmission}
                       bookmarkCompleted={colors.bookmarkCompleted}
                       bookmarkEmpty={colors.bookmarkEmpty}
+                      cohortNumber={cohortNumber}
                     />
                     <HistoryWeekRow
                       days={dailySubmissions.slice(7, 14)}
                       onSubmissionClick={setSelectedSubmission}
                       bookmarkCompleted={colors.bookmarkCompleted}
                       bookmarkEmpty={colors.bookmarkEmpty}
+                      cohortNumber={cohortNumber}
                     />
                   </div>
                 </div>
