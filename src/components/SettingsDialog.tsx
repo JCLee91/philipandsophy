@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { X, Shield, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { X, Shield, User, RefreshCw } from 'lucide-react';
 import { NotificationToggle } from './NotificationToggle';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { useViewMode } from '@/contexts/ViewModeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 
 interface SettingsDialogProps {
@@ -20,7 +22,18 @@ interface SettingsDialogProps {
  */
 export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
   useModalCleanup(isOpen);
+  const router = useRouter();
+  const { participant } = useAuth();
   const { viewMode, canSwitchMode, toggleViewMode } = useViewMode();
+
+  // 관리자 여부 확인
+  const isAdmin = participant?.isAdministrator || participant?.isSuperAdmin;
+
+  // 코호트 변경 페이지로 이동
+  const handleChangeCohort = () => {
+    onClose();
+    router.push('/app/cohorts');
+  };
 
   // 🔍 프로덕션 디버깅: 강제 로그 출력
   useEffect(() => {
@@ -105,6 +118,24 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
                       : '일반 참가자 화면으로 서비스를 이용합니다.'}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* Cohort Change Section - 관리자만 표시 */}
+            {isAdmin && (
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 mb-3">관리자 메뉴</h3>
+                <button
+                  type="button"
+                  onClick={handleChangeCohort}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 font-medium text-black transition-colors hover:bg-gray-50 active:bg-gray-100 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <RefreshCw className="h-5 w-5 text-gray-600" />
+                    <span>코호트 변경</span>
+                  </div>
+                  <span className="text-sm text-gray-500">›</span>
+                </button>
               </div>
             )}
 
