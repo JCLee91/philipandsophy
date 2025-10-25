@@ -108,8 +108,10 @@ export default function NoticeItem({
                       className="text-[#1264a3] hover:underline"
                       onClick={(e) => {
                         e.preventDefault();
-                        // iOS PWA에서 외부 브라우저로 열기
-                        window.location.href = part;
+                        // iOS PWA에서 외부 Safari 브라우저로 열기
+                        // https://example.com → x-safari-https://example.com
+                        const safariUrl = part.replace(/^https?:\/\//, 'x-safari-https://');
+                        window.location.href = safariUrl;
                       }}
                       rel="noopener noreferrer"
                     >
