@@ -214,6 +214,7 @@ function ChatPageContent() {
         cohortId,
         author: APP_CONSTANTS.ADMIN_NAME,
         content: newNoticeContent.trim(),
+        isCustom: true, // 관리자가 직접 작성하는 커스텀 공지
         imageUrl,
       });
 

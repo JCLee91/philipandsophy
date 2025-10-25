@@ -34,24 +34,30 @@ export async function createNotice(
     cohortId: string;
     author: string;
     content: string;
-    templateId: string | null;
     isCustom: boolean;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    templateId?: string;
     imageUrl?: string;
+    order?: number;
   } = {
     cohortId: data.cohortId,
     author: data.author,
     content: data.content,
-    templateId: data.templateId || null,
-    isCustom: data.isCustom ?? true, // 기본값: 커스텀 공지
+    isCustom: data.isCustom,
     createdAt: now,
     updatedAt: now,
   };
 
-  // imageUrl이 있을 때만 필드 추가
+  // Optional 필드들
+  if (data.templateId) {
+    noticeData.templateId = data.templateId;
+  }
   if (data.imageUrl) {
     noticeData.imageUrl = data.imageUrl;
+  }
+  if (data.order !== undefined) {
+    noticeData.order = data.order;
   }
 
   const docRef = await addDoc(collection(db, COLLECTIONS.NOTICES), noticeData);
