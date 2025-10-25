@@ -121,7 +121,19 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
               </div>
             )}
 
-            {/* Cohort Change Section - 관리자만 표시 */}
+            {/* Notification Toggle Section */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">알림</h3>
+              <NotificationToggle />
+            </div>
+
+            {/* Future: 추가 설정 항목 */}
+            {/* <div>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">기타</h3>
+              ...
+            </div> */}
+
+            {/* Cohort Change Section - 관리자만 표시, 맨 아래 배치 */}
             {isAdmin && (
               <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-3">관리자 메뉴</h3>
@@ -138,18 +150,6 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
                 </button>
               </div>
             )}
-
-            {/* Notification Toggle Section */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">알림</h3>
-              <NotificationToggle />
-            </div>
-
-            {/* Future: 추가 설정 항목 */}
-            {/* <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">기타</h3>
-              ...
-            </div> */}
           </div>
         </div>
       </div>
