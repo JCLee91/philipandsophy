@@ -106,6 +106,10 @@ export default function NoticeItem({
                       key={i}
                       href={part}
                       className="text-[#1264a3] hover:underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(part, '_blank', 'noopener,noreferrer');
+                      }}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

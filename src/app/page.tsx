@@ -118,7 +118,7 @@ export default function LandingPage() {
         <div className="cta-section">
           <Tooltip />
           <a
-            href="https://smore.im/form/0C2SFfq79d#_q=rtwE0JeU"
+            href="https://smore.im/form/13J1nUevrX"
             target="_blank"
             rel="noopener"
             aria-label="사전 신청 설문 열기"
