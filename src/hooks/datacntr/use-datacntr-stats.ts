@@ -28,7 +28,7 @@ export function useDataCenterStats(cohortId?: string) {
 
       return response.json();
     },
-    enabled: !!user && !!cohortId,
+    enabled: !!user, // cohortId는 선택사항 (undefined면 전체 조회)
     staleTime: DATACNTR_QUERY_CONFIG.STATS_STALE_TIME,
     refetchInterval: DATACNTR_QUERY_CONFIG.STATS_REFETCH_INTERVAL,
   });

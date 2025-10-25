@@ -152,6 +152,10 @@ export async function GET(request: NextRequest) {
       if (superAdminIds.has(data.participantId)) return;
 
       const submittedAt = safeTimestampToDate(data.submittedAt);
+      if (!submittedAt) {
+        logger.warn('제출 타임스탬프 누락', { docId: doc.id, submissionDate: data.submissionDate });
+        return;
+      }
       const date = format(submittedAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
 

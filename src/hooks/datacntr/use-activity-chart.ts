@@ -29,7 +29,7 @@ export function useActivityChart(days: number = DATACNTR_QUERY_CONFIG.DEFAULT_AC
 
       return response.json();
     },
-    enabled: !!user && !!cohortId,
+    enabled: !!user, // cohortId는 선택사항 (undefined면 전체 조회)
     staleTime: DATACNTR_QUERY_CONFIG.ACTIVITY_STALE_TIME,
   });
 }
