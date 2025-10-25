@@ -90,22 +90,31 @@ export default function DataCenterBoardPage() {
           })
           .filter((p) => !p.isSuperAdmin); // Exclude only super admins
 
-        // 5. Get all submissions for this cohort using range query
+        // 5. Get all submissions for this cohort's participants
+        // NOTE: reading_submissions doesn't have cohortId field, so we query by participantId
+        const participantIds = participants.map(p => p.id);
         const submissionsRef = collection(db, 'reading_submissions');
-        const submissionsQuery = query(
-          submissionsRef,
-          where('cohortId', '==', targetCohort.id),
-          where('submissionDate', '>=', targetCohort.startDate),
-          where('submissionDate', '<=', targetCohort.endDate),
-          orderBy('submissionDate')
-        );
-        const submissionsSnapshot = await getDocs(submissionsQuery);
 
-        const submissions = submissionsSnapshot.docs.map((doc) => {
-          const data = doc.data() as ReadingSubmission;
-          data.id = doc.id;
-          return data;
-        });
+        let submissions: ReadingSubmission[] = [];
+
+        // Firestore IN constraint: max 30 items per query (using 10 for safety)
+        const chunkSize = 10;
+        for (let i = 0; i < participantIds.length; i += chunkSize) {
+          const chunk = participantIds.slice(i, i + chunkSize);
+          const submissionsQuery = query(
+            submissionsRef,
+            where('participantId', 'in', chunk),
+            where('submissionDate', '>=', targetCohort.startDate),
+            where('submissionDate', '<=', targetCohort.endDate)
+          );
+          const snapshot = await getDocs(submissionsQuery);
+          const chunkSubmissions = snapshot.docs.map((doc) => {
+            const data = doc.data() as ReadingSubmission;
+            data.id = doc.id;
+            return data;
+          });
+          submissions.push(...chunkSubmissions);
+        }
 
         // 6. Group submissions by participant
         const submissionsByParticipant = new Map<string, Map<string, ReadingSubmission>>();

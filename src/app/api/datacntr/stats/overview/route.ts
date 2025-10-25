@@ -79,31 +79,9 @@ export async function GET(request: NextRequest) {
       db.collection(COLLECTIONS.MESSAGES).get(),
     ]);
 
-    // 슈퍼관리자만 제외 (일반 관리자는 통계에 포함)
-    const nonSuperAdminParticipants = participantsSnapshot.docs.filter((doc) => {
-      const data = doc.data();
-      return !data.isSuperAdmin;
-    });
-
-    // 슈퍼관리자 ID 목록 생성 (일반 관리자는 포함 안함)
-    const superAdminIds = new Set(
-      participantsSnapshot.docs
-        .filter((doc) => {
-          const data = doc.data();
-          return data.isSuperAdmin === true;
-        })
-        .map((doc) => doc.id)
-    );
-
-    // 슈퍼관리자의 인증만 제외 (일반 관리자 인증은 포함)
-    const nonSuperAdminSubmissions = submissionsSnapshot.docs.filter((doc) => {
-      const data = doc.data();
-      return !superAdminIds.has(data.participantId);
-    });
-
     // 오늘 인증은 중복 제출을 방지하기 위해 참가자 기준으로 집계
     const nonSuperAdminTodaySubmissionIds = new Set<string>();
-    todaySubmissionsSnapshot.docs.forEach((doc) => {
+    todaySubmissions.forEach((doc) => {
       const data = doc.data();
       if (!superAdminIds.has(data.participantId)) {
         nonSuperAdminTodaySubmissionIds.add(data.participantId);
@@ -177,14 +155,14 @@ export async function GET(request: NextRequest) {
 
     // 참가자당 평균 독서 인증 횟수 계산
     const averageSubmissionsPerParticipant = nonSuperAdminParticipants.length > 0
-      ? Math.round((nonSuperAdminSubmissions.length / nonSuperAdminParticipants.length) * 10) / 10 // 소수점 1자리
+      ? Math.round((allSubmissions.length / nonSuperAdminParticipants.length) * 10) / 10 // 소수점 1자리
       : 0;
 
     const stats: OverviewStats = {
       averageSubmissionsPerParticipant,
       totalParticipants: nonSuperAdminParticipants.length,
       todaySubmissions: nonSuperAdminTodaySubmissionIds.size,
-      totalSubmissions: nonSuperAdminSubmissions.length,
+      totalSubmissions: allSubmissions.length,
       totalNotices: noticesSnapshot.size,
       totalMessages: messagesSnapshot.size,
       pushEnabledCount,
