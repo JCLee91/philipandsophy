@@ -250,6 +250,32 @@ function TodayLibraryContent() {
 
   // 프로필북 클릭 핸들러 (인증 체크는 isLocked에서 이미 완료)
   const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
+    // 15일차 이후: 인증 체크 완전 스킵 (별도 로직)
+    if (showAllProfilesWithoutAuth) {
+      // 인증 없이 바로 접근 가능
+      const matchingDate = getTodayString();
+      const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
+      router.push(profileUrl);
+      return;
+    }
+
+    // 14일차: 전체 공개지만 인증 필요
+    if (showAllProfiles && !showAllProfilesWithoutAuth) {
+      if (isLocked) {
+        toast({
+          title: '프로필 잠김 🔒',
+          description: '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요 (마지막 날 특별 이벤트!)',
+        });
+        return;
+      }
+      // 인증됨 - 접근 허용
+      const matchingDate = getTodayString();
+      const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
+      router.push(profileUrl);
+      return;
+    }
+
+    // 평소 (1-13일차): 기존 로직
     if (isLocked) {
       toast({
         title: '프로필 잠김 🔒',
@@ -258,8 +284,7 @@ function TodayLibraryContent() {
       return;
     }
 
-    // 마지막 날에는 매칭 날짜 체크 건너뛰기 (전체 프로필 공개)
-    if (!showAllProfiles && !activeMatchingDate) {
+    if (!activeMatchingDate) {
       toast({
         title: '프로필북 정보를 불러올 수 없습니다',
         description: '잠시 후 다시 시도해주세요.',
@@ -267,9 +292,8 @@ function TodayLibraryContent() {
       return;
     }
 
-    // 매칭 날짜를 URL에 포함하여 스포일러 방지 (마지막 날에는 오늘 날짜 사용)
-    const matchingDate = showAllProfiles ? getTodayString() : activeMatchingDate!;
-    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
+    // 매칭 날짜를 URL에 포함하여 스포일러 방지
+    const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(activeMatchingDate)}`;
     router.push(profileUrl);
   };
 
