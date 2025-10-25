@@ -10,6 +10,24 @@ import { getParticipantStatus } from '@/lib/datacntr/status';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 import type { DataCenterParticipant } from '@/types/datacntr';
 
+function hasAnyPushSubscription(data: any): boolean {
+  const hasMultiDeviceToken =
+    Array.isArray(data.pushTokens) &&
+    data.pushTokens.some(
+      (entry: any) => typeof entry?.token === 'string' && entry.token.trim().length > 0
+    );
+
+  const hasWebPushSubscription =
+    Array.isArray(data.webPushSubscriptions) &&
+    data.webPushSubscriptions.some(
+      (sub: any) => typeof sub?.endpoint === 'string' && sub.endpoint.trim().length > 0
+    );
+
+  const hasLegacyToken = typeof data.pushToken === 'string' && data.pushToken.trim().length > 0;
+
+  return hasMultiDeviceToken || hasWebPushSubscription || hasLegacyToken;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Firebase Auth 검증
@@ -51,55 +69,71 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // 각 참가자의 인증 횟수, 인게이지먼트, 활동 상태 추가 (관리자 제외)
-    const now = Date.now();
-    const participantsWithStats: DataCenterParticipant[] = await Promise.all(
-      nonAdminParticipants.map(async (doc) => {
-        const participantData = doc.data();
+    // 모든 참가자 ID 수집
+    const participantIds = nonAdminParticipants.map(doc => doc.id);
 
-        // 해당 참가자의 인증 횟수 조회
+    // 인증 횟수를 한 번에 조회하여 Map으로 집계 (N+1 문제 해결)
+    const submissionCountMap = new Map<string, number>();
+    if (participantIds.length > 0) {
+      // Firestore IN 제약: 최대 10개씩 분할 쿼리
+      const chunkSize = 10;
+      for (let i = 0; i < participantIds.length; i += chunkSize) {
+        const chunk = participantIds.slice(i, i + chunkSize);
         const submissionsSnapshot = await db
           .collection(COLLECTIONS.READING_SUBMISSIONS)
-          .where('participantId', '==', doc.id)
+          .where('participantId', 'in', chunk)
           .get();
 
-        const submissionCount = submissionsSnapshot.size;
+        submissionsSnapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          const participantId = data.participantId;
+          submissionCountMap.set(participantId, (submissionCountMap.get(participantId) || 0) + 1);
+        });
+      }
+    }
 
-        // 코호트 정보 가져오기
-        const cohort = cohortsMap.get(participantData.cohortId);
-        const cohortName = cohort?.name || '알 수 없음';
+    // 각 참가자의 인게이지먼트, 활동 상태 추가
+    const now = Date.now();
+    const participantsWithStats: DataCenterParticipant[] = nonAdminParticipants.map((doc) => {
+      const participantData = doc.data();
 
-        // 인게이지먼트 점수 계산
-        let engagementScore = 0;
-        let engagementLevel: 'high' | 'medium' | 'low' = 'low';
-        if (cohort?.startDate) {
-          const weeksPassed = getWeeksPassed(cohort.startDate);
-          engagementScore = calculateEngagementScore(submissionCount, weeksPassed);
-          engagementLevel = getEngagementLevel(engagementScore);
-        }
+      // Map에서 인증 횟수 조회
+      const submissionCount = submissionCountMap.get(doc.id) || 0;
 
-        // 활동 상태 계산
-        const lastActivityAt = safeTimestampToDate(participantData.lastActivityAt);
-        let activityStatus: 'active' | 'moderate' | 'dormant' = 'dormant';
-        if (lastActivityAt) {
-          const daysSinceActivity = Math.floor((now - lastActivityAt.getTime()) / (1000 * 60 * 60 * 24));
-          activityStatus = getParticipantStatus(daysSinceActivity);
-        }
+      // 코호트 정보 가져오기
+      const cohort = cohortsMap.get(participantData.cohortId);
+      const cohortName = cohort?.name || '알 수 없음';
 
-        // pushNotificationEnabled 필드 기준으로 푸시 알림 활성화 여부 확인
-        const hasPushToken = participantData.pushNotificationEnabled === true;
+      // 인게이지먼트 점수 계산
+      let engagementScore = 0;
+      let engagementLevel: 'high' | 'medium' | 'low' = 'low';
+      if (cohort?.startDate) {
+        const weeksPassed = getWeeksPassed(cohort.startDate);
+        engagementScore = calculateEngagementScore(submissionCount, weeksPassed);
+        engagementLevel = getEngagementLevel(engagementScore);
+      }
 
-        return {
-          ...sanitizeParticipantForClient({ id: doc.id, ...participantData }),
-          cohortName,
-          submissionCount,
-          engagementScore,
-          engagementLevel,
-          hasPushToken,
-          activityStatus,
-        };
-      })
-    );
+      // 활동 상태 계산
+      const lastActivityAt = safeTimestampToDate(participantData.lastActivityAt);
+      let activityStatus: 'active' | 'moderate' | 'dormant' = 'dormant';
+      if (lastActivityAt) {
+        const daysSinceActivity = Math.floor((now - lastActivityAt.getTime()) / (1000 * 60 * 60 * 24));
+        activityStatus = getParticipantStatus(daysSinceActivity);
+      }
+
+      // 실제 푸시 토큰 존재 여부 확인
+      const hasPushToken = hasAnyPushSubscription(participantData);
+
+      return {
+        ...sanitizeParticipantForClient({ id: doc.id, ...participantData }),
+        cohortName,
+        submissionCount,
+        engagementScore,
+        engagementLevel,
+        hasPushToken,
+        activityStatus,
+      };
+    });
 
     return NextResponse.json(participantsWithStats);
   } catch (error) {

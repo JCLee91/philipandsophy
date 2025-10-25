@@ -78,11 +78,12 @@ function ChatPageContent() {
   );
   const hasSubmittedToday = !!todaySubmission;
 
-  // 현재 Day 계산 (1일차 판별용)
+  // 현재 Day 계산 (1일차, 15일 이후 판별용)
   const currentDay = cohort && cohort.programStartDate
     ? differenceInDays(parseISO(getTodayString()), parseISO(cohort.programStartDate)) + 1
     : null;
   const isDay1 = currentDay === 1;
+  const isAfterDay14 = currentDay !== null && currentDay > 14;
 
   // Firebase hooks
   const { data: noticesData = [], isLoading } = useNoticesByCohort(cohortId || undefined);
@@ -394,7 +395,7 @@ function ChatPageContent() {
         ) : (
           /* 참가자 모드일 때 버튼 */
           <div className="grid grid-cols-2 gap-2">
-            {/* 독서 인증하기 버튼 (1일차에는 비활성화) */}
+            {/* 1일차: 환영 메시지 */}
             {isDay1 ? (
               <div className="col-span-2 rounded-lg border bg-card p-4 text-center shadow-sm">
                 <p className="text-lg font-bold text-foreground mb-1">환영합니다</p>
@@ -402,8 +403,17 @@ function ChatPageContent() {
                   독서 인증은 내일부터 시작됩니다
                 </p>
               </div>
+            ) : isAfterDay14 ? (
+              /* 15일 이후: 프로그램 종료 메시지 */
+              <div className="col-span-2 rounded-lg border bg-card p-4 text-center shadow-sm">
+                <p className="text-lg font-bold text-foreground mb-1">프로그램이 종료되었습니다</p>
+                <p className="text-sm text-muted-foreground">
+                  14일간의 독서 여정을 함께해주셔서 감사합니다
+                </p>
+              </div>
             ) : (
               <>
+                {/* 2~14일차: 독서 인증 버튼 */}
                 <UnifiedButton
                   variant="primary"
                   onClick={() => setSubmissionDialogOpen(true)}

@@ -18,18 +18,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const cohortId = searchParams.get('cohortId');
 
-    // 모든 독서 인증 조회 (최신순)
-    let submissionsQuery = db
-      .collection(COLLECTIONS.READING_SUBMISSIONS)
-      .orderBy('submittedAt', 'desc')
-      .limit(200); // 최대 200개만 조회 (성능 고려)
+    // 1. 참가자 정보 조회 (cohortId 필터링)
+    let participantsQuery = db.collection(COLLECTIONS.PARTICIPANTS);
+    if (cohortId) {
+      participantsQuery = participantsQuery.where('cohortId', '==', cohortId);
+    }
+    const participantsSnapshot = await participantsQuery.get();
 
-    const submissionsSnapshot = await submissionsQuery.get();
-
-    // 참가자 정보 맵 생성
-    const participantsSnapshot = await db.collection(COLLECTIONS.PARTICIPANTS).get();
     const participantsMap = new Map();
     const superAdminIds = new Set<string>();
+    const targetParticipantIds: string[] = [];
 
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
@@ -41,45 +39,54 @@ export async function GET(request: NextRequest) {
       // 슈퍼관리자 ID만 수집 (일반 관리자는 포함)
       if (data.isSuperAdmin) {
         superAdminIds.add(doc.id);
+      } else {
+        targetParticipantIds.push(doc.id);
       }
     });
 
-    // 코호트 정보 맵 생성
+    // 2. 독서 인증 조회 (participantId IN 쿼리로 필터링)
+    let submissions: any[] = [];
+    if (targetParticipantIds.length > 0) {
+      // Firestore IN 제약: 최대 10개씩 분할 쿼리
+      const chunkSize = 10;
+      for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
+        const chunk = targetParticipantIds.slice(i, i + chunkSize);
+        const chunkSnapshot = await db
+          .collection(COLLECTIONS.READING_SUBMISSIONS)
+          .where('participantId', 'in', chunk)
+          .orderBy('submittedAt', 'desc')
+          .limit(200)
+          .get();
+        submissions.push(...chunkSnapshot.docs);
+      }
+    }
+
+    // 최신순 정렬
+    submissions.sort((a, b) => {
+      const aTime = a.data().submittedAt?.toMillis() || 0;
+      const bTime = b.data().submittedAt?.toMillis() || 0;
+      return bTime - aTime;
+    });
+
+    // 3. 코호트 정보 맵 생성
     const cohortsSnapshot = await db.collection(COLLECTIONS.COHORTS).get();
     const cohortsMap = new Map();
     cohortsSnapshot.docs.forEach((doc) => {
       cohortsMap.set(doc.id, doc.data().name);
     });
 
-    // 인증 데이터에 참가자명 및 코호트명 추가 (슈퍼관리자 인증만 제외)
-    const submissionsWithParticipant = submissionsSnapshot.docs
-      .filter((doc) => {
-        const submissionData = doc.data();
-        const participant = participantsMap.get(submissionData.participantId);
+    // 4. 인증 데이터에 참가자명 및 코호트명 추가
+    const submissionsWithParticipant = submissions.map((doc) => {
+      const submissionData = doc.data();
+      const participant = participantsMap.get(submissionData.participantId);
 
-        // 슈퍼관리자 인증만 제외 (일반 관리자는 포함)
-        if (superAdminIds.has(submissionData.participantId)) {
-          return false;
-        }
-
-        // cohortId 필터링 (있을 경우)
-        if (cohortId && participant?.cohortId !== cohortId) {
-          return false;
-        }
-
-        return true;
-      })
-      .map((doc) => {
-        const submissionData = doc.data();
-        const participant = participantsMap.get(submissionData.participantId);
-
-        return {
-          id: doc.id,
-          ...submissionData,
-          participantName: participant?.name || '알 수 없음',
-          cohortName: cohortsMap.get(participant?.cohortId) || '알 수 없음',
-        };
-      });
+      return {
+        id: doc.id,
+        ...submissionData,
+        participantName: participant?.name || '알 수 없음',
+        cohortName: cohortsMap.get(participant?.cohortId) || '알 수 없음',
+      };
+    });
 
     return NextResponse.json(submissionsWithParticipant);
   } catch (error) {

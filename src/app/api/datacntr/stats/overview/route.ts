@@ -24,29 +24,55 @@ export async function GET(request: NextRequest) {
     // 오늘 날짜 (KST) - submissionDate 필드를 사용해 타임존 이슈 제거
     const todayString = getTodayString();
 
-    // 병렬로 통계 조회 (Admin SDK)
-    const [participantsSnapshot, submissionsSnapshot, todaySubmissionsSnapshot, noticesSnapshot, messagesSnapshot] = await Promise.all([
-      cohortId
-        ? db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
-        : db.collection(COLLECTIONS.PARTICIPANTS).get(),
-      cohortId
-        ? db.collection(COLLECTIONS.READING_SUBMISSIONS).get().then(async snap => {
-            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
-            const participantIds = participants.docs.map(d => d.id);
-            return {
-              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
-            };
-          })
-        : db.collection(COLLECTIONS.READING_SUBMISSIONS).get(),
-      cohortId
-        ? db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submissionDate', '==', todayString).get().then(async snap => {
-            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
-            const participantIds = participants.docs.map(d => d.id);
-            return {
-              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
-            };
-          })
-        : db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submissionDate', '==', todayString).get(),
+    // 1. 참가자 조회 (cohortId 필터링)
+    const participantsSnapshot = cohortId
+      ? await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
+      : await db.collection(COLLECTIONS.PARTICIPANTS).get();
+
+    // 슈퍼관리자만 제외 (일반 관리자는 통계에 포함)
+    const nonSuperAdminParticipants = participantsSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !data.isSuperAdmin;
+    });
+
+    // 슈퍼관리자 ID 목록 생성
+    const superAdminIds = new Set(
+      participantsSnapshot.docs
+        .filter((doc) => doc.data().isSuperAdmin === true)
+        .map((doc) => doc.id)
+    );
+
+    // 대상 참가자 ID 목록 (슈퍼관리자 제외)
+    const targetParticipantIds = nonSuperAdminParticipants.map(doc => doc.id);
+
+    // 2. 독서 인증, 공지사항, 메시지 조회 (participantId IN 쿼리 사용)
+    let allSubmissions: any[] = [];
+    let todaySubmissions: any[] = [];
+
+    if (targetParticipantIds.length > 0) {
+      // Firestore IN 제약: 최대 10개씩 분할 쿼리
+      const chunkSize = 10;
+      for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
+        const chunk = targetParticipantIds.slice(i, i + chunkSize);
+
+        // 전체 제출
+        const submissionsChunk = await db
+          .collection(COLLECTIONS.READING_SUBMISSIONS)
+          .where('participantId', 'in', chunk)
+          .get();
+        allSubmissions.push(...submissionsChunk.docs);
+
+        // 오늘 제출
+        const todayChunk = await db
+          .collection(COLLECTIONS.READING_SUBMISSIONS)
+          .where('participantId', 'in', chunk)
+          .where('submissionDate', '==', todayString)
+          .get();
+        todaySubmissions.push(...todayChunk.docs);
+      }
+    }
+
+    const [noticesSnapshot, messagesSnapshot] = await Promise.all([
       cohortId
         ? db.collection(COLLECTIONS.NOTICES).where('cohortId', '==', cohortId).get()
         : db.collection(COLLECTIONS.NOTICES).get(),
