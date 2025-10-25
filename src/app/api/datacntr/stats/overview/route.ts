@@ -121,14 +121,24 @@ export async function GET(request: NextRequest) {
     weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // 이번 주 일요일
     weekStart.setHours(0, 0, 0, 0);
 
-    const weekSubmissionsSnapshot = await db
-      .collection(COLLECTIONS.READING_SUBMISSIONS)
-      .where('submittedAt', '>=', weekStart)
-      .get();
+    const weekSubmissionsSnapshot = cohortId
+      ? await db.collection(COLLECTIONS.READING_SUBMISSIONS)
+          .where('submittedAt', '>=', weekStart)
+          .get()
+          .then(async snap => {
+            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
+            const participantIds = participants.docs.map(d => d.id);
+            return {
+              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
+            };
+          })
+      : await db.collection(COLLECTIONS.READING_SUBMISSIONS)
+          .where('submittedAt', '>=', weekStart)
+          .get();
 
     // 이번 주 인증한 참가자 ID (슈퍼관리자만 제외, 중복 제거)
     const weekParticipantIds = new Set<string>();
-    weekSubmissionsSnapshot.forEach((doc) => {
+    weekSubmissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
       if (!superAdminIds.has(data.participantId)) {
         weekParticipantIds.add(data.participantId);

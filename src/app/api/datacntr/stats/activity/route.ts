@@ -3,7 +3,7 @@ import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
-import { format, subDays, endOfDay } from 'date-fns';
+import { format, subDays, endOfDay, parseISO, differenceInDays, addDays } from 'date-fns';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import type { DailyActivity } from '@/types/datacntr';
 
@@ -35,15 +35,47 @@ export async function GET(request: NextRequest) {
 
     // days, cohortId 파라미터
     const searchParams = request.nextUrl.searchParams;
-    const days = parseInt(searchParams.get('days') || '7', 10);
     const cohortId = searchParams.get('cohortId');
 
     const db = getAdminDb();
     const now = new Date();
 
-    // 지난 N일 데이터 조회
-    const startDate = subDays(now, days);
-    startDate.setHours(0, 0, 0, 0);
+    // 코호트 정보 조회 (cohortId가 있으면)
+    let startDate: Date;
+    let endDate: Date;
+    let totalDays: number;
+
+    if (cohortId) {
+      const cohortDoc = await db.collection(COLLECTIONS.COHORTS).doc(cohortId).get();
+
+      if (!cohortDoc.exists) {
+        return NextResponse.json(
+          { error: '코호트를 찾을 수 없습니다' },
+          { status: 404 }
+        );
+      }
+
+      const cohortData = cohortDoc.data();
+      const cohortStartDate = parseISO(cohortData.startDate); // ISO 8601 문자열 → Date
+      const cohortEndDate = parseISO(cohortData.endDate);
+
+      // 코호트 시작일~종료일 기간 사용
+      startDate = new Date(cohortStartDate);
+      startDate.setHours(0, 0, 0, 0);
+
+      endDate = new Date(cohortEndDate);
+      endDate.setHours(23, 59, 59, 999);
+
+      // 총 일수 계산
+      totalDays = differenceInDays(endDate, startDate) + 1; // +1: 시작일 포함
+    } else {
+      // cohortId가 없으면 기존 방식 (최근 N일)
+      const days = parseInt(searchParams.get('days') || '7', 10);
+      startDate = subDays(now, days);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = now;
+      totalDays = days;
+    }
 
     // 독서 인증 & 전체 참가자 조회 (cohortId 필터링)
     const [submissionsSnapshot, allParticipantsSnapshot] = await Promise.all([
@@ -81,9 +113,9 @@ export async function GET(request: NextRequest) {
       submissionCount: number;
     }>();
 
-    // 날짜 초기화 (최근 N일)
-    for (let i = 0; i < days; i++) {
-      const date = subDays(now, i);
+    // 날짜 초기화 (startDate ~ endDate 기간)
+    for (let i = 0; i < totalDays; i++) {
+      const date = addDays(startDate, i);
       const dateStr = format(date, 'yyyy-MM-dd');
       // 그날의 마지막 시각 (23:59:59)까지 포함
       const endOfDayDate = endOfDay(date);

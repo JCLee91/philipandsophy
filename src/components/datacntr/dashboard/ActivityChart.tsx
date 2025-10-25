@@ -8,9 +8,18 @@ import type { DailyActivity } from '@/types/datacntr';
 interface ActivityChartProps {
   data: DailyActivity[];
   isLoading?: boolean;
+  cohortName?: string; // 기수 이름 (예: '1기')
+  cohortStartDate?: string; // 시작일 (ISO 8601)
+  cohortEndDate?: string; // 종료일 (ISO 8601)
 }
 
-export default function ActivityChart({ data, isLoading }: ActivityChartProps) {
+export default function ActivityChart({
+  data,
+  isLoading,
+  cohortName,
+  cohortStartDate,
+  cohortEndDate,
+}: ActivityChartProps) {
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
@@ -26,9 +35,22 @@ export default function ActivityChart({ data, isLoading }: ActivityChartProps) {
     dateLabel: format(parseISO(item.date), 'M/d', { locale: ko }),
   }));
 
+  // 차트 제목 생성
+  let chartTitle = '일별 활동 추이';
+  if (cohortName && cohortStartDate && cohortEndDate) {
+    const startFormatted = format(parseISO(cohortStartDate), 'M/d', { locale: ko });
+    const endFormatted = format(parseISO(cohortEndDate), 'M/d', { locale: ko });
+    chartTitle = `${cohortName} 일별 활동 추이 (${startFormatted} ~ ${endFormatted})`;
+  } else if (data.length > 0) {
+    // 전체 기수 또는 기수 정보 없을 때
+    const firstDate = format(parseISO(data[0].date), 'M/d', { locale: ko });
+    const lastDate = format(parseISO(data[data.length - 1].date), 'M/d', { locale: ko });
+    chartTitle = `전체 기수 일별 활동 추이 (${firstDate} ~ ${lastDate})`;
+  }
+
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-      <h3 className="text-lg font-bold text-gray-900 mb-4">일별 활동 추이 (최근 7일)</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">{chartTitle}</h3>
       <ResponsiveContainer width="100%" height={350}>
         <LineChart data={formattedData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />

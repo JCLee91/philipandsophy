@@ -90,11 +90,14 @@ export default function DataCenterBoardPage() {
           })
           .filter((p) => !p.isSuperAdmin); // Exclude only super admins
 
-        // 5. Get all submissions for this cohort
+        // 5. Get all submissions for this cohort using range query
         const submissionsRef = collection(db, 'reading_submissions');
         const submissionsQuery = query(
           submissionsRef,
-          where('submissionDate', 'in', dateStrings)
+          where('cohortId', '==', targetCohort.id),
+          where('submissionDate', '>=', targetCohort.startDate),
+          where('submissionDate', '<=', targetCohort.endDate),
+          orderBy('submissionDate')
         );
         const submissionsSnapshot = await getDocs(submissionsQuery);
 

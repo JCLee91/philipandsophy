@@ -16,30 +16,28 @@ export default function DataCenterPage() {
   const { data: cohorts = [], isLoading: cohortsLoading } = useAllCohorts();
   const { selectedCohortId, setSelectedCohortId } = useDatacntrStore();
 
-  // 첫 로드 시 활성 기수를 디폴트로 선택 (selectedCohortId가 'all'이면)
+  // 첫 로드 시 활성 기수를 디폴트로 선택 (selectedCohortId가 없으면)
   useEffect(() => {
-    if (cohorts.length > 0 && selectedCohortId === 'all') {
+    if (cohorts.length > 0 && !selectedCohortId) {
       const activeCohort = cohorts.find(c => c.isActive);
       setSelectedCohortId(activeCohort?.id || cohorts[0].id);
     }
   }, [cohorts, selectedCohortId, setSelectedCohortId]);
 
-  // 통계는 'all'이 아닌 특정 기수만 조회
-  const statsSelectedCohortId = selectedCohortId === 'all'
-    ? (cohorts.find(c => c.isActive)?.id || cohorts[0]?.id || '')
-    : selectedCohortId;
+  // 'all' 선택 시 cohortId를 전달하지 않음 (전체 조회)
+  const statsSelectedCohortId = selectedCohortId === 'all' ? undefined : selectedCohortId;
 
   const { data: stats, isLoading: statsLoading } = useDataCenterStats(statsSelectedCohortId);
   const { data: activities, isLoading: activityLoading } = useActivityChart(14, statsSelectedCohortId);
 
-  const selectedCohort = cohorts.find(c => c.id === statsSelectedCohortId);
+  const selectedCohort = statsSelectedCohortId ? cohorts.find(c => c.id === statsSelectedCohortId) : undefined;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">개요 대시보드</h1>
         <p className="text-gray-600 mt-2">
-          {selectedCohort ? `${selectedCohort.name} 기수 현황` : '기수별 서비스 현황을 한눈에 확인하세요'}
+          {selectedCohort ? `${selectedCohort.name} 기수 현황` : selectedCohortId === 'all' ? '전체 기수 통합 현황' : '기수별 서비스 현황을 한눈에 확인하세요'}
         </p>
       </div>
 
@@ -91,7 +89,13 @@ export default function DataCenterPage() {
       </div>
 
       {/* 활동 추이 그래프 */}
-      <ActivityChart data={activities ?? []} isLoading={activityLoading} />
+      <ActivityChart
+        data={activities ?? []}
+        isLoading={activityLoading}
+        cohortName={selectedCohort?.name}
+        cohortStartDate={selectedCohort?.startDate}
+        cohortEndDate={selectedCohort?.endDate}
+      />
 
       {/* AI 데이터 분석 챗봇 */}
       <div className="mt-8">
