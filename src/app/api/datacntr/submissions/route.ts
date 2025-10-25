@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const cohortId = searchParams.get('cohortId');
 
     // 1. 참가자 정보 조회 (cohortId 필터링)
-    let participantsQuery = db.collection(COLLECTIONS.PARTICIPANTS);
+    let participantsQuery: any = db.collection(COLLECTIONS.PARTICIPANTS);
     if (cohortId) {
       participantsQuery = participantsQuery.where('cohortId', '==', cohortId);
     }
