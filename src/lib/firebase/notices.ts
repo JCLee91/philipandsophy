@@ -30,10 +30,21 @@ export async function createNotice(
   const db = getDb();
   const now = Timestamp.now();
 
-  const noticeData: any = {
+  const noticeData: {
+    cohortId: string;
+    author: string;
+    content: string;
+    templateId: string | null;
+    isCustom: boolean;
+    createdAt: typeof Timestamp;
+    updatedAt: typeof Timestamp;
+    imageUrl?: string;
+  } = {
     cohortId: data.cohortId,
     author: data.author,
     content: data.content,
+    templateId: data.templateId || null,
+    isCustom: data.isCustom ?? true, // 기본값: 커스텀 공지
     createdAt: now,
     updatedAt: now,
   };

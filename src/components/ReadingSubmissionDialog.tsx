@@ -142,22 +142,6 @@ export default function ReadingSubmissionDialog({
       // 신규 제출 모드: 오늘의 질문 동적 로딩
       const loadDailyQuestion = async () => {
         const today = getTodayString();
-
-        // 임시 하드코딩: 2025-10-24 (14일차) 질문
-        if (today === '2025-10-24') {
-          setDailyQuestion({
-            id: '14',
-            dayNumber: 14,
-            date: '2025-10-24',
-            question: '차 한 대, 소파 하나, 신발 한 켤레에 쓸 수 있는 최대 금액은?',
-            category: '가치관 & 삶',
-            order: 14,
-            createdAt: null as any,
-            updatedAt: null as any,
-          });
-          return;
-        }
-
         const question = await getDailyQuestion(cohortId, today);
         if (question && isMounted) {
           setDailyQuestion(question);

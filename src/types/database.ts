@@ -173,6 +173,27 @@ export interface ReadingSubmission {
 }
 
 /**
+ * 공지 템플릿 카테고리
+ */
+export type NoticeTemplateCategory = 'onboarding' | 'guide' | 'milestone' | 'event';
+
+/**
+ * 공지 템플릿
+ * - 재활용 가능한 공지의 마스터 템플릿
+ * - datacntr에서 선택하여 기수별 공지로 복사
+ */
+export interface NoticeTemplate {
+  id: string; // 문서 ID (welcome-guide, reading-tips 등)
+  category: NoticeTemplateCategory; // 카테고리
+  title: string; // 템플릿 제목
+  content: string; // 공지 내용
+  imageUrl?: string; // 이미지 URL (선택)
+  order: number; // 정렬 순서 (같은 카테고리 내)
+  createdAt: Timestamp; // 생성 일시
+  updatedAt: Timestamp; // 수정 일시
+}
+
+/**
  * 공지사항
  *
  * Note: isPinned 필드는 DB에 남아있을 수 있으나 앱에서는 사용하지 않음 (레거시)
@@ -183,6 +204,9 @@ export interface Notice {
   author: string; // 작성자
   content: string; // 공지 내용
   imageUrl?: string; // 이미지 URL (선택)
+  templateId?: string; // 템플릿 ID (템플릿에서 생성된 경우)
+  isCustom: boolean; // 커스텀 공지 여부 (true: 직접 작성, false: 템플릿 복사)
+  order?: number; // 정렬 순서 (템플릿에서 복사된 경우)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
@@ -209,6 +233,7 @@ export const COLLECTIONS = {
   PARTICIPANTS: 'participants',
   READING_SUBMISSIONS: 'reading_submissions',
   NOTICES: 'notices',
+  NOTICE_TEMPLATES: 'notice_templates', // 공지 템플릿
   MESSAGES: 'messages',
   MATCHING_JOBS: 'matching_jobs',
 } as const;

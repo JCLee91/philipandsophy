@@ -8,6 +8,7 @@ import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { ReadingSubmission, Participant, Cohort } from '@/types/database';
 import { logger } from '@/lib/logger';
+import { useDatacntrStore } from '@/stores/datacntr-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -20,10 +21,12 @@ interface BoardData {
 
 export default function DataCenterBoardPage() {
   const router = useRouter();
+  const { selectedCohortId } = useDatacntrStore();
   const [loading, setLoading] = useState(true);
   const [boardData, setBoardData] = useState<BoardData[]>([]);
   const [dates, setDates] = useState<string[]>([]);
   const [cohort, setCohort] = useState<Cohort | null>(null);
+  const [allCohorts, setAllCohorts] = useState<Cohort[]>([]);
 
   useEffect(() => {
     async function loadBoardData() {
@@ -36,32 +39,45 @@ export default function DataCenterBoardPage() {
           return;
         }
 
-        // 1. Get active cohort
+        // 1. Get cohorts
         const cohortsRef = collection(db, 'cohorts');
-        const cohortQuery = query(cohortsRef, where('isActive', '==', true));
-        const cohortSnapshot = await getDocs(cohortQuery);
+        const cohortsSnapshot = await getDocs(cohortsRef);
+        const cohortsList = cohortsSnapshot.docs.map(doc => {
+          const data = doc.data() as Cohort;
+          data.id = doc.id;
+          return data;
+        });
+        setAllCohorts(cohortsList);
 
-        if (cohortSnapshot.empty) {
-          logger.error('No active cohort found');
+        // 2. Select cohort based on global filter
+        let targetCohort: Cohort | null = null;
+        if (selectedCohortId === 'all') {
+          // 'all'이면 활성 기수
+          targetCohort = cohortsList.find(c => c.isActive) || cohortsList[0] || null;
+        } else {
+          // 선택된 기수
+          targetCohort = cohortsList.find(c => c.id === selectedCohortId) || null;
+        }
+
+        if (!targetCohort) {
+          logger.error('No cohort found');
           return;
         }
 
-        const activeCohort = cohortSnapshot.docs[0].data() as Cohort;
-        activeCohort.id = cohortSnapshot.docs[0].id;
-        setCohort(activeCohort);
+        setCohort(targetCohort);
 
-        // 2. Generate date range
-        const startDate = parseISO(activeCohort.startDate);
-        const endDate = parseISO(activeCohort.endDate);
+        // 3. Generate date range
+        const startDate = parseISO(targetCohort.startDate);
+        const endDate = parseISO(targetCohort.endDate);
         const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
         const dateStrings = dateRange.map((date) => format(date, 'yyyy-MM-dd'));
         setDates(dateStrings);
 
-        // 3. Get all participants (exclude only super admins, include general admins)
+        // 4. Get all participants (exclude only super admins, include general admins)
         const participantsRef = collection(db, 'participants');
         const participantsQuery = query(
           participantsRef,
-          where('cohortId', '==', activeCohort.id),
+          where('cohortId', '==', targetCohort.id),
           orderBy('name')
         );
         const participantsSnapshot = await getDocs(participantsQuery);
@@ -74,7 +90,7 @@ export default function DataCenterBoardPage() {
           })
           .filter((p) => !p.isSuperAdmin); // Exclude only super admins
 
-        // 4. Get all submissions for this cohort
+        // 5. Get all submissions for this cohort
         const submissionsRef = collection(db, 'reading_submissions');
         const submissionsQuery = query(
           submissionsRef,
@@ -88,7 +104,7 @@ export default function DataCenterBoardPage() {
           return data;
         });
 
-        // 5. Group submissions by participant
+        // 6. Group submissions by participant
         const submissionsByParticipant = new Map<string, Map<string, ReadingSubmission>>();
 
         submissions.forEach((submission) => {
@@ -100,7 +116,7 @@ export default function DataCenterBoardPage() {
             .set(submission.submissionDate, submission);
         });
 
-        // 6. Build board data
+        // 7. Build board data
         const data: BoardData[] = participants.map((participant) => ({
           participant,
           submissions: submissionsByParticipant.get(participant.id) || new Map(),
@@ -115,7 +131,7 @@ export default function DataCenterBoardPage() {
     }
 
     loadBoardData();
-  }, []);
+  }, [selectedCohortId]);
 
   if (loading) {
     return (

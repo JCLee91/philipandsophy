@@ -6,6 +6,7 @@ import { BookOpen } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { scrollToBottom, formatDate, formatTime } from '@/lib/utils';
 import { getTodayString } from '@/lib/date-utils';
+import { parseISO, differenceInDays } from 'date-fns';
 import { APP_CONSTANTS, SYSTEM_IDS } from '@/constants/app';
 import { uploadNoticeImage } from '@/lib/firebase/storage';
 import { Notice, Participant } from '@/types/database';
@@ -76,6 +77,12 @@ function ChatPageContent() {
     (sub) => sub.submissionDate === getTodayString()
   );
   const hasSubmittedToday = !!todaySubmission;
+
+  // 현재 Day 계산 (1일차 판별용)
+  const currentDay = cohort && cohort.programStartDate
+    ? differenceInDays(parseISO(getTodayString()), parseISO(cohort.programStartDate)) + 1
+    : null;
+  const isDay1 = currentDay === 1;
 
   // Firebase hooks
   const { data: noticesData = [], isLoading } = useNoticesByCohort(cohortId || undefined);
@@ -386,24 +393,35 @@ function ChatPageContent() {
         ) : (
           /* 참가자 모드일 때 버튼 */
           <div className="grid grid-cols-2 gap-2">
-            {/* 독서 인증하기 버튼 */}
-            <UnifiedButton
-              variant="primary"
-              onClick={() => setSubmissionDialogOpen(true)}
-              icon={<BookOpen className="h-5 w-5" />}
-              className={hasSubmittedToday ? 'opacity-50' : ''}
-            >
-              {hasSubmittedToday ? '인증 수정하기' : '독서 인증'}
-            </UnifiedButton>
+            {/* 독서 인증하기 버튼 (1일차에는 비활성화) */}
+            {isDay1 ? (
+              <div className="col-span-2 rounded-lg border bg-card p-4 text-center shadow-sm">
+                <p className="text-lg font-bold text-foreground mb-1">환영합니다</p>
+                <p className="text-sm text-muted-foreground">
+                  독서 인증은 내일부터 시작됩니다
+                </p>
+              </div>
+            ) : (
+              <>
+                <UnifiedButton
+                  variant="primary"
+                  onClick={() => setSubmissionDialogOpen(true)}
+                  icon={<BookOpen className="h-5 w-5" />}
+                  className={hasSubmittedToday ? 'opacity-50' : ''}
+                >
+                  {hasSubmittedToday ? '인증 수정하기' : '독서 인증'}
+                </UnifiedButton>
 
-            {/* 오늘의 서재 버튼 */}
-            <UnifiedButton
-              variant="secondary"
-              onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
-              icon={<BookLibraryIcon className="h-5 w-5" />}
-            >
-              오늘의 서재
-            </UnifiedButton>
+                {/* 오늘의 서재 버튼 */}
+                <UnifiedButton
+                  variant="secondary"
+                  onClick={() => router.push(appRoutes.todayLibrary(cohortId))}
+                  icon={<BookLibraryIcon className="h-5 w-5" />}
+                >
+                  오늘의 서재
+                </UnifiedButton>
+              </>
+            )}
           </div>
         )}
       </FooterActions>

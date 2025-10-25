@@ -67,6 +67,24 @@ service firebase.storage {
     }
 
     // ============================================
+    // 프로필 이미지 (원형) - 공개 읽기
+    // ============================================
+    match /profileImagesCircle/{fileName} {
+      allow read: if true;  // 공개 읽기 허용
+      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow delete: if isSignedIn();
+    }
+
+    // ============================================
+    // 프로필 카드 이미지 - 공개 읽기
+    // ============================================
+    match /profileImages/{fileName} {
+      allow read: if true;  // 공개 읽기 허용
+      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow delete: if isSignedIn();
+    }
+
+    // ============================================
     // 기타 경로: 차단
     // ============================================
     match /{allPaths=**} {

@@ -20,10 +20,19 @@ export async function GET(request: NextRequest) {
 
     const db = getAdminDb();
 
-    // 모든 참가자 조회
-    const participantsSnapshot = await db
-      .collection(COLLECTIONS.PARTICIPANTS)
-      .orderBy('createdAt', 'desc')
+    // URL에서 cohortId 파라미터 추출
+    const { searchParams } = new URL(request.url);
+    const cohortId = searchParams.get('cohortId');
+
+    // 참가자 조회 (cohortId 필터링 옵션)
+    let participantsQuery = db.collection(COLLECTIONS.PARTICIPANTS);
+
+    if (cohortId) {
+      participantsQuery = participantsQuery.where('cohortId', '==', cohortId);
+    }
+
+    const participantsSnapshot = await participantsQuery
+      .orderBy('createdAt', 'asc')
       .get();
 
     // 슈퍼 관리자 제외 필터링 (일반 관리자는 통계에 포함)
@@ -78,10 +87,8 @@ export async function GET(request: NextRequest) {
           activityStatus = getParticipantStatus(daysSinceActivity);
         }
 
-        // hasPushToken: pushTokens 배열 우선, 없으면 레거시 pushToken 필드 폴백
-        const hasPushToken = Array.isArray(participantData.pushTokens) && participantData.pushTokens.length > 0
-          ? participantData.pushTokens.some((entry: any) => entry?.token) // 활성 토큰 존재 여부
-          : false;
+        // pushNotificationEnabled 필드 기준으로 푸시 알림 활성화 여부 확인
+        const hasPushToken = participantData.pushNotificationEnabled === true;
 
         return {
           ...sanitizeParticipantForClient({ id: doc.id, ...participantData }),

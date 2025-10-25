@@ -14,12 +14,17 @@ export async function GET(request: NextRequest) {
 
     const db = getAdminDb();
 
+    // URL에서 cohortId 파라미터 추출
+    const { searchParams } = new URL(request.url);
+    const cohortId = searchParams.get('cohortId');
+
     // 모든 독서 인증 조회 (최신순)
-    const submissionsSnapshot = await db
+    let submissionsQuery = db
       .collection(COLLECTIONS.READING_SUBMISSIONS)
       .orderBy('submittedAt', 'desc')
-      .limit(200) // 최대 200개만 조회 (성능 고려)
-      .get();
+      .limit(200); // 최대 200개만 조회 (성능 고려)
+
+    const submissionsSnapshot = await submissionsQuery.get();
 
     // 참가자 정보 맵 생성
     const participantsSnapshot = await db.collection(COLLECTIONS.PARTICIPANTS).get();
@@ -50,8 +55,19 @@ export async function GET(request: NextRequest) {
     const submissionsWithParticipant = submissionsSnapshot.docs
       .filter((doc) => {
         const submissionData = doc.data();
+        const participant = participantsMap.get(submissionData.participantId);
+
         // 슈퍼관리자 인증만 제외 (일반 관리자는 포함)
-        return !superAdminIds.has(submissionData.participantId);
+        if (superAdminIds.has(submissionData.participantId)) {
+          return false;
+        }
+
+        // cohortId 필터링 (있을 경우)
+        if (cohortId && participant?.cohortId !== cohortId) {
+          return false;
+        }
+
+        return true;
       })
       .map((doc) => {
         const submissionData = doc.data();

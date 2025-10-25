@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { Loader2, Upload, Download, Plus, X } from 'lucide-react';
+import FormSelect from '@/components/datacntr/form/FormSelect';
 
 type ParticipantRow = {
   name: string;
@@ -367,14 +368,14 @@ export default function CohortCreatePage() {
                       />
                     </td>
                     <td className="px-4 py-2">
-                      <select
+                      <FormSelect
                         value={p.role}
-                        onChange={(e) => handleParticipantChange(index, 'role', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="participant">참가자</option>
-                        <option value="admin">관리자</option>
-                      </select>
+                        onChange={(value) => handleParticipantChange(index, 'role', value)}
+                        options={[
+                          { value: 'participant', label: '참가자' },
+                          { value: 'admin', label: '관리자' },
+                        ]}
+                      />
                     </td>
                     <td className="px-4 py-2">
                       <button

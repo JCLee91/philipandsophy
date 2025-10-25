@@ -13,6 +13,7 @@ import { Loader2, ArrowLeft, Save, Copy } from 'lucide-react';
 import { format, addDays, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { Cohort, DailyQuestion } from '@/types/database';
+import FormSelect from '@/components/datacntr/form/FormSelect';
 
 interface DailyQuestionsPageProps {
   params: Promise<{ cohortId: string }>;
@@ -284,22 +285,19 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor={`category-${q.id}`}>카테고리</Label>
-                <select
-                  id={`category-${q.id}`}
-                  value={q.category}
-                  onChange={(e) => handleQuestionChange(index, 'category', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1"
-                >
-                  <option value="">선택하세요</option>
-                  {DAILY_QUESTION_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <FormSelect
+                label="카테고리"
+                value={q.category}
+                onChange={(value) => handleQuestionChange(index, 'category', value)}
+                options={[
+                  { value: '', label: '선택하세요' },
+                  ...DAILY_QUESTION_CATEGORIES.map((cat) => ({
+                    value: cat,
+                    label: cat,
+                  })),
+                ]}
+                className="mt-1"
+              />
               <div>
                 <Label htmlFor={`question-${q.id}`}>질문</Label>
                 <Input

@@ -18,24 +18,47 @@ export async function GET(request: NextRequest) {
 
     const db = getAdminDb();
 
-    // 관리자 ID 목록 생성
+    // URL에서 cohortId 파라미터 추출
+    const { searchParams } = new URL(request.url);
+    const cohortId = searchParams.get('cohortId');
+
+    // 참가자 정보 조회 (관리자 필터링 + cohortId 맵핑)
     const participantsSnapshot = await db.collection(COLLECTIONS.PARTICIPANTS).get();
     const adminIds = new Set<string>();
+    const participantCohortMap = new Map<string, string>();
+
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
       if (data.isSuperAdmin) {
         adminIds.add(doc.id);
       }
+      participantCohortMap.set(doc.id, data.cohortId);
     });
 
-    // 모든 독서 인증 조회 (관리자 제외)
+    // 모든 독서 인증 조회
     const submissionsSnapshot = await db
       .collection(COLLECTIONS.READING_SUBMISSIONS)
       .get();
 
+    // 관리자 제외 + cohortId 필터링
     const nonAdminSubmissions = submissionsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !adminIds.has(data.participantId);
+      const participantId = data.participantId;
+
+      // 슈퍼관리자 제외
+      if (adminIds.has(participantId)) {
+        return false;
+      }
+
+      // cohortId 필터링 (있을 경우)
+      if (cohortId) {
+        const participantCohortId = participantCohortMap.get(participantId);
+        if (participantCohortId !== cohortId) {
+          return false;
+        }
+      }
+
+      return true;
     });
 
     // 1. 시간대별 제출 분포

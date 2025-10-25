@@ -14,6 +14,7 @@ export default function CohortsPage() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [updatingCohortId, setUpdatingCohortId] = useState<string | null>(null);
 
   // 로그인 체크
   useEffect(() => {
@@ -50,6 +51,50 @@ export default function CohortsPage() {
 
     fetchCohorts();
   }, [user]);
+
+  // 기수 활성화 상태 토글
+  const handleToggleActive = async (cohortId: string, currentStatus: boolean) => {
+    if (!user) return;
+
+    const confirmed = confirm(
+      `정말 이 기수를 ${currentStatus ? '종료' : '진행중으로 변경'}하시겠습니까?`
+    );
+    if (!confirmed) return;
+
+    setUpdatingCohortId(cohortId);
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(`/api/datacntr/cohorts/${cohortId}/toggle-active`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('상태 변경 실패');
+      }
+
+      // 로컬 상태 업데이트
+      setCohorts(prev =>
+        prev.map(cohort =>
+          cohort.id === cohortId
+            ? { ...cohort, isActive: !currentStatus }
+            : cohort
+        )
+      );
+
+      alert(`기수가 ${currentStatus ? '종료' : '진행중'}으로 변경되었습니다.`);
+    } catch (error) {
+      console.error(error);
+      alert('상태 변경에 실패했습니다.');
+    } finally {
+      setUpdatingCohortId(null);
+    }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -95,23 +140,37 @@ export default function CohortsPage() {
           return (
             <div
               key={cohort.id}
-              onClick={() => router.push(`/datacntr/cohorts/${cohort.id}`)}
-              className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
             >
               {/* 헤더 */}
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-900">{cohort.name}</h3>
-                {cohort.isActive ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold">
-                    <CheckCircle className="h-3 w-3" />
-                    활성
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-semibold ${cohort.isActive ? 'text-green-700' : 'text-gray-500'}`}>
+                    {cohort.isActive ? '진행중' : '종료'}
                   </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 text-gray-500 text-xs font-semibold">
-                    <XCircle className="h-3 w-3" />
-                    종료
-                  </span>
-                )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleActive(cohort.id, cohort.isActive);
+                    }}
+                    disabled={updatingCohortId === cohort.id}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      cohort.isActive ? 'bg-green-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        cohort.isActive ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    >
+                      {updatingCohortId === cohort.id && (
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      )}
+                    </span>
+                  </button>
+                </div>
               </div>
 
               {/* 날짜 정보 */}
@@ -124,7 +183,10 @@ export default function CohortsPage() {
 
               {/* 하단: 상세 보기 */}
               <div className="mt-4 pt-4 border-t border-gray-100">
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-semibold">
+                <button
+                  onClick={() => router.push(`/datacntr/cohorts/${cohort.id}`)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                >
                   상세 보기 →
                 </button>
               </div>

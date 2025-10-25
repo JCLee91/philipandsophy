@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, MessageSquare, CheckCheck, Clock } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
+import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { DirectMessage } from '@/types/database';
 
 interface MessageWithParticipant extends DirectMessage {
@@ -15,6 +16,7 @@ interface MessageWithParticipant extends DirectMessage {
 export default function MessagesPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { selectedCohortId } = useDatacntrStore();
   const [messages, setMessages] = useState<MessageWithParticipant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,14 +27,19 @@ export default function MessagesPage() {
     }
   }, [authLoading, user, router]);
 
-  // 메시지 데이터 로드
+  // 메시지 데이터 로드 (기수별 필터링)
   useEffect(() => {
     if (!user) return;
 
     const fetchMessages = async () => {
       try {
+        setIsLoading(true);
         const idToken = await user.getIdToken();
-        const response = await fetch('/api/datacntr/messages', {
+        const url = selectedCohortId === 'all'
+          ? '/api/datacntr/messages'
+          : `/api/datacntr/messages?cohortId=${selectedCohortId}`;
+
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${idToken}`,
           },
@@ -52,7 +59,7 @@ export default function MessagesPage() {
     };
 
     fetchMessages();
-  }, [user]);
+  }, [user, selectedCohortId]);
 
   if (authLoading || isLoading) {
     return (

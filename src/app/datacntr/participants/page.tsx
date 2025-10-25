@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
+import { useDatacntrStore } from '@/stores/datacntr-store';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TablePagination from '@/components/datacntr/table/TablePagination';
 import { dataCenterParticipantSchema, type DataCenterParticipant } from '@/types/datacntr';
+import FormSelect from '@/components/datacntr/form/FormSelect';
 
 type ParticipantRow = DataCenterParticipant;
 
@@ -21,6 +23,7 @@ type FilterState = {
 export default function ParticipantsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { selectedCohortId } = useDatacntrStore();
   const [participants, setParticipants] = useState<ParticipantRow[]>([]);
   const [filteredParticipants, setFilteredParticipants] = useState<ParticipantRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,14 +46,19 @@ export default function ParticipantsPage() {
     }
   }, [authLoading, user, router]);
 
-  // 참가자 데이터 로드
+  // 참가자 데이터 로드 (기수별 필터링)
   useEffect(() => {
     if (!user) return;
 
     const fetchParticipants = async () => {
       try {
+        setIsLoading(true);
         const idToken = await user.getIdToken();
-        const response = await fetch('/api/datacntr/participants', {
+        const url = selectedCohortId === 'all'
+          ? '/api/datacntr/participants'
+          : `/api/datacntr/participants?cohortId=${selectedCohortId}`;
+
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${idToken}`,
           },
@@ -73,7 +81,7 @@ export default function ParticipantsPage() {
     };
 
     fetchParticipants();
-  }, [user]);
+  }, [user, selectedCohortId]);
 
   // 검색 및 필터링
   useEffect(() => {
@@ -268,22 +276,18 @@ export default function ParticipantsPage() {
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div>
               {/* 푸시 알림 */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  푸시 알림
-                </label>
-                <select
-                  value={filters.pushToken}
-                  onChange={(e) =>
-                    setFilters({ pushToken: e.target.value as FilterState['pushToken'] })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">전체</option>
-                  <option value="enabled">허용</option>
-                  <option value="disabled">거부</option>
-                </select>
-              </div>
+              <FormSelect
+                label="푸시 알림"
+                value={filters.pushToken}
+                onChange={(value) =>
+                  setFilters({ pushToken: value as FilterState['pushToken'] })
+                }
+                options={[
+                  { value: 'all', label: '전체' },
+                  { value: 'enabled', label: '허용' },
+                  { value: 'disabled', label: '거부' },
+                ]}
+              />
             </div>
 
             {/* 필터 초기화 */}

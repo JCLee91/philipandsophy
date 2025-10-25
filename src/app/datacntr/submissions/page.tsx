@@ -12,6 +12,7 @@ import TableSearch from '@/components/datacntr/table/TableSearch';
 import TimeDistributionChart from '@/components/datacntr/dashboard/TimeDistributionChart';
 import ParticipationPanel from '@/components/datacntr/dashboard/ParticipationPanel';
 import ReviewQualityPanel from '@/components/datacntr/dashboard/ReviewQualityPanel';
+import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
 
@@ -23,6 +24,7 @@ interface SubmissionWithParticipant extends ReadingSubmission {
 export default function SubmissionsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { selectedCohortId } = useDatacntrStore();
   const [submissions, setSubmissions] = useState<SubmissionWithParticipant[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<SubmissionWithParticipant[]>([]);
   const [analytics, setAnalytics] = useState<SubmissionAnalytics | null>(null);
@@ -38,14 +40,19 @@ export default function SubmissionsPage() {
     }
   }, [authLoading, user, router]);
 
-  // 인증 데이터 로드
+  // 인증 데이터 로드 (기수별 필터링)
   useEffect(() => {
     if (!user) return;
 
     const fetchSubmissions = async () => {
       try {
+        setIsLoading(true);
         const idToken = await user.getIdToken();
-        const response = await fetch('/api/datacntr/submissions', {
+        const url = selectedCohortId === 'all'
+          ? '/api/datacntr/submissions'
+          : `/api/datacntr/submissions?cohortId=${selectedCohortId}`;
+
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${idToken}`,
           },
@@ -66,16 +73,21 @@ export default function SubmissionsPage() {
     };
 
     fetchSubmissions();
-  }, [user]);
+  }, [user, selectedCohortId]);
 
-  // 분석 데이터 로드
+  // 분석 데이터 로드 (기수별 필터링)
   useEffect(() => {
     if (!user) return;
 
     const fetchAnalytics = async () => {
       try {
+        setAnalyticsLoading(true);
         const idToken = await user.getIdToken();
-        const response = await fetch('/api/datacntr/stats/submissions', {
+        const url = selectedCohortId === 'all'
+          ? '/api/datacntr/stats/submissions'
+          : `/api/datacntr/stats/submissions?cohortId=${selectedCohortId}`;
+
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${idToken}`,
           },
@@ -95,7 +107,7 @@ export default function SubmissionsPage() {
     };
 
     fetchAnalytics();
-  }, [user]);
+  }, [user, selectedCohortId]);
 
   // 검색 필터링 (가치관 답변 포함)
   useEffect(() => {
