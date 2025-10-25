@@ -9,7 +9,7 @@ import { useDatacntrStore } from '@/stores/datacntr-store';
 import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
 import AIChatPanel from '@/components/datacntr/AIChatPanel';
-import { Users, BookOpen, Bell, FolderKanban, FileText, BellRing } from 'lucide-react';
+import { Users, BookOpen, Bell, FileText, BellRing } from 'lucide-react';
 
 export default function DataCenterPage() {
   const { user } = useAuth();
@@ -46,11 +46,12 @@ export default function DataCenterPage() {
       {/* 메트릭 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <MetricCard
-          title="총 코호트"
-          value={stats?.totalCohorts ?? 0}
-          icon={FolderKanban}
+          title="평균 독서 인증"
+          value={stats?.averageSubmissionsPerParticipant ?? 0}
+          icon={BookOpen}
           color="blue"
           isLoading={statsLoading}
+          subtitle="회/인"
         />
         <MetricCard
           title="총 참가자"

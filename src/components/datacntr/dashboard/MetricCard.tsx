@@ -8,6 +8,7 @@ interface MetricCardProps {
   icon: LucideIcon;
   color?: 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'gray';
   isLoading?: boolean;
+  subtitle?: string; // 부제목 (예: "회/인")
 }
 
 const colorClasses = {
@@ -25,6 +26,7 @@ export default function MetricCard({
   icon: Icon,
   color = 'blue',
   isLoading,
+  subtitle,
 }: MetricCardProps) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
@@ -34,7 +36,12 @@ export default function MetricCard({
           {isLoading ? (
             <div className="h-8 w-24 shimmer rounded" />
           ) : (
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
+            <div className="flex items-baseline gap-1">
+              <p className="text-3xl font-bold text-gray-900">{value}</p>
+              {subtitle && (
+                <p className="text-sm text-gray-500">{subtitle}</p>
+              )}
+            </div>
           )}
         </div>
         <div className={`p-3 rounded-lg ${colorClasses[color]}`}>

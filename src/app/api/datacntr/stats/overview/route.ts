@@ -139,8 +139,13 @@ export async function GET(request: NextRequest) {
       ? Math.round((weekParticipantIds.size / nonSuperAdminParticipants.length) * 100)
       : 0;
 
+    // 참가자당 평균 독서 인증 횟수 계산
+    const averageSubmissionsPerParticipant = nonSuperAdminParticipants.length > 0
+      ? Math.round((nonSuperAdminSubmissions.length / nonSuperAdminParticipants.length) * 10) / 10 // 소수점 1자리
+      : 0;
+
     const stats: OverviewStats = {
-      totalCohorts: cohortsSnapshot.size,
+      averageSubmissionsPerParticipant,
       totalParticipants: nonSuperAdminParticipants.length,
       todaySubmissions: nonSuperAdminTodaySubmissionIds.size,
       totalSubmissions: nonSuperAdminSubmissions.length,

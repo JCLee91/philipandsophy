@@ -38,7 +38,7 @@ export async function PUT(
 
     // 업데이트할 필드만 포함
     const updateData: {
-      updatedAt: typeof Timestamp;
+      updatedAt: Timestamp;
       category?: string;
       title?: string;
       content?: string;

@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
           content: string;
           templateId: string;
           isCustom: boolean;
-          createdAt: typeof Timestamp;
-          updatedAt: typeof Timestamp;
+          createdAt: Timestamp;
+          updatedAt: Timestamp;
           imageUrl?: string;
           order?: number;
         } = {
