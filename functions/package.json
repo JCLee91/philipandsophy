@@ -4,6 +4,7 @@
   "description": "Firebase Functions for PhilipandSophy",
   "main": "lib/index.js",
   "scripts": {
+    "lint": "eslint --ext .js,.ts .",
     "build": "tsc",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
