@@ -27,6 +27,9 @@ import { logger } from '@/lib/logger';
 import { SYSTEM_IDS } from '@/constants/app';
 import type { Participant } from '@/types/database';
 
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
+
 function ParticipantRow({
   participant,
   currentUserId,

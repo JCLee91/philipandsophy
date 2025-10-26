@@ -15,6 +15,9 @@ import { ko } from 'date-fns/locale';
 import type { Cohort, DailyQuestion } from '@/types/database';
 import FormSelect from '@/components/datacntr/form/FormSelect';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 interface DailyQuestionsPageProps {
   params: Promise<{ cohortId: string }>;
 }

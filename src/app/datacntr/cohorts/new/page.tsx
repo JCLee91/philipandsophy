@@ -12,6 +12,9 @@ import { logger } from '@/lib/logger';
 import { Loader2, Upload, Download, Plus, X } from 'lucide-react';
 import FormSelect from '@/components/datacntr/form/FormSelect';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 type ParticipantRow = {
   name: string;
   phone: string;

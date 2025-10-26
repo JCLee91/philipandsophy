@@ -3,6 +3,9 @@
 import '../../styles/landing.css';
 import Footer from '@/components/Footer';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 export default function ProgramPage() {
   // Program_01.webp ~ Program_18.webp 경로 생성
   const version = '5.0'; // 무손실 WebP 업데이트 (2025.10.24)

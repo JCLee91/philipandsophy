@@ -8,6 +8,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 import { appRoutes } from '@/lib/navigation';
 
+// ✅ Disable static generation - requires runtime authentication state
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const router = useRouter();
   const { participant, participantStatus, isLoading } = useAuth();

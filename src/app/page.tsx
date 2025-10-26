@@ -5,6 +5,9 @@ import '../styles/landing.css';
 import Footer from '@/components/Footer';
 import Tooltip from '@/components/Tooltip';
 
+// ✅ Disable static generation - providers require runtime context
+export const dynamic = 'force-dynamic';
+
 export default function LandingPage() {
   return (
     <div className="landing-page">

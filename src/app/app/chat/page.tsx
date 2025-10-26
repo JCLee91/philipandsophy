@@ -36,6 +36,9 @@ import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
 import SettingsDialog from '@/components/SettingsDialog';
 import { useToast } from '@/hooks/use-toast';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -182,7 +182,6 @@ export async function buildAuthorizedJsonHeaders(): Promise<Record<string, strin
     const auth = getFirebaseAuth();
 
     // Wait for auth state if available (Firebase v10+)
-    // @ts-expect-error authStateReady is available in modern SDKs
     if (typeof auth.authStateReady === 'function') {
       await auth.authStateReady();
     }

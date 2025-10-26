@@ -27,6 +27,9 @@ import type {
 } from '@/types/matching';
 import { appRoutes } from '@/lib/navigation';
 
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
+
 // localStorage 상수 (컴포넌트 외부 정의로 안정성 보장)
 const STORAGE_VERSION = '1.0';
 const STORAGE_TTL = 24 * 60 * 60 * 1000; // 24시간

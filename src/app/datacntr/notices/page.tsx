@@ -28,6 +28,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
+
 interface NoticeWithCohort extends Notice {
   cohortName: string;
 }

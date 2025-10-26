@@ -24,7 +24,7 @@ interface AuthContextType {
   isAdministrator: boolean;
   isLoading: boolean;
   logout: () => Promise<void>;
-  retryParticipantFetch: () => Promise<void>;
+  retryParticipantFetch: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

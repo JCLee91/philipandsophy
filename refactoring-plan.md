@@ -15,80 +15,56 @@
 
 ---
 
-## 2. 단계별 계획
+## 2. 단계별 계획 (Stage Plan)
 
-### Phase 0 — 진단 및 안전망 구축 (우선순위 최고)
+| Stage | 목표 | 핵심 산출물 | 현황 |
+|-------|------|-------------|------|
+| Stage 1 | 레이아웃·인증 경계 재정비 | 서버 레이아웃 전환, Devtools lazy 로딩, 라우팅 보호 강화 | ⚠️ 진행 중 |
+| Stage 2 | 공용 레이어 구축 & 경량 보안 점검 | 컴포넌트/훅 인벤토리, 도메인별 폴더링, Firestore Emulator 스모크 테스트 | ⏳ 대기 |
+| Stage 3 | 도메인 구조 분리 & 운영 안정화 | `/app/chat` 분리 + Route Handler, 기타 화면 정리, Worker/스크립트 개선 | ⏳ 대기 |
 
-| 목표 | 상세 작업 | 검증 |
+### Stage 1 — 레이아웃·인증 경계 재정비
+
+| 영역 | 작업 항목 | 검증 |
 |------|-----------|------|
-| 현재 상태 진단 | `npm run lint`, TypeScript 빌드 체크, Firebase Emulator 스모크(로그인/공지/제출 흐름) 실행. | lint 로그, Emulator 결과 스크린샷 또는 요약 |
-| 도구 준비 | React Query Devtools를 게으른 로딩 모드로 연결(프로덕션 토글)하여 상태 추적 가능하게 함. | Devtools 토글 정상 동작 확인 |
-| 문서·워크플로 통합 | Context7 워크스페이스에 주요 내부 문서(아키텍처, DB 스키마, 퍼포먼스 가이드) 업로드 및 태깅. | Context7에서 문서 검색 테스트 |
+| `/app/layout.tsx` | 서버 컴포넌트로 전환, ViewModeProvider·Service Worker 등록은 하위 Client 컴포넌트로 이동 | 빌드 시 경고 없음, hydration mismatch 미발생 |
+| Provider 계층 | `src/app/AppClientProviders.tsx`(또는 providers.tsx)에서 React Query Devtools lazy import, `process.env.NODE_ENV` 분기 적용 | 프로덕션 번들에서 Devtools 제거 확인 |
+| 라우팅 보호 | `/app` 진입 시 Route Handler(or middleware)에서 인증/코호트 확인 후 리다이렉트 처리, UI 레벨의 중복 체크 제거 | 로그인 → Cohort → 채팅 순서 테스트, 미인증 시 `/app` 복귀 |
+| Auth/Push 초기화 | PushNotificationRefresher 및 AuthProvider 간 의존성 재검토, 필요 시 커스텀 훅으로 캡슐화 | 로그인/로그아웃, 토글 ON/OFF 시 토큰 유지 확인 |
 
-**출력물**: 진단 리포트, 이슈 목록, Context7 메모(“Baseline Findings”)
+**완료 기준**  
+- Devtools가 개발 모드에서만 로드되는지 확인 (`npm run build` 번들 사이즈 측정).  
+- `/app/layout.tsx`가 서버 컴포넌트이고, Child 컴포넌트 경계를 통과해도 hydration warning이 없음.  
+- 인증 실패 → `/app` 리다이렉트 플로우가 서버 사이드에서 처리됨 (네트워크 탭 확인).
 
----
+### Stage 2 — 공용 레이어 구축 & 경량 보안 점검
 
-### Phase 1 — 인증·레이아웃 경계 정비
+| 영역 | 작업 항목 | 검증 |
+|------|-----------|------|
+| 컴포넌트 인벤토리 | `src/components`, `src/hooks`, `src/lib` 전수 조사 → 중복/거대 컴포넌트를 목록화하고 도메인별 폴더 구조 초안 수립 (`components/chat`, `components/datacntr` 등) | 인벤토리 문서/Context7 노트 작성 |
+| 서비스/훅 레이어 | 공지·DM·제출 등 주요 도메인에 대해 공용 훅(`useNoticeActions`, `useDMThread` 등) 설계안 마련, UI는 상태 결합만 담당하도록 분리 계획 수립 | 새 훅 사용 예시 (샘플 컴포넌트) |
+| Firestore/보안 | 기존 Rules 유지하되, Firestore Emulator에서 관리자/일반 사용자 시나리오 스모크 테스트만 수행 | `firebase emulators:exec` 결과 및 로그 |
+| 로깅 체계 | Cloud Functions/클라이언트 로그를 검토하여 Rules 관련 에러 패턴 파악, 필요 시 TODO 목록화 | 로그 점검 결과를 Context7 메모로 저장 |
 
-| 영역 | 개선 포인트 | 구현 항목 | 참조 문서 |
-|------|-------------|-----------|-----------|
-| `src/app/app/layout.tsx` | `'use client'` 선언으로 전체 앱이 클라이언트 전용 → 서버 컴포넌트 전환 필요 | - 레이아웃을 서버 컴포넌트화하고 ViewModeProvider 등 클라이언트 로직은 하위에 배치<br>- App Router 가이드에 따라 `unstable_cache`/Suspense 구성 검토 | `/vercel/next.js/v15.1.8` Production Checklist |
-| `src/contexts/AuthContext.tsx` | Firebase Auth → Firestore 조회까지 직접 처리, 오류 시 상태 불안정 | - 세션 확인은 Route Handler/Server Action에서 처리, 클라이언트엔 정제된 DTO만 전달<br>- TanStack Query `useQuery`/`select`로 재구성, 에러 리트라이는 Query 정책에 위임 | `/tanstack/query/v5.71.10` Render Optimizations |
-| 라우팅 보호 | cohortId 누락/세션 미확인 시 페이지가 깨짐 | - 서버에서 인증 후 리다이렉션 처리, `redirect` 유틸 사용<br>- 에러 페이지/로깅 강화 | Next.js Auth Patterns |
+**완료 기준**  
+- 공용 컴포넌트/훅 인벤토리 문서가 존재하고 팀 공유됨.  
+- 최소 1회 Firestore Emulator 스모크 테스트 결과(스크린샷/로그) 확보.  
+- 대형 컴포넌트 리팩토링 우선순위 리스트가 정리됨.
 
-**검증**:  
-- 로그인 → Cohort 진입 → 채팅 화면 진입 시 에러 미발생  
-- Auth 실패 시 `/app`으로 안정적 리다이렉션 로그 확인  
-- React Query Devtools로 Auth 캐시가 정상 유지됨 확인
+### Stage 3 — 도메인 구조 분리 & 운영 안정화
 
----
+| 영역 | 작업 항목 | 검증 |
+|------|-----------|------|
+| `/app/chat` | 공지/DM/참가자/푸터 영역을 독립 컴포넌트로 분리, Route Handler에서 초기 데이터 fetch, Server Component + Client Component 경계 재구성 | 분리된 컴포넌트 구조, e2e 시나리오(공지 작성/DM 전송/푸터 액션) 통과 |
+| 기타 화면 | `/app/profile`, `/app/cohorts`, `/app/admin/*` 등도 서버/클라이언트 경계를 점검, 중복 UI를 Stage 2에서 정의한 공용 컴포넌트로 교체 | QA 시나리오 (프로필 진입, 매칭 관리) 통과 |
+| Worker | `worker/index.js` 캐시 버전 키 도입, 업데이트 알림 UX 검토 | PWA 업데이트 테스트 (버전 증가 시 새 자원 fetch) |
+| 스크립트 | `scripts/`, `src/scripts/` 주요 작업에 dry-run 옵션 및 결과 리포트 추가 | dry run 실행 결과 (콘솔 로그/README) |
+| Functions | Stage 2에서 정의한 서비스 레이어 적용, 배포 전 `npm run lint`/`npm run build` 루틴 확립 | Functions 배포 체크리스트 문서화 |
 
-### Phase 2 — 관리자(Data Center) API & 보안 강화
-
-| 영역 | 개선 포인트 | 구현 항목 | 참조 문서 |
-|------|-------------|-----------|-----------|
-| Route Handlers (`src/app/api/datacntr/*`) | `requireWebAppAdmin` 검증 이후 Firestore Rules와 불일치 가능성 | - Firestore Rules 정비: `get/list/create/update/delete` 세분화, Custom Function 통일<br>- 서버 로직에서도 동일 조건(예: isAdministrator, isSuperAdmin) 검증 | `/websites/firebase_google` Security Rules Guide |
-| 데이터 쿼리 | 참가자/제출 집계 시 중복 호출과 예외 처리 부족 | - IN 쿼리 실패 케이스(10개 분할) 예외 처리<br>- 실패 시 재시도/로그 분리 | TanStack Query Retry Guide |
-| 로깅·모니터링 | 관리자 API 실패 시 로그 메시지 단일함 | - `logger.error` 구조화, Context7 노트에 공통 실패 패턴 정리 | 내부 Logger 가이드 |
-
-**검증**:  
-- Firestore Emulator Rules 테스트(`firebase emulators:exec`)  
-- 관리자 계정: API 정상 응답 / 일반 사용자: 403 응답  
-- 에러 케이스에 대한 로그 확인
-
----
-
-### Phase 3 — 멤버 포털 주요 흐름 안정화
-
-| 영역 | 개선 포인트 | 구현 항목 | 참조 문서 |
-|------|-------------|-----------|-----------|
-| 채팅 화면 (`src/app/app/chat/page.tsx`) | 거대한 클라이언트 컴포넌트가 모든 기능을 담당 → 오류 추적 어려움 | - 데이터 패칭을 서버 컴포넌트 + 다중 Client 컴포넌트로 분리<br>- Route Handler에서 공지/참가자/제출 데이터 병렬 fetch | Next.js Parallel Data Fetching |
-| 제출/DM 모달 | Firebase Storage 업로드 실패 시 UI만 멈춤 | - 오류 알림(Toast) 및 재시도 버튼 추가<br>- 업로드 성공/실패 상태를 React Query mutation으로 일원화 | TanStack Mutations |
-| View Mode | iOS PWA용 분기 로직(Path Navigation) race condition 가능 | - `isNavigating` 상태를 Route transition hook 또는 Router 이벤트로 대체<br>- Context7에 race condition 해결 사례 기록 | 내부 iOS PWA 가이드 |
-
-**검증**:  
-- 공지 작성/수정/삭제, DM 송신, 독서 제출 플로우 수동 테스트  
-- 실패 시 UI 피드백/로그 확인  
-- React Query Devtools에서 쿼리/뮤테이션 상태 정상 여부 확인
-
----
-
-### Phase 4 — Functions & 배치 스크립트 안전화
-
-| 영역 | 개선 포인트 | 구현 항목 | 참조 문서 |
-|------|-------------|-----------|-----------|
-| Firebase Functions (`functions/src/index.ts` 등) | 타입 검증/로깅 일관성 부족 | - 공용 `logger`, `schema` 유틸 추출<br>- 배포 전 `npm run lint` + `firebase emulators:exec` 파이프라인 구성 | Firebase Functions Emulator Docs |
-| Worker (`worker/index.js`) | SW 캐시 버전 관리 부족 | - 캐시 키 버전화, 업데이트 시 이전 버전 클린업<br>- 업데이트 알림 UI 제공 검토 | Next.js PWA Patterns |
-| Scripts (`scripts/`, `src/scripts/`) | 운영 스크립트 오류 시 롤백 없음 | - Firestore Emulator에서 dry run 지원 추가<br>- 결과 리포트 출력과 종료코드 관리 | Node.js CLI Best Practices |
-
-**검증**:  
-- Emulator 기반 함수 실행 성공  
-- PWA 업데이트 흐름 테스트 (캐시 미스 시 자동 리로드)  
-- 주요 스크립트 dry run 로그 확인
-
----
-
+**완료 기준**  
+- `/app/chat/page.tsx`가 경량 컨테이너 역할만 수행하고 데이터 fetch는 Route Handler 또는 Server Component가 담당.  
+- PWA 버전 업데이트 시 캐시 충돌 없이 자동/수동 갱신 가능.  
+- 주요 배치/운영 스크립트가 dry-run을 지원하고 README에 사용법이 문서화됨.
 ## 3. Context7 MCP 활용 전략
 
 - **공식 문서 연결**: `/vercel/next.js/v15.1.8`, `/tanstack/query/v5.71.10`, `/websites/firebase_google`, `/shadcn-ui/ui` 라이브러리를 워크스페이스에 고정 등록하여 검색 지연 없이 참조.
@@ -111,10 +87,10 @@
 
 ## 5. 산출물 & 마일스톤
 
-- **Phase 0 완료**: 진단 리포트, 에러/경고 티켓화 (1주)
-- **Phase 1~3 완료**: 각 플로우별 리팩토링 PR, QA 체크리스트 업데이트 (4~5주)
-- **Phase 4 완료**: Functions/Worker/Scripts 안정화, 문서화 (1~2주)
-- **최종 문서화**: Context7 노트 + `docs/development` 내 리팩토링 회고 추가
+- **Stage 1**: 레이아웃/인증 경계 재정비 → 1~2주
+- **Stage 2**: 공용 레이어 인벤토리 + Firestore 스모크 테스트 → 1~1.5주
+- **Stage 3**: `/app/chat` 구조 분리, 기타 화면 정리, Worker/스크립트 개선 → 3주
+- **최종 문서화**: Context7 노트 + `docs/development` 내 리팩토링 회고 갱신
 
 ---
 
@@ -136,5 +112,4 @@
 
 ---
 
-본 계획은 “버그 없는 무결한 작동”을 최우선 가치로 하며, 각 Phase는 안정성 검증 후에만 다음 단계로 이동합니다. 필요 시 본 문서를 업데이트하며, 변경 이력은 Context7 메모와 Git 기록으로 추적합니다.
-
+본 계획은 “버그 없는 무결한 작동”을 최우선 가치로 하며, 각 Stage는 안정성 검증 후에만 다음 단계로 이동합니다. 필요 시 본 문서를 업데이트하며, 변경 이력은 Context7 메모와 Git 기록으로 추적합니다.

@@ -8,6 +8,9 @@ import { Loader2, Calendar, Users, CheckCircle, XCircle } from 'lucide-react';
 import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import type { Cohort } from '@/types/database';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 export default function CohortsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();

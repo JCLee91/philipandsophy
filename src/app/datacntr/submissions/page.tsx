@@ -16,6 +16,9 @@ import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 interface SubmissionWithParticipant extends ReadingSubmission {
   participantName: string;
   cohortName: string;

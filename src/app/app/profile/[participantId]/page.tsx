@@ -10,6 +10,9 @@ import PageTransition from '@/components/PageTransition';
 import HistoryWeekRow from '@/components/HistoryWeekRow';
 import ErrorState from '@/components/ErrorState';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 // import MatchingReasonBanner from '@/components/MatchingReasonBanner'; // 논의 중인 기능
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';

@@ -78,8 +78,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
           <PushNotificationRefresher />
           {children}
           <Toaster />
@@ -89,8 +89,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
               <ReactQueryDevtools initialIsOpen={false} />
             </Suspense>
           )}
-        </QueryClientProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

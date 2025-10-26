@@ -8,6 +8,9 @@ import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { DirectMessage } from '@/types/database';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 interface MessageWithParticipant extends DirectMessage {
   senderName: string;
   receiverName: string;
