@@ -20,6 +20,7 @@ import MessageGroup from '@/components/MessageGroup';
 import { groupMessagesByDate } from '@/lib/message-grouping';
 import Image from 'next/image';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
+import { useToast } from '@/hooks/use-toast';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -47,6 +48,7 @@ export default function DirectMessageDialog({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(0);
+  const { toast } = useToast();
 
   // conversationId 생성 로직
   const conversationId = useMemo(() => {
@@ -183,7 +185,25 @@ export default function DirectMessageDialog({
 
       // 이미지가 있으면 업로드
       if (imageFile) {
-        imageUrl = await uploadDMImage(imageFile, currentUserId);
+        try {
+          imageUrl = await uploadDMImage(imageFile, currentUserId);
+        } catch (uploadError) {
+          // Firebase Storage 특정 에러 처리
+          const errorMessage = uploadError instanceof Error
+            ? uploadError.message.includes('storage/quota-exceeded')
+              ? '스토리지 용량이 초과되었습니다. 관리자에게 문의하세요.'
+              : uploadError.message.includes('storage/unauthorized')
+              ? '이미지 업로드 권한이 없습니다.'
+              : '이미지 업로드에 실패했습니다.'
+            : '이미지 업로드에 실패했습니다.';
+
+          toast({
+            title: '이미지 업로드 실패',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+          throw uploadError; // 메시지 전송 중단
+        }
       }
 
       await sendMessageMutation.mutateAsync({
@@ -202,6 +222,15 @@ export default function DirectMessageDialog({
       });
     } catch (error) {
       logger.error('메시지 전송 실패:', error);
+
+      // 이미지 업로드 에러가 아닌 경우에만 메시지 전송 실패 토스트 표시
+      if (error instanceof Error && !error.message.includes('storage/')) {
+        toast({
+          title: '메시지 전송 실패',
+          description: '메시지를 전송하지 못했습니다. 다시 시도해주세요.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setUploading(false);
     }

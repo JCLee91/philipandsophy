@@ -34,6 +34,7 @@ import NoticeWriteDialog from '@/components/NoticeWriteDialog';
 import NoticeEditDialog from '@/components/NoticeEditDialog';
 import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
 import SettingsDialog from '@/components/SettingsDialog';
+import { useToast } from '@/hooks/use-toast';
 
 function ChatPageContent() {
   const router = useRouter();
@@ -57,6 +58,7 @@ function ChatPageContent() {
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const isIosStandalone = useIsIosStandalone();
+  const { toast } = useToast();
 
   // Race Condition 방지: 이미 네비게이션 중인지 추적
   const [isNavigating, setIsNavigating] = useState(false);
@@ -210,7 +212,25 @@ function ChatPageContent() {
 
       // 이미지가 있으면 업로드
       if (imageFile) {
-        imageUrl = await uploadNoticeImage(imageFile, cohortId);
+        try {
+          imageUrl = await uploadNoticeImage(imageFile, cohortId);
+        } catch (uploadError) {
+          // Firebase Storage 특정 에러 처리
+          const errorMessage = uploadError instanceof Error
+            ? uploadError.message.includes('storage/quota-exceeded')
+              ? '스토리지 용량이 초과되었습니다. 관리자에게 문의하세요.'
+              : uploadError.message.includes('storage/unauthorized')
+              ? '이미지 업로드 권한이 없습니다.'
+              : '이미지 업로드에 실패했습니다.'
+            : '이미지 업로드에 실패했습니다.';
+
+          toast({
+            title: '이미지 업로드 실패',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+          throw uploadError; // 공지 작성 중단
+        }
       }
 
       await createNoticeMutation.mutateAsync({
@@ -227,6 +247,15 @@ function ChatPageContent() {
       scrollToBottom(undefined, { behavior: 'smooth', delay: AUTH_TIMING.SCROLL_DELAY });
     } catch (error) {
       logger.error('공지 작성 실패:', error);
+
+      // 이미지 업로드 에러가 아닌 경우에만 공지 작성 실패 토스트 표시
+      if (error instanceof Error && !error.message.includes('storage/')) {
+        toast({
+          title: '공지 작성 실패',
+          description: '공지를 작성하지 못했습니다. 다시 시도해주세요.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setUploadingNoticeImage(false);
     }
