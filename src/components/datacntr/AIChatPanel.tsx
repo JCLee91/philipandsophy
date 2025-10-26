@@ -218,9 +218,9 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
                     <p className="font-semibold mb-2">AI 데이터 분석 준비 완료!</p>
                     <p className="text-sm">궁금한 데이터를 물어보세요</p>
                     <div className="mt-4 text-xs text-gray-400 space-y-1">
-                      <p>예: "1기 참가자 몇 명?"</p>
-                      <p>예: "오늘 제출 현황 알려줘"</p>
-                      <p>예: "가장 활발한 참가자는?"</p>
+                      <p>예: &quot;1기 참가자 몇 명?&quot;</p>
+                      <p>예: &quot;오늘 제출 현황 알려줘&quot;</p>
+                      <p>예: &quot;가장 활발한 참가자는?&quot;</p>
                     </div>
                   </div>
                 )}
