@@ -95,7 +95,7 @@ export default function DataCenterBoardPage() {
         const participantIds = participants.map(p => p.id);
         const submissionsRef = collection(db, 'reading_submissions');
 
-        let submissions: ReadingSubmission[] = [];
+        const submissions: ReadingSubmission[] = [];
 
         // Firestore IN constraint: max 30 items per query (using 10 for safety)
         const chunkSize = 10;

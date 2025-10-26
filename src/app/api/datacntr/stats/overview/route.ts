@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
     const targetParticipantIds = nonSuperAdminParticipants.map(doc => doc.id);
 
     // 2. 독서 인증, 공지사항, 메시지 조회 (participantId IN 쿼리 사용)
-    let allSubmissions: any[] = [];
-    let todaySubmissions: any[] = [];
+    const allSubmissions: any[] = [];
+    const todaySubmissions: any[] = [];
 
     if (targetParticipantIds.length > 0) {
       // Firestore IN 제약: 최대 10개씩 분할 쿼리
