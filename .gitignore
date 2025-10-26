@@ -59,6 +59,13 @@ parsed-*.json
 *-seed-data.json
 check-*.js
 check-*.mjs
+*.md.backup
+*-critical-issues.md
+*-issue*.md
+special-*.md
+USER_*.md
+*.json.backup
+user-activity-*.json
 
 # PWA generated files (next-pwa)
 # ✅ We maintain public/sw.js manually, so DON'T ignore it
