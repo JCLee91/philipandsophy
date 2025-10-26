@@ -108,6 +108,21 @@ export default function NoticeItem({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#1264a3] hover:underline"
+                      onClick={(e) => {
+                        // PWA 환경에서 외부 브라우저로 강제 열기
+                        const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+                        if (isPWA) {
+                          e.preventDefault();
+                          const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+                          if (isIOS) {
+                            // iOS PWA: Safari로 열기
+                            window.location.href = `x-safari-${part}`;
+                          } else {
+                            // Android PWA: width/height 파라미터로 브라우저에서 열기
+                            window.open(part, '_blank', 'width=800,height=600,noopener,noreferrer');
+                          }
+                        }
+                      }}
                     >
                       {part}
                     </a>

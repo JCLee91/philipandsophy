@@ -13,6 +13,40 @@ export default function Home() {
   const { participant, participantStatus, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
+  // ✅ 인앱 브라우저 감지 및 외부 브라우저로 리다이렉트
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const currentUrl = window.location.href;
+
+    // 카카오톡 인앱 브라우저
+    if (userAgent.includes('kakaotalk')) {
+      logger.info('카카오톡 인앱 브라우저 감지, 외부 브라우저로 리다이렉트');
+      window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
+      return;
+    }
+
+    // 라인 인앱 브라우저 (쿼리 파라미터 방식)
+    if (userAgent.includes('line')) {
+      logger.info('라인 인앱 브라우저 감지, 외부 브라우저로 리다이렉트');
+      const separator = currentUrl.includes('?') ? '&' : '?';
+      window.location.href = `${currentUrl}${separator}openExternalBrowser=1`;
+      return;
+    }
+
+    // 인스타그램 인앱 브라우저
+    if (userAgent.includes('instagram')) {
+      logger.info('인스타그램 인앱 브라우저 감지, 안내 메시지 표시');
+      // 인스타그램은 URL 스킴이 없어서 사용자에게 안내만 가능
+      // 필요시 안내 모달 추가
+    }
+
+    // 페이스북 인앱 브라우저
+    if (userAgent.includes('fbav') || userAgent.includes('fban')) {
+      logger.info('페이스북 인앱 브라우저 감지, 안내 메시지 표시');
+      // 페이스북도 URL 스킴 미지원
+    }
+  }, []);
+
   // ✅ participant가 ready 상태이면 적절한 화면으로 이동
   useEffect(() => {
     if (!isLoading && participantStatus === 'ready' && participant) {
