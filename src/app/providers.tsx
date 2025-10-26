@@ -7,6 +7,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ThemeProvider } from 'next-themes';
 import { useEffect } from 'react';
 import { initializeFirebase } from '@/lib/firebase';
@@ -73,6 +74,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <PushNotificationRefresher />
           {children}
           <Toaster />
+          {/* React Query Devtools - 프로덕션에서는 자동으로 제외됨 */}
+          <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </AuthProvider>
     </ThemeProvider>
