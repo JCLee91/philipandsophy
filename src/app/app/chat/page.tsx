@@ -106,6 +106,8 @@ function ChatPageContent() {
         return;
       }
     }
+    // router는 Next.js useRouter에서 반환되는 안정적인 객체이므로 의존성 배열에 불필요
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionLoading, participant, cohortId]);
 
   // 최신 공지로 자동 스크롤 (페이지 로드 및 최초 로그인 시)

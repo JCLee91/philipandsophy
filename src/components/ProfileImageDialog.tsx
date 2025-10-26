@@ -101,7 +101,10 @@ export default function ProfileImageDialog({
         window.history.back();
       }
     };
-  }, [open]); // onClose 의존성 제거 - effect 재실행 방지
+    // onClose는 부모에서 전달되어 자주 변경될 수 있으므로 의존성에서 제외
+    // effect는 open 상태 변경 시에만 실행되어야 함
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!participant) return null;
 

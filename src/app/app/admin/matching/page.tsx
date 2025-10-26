@@ -52,13 +52,13 @@ function MatchingPageContent() {
   const [confirmedResult, setConfirmedResult] = useState<MatchingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 날짜 정의
-  const submissionDate = getYesterdayString(); // 제출 날짜 (어제 제출 데이터 조회용)
-  const submissionQuestion = getDailyQuestionText(submissionDate);
+  // 날짜 정의 (useMemo로 메모이제이션 - 불필요한 재계산 방지)
+  const submissionDate = useMemo(() => getYesterdayString(), []); // 제출 날짜 (어제 제출 데이터 조회용)
+  const submissionQuestion = useMemo(() => getDailyQuestionText(submissionDate), [submissionDate]);
 
   // 오늘 날짜 (Firestore 매칭 키 & localStorage 키로 사용)
-  const todayDate = getTodayString(); // KST 기준 오늘 날짜
-  const todayQuestion = getDailyQuestionText(todayDate);
+  const todayDate = useMemo(() => getTodayString(), []); // KST 기준 오늘 날짜
+  const todayQuestion = useMemo(() => getDailyQuestionText(todayDate), [todayDate]);
 
   // 로컬 스토리지 키 (todayDate 기준 - Firestore 키와 일치)
   const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${todayDate}`;
@@ -316,7 +316,7 @@ function MatchingPageContent() {
     };
 
     loadFirestoreData();
-  }, [cohortId, submissionDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY, loadFromStorage, saveToStorage, toast]);
+  }, [cohortId, submissionDate, todayDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY, loadFromStorage, saveToStorage, toast]);
 
   // beforeunload 경고: AI 매칭 처리 중 페이지 이탈 방지
   useEffect(() => {
