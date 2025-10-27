@@ -277,15 +277,16 @@ export function ChatClientView({
   }
 
   return (
-    <PageTransition>
-      <div className="app-shell flex flex-col overflow-hidden">
-        <Header
-          onParticipantsClick={handleParticipantsClick}
-          onWriteClick={writeDialog.open}
-          onMessageAdminClick={handleMessageAdmin}
-          onSettingsClick={() => setSettingsOpen(true)}
-          isAdmin={isAdmin}
-        />
+    <>
+      <Header
+        onParticipantsClick={handleParticipantsClick}
+        onWriteClick={writeDialog.open}
+        onMessageAdminClick={handleMessageAdmin}
+        onSettingsClick={() => setSettingsOpen(true)}
+        isAdmin={isAdmin}
+      />
+      <PageTransition>
+        <div className="app-shell flex flex-col overflow-hidden">
 
         <ChatParticipantsSheet
           participants={participants}
@@ -373,6 +374,7 @@ export function ChatClientView({
         <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       </div>
     </PageTransition>
+    </>
   );
 }
 
