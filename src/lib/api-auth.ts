@@ -183,8 +183,6 @@ export async function requireWebAppAuth(
     const auth = getAdminAuth();
     const decodedToken = await auth.verifyIdToken(idToken);
 
-    logger.debug('ID Token 검증 완료 (웹앱)', { uid: decodedToken.uid });
-
     // UID로 Firestore participants 조회
     const db = getAdminDb();
     const snapshot = await db
@@ -215,7 +213,6 @@ export async function requireWebAppAuth(
       ...snapshot.docs[0].data(),
     } as Participant;
 
-    logger.debug('Participant 조회 완료', { participantId: participant.id });
     return { user: participant, error: null };
   } catch (error: any) {
     logger.error('Firebase ID Token 검증 실패 (웹앱):', error);
@@ -285,6 +282,5 @@ export async function requireWebAppAdmin(
     };
   }
 
-  logger.debug('관리자 권한 확인 완료', { participantId: user.id });
   return { user, error: null };
 }
