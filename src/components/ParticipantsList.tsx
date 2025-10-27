@@ -20,6 +20,7 @@ import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import { useAuth } from '@/contexts/AuthContext';
+import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 import type { Participant } from '@/types/database';
 
@@ -168,6 +169,8 @@ export default function ParticipantsList({
   onProfileClick,
   onProfileBookClick,
 }: ParticipantsListProps) {
+  useModalCleanup(open);
+
   const { data: verifiedIds } = useVerifiedToday();
   const { logout, participant } = useAuth();
 
