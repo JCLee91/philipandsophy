@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
 import BackHeader from '@/components/BackHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import DirectMessageDialog from '@/components/DirectMessageDialog';
+import DirectMessageDialog from '@/components/chat/DM/DirectMessageDialog';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {

@@ -148,10 +148,13 @@ export default function ProfileImageDialog({
         </DialogDescription>
         {participant.profileImage && imageLoaded ? (
           <div className="relative max-w-[90vw] max-h-[90vh]" style={{ aspectRatio: 'auto' }}>
-            <img
+            <Image
               src={participant.profileImage}
               alt={participant.name}
+              width={1024}
+              height={1024}
               className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
+              unoptimized
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();

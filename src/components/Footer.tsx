@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 export default function Footer() {
   return (
     <footer className="footer">
@@ -20,7 +22,13 @@ export default function Footer() {
                   aria-label="카카오톡에서 문의하기"
                   className="sns-button kakao-button"
                 >
-                  <img src="/image/kakao.webp?v=1.1" alt="카카오톡 채널" className="sns-icon" />
+                  <Image
+                    src="/image/kakao.webp?v=1.1"
+                    alt="카카오톡 채널"
+                    width={24}
+                    height={24}
+                    className="sns-icon"
+                  />
                   <span>문의하기</span>
                 </a>
                 <a

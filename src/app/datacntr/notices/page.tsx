@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Bell, Calendar, User, BookTemplate, Save, Settings, Trash2, GripVertical } from 'lucide-react';
@@ -124,10 +125,13 @@ function SortableNoticeItem({
       {/* 이미지 */}
       {notice.imageUrl && (
         <div className="mt-4">
-          <img
+          <Image
             src={notice.imageUrl}
             alt="공지 이미지"
-            className="max-w-md rounded-lg border border-gray-200"
+            width={800}
+            height={600}
+            className="max-w-md rounded-lg border border-gray-200 h-auto w-full"
+            unoptimized
           />
         </div>
       )}

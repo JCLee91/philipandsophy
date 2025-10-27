@@ -14,6 +14,8 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,9 +41,24 @@ const db = getFirestore();
 /**
  * Cleanup Web Push subscriptions from FCM users
  */
+const argv = yargs(hideBin(process.argv))
+  .option('dry-run', {
+    type: 'boolean',
+    default: false,
+    describe: 'Perform read-only cleanup simulation without writing changes',
+  })
+  .help()
+  .alias('h', 'help')
+  .parseSync();
+
 async function cleanupAndroidWebPush() {
+  const { dryRun } = argv;
+
   try {
     console.log('🧹 Cleaning up Web Push subscriptions from FCM users...\n');
+    if (dryRun) {
+      console.log('🔍 Dry-run mode enabled. No changes will be written.\n');
+    }
 
     // Get all participants
     const participantsSnapshot = await db.collection('participants').get();
@@ -71,10 +88,11 @@ async function cleanupAndroidWebPush() {
         console.log(`   FCM tokens: ${pushTokens.length} ✅ (keep)`);
         console.log(`   Web Push: ${webPushSubs.length} ❌ (remove - redundant)`);
 
-        // Remove Web Push subscriptions (FCM user should not use Web Push)
-        batch.update(doc.ref, {
-          webPushSubscriptions: [],
-        });
+        if (!dryRun) {
+          batch.update(doc.ref, {
+            webPushSubscriptions: [],
+          });
+        }
 
         totalWebPushRemoved += webPushSubs.length;
         cleanupCount++;
@@ -87,12 +105,14 @@ async function cleanupAndroidWebPush() {
       return;
     }
 
-    console.log('\n💾 Updating database...');
-    await batch.commit();
+    if (!dryRun) {
+      console.log('\n💾 Updating database...');
+      await batch.commit();
+    }
 
     console.log('\n✅ Cleanup complete!');
-    console.log(`   Removed ${totalWebPushRemoved} Web Push subscription(s)`);
-    console.log(`   Updated ${cleanupCount} participant(s)`);
+    console.log(`   ${dryRun ? 'Would remove' : 'Removed'} ${totalWebPushRemoved} Web Push subscription(s)`);
+    console.log(`   ${dryRun ? 'Would update' : 'Updated'} ${cleanupCount} participant(s)`);
     console.log('\n🎯 Android/Chrome users now use FCM only.\n');
     console.log('iOS Safari users will continue using Web Push API.\n');
 

@@ -97,12 +97,17 @@ export default function BookmarkCard({
 
         {/* Bookmark Flag - at right edge, above profile */}
         <div className="absolute h-[32px] left-[69px] top-0 w-[21px] z-20" aria-hidden="true">
-          <img
-            alt=""
-            src={config.flagSvg}
-            className="block max-w-none size-full"
-          />
-        </div>
+            <div className="relative size-full">
+              <Image
+                alt=""
+                src={config.flagSvg}
+                fill
+                unoptimized
+                sizes="21px"
+                className="block max-w-none size-full object-contain"
+              />
+            </div>
+          </div>
 
         {/* Lock Icon (only for locked state) */}
         {isLocked && (
@@ -114,11 +119,16 @@ export default function BookmarkCard({
             }}
             aria-hidden="true"
           >
-            <img
-              alt="잠금 아이콘"
-              src={config.lockSvg}
-              className="block max-w-none size-full"
-            />
+            <div className="relative size-full">
+              <Image
+                alt="잠금 아이콘"
+                src={config.lockSvg}
+                fill
+                unoptimized
+                sizes={`${BOOKMARK_DIMENSIONS.LOCK_ICON_SIZE}px`}
+                className="block max-w-none size-full object-contain"
+              />
+            </div>
           </div>
         )}
       </button>

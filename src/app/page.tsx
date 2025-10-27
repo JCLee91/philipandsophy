@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Script from 'next/script';
 import '../styles/landing.css';
 import Footer from '@/components/Footer';
@@ -27,8 +28,13 @@ export default function LandingPage() {
         `}
       </Script>
       <noscript>
-        <img height="1" width="1" style={{display:'none'}}
-        src="https://www.facebook.com/tr?id=1365426628495741&ev=PageView&noscript=1"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          height="1"
+          width="1"
+          style={{ display: 'none' }}
+          src="https://www.facebook.com/tr?id=1365426628495741&ev=PageView&noscript=1"
+          alt="Facebook pixel tracking"
         />
       </noscript>
 
@@ -110,13 +116,39 @@ export default function LandingPage() {
       </div>
 
       <div className="container">
-        <img src="/image/PnS_1.webp?v=3.0" alt="필립앤소피(P&S) 승인제 독서소셜클럽 - 깊이 있는 대화가 설레는 만남으로" className="main-image" fetchPriority="high" />
+        <Image
+          src="/image/PnS_1.webp?v=3.0"
+          alt="필립앤소피(P&S) 승인제 독서소셜클럽 - 깊이 있는 대화가 설레는 만남으로"
+          width={1170}
+          height={2637}
+          className="main-image"
+          priority
+        />
 
-        <img src="/image/PnS_2.webp?v=3.0" alt="필립앤소피 소셜클럽 소개" className="main-image" fetchPriority="high" loading="eager" />
+        <Image
+          src="/image/PnS_2.webp?v=3.0"
+          alt="필립앤소피 소셜클럽 소개"
+          width={1170}
+          height={5574}
+          className="main-image"
+          priority
+        />
 
-        <img src="/image/PnS_3.webp?v=3.0" alt="필립앤소피 서비스 특징" className="main-image" />
+        <Image
+          src="/image/PnS_3.webp?v=3.0"
+          alt="필립앤소피 서비스 특징"
+          width={1170}
+          height={5601}
+          className="main-image"
+        />
 
-        <img src="/image/PnS_4_nofooter.webp?v=3.0" alt="필립앤소피 가입 안내" className="main-image" />
+        <Image
+          src="/image/PnS_4_nofooter.webp?v=3.0"
+          alt="필립앤소피 가입 안내"
+          width={1560}
+          height={6728}
+          className="main-image"
+        />
 
         <div className="cta-section">
           <Tooltip />

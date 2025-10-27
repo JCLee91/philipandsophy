@@ -415,7 +415,7 @@ export default function ProfileClientView({
                   <div className="text-right text-xs text-[#64748b]">
                     <p>최근 인증일</p>
                     <p className="font-semibold text-[#334155]">
-                      {formatShortDate(latestSubmission.submittedAt.toDate())}
+                      {formatShortDate(latestSubmission.submittedAt)}
                     </p>
                   </div>
                 )}
@@ -501,7 +501,7 @@ export default function ProfileClientView({
             <DialogContent className="profile-reading-dialog-ios-safe sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-base">
-                  {formatShortDate(selectedSubmission.submittedAt.toDate())} 독서 기록
+                  {formatShortDate(selectedSubmission.submittedAt)} 독서 기록
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 max-h-[60vh] overflow-y-auto">

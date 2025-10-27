@@ -6,6 +6,7 @@ import { initializeFirebase, getFirebaseAuth } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
 import { Participant } from '@/types/database';
 import { useParticipant as useParticipantQuery } from '@/hooks/useParticipant';
+import { deleteClientCookie } from '@/lib/cookies';
 
 /**
  * AuthContext - Firebase Authentication + Participant 통합 관리
@@ -64,6 +65,8 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
             } catch (error) {
               logger.error('Failed to remove participantId from localStorage:', error);
             }
+            deleteClientCookie('pns-participant');
+            deleteClientCookie('pns-cohort');
           }
         });
       } catch (error) {
@@ -94,6 +97,8 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     try {
       const auth = getFirebaseAuth();
       await signOut(auth);
+      deleteClientCookie('pns-participant');
+      deleteClientCookie('pns-cohort');
       logger.info('로그아웃 성공');
     } catch (error) {
       logger.error('로그아웃 실패:', error);

@@ -12,6 +12,7 @@
 'use client';
 
 import { logger } from '@/lib/logger';
+import { isPushEnabledForDevice } from './helpers';
 
 /**
  * Check if push is enabled for current device (client-side)
@@ -28,9 +29,6 @@ export function isPushEnabledForCurrentDevice(data: any): boolean {
     logger.warn('[isPushEnabledForCurrentDevice] Called on server, returning false');
     return false;
   }
-
-  // Import server-safe helper
-  const { isPushEnabledForDevice } = require('./helpers');
 
   // Get deviceId from localStorage (client-only)
   let deviceId: string;

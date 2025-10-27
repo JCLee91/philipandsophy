@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import '../../styles/landing.css';
 import Footer from '@/components/Footer';
 
@@ -18,13 +19,14 @@ export default function ProgramPage() {
     <div className="landing-page">
       <div className="container">
         {images.map((image, idx) => (
-          <img
+          <Image
             key={idx}
             src={image.src}
             alt={image.alt}
+            width={3240}
+            height={2880}
             className="main-image"
-            loading={idx === 0 ? 'eager' : 'lazy'}
-            fetchPriority={idx === 0 ? 'high' : 'auto'}
+            priority={idx === 0}
           />
         ))}
       </div>
@@ -32,4 +34,3 @@ export default function ProgramPage() {
     </div>
   );
 }
-

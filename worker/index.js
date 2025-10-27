@@ -37,12 +37,20 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v3'; // Increment version to force update
+const CACHE_VERSION = 'v2025-10-26';
+const CACHE_NAME = `philipandsophy-${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
   '/app',
   '/image/favicon.webp',
 ];
+
+async function broadcastMessage(type, payload = {}) {
+  const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  allClients.forEach((client) => {
+    client.postMessage({ type, version: CACHE_VERSION, ...payload });
+  });
+}
 
 // ============================================
 // PART 3: Service Worker Lifecycle Events
@@ -65,6 +73,8 @@ self.addEventListener('install', (event) => {
         console.error('[Unified SW] Failed to cache resources:', error);
       })
   );
+
+  broadcastMessage('SW_INSTALLING');
 
   // Force the waiting service worker to become the active service worker
   self.skipWaiting();
@@ -94,6 +104,8 @@ self.addEventListener('activate', (event) => {
       self.clients.claim(),
     ])
   );
+
+  broadcastMessage('SW_ACTIVATED');
 
   console.log('[Unified SW] Activated successfully');
 });

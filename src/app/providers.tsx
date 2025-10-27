@@ -14,6 +14,7 @@ import { CACHE_TIMES } from '@/constants/cache';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PushNotificationRefresher } from '@/components/PushNotificationRefresher';
+import ServiceWorkerUpdateListener from '@/components/pwa/ServiceWorkerUpdateListener';
 
 // Lazy load React Query Devtools (프로덕션 번들에서 완전 제외)
 const ReactQueryDevtools =
@@ -80,6 +81,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <ServiceWorkerUpdateListener />
           <PushNotificationRefresher />
           {children}
           <Toaster />

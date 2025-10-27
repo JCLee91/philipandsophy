@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getParticipantByFirebaseUid } from '@/lib/firebase';
 import { Participant } from '@/types/database';
 import { logger } from '@/lib/logger';
+import { deleteClientCookie, setClientCookie } from '@/lib/cookies';
 
 /**
  * Firebase UID로 Participant 데이터를 조회하는 React Query 훅
@@ -27,6 +28,8 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
 
         if (!participant) {
           logger.warn('Participant not found for Firebase UID', { firebaseUid });
+          deleteClientCookie('pns-participant');
+          deleteClientCookie('pns-cohort');
           return null;
         }
 
@@ -36,6 +39,14 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
           logger.debug('Participant ID saved to localStorage', { participantId: participant.id });
         } catch (error) {
           logger.error('Failed to save participantId to localStorage:', error);
+        }
+
+        // ✅ 쿠키에도 participant 정보 저장 (서버 사이드 라우팅 보호용)
+        setClientCookie('pns-participant', participant.id);
+        if (participant.cohortId) {
+          setClientCookie('pns-cohort', participant.cohortId);
+        } else {
+          deleteClientCookie('pns-cohort');
         }
 
         logger.info('Participant 조회 성공', {
