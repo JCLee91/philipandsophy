@@ -949,7 +949,6 @@ export const scheduledMatchingPreview = onSchedule(
 
     try {
       // 1. 환경 설정
-      const cohortId = cohortIdParam.value();
       const apiBaseUrl = apiBaseUrlParam.value();
       const internalSecret = internalSecretParam.value();
 
@@ -959,7 +958,28 @@ export const scheduledMatchingPreview = onSchedule(
         return;
       }
 
-      // 3. Preview API 호출
+      // 3. 활성화된 cohort 조회 (active: true)
+      const db = admin.firestore();
+      const activeCohortsSnapshot = await db
+        .collection("cohorts")
+        .where("active", "==", true)
+        .limit(1)
+        .get();
+
+      if (activeCohortsSnapshot.empty) {
+        logger.warn("No active cohort found, using fallback cohort ID");
+        // Fallback: 환경 변수에서 기본 cohort ID 사용
+        const fallbackCohortId = cohortIdParam.value();
+        logger.info(`Using fallback cohort ID: ${fallbackCohortId}`);
+      }
+
+      const cohortId = activeCohortsSnapshot.empty
+        ? cohortIdParam.value()
+        : activeCohortsSnapshot.docs[0].id;
+
+      logger.info(`Active cohort detected: ${cohortId}`);
+
+      // 4. Preview API 호출
       logger.info(`Calling preview API for cohort: ${cohortId}`);
 
       const response = await fetch(`${apiBaseUrl}/api/admin/matching/preview`, {
