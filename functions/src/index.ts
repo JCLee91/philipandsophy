@@ -783,48 +783,57 @@ export const sendMatchingNotifications = onRequest(
       return;
     }
 
-    // ✅ Authentication: Verify Firebase ID Token
-    const authHeader = request.headers.authorization;
+    // ✅ Authentication: Check internal secret OR Firebase ID Token
+    const internalSecret = request.headers["x-internal-secret"] as string;
+    const expectedSecret = process.env.INTERNAL_SERVICE_SECRET;
+    const isInternalCall = internalSecret && expectedSecret && internalSecret === expectedSecret;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      logger.warn("Unauthorized request: Missing or invalid Authorization header");
-      response.status(401).json({
-        error: "Unauthorized",
-        message: "Authorization header with Bearer token is required",
-      });
-      return;
-    }
+    if (isInternalCall) {
+      logger.info("Internal call authenticated via X-Internal-Secret");
+    } else {
+      // Fallback to Firebase ID Token authentication
+      const authHeader = request.headers.authorization;
 
-    const idToken = authHeader.split("Bearer ")[1];
-
-    try {
-      // Verify ID Token and decode claims
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-
-      // ✅ Authorization: Check isAdministrator custom claim
-      if (!decodedToken.isAdministrator) {
-        logger.warn("Forbidden request: User is not an administrator", {
-          uid: decodedToken.uid,
-          email: decodedToken.email,
-        });
-        response.status(403).json({
-          error: "Forbidden",
-          message: "Administrator permission required",
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        logger.warn("Unauthorized request: Missing or invalid Authorization header");
+        response.status(401).json({
+          error: "Unauthorized",
+          message: "Authorization header with Bearer token is required",
         });
         return;
       }
 
-      logger.info("Authenticated administrator request", {
-        uid: decodedToken.uid,
-        email: decodedToken.email,
-      });
-    } catch (authError: any) {
-      logger.error("Authentication failed", authError);
-      response.status(401).json({
-        error: "Unauthorized",
-        message: "Invalid or expired token",
-      });
-      return;
+      const idToken = authHeader.split("Bearer ")[1];
+
+      try {
+        // Verify ID Token and decode claims
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+        // ✅ Authorization: Check isAdministrator custom claim
+        if (!decodedToken.isAdministrator) {
+          logger.warn("Forbidden request: User is not an administrator", {
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+          });
+          response.status(403).json({
+            error: "Forbidden",
+            message: "Administrator permission required",
+          });
+          return;
+        }
+
+        logger.info("Authenticated administrator request", {
+          uid: decodedToken.uid,
+          email: decodedToken.email,
+        });
+      } catch (authError: any) {
+        logger.error("Authentication failed", authError);
+        response.status(401).json({
+          error: "Unauthorized",
+          message: "Invalid or expired token",
+        });
+        return;
+      }
     }
 
     const {cohortId, date} = request.body;
@@ -958,11 +967,11 @@ export const scheduledMatchingPreview = onSchedule(
         return;
       }
 
-      // 3. 활성화된 cohort 조회 (active: true)
+      // 3. 활성화된 cohort 조회 (isActive: true)
       const db = admin.firestore();
       const activeCohortsSnapshot = await db
         .collection("cohorts")
-        .where("active", "==", true)
+        .where("isActive", "==", true)
         .limit(1)
         .get();
 
@@ -1069,7 +1078,45 @@ export const scheduledMatchingPreview = onSchedule(
         throw new Error(`Confirm API returned error: ${confirmResult.error}`);
       }
 
-      logger.info(`✅ Scheduled matching completed and confirmed automatically`, {
+      logger.info(`✅ Matching confirmed successfully, now sending notifications`, {
+        cohortId,
+        date: previewResult.date,
+        totalParticipants: previewResult.totalParticipants,
+      });
+
+      // 5. 매칭 알림 전송 (프로필북 도착 푸시)
+      logger.info(`Calling sendMatchingNotifications function for cohort: ${cohortId}`);
+
+      // sendMatchingNotifications는 Firebase Function이므로 직접 호출
+      // 같은 프로젝트 내의 함수이므로 HTTP 호출 대신 직접 호출 가능
+      const functionsUrl = `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/sendMatchingNotifications`;
+
+      const notificationResponse = await fetch(functionsUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Secret": internalSecret,
+        },
+        body: JSON.stringify({
+          cohortId,
+          date: previewResult.date,
+        }),
+      });
+
+      if (!notificationResponse.ok) {
+        const notificationError = await notificationResponse.json();
+        logger.error(`Notification API failed: ${notificationResponse.status}`, notificationError);
+        // 알림 실패는 전체 프로세스를 중단시키지 않음 (매칭은 이미 완료됨)
+      } else {
+        const notificationResult = await notificationResponse.json();
+        logger.info(`✅ Matching notifications sent successfully`, {
+          cohortId,
+          date: previewResult.date,
+          recipientCount: notificationResult.recipientCount || "unknown",
+        });
+      }
+
+      logger.info(`✅ Scheduled matching completed: preview → confirm → notify`, {
         cohortId,
         date: previewResult.date,
         totalParticipants: previewResult.totalParticipants,
