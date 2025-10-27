@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'storage.googleapis.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'shopping-phinf.pstatic.net',
         pathname: '/**',
       },

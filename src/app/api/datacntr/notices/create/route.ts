@@ -99,11 +99,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 8. 공지 생성
+    const finalStatus = status || 'published';
     const noticeData = {
       cohortId,
       author: authorName,
       content: content.trim(),
-      status: status || 'published', // draft or published
+      status: finalStatus, // draft or published
       isCustom: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -116,8 +117,10 @@ export async function POST(request: NextRequest) {
       noticeId: noticeRef.id,
       cohortId,
       author: authorName,
-      status: status || 'published',
+      status: finalStatus,
+      isDraft: finalStatus === 'draft',
       hasImage: !!imageUrl,
+      willTriggerPush: finalStatus !== 'draft',
     });
 
     return NextResponse.json({
