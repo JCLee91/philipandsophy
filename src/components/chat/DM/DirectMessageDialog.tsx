@@ -36,6 +36,11 @@ export default function DirectMessageDialog({
   currentUser,
   otherUser,
 }: DirectMessageDialogProps) {
+  // ✅ Early return BEFORE any hooks to prevent React Rules of Hooks violation
+  if (!otherUser) {
+    return null;
+  }
+
   useModalCleanup(open);
 
   const [messageContent, setMessageContent] = useState('');
@@ -48,8 +53,8 @@ export default function DirectMessageDialog({
   const prevMessagesLengthRef = useRef(0);
 
   const conversationId = useMemo(() => {
-    if (!otherUser || !currentUserId) {
-      logger.warn('[DirectMessageDialog] Missing required data', { otherUser: !!otherUser, currentUserId });
+    if (!currentUserId) {
+      logger.warn('[DirectMessageDialog] Missing currentUserId', { currentUserId });
       return '';
     }
 
@@ -174,8 +179,6 @@ export default function DirectMessageDialog({
   };
 
   const canSendMessage = messageContent.trim().length > 0 || !!imageFile;
-
-  if (!otherUser) return null;
 
   const displayName =
     currentUser?.isSuperAdmin || currentUser?.isAdministrator ? otherUser.name : APP_CONSTANTS.ADMIN_NAME;

@@ -37,7 +37,7 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v5'; // Increment version to force update
+const CACHE_NAME = 'philipandsophy-v6'; // Increment version to force update
 const urlsToCache = [
   '/',
   '/app',
@@ -114,9 +114,16 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch((error) => {
-        console.error('[Unified SW] API fetch failed:', error);
+        console.error('[Unified SW] API fetch failed:', {
+          url: event.request.url,
+          method: event.request.method,
+          error: error.message
+        });
         return new Response(
-          JSON.stringify({ error: 'Network request failed' }),
+          JSON.stringify({
+            error: 'Network request failed',
+            url: url.pathname
+          }),
           {
             status: 503,
             statusText: 'Service Unavailable',
@@ -283,12 +290,13 @@ self.addEventListener('push', (event) => {
  * Allows communication between app and service worker
  */
 self.addEventListener('message', (event) => {
-  console.log('[Unified SW] Message received from app:', event.data);
-
-  // Handle SKIP_WAITING command (for SW updates)
+  // Only log important messages, not Firebase Auth storage events
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[Unified SW] SKIP_WAITING command received');
     self.skipWaiting();
   }
+  // Skip logging Firebase Auth localStorage events (too noisy)
+  // They have eventType: 'keyChanged' and key starting with 'firebase:'
 });
 
 // ============================================
