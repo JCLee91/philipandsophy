@@ -931,17 +931,18 @@ export const sendMatchingNotifications = onRequest(
 );
 
 /**
- * 4. 매일 오전 5시 자동 매칭 프리뷰 (Scheduled 함수)
+ * 4. 매일 정오 자동 매칭 실행 (Scheduled 함수)
  *
- * 매일 오전 5시 (KST)에 자동으로 실행
+ * 매일 정오 12시 (KST)에 자동으로 실행
  * 1. Preview API 호출하여 매칭 결과 생성
- * 2. 결과를 Firestore에 임시 저장 (matching_previews 컬렉션)
- * 3. 관리자들에게 푸시 알림 전송
+ * 2. Confirm API 호출하여 즉시 확정 및 알림 전송
  */
 export const scheduledMatchingPreview = onSchedule(
   {
-    schedule: "0 5 * * *", // 매일 오전 5시 (KST)
+    schedule: "0 12 * * *", // 매일 정오 12시 (KST)
     timeZone: "Asia/Seoul",
+    timeoutSeconds: 540, // 9분 (API 응답 대기)
+    memory: "1GiB",
   },
   async (event) => {
     logger.info("🤖 Scheduled matching preview started");
@@ -1021,8 +1022,38 @@ export const scheduledMatchingPreview = onSchedule(
 
       logger.info(`Preview saved to Firestore: ${previewRef.id}`);
 
-      // AI 매칭 완료 알림은 보내지 않음 (관리자가 직접 확인)
-      logger.info(`✅ Scheduled matching preview completed (no notifications sent)`);
+      // 4. 즉시 확정 API 호출 (내부 인증으로 자동 확정)
+      logger.info(`Calling confirm API for cohort: ${cohortId}`);
+
+      const confirmResponse = await fetch(`${apiBaseUrl}/api/admin/matching/confirm`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Secret": internalSecret,
+        },
+        body: JSON.stringify({
+          cohortId,
+          matching: previewResult.matching,
+          date: previewResult.date,
+        }),
+      });
+
+      if (!confirmResponse.ok) {
+        const confirmError = await confirmResponse.json();
+        throw new Error(`Confirm API failed: ${confirmResponse.status} - ${JSON.stringify(confirmError)}`);
+      }
+
+      const confirmResult = await confirmResponse.json();
+
+      if (!confirmResult.success) {
+        throw new Error(`Confirm API returned error: ${confirmResult.error}`);
+      }
+
+      logger.info(`✅ Scheduled matching completed and confirmed automatically`, {
+        cohortId,
+        date: previewResult.date,
+        totalParticipants: previewResult.totalParticipants,
+      });
     } catch (error) {
       logger.error("❌ Scheduled matching preview failed", error as Error);
       throw error; // Retry on failure

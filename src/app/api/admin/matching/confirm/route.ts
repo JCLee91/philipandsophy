@@ -12,10 +12,23 @@ import { getAdminDb } from '@/lib/firebase/admin';
  * AI 매칭 결과를 최종 확인하고 Firebase에 저장
  */
 export async function POST(request: NextRequest) {
-  // 관리자 권한 검증
-  const { user, error } = await requireWebAppAdmin(request);
-  if (error) {
-    return error;
+  // 내부 호출 인증 확인 (Firebase Functions에서 호출 시)
+  const internalSecret = request.headers.get('x-internal-secret');
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET;
+  const isInternalCall = internalSecret && expectedSecret && internalSecret === expectedSecret;
+
+  let adminUser: { id: string; name: string } | null = null;
+
+  // 내부 호출이 아니면 관리자 권한 검증
+  if (!isInternalCall) {
+    const { user, error } = await requireWebAppAdmin(request);
+    if (error) {
+      return error;
+    }
+    adminUser = user;
+  } else {
+    logger.info('Internal call detected, skipping admin auth');
+    adminUser = { id: 'system', name: 'Scheduled Function' };
   }
 
   try {
@@ -105,8 +118,8 @@ export async function POST(request: NextRequest) {
         logger.info('매칭 결과 저장 완료', {
           cohortId,
           date: matchingDate,
-          adminId: user!.id,
-          adminName: user!.name,
+          adminId: adminUser!.id,
+          adminName: adminUser!.name,
           participantCount: Object.keys(matching.assignments || {}).length,
         });
       });
