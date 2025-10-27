@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { scrollToBottom } from '@/lib/utils';
 import { getTodayString } from '@/lib/date-utils';
+import { getTimestampMillis } from '@/lib/firebase/timestamp-utils';
 import { parseISO, differenceInDays } from 'date-fns';
 import { APP_CONSTANTS } from '@/constants/app';
 import type { Cohort, Notice, Participant } from '@/types/database';
@@ -105,7 +106,7 @@ export function ChatClientView({
       id: string;
       timestamp: number;
     } | null>((acc, notice) => {
-      const timestamp = notice.createdAt.toDate().getTime();
+      const timestamp = getTimestampMillis(notice.createdAt);
       if (!acc || timestamp > acc.timestamp) {
         return { id: notice.id, timestamp };
       }

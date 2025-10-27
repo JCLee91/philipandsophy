@@ -2,6 +2,7 @@
 
 import { cache } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from '@/lib/firebase/admin-init';
 import type { Cohort, Notice, Participant } from '@/types/database';
 
@@ -13,8 +14,31 @@ const COLLECTIONS = {
 
 type FirestoreDoc<T> = T & { id: string };
 
+/**
+ * Convert Firestore Timestamps to serializable objects for Client Components
+ */
+function serializeTimestamps(data: any): any {
+  if (data instanceof Timestamp) {
+    return { _seconds: data.seconds, _nanoseconds: data.nanoseconds };
+  }
+  if (Array.isArray(data)) {
+    return data.map(serializeTimestamps);
+  }
+  if (data && typeof data === 'object') {
+    const serialized: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      serialized[key] = serializeTimestamps(value);
+    }
+    return serialized;
+  }
+  return data;
+}
+
 function mapSnapshot<T>(docs: QueryDocumentSnapshot[]): FirestoreDoc<T>[] {
-  return docs.map((doc) => ({ id: doc.id, ...(doc.data() as T) }));
+  return docs.map((doc) => {
+    const data = doc.data();
+    return { id: doc.id, ...serializeTimestamps(data) } as FirestoreDoc<T>;
+  });
 }
 
 export const fetchChatParticipants = cache(async (cohortId: string): Promise<Participant[]> => {
@@ -46,7 +70,8 @@ export const fetchChatCohort = cache(async (cohortId: string): Promise<Cohort | 
     return null;
   }
 
-  return { id: doc.id, ...(doc.data() as Cohort) };
+  const data = doc.data();
+  return { id: doc.id, ...serializeTimestamps(data) } as Cohort;
 });
 
 export const fetchChatInitialData = cache(
