@@ -42,7 +42,7 @@ setGlobalOptions({
 // Environment parameters
 const cohortIdParam = defineString("DEFAULT_COHORT_ID", {
   description: "Default cohort ID for scheduled matching",
-  default: "1",
+  default: "2",
 });
 
 const apiBaseUrlParam = defineString("API_BASE_URL", {
