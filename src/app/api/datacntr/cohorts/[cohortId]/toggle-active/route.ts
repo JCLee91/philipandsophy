@@ -35,15 +35,18 @@ export async function POST(
 
     // 트랜잭션으로 하나만 활성화 보장
     await db.runTransaction(async (transaction) => {
-      // 1. 현재 cohort 상태 확인
-      const cohortDoc = await transaction.get(cohortRef);
-      if (!cohortDoc.exists) {
+      // 1. 모든 cohort 읽기 (트랜잭션 내에서)
+      const allCohortsQuery = db.collection('cohorts');
+      const allCohortsSnapshot = await transaction.get(allCohortsQuery);
+
+      // 2. 현재 cohort 존재 확인
+      const targetCohort = allCohortsSnapshot.docs.find(doc => doc.id === cohortId);
+      if (!targetCohort) {
         throw new Error('Cohort를 찾을 수 없습니다');
       }
 
-      // 2. 활성화하려는 경우, 다른 모든 cohort를 비활성화
+      // 3. 활성화하려는 경우, 다른 모든 cohort를 비활성화
       if (isActive) {
-        const allCohortsSnapshot = await db.collection('cohorts').get();
         allCohortsSnapshot.docs.forEach((doc) => {
           if (doc.id !== cohortId) {
             transaction.update(doc.ref, {
@@ -55,7 +58,7 @@ export async function POST(
         logger.info(`모든 다른 cohort 비활성화 완료. 활성화: ${cohortId}`);
       }
 
-      // 3. 현재 cohort 상태 업데이트
+      // 4. 현재 cohort 상태 업데이트
       transaction.update(cohortRef, {
         isActive,
         updatedAt: Timestamp.now(),
