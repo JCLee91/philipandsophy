@@ -426,6 +426,10 @@ function MatchingPageContent() {
   // 기존 매칭 결과 로드 (오늘 날짜 기준 - Firestore에 저장된 키)
   const fetchMatchingResult = useCallback(async () => {
     if (!cohortId || hasFetchedInitialResult) return;
+
+    // 🔒 Race condition 방지: 함수 호출 즉시 플래그 설정
+    setHasFetchedInitialResult(true);
+
     try {
       const headers = await getAdminHeaders();
       if (!headers) {
@@ -440,7 +444,6 @@ function MatchingPageContent() {
 
       // ℹ️ 404는 정상 응답 - 아직 매칭을 실행하지 않았을 때
       if (response.status === 404) {
-        setHasFetchedInitialResult(true);
         return;
       }
 
@@ -448,11 +451,9 @@ function MatchingPageContent() {
         const data = await response.json();
         setConfirmedResult(data);
         setMatchingState('confirmed');
-        setHasFetchedInitialResult(true);
       }
     } catch (error) {
       logger.error('매칭 결과 로드 실패', error);
-      setHasFetchedInitialResult(true);
     }
   }, [cohortId, todayDate, hasFetchedInitialResult]);
 
