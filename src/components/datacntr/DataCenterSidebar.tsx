@@ -12,7 +12,8 @@ import {
   FolderKanban,
   Menu,
   X,
-  Table
+  Table,
+  Send
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -53,6 +54,11 @@ const navItems: NavItem[] = [
     href: '/datacntr/notices',
     label: '공지사항',
     icon: <Bell className="h-5 w-5" />,
+  },
+  {
+    href: '/datacntr/notifications',
+    label: '커스텀 알림',
+    icon: <Send className="h-5 w-5" />,
   },
   {
     href: '/datacntr/settings',

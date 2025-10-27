@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Bell, Calendar, User, BookTemplate, Save, Settings, Trash2, GripVertical } from 'lucide-react';
+import { Loader2, Bell, Calendar, User, BookTemplate, Save, Settings, Trash2, GripVertical, PenSquare, Edit } from 'lucide-react';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import type { Notice, Cohort } from '@/types/database';
@@ -41,10 +41,12 @@ function SortableNoticeItem({
   notice,
   onSaveAsTemplate,
   onDelete,
+  onEdit,
 }: {
   notice: NoticeWithCohort;
   onSaveAsTemplate: (noticeId: string) => void;
   onDelete: (noticeId: string, author: string) => void;
+  onEdit: (noticeId: string) => void;
 }) {
   const {
     attributes,
@@ -65,45 +67,50 @@ function SortableNoticeItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
+      className="bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-300 transition-colors"
     >
       {/* 헤더 */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-          <User className="h-4 w-4 text-gray-600" />
-          <span className="text-sm font-semibold text-gray-900">{notice.author}</span>
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-1.5 text-xs">
+          <User className="h-3 w-3 text-gray-500" />
+          <span className="font-medium text-gray-900">{notice.author}</span>
+          {notice.status === 'draft' && (
+            <>
+              <span className="text-gray-300">·</span>
+              <span className="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                임시저장
+              </span>
+            </>
+          )}
           {notice.templateId && (
             <>
-              <span className="text-gray-400">·</span>
-              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+              <span className="text-gray-300">·</span>
+              <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">
                 템플릿
               </span>
             </>
           )}
-          {typeof notice.order === 'number' && (
-            <>
-              <span className="text-gray-400">·</span>
-              <span className="text-xs text-gray-500">순서: {notice.order}</span>
-            </>
-          )}
+          <span className="text-gray-400">·</span>
+          <span className="text-gray-500">
+            {formatTimestampKST(notice.createdAt, 'M/d HH:mm')}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onEdit(notice.id)}
+            className="p-1.5 text-gray-600 rounded hover:text-green-600 hover:bg-green-50 transition-colors"
+            title="편집"
+          >
+            <Edit className="h-4 w-4" />
+          </button>
           <button
             type="button"
             onClick={() => onSaveAsTemplate(notice.id)}
-            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 rounded hover:text-blue-600 hover:bg-blue-50 transition-colors"
+            className="p-1.5 text-gray-600 rounded hover:text-blue-600 hover:bg-blue-50 transition-colors"
             title="템플릿으로 저장"
           >
-            <Save className="h-3 w-3" />
-            템플릿 저장
+            <Save className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -111,26 +118,23 @@ function SortableNoticeItem({
             className="p-1.5 text-gray-600 rounded hover:text-red-600 hover:bg-red-50 transition-colors"
             title="삭제"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-4 w-4" />
           </button>
-          <span className="text-xs text-gray-500">
-            {formatTimestampKST(notice.createdAt, 'M월 d일 HH:mm')}
-          </span>
         </div>
       </div>
 
       {/* 내용 */}
-      <p className="text-gray-700 whitespace-pre-wrap">{notice.content}</p>
+      <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">{notice.content}</p>
 
       {/* 이미지 */}
       {notice.imageUrl && (
-        <div className="mt-4">
+        <div className="mt-2">
           <Image
             src={notice.imageUrl}
             alt="공지 이미지"
-            width={800}
-            height={600}
-            className="max-w-md rounded-lg border border-gray-200 h-auto w-full"
+            width={200}
+            height={150}
+            className="max-w-[200px] rounded border border-gray-200 h-auto"
             unoptimized
           />
         </div>
@@ -387,23 +391,13 @@ export default function NoticesPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">공지사항 분석</h1>
-          <p className="text-gray-600 mt-2">
-            {selectedCohortFilter === 'all'
-              ? '전체 공지사항 내역'
-              : `${cohorts.find(c => c.id === selectedCohortFilter)?.name || ''} 공지사항`}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => router.push('/datacntr/notice-templates')}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-        >
-          <Settings className="h-5 w-5" />
-          템플릿 관리
-        </button>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">공지사항 분석</h1>
+        <p className="text-gray-600 mt-2">
+          {selectedCohortFilter === 'all'
+            ? '전체 공지사항 내역'
+            : `${cohorts.find(c => c.id === selectedCohortFilter)?.name || ''} 공지사항`}
+        </p>
       </div>
 
       {/* 통계 */}
@@ -438,18 +432,10 @@ export default function NoticesPage() {
       </div>
 
       {/* 기수별 공지사항 리스트 */}
-      <div className="space-y-8">
+      <div className="space-y-6">
         {cohortGroups.map((cohort) => {
-          // 공지 정렬
+          // 공지 정렬: 최신순 (createdAt 내림차순)
           const sortedNotices = cohort.notices.sort((a, b) => {
-            // order가 있으면 order 우선 정렬 (오름차순)
-            if (typeof a.order === 'number' && typeof b.order === 'number') {
-              return a.order - b.order;
-            }
-            // order가 있는 것을 우선
-            if (typeof a.order === 'number') return -1;
-            if (typeof b.order === 'number') return 1;
-            // 둘 다 order가 없으면 생성일 기준 최신순
             const aTime = a.createdAt?.seconds || 0;
             const bTime = b.createdAt?.seconds || 0;
             return bTime - aTime;
@@ -460,14 +446,32 @@ export default function NoticesPage() {
             {/* 기수 헤더 */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">{cohort.cohortName}</h2>
-              <button
-                type="button"
-                onClick={() => handleAddTemplate(cohort.cohortId)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                <BookTemplate className="h-5 w-5" />
-                템플릿 추가
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/datacntr/notices/create?cohortId=${cohort.cohortId}`)}
+                  className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                >
+                  <PenSquare className="h-4 w-4" />
+                  공지 작성
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddTemplate(cohort.cohortId)}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <BookTemplate className="h-4 w-4" />
+                  템플릿 사용
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/datacntr/notice-templates')}
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                >
+                  <Settings className="h-4 w-4" />
+                  템플릿 관리
+                </button>
+              </div>
             </div>
 
             {/* 공지 목록 */}
@@ -480,13 +484,14 @@ export default function NoticesPage() {
                 items={sortedNotices.map((n) => n.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {sortedNotices.map((notice) => (
                     <SortableNoticeItem
                       key={notice.id}
                       notice={notice}
                       onSaveAsTemplate={handleSaveAsTemplate}
                       onDelete={handleDeleteNotice}
+                      onEdit={(noticeId) => router.push(`/datacntr/notices/edit/${noticeId}`)}
                     />
                   ))}
                 </div>

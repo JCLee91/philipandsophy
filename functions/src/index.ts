@@ -5,14 +5,15 @@
  * 1. onMessageCreated - DM 메시지 전송 시
  * 2. onNoticeCreated - 공지사항 작성 시
  * 3. sendMatchingNotifications - 매칭 결과 알림 (HTTP 함수)
- * 4. scheduledMatchingPreview - 매일 오전 5시 자동 매칭 프리뷰 (Scheduled 함수)
+ * 4. scheduledMatchingPreview - 매일 정오 자동 매칭 (Scheduled 함수)
+ * 5. sendCustomNotification - 커스텀 푸시 알림 (HTTP 함수)
  *
  * Auth Triggers:
- * 5. beforeUserCreated - 회원가입 전 도메인 검증 (Data Center용)
+ * 6. beforeUserCreated - 회원가입 전 도메인 검증 (Data Center용)
  */
 
 import * as admin from "firebase-admin";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 // import { beforeUserCreated } from "firebase-functions/v2/identity"; // Temporarily disabled
@@ -656,6 +657,7 @@ export const onMessageCreated = onDocumentCreated(
  * Trigger: notices/{noticeId} 문서 생성
  *
  * ✅ Updated to use pushTokens array for multi-device support
+ * ✅ Skip push notifications for draft notices (status: 'draft')
  */
 export const onNoticeCreated = onDocumentCreated(
   {
@@ -670,7 +672,16 @@ export const onNoticeCreated = onDocumentCreated(
       return;
     }
 
-    const {cohortId, content} = noticeData;
+    const {cohortId, content, status} = noticeData;
+
+    // ✅ Skip push notifications for draft notices
+    if (status === 'draft') {
+      logger.info('Draft notice created, skipping push notifications', {
+        noticeId: event.params.noticeId,
+        cohortId,
+      });
+      return;
+    }
 
     // Validate required fields
     if (!cohortId || !content) {
@@ -749,6 +760,130 @@ export const onNoticeCreated = onDocumentCreated(
     totalSuccess = results.reduce((sum, count) => sum + (count || 0), 0);
 
     logger.info(`Notice push notifications sent (dual-path)`, {
+      noticeId: event.params.noticeId,
+      totalParticipants: participantsSnapshot.size,
+      totalFCM,
+      totalWebPush,
+      totalSuccess,
+    });
+  }
+);
+
+/**
+ * 2-1. 공지사항 업데이트 시 푸시 알림 (임시저장 → 발행)
+ *
+ * Trigger: notices/{noticeId} 문서 업데이트
+ *
+ * ✅ Draft → Published 변경 시에만 푸시 알림 전송
+ */
+export const onNoticeUpdated = onDocumentUpdated(
+  {
+    document: "notices/{noticeId}",
+    database: "(default)",
+  },
+  async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    if (!beforeData || !afterData) {
+      logger.error("No notice data found in update");
+      return;
+    }
+
+    const oldStatus = beforeData.status || 'published';
+    const newStatus = afterData.status || 'published';
+
+    // ✅ Only send notifications when draft → published
+    if (oldStatus !== 'draft' || newStatus !== 'published') {
+      logger.debug('Notice updated but status change not draft→published, skipping push', {
+        noticeId: event.params.noticeId,
+        oldStatus,
+        newStatus,
+      });
+      return;
+    }
+
+    logger.info('Draft notice published, sending push notifications', {
+      noticeId: event.params.noticeId,
+      cohortId: afterData.cohortId,
+    });
+
+    const {cohortId, content} = afterData;
+
+    // Validate required fields
+    if (!cohortId || !content) {
+      logger.error("Missing required fields in notice data", {cohortId, hasContent: !!content});
+      return;
+    }
+
+    // Get all participants in cohort (including admins)
+    const participantsSnapshot = await getCohortParticipants(cohortId);
+
+    if (participantsSnapshot.empty) {
+      logger.info(`No participants found in cohort: ${cohortId}`);
+      return;
+    }
+
+    // ✅ Get all administrators
+    const adminsSnapshot = await getAllAdministrators();
+
+    // Combine cohort participants + all admins (deduplicate by ID)
+    const recipientMap = new Map<string, admin.firestore.QueryDocumentSnapshot>();
+
+    participantsSnapshot.docs.forEach((doc) => {
+      recipientMap.set(doc.id, doc);
+    });
+
+    adminsSnapshot.docs.forEach((doc) => {
+      recipientMap.set(doc.id, doc);
+    });
+
+    const allRecipients = Array.from(recipientMap.values());
+
+    logger.info(`Notice update recipients`, {
+      cohortParticipants: participantsSnapshot.size,
+      administrators: adminsSnapshot.size,
+      totalRecipients: allRecipients.length,
+    });
+
+    // Truncate long notice for body
+    const noticeBody = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
+
+    // ✅ Send push notification to all recipients
+    let totalFCM = 0;
+    let totalWebPush = 0;
+    let totalSuccess = 0;
+
+    const pushPromises = allRecipients.map(async (doc) => {
+      const participantId = doc.id;
+
+      const { tokens, entriesMap, webPushSubscriptions } = await getPushTokens(participantId);
+
+      if (tokens.length === 0 && webPushSubscriptions.length === 0) {
+        return 0;
+      }
+
+      totalFCM += tokens.length;
+      totalWebPush += webPushSubscriptions.length;
+
+      const successCount = await sendPushNotificationMulticast(
+        participantId,
+        tokens,
+        entriesMap,
+        webPushSubscriptions,
+        NOTIFICATION_MESSAGES.NOTICE_TITLE,
+        noticeBody,
+        NOTIFICATION_ROUTES.CHAT,
+        NOTIFICATION_TYPES.NOTICE
+      );
+
+      return successCount;
+    });
+
+    const results = await Promise.all(pushPromises);
+    totalSuccess = results.reduce((sum, count) => sum + (count || 0), 0);
+
+    logger.info(`Notice update push notifications sent (dual-path)`, {
       noticeId: event.params.noticeId,
       totalParticipants: participantsSnapshot.size,
       totalFCM,
@@ -1238,3 +1373,6 @@ export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
   return;
 });
 */
+
+// Export custom notifications
+export { sendCustomNotification } from "./custom-notifications";

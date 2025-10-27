@@ -84,22 +84,37 @@ export async function getNoticeById(id: string): Promise<Notice | null> {
 }
 
 /**
- * 기수별 공지 조회
+ * 기수별 공지 조회 (발행된 공지만)
+ * createdAt 내림차순 정렬 (최신순)
+ *
+ * ✅ Draft notices (status: 'draft') are filtered out for regular users
+ * ✅ Only published notices (status: 'published' or no status field) are returned
  */
 export async function getNoticesByCohort(cohortId: string): Promise<Notice[]> {
   const db = getDb();
+
+  // Query for published notices only (status is 'published' or undefined)
+  // We query all notices for the cohort, then filter client-side since Firestore
+  // doesn't support OR queries for undefined/missing fields efficiently
   const q = query(
     collection(db, COLLECTIONS.NOTICES),
     where('cohortId', '==', cohortId),
-    orderBy('createdAt', 'asc')
+    orderBy('createdAt', 'desc')
   );
 
   const querySnapshot = await getDocs(q);
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Notice[];
+  // Filter out draft notices client-side
+  return querySnapshot.docs
+    .filter((doc) => {
+      const data = doc.data();
+      // Only include if status is undefined/null or 'published'
+      return !data.status || data.status === 'published';
+    })
+    .map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Notice[];
 }
 
 /**

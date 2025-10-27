@@ -10,7 +10,7 @@
         },
         {
           "fieldPath": "createdAt",
-          "order": "ASCENDING"
+          "order": "DESCENDING"
         }
       ]
     },
@@ -140,6 +140,20 @@
         },
         {
           "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reading_submissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cohortId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "submittedAt",
           "order": "ASCENDING"
         }
       ]

@@ -634,6 +634,18 @@ function MatchingPageContent() {
 
       // 매칭 알림 전송 (프로필북 도착 푸시)
       try {
+        // 🔒 환경변수 검증
+        if (!process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL) {
+          logger.error('CRITICAL: NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL is not set');
+          toast({
+            title: '매칭 적용 완료',
+            description: '매칭은 완료되었으나 푸시 알림 설정이 누락되었습니다. 관리자에게 문의하세요.',
+            variant: 'default',
+          });
+          // 알림 전송 건너뛰고 계속 진행
+          return;
+        }
+
         logger.info('매칭 알림 전송 시작', { cohortId, date: previewResult.date });
 
         const notificationResponse = await fetch(

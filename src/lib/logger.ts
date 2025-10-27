@@ -9,13 +9,29 @@ export const logger = {
    * 에러 로깅
    * 프로덕션에서는 console에 출력하지 않고 향후 Sentry 등으로 전송 가능
    */
-  error: (message: string, error?: unknown) => {
+  error: (message: string, errorOrData?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
-      console.error(message, error);
+      if (errorOrData instanceof Error) {
+        console.error(message, {
+          name: errorOrData.name,
+          message: errorOrData.message,
+          stack: errorOrData.stack,
+        });
+      } else if (errorOrData !== undefined) {
+        // 일반 객체나 값을 JSON으로 직렬화하여 출력
+        try {
+          console.error(message, JSON.stringify(errorOrData, null, 2));
+        } catch {
+          // 순환 참조 등으로 직렬화 실패 시 원본 출력
+          console.error(message, errorOrData);
+        }
+      } else {
+        console.error(message);
+      }
     }
     // TODO: 프로덕션에서 Sentry 등으로 전송
     // if (process.env.NODE_ENV === 'production') {
-    //   Sentry.captureException(error, { extra: { message } });
+    //   Sentry.captureException(errorOrData, { extra: { message } });
     // }
   },
 

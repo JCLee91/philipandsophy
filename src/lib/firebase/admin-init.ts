@@ -81,7 +81,7 @@ export function getFirebaseAdmin() {
 
   // Firestore 및 Storage 인스턴스 생성
   cachedDb = getFirestore();
-  cachedBucket = getStorage().bucket();
+  cachedBucket = getStorage().bucket(storageBucket);
 
   return { app: cachedApp, db: cachedDb, bucket: cachedBucket };
 }

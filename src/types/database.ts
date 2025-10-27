@@ -206,6 +206,7 @@ export interface Notice {
   imageUrl?: string; // 이미지 URL (선택)
   templateId?: string; // 템플릿 ID (템플릿에서 생성된 경우)
   isCustom: boolean; // 커스텀 공지 여부 (true: 직접 작성, false: 템플릿 복사)
+  status?: 'draft' | 'published'; // 공지 상태 (draft: 임시저장, published: 발행, 기본값: published)
   order?: number; // 정렬 순서 (템플릿에서 복사된 경우)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
