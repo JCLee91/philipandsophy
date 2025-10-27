@@ -50,24 +50,18 @@ export default function Home() {
     }
   }, []);
 
-  // ✅ participant가 ready 상태이면 적절한 화면으로 이동
+  // ✅ participant가 ready 상태이면 채팅으로 바로 이동
   useEffect(() => {
     if (!isLoading && participantStatus === 'ready' && participant) {
-      // 관리자는 코호트 선택 화면으로, 일반 사용자는 채팅으로 이동
-      if (participant.isAdministrator || participant.isSuperAdmin) {
-        logger.info('관리자 로그인 감지, 코호트 선택 화면으로 이동', {
-          participantId: participant.id,
-          isAdministrator: participant.isAdministrator,
-          isSuperAdmin: participant.isSuperAdmin,
-        });
-        router.replace('/app/cohorts');
-      } else {
-        logger.info('일반 사용자 로그인 감지, 채팅으로 이동', {
-          participantId: participant.id,
-          cohortId: participant.cohortId,
-        });
-        router.replace(appRoutes.chat(participant.cohortId));
-      }
+      logger.info('사용자 로그인 감지, 채팅으로 이동', {
+        participantId: participant.id,
+        cohortId: participant.cohortId,
+        isAdministrator: participant.isAdministrator,
+        isSuperAdmin: participant.isSuperAdmin,
+      });
+      // 관리자와 일반 사용자 모두 바로 채팅으로 이동
+      // (활성 코호트가 자동으로 설정되어 있음)
+      router.replace(appRoutes.chat(participant.cohortId));
     }
   }, [isLoading, participantStatus, participant, router]);
 
