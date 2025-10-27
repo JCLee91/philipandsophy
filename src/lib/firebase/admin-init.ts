@@ -1,6 +1,7 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
+import { getAuth, Auth } from 'firebase-admin/auth';
 import type { Bucket } from '@google-cloud/storage';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -11,6 +12,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 let cachedApp: App | null = null;
 let cachedDb: Firestore | null = null;
 let cachedBucket: Bucket | null = null;
+let cachedAuth: Auth | null = null;
 
 /**
  * Firebase Admin SDK 초기화 및 인스턴스 반환
@@ -82,6 +84,28 @@ export function getFirebaseAdmin() {
   // Firestore 및 Storage 인스턴스 생성
   cachedDb = getFirestore();
   cachedBucket = getStorage().bucket(storageBucket);
+  cachedAuth = getAuth();
 
-  return { app: cachedApp, db: cachedDb, bucket: cachedBucket };
+  return { app: cachedApp, db: cachedDb, bucket: cachedBucket, auth: cachedAuth };
+}
+
+/**
+ * Firebase Admin Auth 인스턴스 반환
+ *
+ * API 라우트에서 토큰 검증 시 사용
+ * 자동으로 Admin 앱을 초기화하므로 auth() 직접 호출 방지
+ *
+ * @returns Firebase Admin Auth 인스턴스
+ */
+export function getAdminAuth(): Auth {
+  // Admin이 초기화되지 않았으면 초기화
+  if (!cachedAuth) {
+    getFirebaseAdmin();
+  }
+
+  if (!cachedAuth) {
+    throw new Error('Firebase Admin Auth initialization failed');
+  }
+
+  return cachedAuth;
 }

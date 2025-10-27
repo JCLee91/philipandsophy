@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase/admin-init';
-import { auth } from 'firebase-admin';
+import { getFirebaseAdmin, getAdminAuth } from '@/lib/firebase/admin-init';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { logger } from '@/lib/logger';
 
 /**
@@ -16,10 +16,12 @@ export async function POST(request: NextRequest) {
     }
 
     const idToken = authHeader.split('Bearer ')[1];
-    let decodedToken: auth.DecodedIdToken;
+    let decodedToken: DecodedIdToken;
 
     try {
-      decodedToken = await auth().verifyIdToken(idToken);
+      // ✅ getAdminAuth()를 사용하여 Admin 자동 초기화
+      const adminAuth = getAdminAuth();
+      decodedToken = await adminAuth.verifyIdToken(idToken);
     } catch (error) {
       logger.error('ID 토큰 검증 실패 (notices-create-api)', error);
       return NextResponse.json({ error: '유효하지 않은 인증 토큰' }, { status: 401 });
