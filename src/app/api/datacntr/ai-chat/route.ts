@@ -23,11 +23,6 @@ function getAIModel() {
 
 export async function POST(req: NextRequest) {
   try {
-    const provider = process.env.AI_PROVIDER || 'openai';
-    const modelName = process.env.AI_MODEL || 'gpt-4o-mini';
-
-    console.log('🤖 AI Chat API 호출됨', { provider, model: modelName });
-
     // 관리자 권한 확인
     const auth = await requireWebAppAdmin(req);
     if (auth.error) {
@@ -35,7 +30,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { messages, dataContext } = await req.json();
-    console.log('📨 받은 메시지 수:', messages.length);
 
     // System prompt
     const systemPrompt = `당신은 필립앤소피 독서 클럽의 데이터 분석 AI 어시스턴트입니다.
@@ -52,8 +46,6 @@ ${dataContext || '⚠️ 데이터가 로드되지 않았습니다. 사용자에
 예시:
 ❌ "cohortId가 1인 participants를 조회한 결과 22명입니다"
 ✅ "1기는 총 22명이 참여하고 있어요"`;
-
-    console.log('💬 AI 응답 생성 중...');
 
     const model = getAIModel();
     const result = streamText({
