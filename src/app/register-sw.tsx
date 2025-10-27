@@ -86,6 +86,28 @@ export default function RegisterServiceWorker() {
      * 2. 없으면 새로 등록
      * 3. 컨트롤러 확보 대기 (controllerchange 이벤트)
      */
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      const { type, version } = event.data || {};
+      if (!type) return;
+
+      switch (type) {
+        case 'SW_INSTALLING':
+          logger.info('[RegisterSW] Service worker installing', { version });
+          break;
+        case 'SW_ACTIVATED':
+          logger.info('[RegisterSW] Service worker activated', { version });
+          try {
+            window.localStorage.setItem('pns-sw-version', version || 'unknown');
+          } catch (error) {
+            logger.warn('[RegisterSW] Failed to persist sw version', error);
+          }
+          window.dispatchEvent(new CustomEvent('pns-sw-activated', { detail: { version } }));
+          break;
+        default:
+          logger.debug('[RegisterSW] Received service worker message', { type, version });
+      }
+    };
+
     const registerUnifiedServiceWorker = async () => {
       try {
         logger.info('[RegisterSW] Starting service worker registration...');
@@ -121,6 +143,8 @@ export default function RegisterServiceWorker() {
         await waitForController(5000);
         logger.info('[RegisterSW] Service worker controller ready');
 
+        navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+
         // Step 4: 업데이트 체크 (개발 중에는 자주 업데이트됨)
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
@@ -136,6 +160,7 @@ export default function RegisterServiceWorker() {
                 // if (confirm('새 버전이 있습니다. 새로고침하시겠습니까?')) {
                 //   window.location.reload();
                 // }
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
               }
             });
           }
@@ -157,6 +182,8 @@ export default function RegisterServiceWorker() {
 
     // ✅ Cleanup function
     return () => {
+      navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+
       // setInterval 정리
       if (updateIntervalId) {
         clearInterval(updateIntervalId);

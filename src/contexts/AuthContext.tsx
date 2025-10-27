@@ -1,10 +1,19 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { initializeFirebase, getFirebaseAuth, getParticipantByFirebaseUid } from '@/lib/firebase';
+import { initializeFirebase, getFirebaseAuth } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
 import { Participant } from '@/types/database';
+import { useParticipant as useParticipantQuery } from '@/hooks/useParticipant';
+import { deleteClientCookie } from '@/lib/cookies';
+
+/**
+ * AuthContext - Firebase Authentication + Participant 통합 관리
+ *
+ * 내부적으로 TanStack Query (useParticipant)를 사용하여 Participant 조회
+ * 외부 API는 기존과 동일하게 유지 (하위 호환성)
+ */
 
 // Participant 조회 상태
 export type ParticipantStatus = 'idle' | 'loading' | 'ready' | 'missing' | 'error';
@@ -16,95 +25,18 @@ interface AuthContextType {
   isAdministrator: boolean;
   isLoading: boolean;
   logout: () => Promise<void>;
-  retryParticipantFetch: () => Promise<void>;
+  retryParticipantFetch: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+// AuthContext Provider는 Firebase Auth만 제공
+function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [participant, setParticipant] = useState<Participant | null>(null);
-  const [participantStatus, setParticipantStatus] = useState<ParticipantStatus>('idle');
-  const [isLoading, setIsLoading] = useState(true);
-  const mountedRef = useRef(true);
-  const currentUserRef = useRef<User | null>(null);
-
-  // Participant 조회 함수 (재사용 가능)
-  const fetchParticipant = useCallback(async (firebaseUser: User): Promise<void> => {
-    if (!mountedRef.current) return;
-
-    setParticipantStatus('loading');
-    let retryCount = 0;
-    const MAX_RETRIES = 5; // ✅ 2 → 5로 증가 (UID 연결 직후 약간의 지연 대응)
-    const RETRY_DELAY = 500; // ✅ 300ms → 500ms로 증가 (Firestore 전파 시간 확보)
-
-    const fetchWithRetry = async (): Promise<void> => {
-      try {
-        const participantData = await getParticipantByFirebaseUid(firebaseUser.uid);
-
-        if (!participantData) {
-          throw new Error('Participant not found for Firebase UID: ' + firebaseUser.uid);
-        }
-
-        if (mountedRef.current) {
-          setParticipant(participantData);
-          setParticipantStatus('ready');
-
-          // ✅ localStorage에 participantId 저장 (푸시 알림용)
-          try {
-            localStorage.setItem('participantId', participantData.id);
-            logger.debug('Participant ID saved to localStorage', { participantId: participantData.id });
-          } catch (error) {
-            logger.error('Failed to save participantId to localStorage:', error);
-          }
-
-          logger.info('Auth state: 로그인됨', {
-            uid: firebaseUser.uid,
-            name: participantData.name,
-            isAdministrator: participantData.isAdministrator,
-          });
-        }
-      } catch (error) {
-        logger.error(`Participant 조회 실패 (시도 ${retryCount + 1}/${MAX_RETRIES}):`, error);
-
-        if (retryCount < MAX_RETRIES - 1) {
-          retryCount++;
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          return fetchWithRetry();
-        } else {
-          // ✅ 최종 실패 시 상태만 업데이트 (로그아웃하지 않음)
-          if (mountedRef.current) {
-            setParticipant(null);
-            // participant가 아예 없는 경우 vs 네트워크 오류 구분
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            if (errorMessage.includes('not found')) {
-              setParticipantStatus('missing');
-              logger.error('Participant 조회 최종 실패: 참가자 정보 없음');
-            } else {
-              setParticipantStatus('error');
-              logger.error('Participant 조회 최종 실패: 네트워크 또는 서버 오류');
-            }
-          }
-        }
-      }
-    };
-
-    await fetchWithRetry();
-  }, []);
-
-  // 수동 재시도 함수 (외부에서 호출 가능)
-  const retryParticipantFetch = useCallback(async () => {
-    if (!currentUserRef.current) {
-      logger.warn('재시도 불가: 로그인된 사용자 없음');
-      return;
-    }
-
-    logger.info('Participant 조회 수동 재시도 시작');
-    await fetchParticipant(currentUserRef.current);
-  }, [fetchParticipant]);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    mountedRef.current = true;
+    let mounted = true;
     let unsubscribe: (() => void) | null = null;
 
     const setupAuth = async () => {
@@ -112,31 +44,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initializeFirebase();
         const auth = getFirebaseAuth();
 
-        if (!mountedRef.current) return;
+        if (!mounted) return;
 
-        unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-          if (!mountedRef.current) return;
+        unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+          if (!mounted) return;
 
           setUser(currentUser);
-          currentUserRef.current = currentUser;
+          setAuthLoading(false);
 
           if (currentUser) {
-            await fetchParticipant(currentUser);
+            logger.info('Auth state: 로그인됨', {
+              uid: currentUser.uid,
+              email: currentUser.email,
+            });
           } else {
-            setParticipant(null);
-            setParticipantStatus('idle');
             logger.info('Auth state: 로그아웃됨');
-          }
-
-          if (mountedRef.current) {
-            setIsLoading(false);
+            // ✅ localStorage에서 participantId 제거
+            try {
+              localStorage.removeItem('participantId');
+            } catch (error) {
+              logger.error('Failed to remove participantId from localStorage:', error);
+            }
+            deleteClientCookie('pns-participant');
+            deleteClientCookie('pns-cohort');
           }
         });
       } catch (error) {
         logger.error('Auth 초기화 실패:', error);
-        if (mountedRef.current) {
-          setIsLoading(false);
-          setParticipantStatus('error');
+        if (mounted) {
+          setAuthLoading(false);
         }
       }
     };
@@ -144,27 +80,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setupAuth();
 
     return () => {
-      mountedRef.current = false;
+      mounted = false;
       unsubscribe?.();
     };
-  }, [fetchParticipant]);
+  }, []);
+
+  // useParticipant는 컴포넌트 내부에서만 사용 가능
+  const {
+    data: participant,
+    isLoading: participantLoading,
+    isError: participantError,
+    refetch: retryParticipantFetch,
+  } = useParticipantQuery(user?.uid);
 
   const logout = async () => {
     try {
       const auth = getFirebaseAuth();
       await signOut(auth);
-      setParticipant(null);
-      setParticipantStatus('idle');
-      currentUserRef.current = null;
-
-      // ✅ localStorage에서 participantId 제거
-      try {
-        localStorage.removeItem('participantId');
-        logger.debug('Participant ID removed from localStorage');
-      } catch (error) {
-        logger.error('Failed to remove participantId from localStorage:', error);
-      }
-
+      deleteClientCookie('pns-participant');
+      deleteClientCookie('pns-cohort');
       logger.info('로그아웃 성공');
     } catch (error) {
       logger.error('로그아웃 실패:', error);
@@ -172,14 +106,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 데이터센터 접근 권한: 일반 관리자 또는 슈퍼 관리자
+  // 전체 로딩 상태
+  const isLoading = authLoading || (!!user && participantLoading);
+
+  // Participant 조회 상태
+  const participantStatus: ParticipantStatus = participantError
+    ? 'error'
+    : participantLoading
+    ? 'loading'
+    : participant
+    ? 'ready'
+    : user
+    ? 'missing'
+    : 'idle';
+
+  // 데이터센터 접근 권한
   const isAdministrator = participant?.isAdministrator === true || participant?.isSuperAdmin === true;
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        participant,
+        participant: participant ?? null,
         participantStatus,
         isAdministrator,
         isLoading,
@@ -190,6 +138,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+// 외부에서 사용하는 Provider
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return <FirebaseAuthProvider>{children}</FirebaseAuthProvider>;
 }
 
 export function useAuth() {

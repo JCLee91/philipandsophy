@@ -41,12 +41,21 @@ export function useNotices() {
  * staleTime을 1분으로 설정하여 새 공지를 빠르게 확인 가능
  * (글로벌 기본값 5분을 override)
  */
-export function useNoticesByCohort(cohortId: string | undefined) {
+type UseNoticesByCohortOptions = {
+  initialData?: Notice[];
+};
+
+export function useNoticesByCohort(
+  cohortId: string | undefined,
+  options?: UseNoticesByCohortOptions
+) {
   return useQuery({
     queryKey: NOTICE_KEYS.byCohort(cohortId || ''),
     queryFn: () => (cohortId ? getNoticesByCohort(cohortId) : []),
     enabled: !!cohortId,
     staleTime: CACHE_TIMES.SEMI_DYNAMIC, // 1분
+    initialData: options?.initialData ?? undefined,
+    placeholderData: options?.initialData ?? undefined,
   });
 }
 

@@ -10,6 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { phoneFormatUtils } from '@/constants/phone-format';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 type AuthStep = 'phone' | 'code';
 
 export default function DataCenterLoginPage() {

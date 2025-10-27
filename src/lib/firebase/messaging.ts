@@ -182,9 +182,7 @@ export async function buildAuthorizedJsonHeaders(): Promise<Record<string, strin
     const auth = getFirebaseAuth();
 
     // Wait for auth state if available (Firebase v10+)
-    // @ts-ignore authStateReady is available in modern SDKs
     if (typeof auth.authStateReady === 'function') {
-      // eslint-disable-next-line @typescript-eslint/await-thenable
       await auth.authStateReady();
     }
 
@@ -761,10 +759,16 @@ export async function shouldRefreshPushToken(participantId: string): Promise<boo
     }
     // pushTokens 배열에서 가장 오래된 토큰 확인
     const pushTokens: PushTokenEntry[] = Array.isArray(data.pushTokens) ? data.pushTokens : [];
+    const webPushSubscriptions: WebPushSubscriptionData[] = Array.isArray(data.webPushSubscriptions)
+      ? data.webPushSubscriptions
+      : [];
 
     if (pushTokens.length === 0) {
-      // No token saved yet, should initialize
-      return true;
+      logger.info('No stored FCM tokens; skipping automatic refresh', {
+        participantId,
+        hasWebPush: webPushSubscriptions.length > 0,
+      });
+      return false;
     }
 
     // 가장 최근 업데이트된 토큰 찾기

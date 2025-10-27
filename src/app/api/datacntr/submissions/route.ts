@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     });
 
     // 2. 독서 인증 조회 (participantId IN 쿼리로 필터링)
-    let submissions: any[] = [];
+    const submissions: any[] = [];
     if (targetParticipantIds.length > 0) {
       // Firestore IN 제약: 최대 10개씩 분할 쿼리
       const chunkSize = 10;

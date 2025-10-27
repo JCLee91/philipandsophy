@@ -8,12 +8,23 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { initializeFirebase } from '@/lib/firebase';
 import { CACHE_TIMES } from '@/constants/cache';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PushNotificationRefresher } from '@/components/PushNotificationRefresher';
+import ServiceWorkerUpdateListener from '@/components/pwa/ServiceWorkerUpdateListener';
+
+// Lazy load React Query Devtools (프로덕션 번들에서 완전 제외)
+const ReactQueryDevtools =
+  process.env.NODE_ENV === 'development'
+    ? lazy(() =>
+        import('@tanstack/react-query-devtools').then((mod) => ({
+          default: mod.ReactQueryDevtools,
+        }))
+      )
+    : () => null;
 
 function makeQueryClient() {
   return new QueryClient({
@@ -68,13 +79,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ServiceWorkerUpdateListener />
           <PushNotificationRefresher />
           {children}
           <Toaster />
-        </QueryClientProvider>
-      </AuthProvider>
+          {/* React Query Devtools - lazy load (프로덕션 번들 제외) */}
+          {process.env.NODE_ENV === 'development' && (
+            <Suspense fallback={null}>
+              <ReactQueryDevtools initialIsOpen={false} />
+            </Suspense>
+          )}
+        </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

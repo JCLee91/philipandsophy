@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Calendar, User, BookOpen, BarChart3, MessageSquare } from 'lucide-react';
@@ -16,6 +17,9 @@ import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 interface SubmissionWithParticipant extends ReadingSubmission {
   participantName: string;
   cohortName: string;
@@ -198,10 +202,13 @@ export default function SubmissionsPage() {
               {/* 인증 사진 */}
               {submission.bookImageUrl && (
                 <div className="aspect-video bg-muted relative">
-                  <img
+                  <Image
                     src={submission.bookImageUrl}
                     alt={submission.bookTitle}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 400px"
+                    className="object-cover"
+                    unoptimized
                   />
                 </div>
               )}

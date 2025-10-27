@@ -45,9 +45,29 @@ export function useSubmissionsByParticipant(participantId: string | undefined) {
  * 참가자별 제출물 실시간 구독 (프로필북용)
  * Firebase onSnapshot으로 즉시 반영
  */
-export function useParticipantSubmissionsRealtime(participantId: string | undefined) {
-  const [submissions, setSubmissions] = useState<ReadingSubmission[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+type UseParticipantSubmissionsRealtimeOptions = {
+  initialData?: ReadingSubmission[];
+};
+
+export function useParticipantSubmissionsRealtime(
+  participantId: string | undefined,
+  options?: UseParticipantSubmissionsRealtimeOptions
+) {
+  const initialData = options?.initialData ?? [];
+  const [submissions, setSubmissions] = useState<ReadingSubmission[]>(initialData);
+  const [isLoading, setIsLoading] = useState(() => {
+    if (!participantId) return false;
+    return initialData.length === 0;
+  });
+
+  useEffect(() => {
+    if (options?.initialData) {
+      setSubmissions(options.initialData);
+      if (options.initialData.length > 0) {
+        setIsLoading(false);
+      }
+    }
+  }, [options?.initialData]);
 
   useEffect(() => {
     if (!participantId) {

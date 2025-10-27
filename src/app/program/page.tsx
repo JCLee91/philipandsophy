@@ -1,8 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import '../../styles/landing.css';
 import Footer from '@/components/Footer';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 export default function ProgramPage() {
   // Program_01.webp ~ Program_18.webp 경로 생성
   const version = '5.0'; // 무손실 WebP 업데이트 (2025.10.24)
@@ -15,13 +19,14 @@ export default function ProgramPage() {
     <div className="landing-page">
       <div className="container">
         {images.map((image, idx) => (
-          <img
+          <Image
             key={idx}
             src={image.src}
             alt={image.alt}
+            width={3240}
+            height={2880}
             className="main-image"
-            loading={idx === 0 ? 'eager' : 'lazy'}
-            fetchPriority={idx === 0 ? 'high' : 'auto'}
+            priority={idx === 0}
           />
         ))}
       </div>
@@ -29,4 +34,3 @@ export default function ProgramPage() {
     </div>
   );
 }
-

@@ -9,6 +9,9 @@ import { appRoutes } from '@/lib/navigation';
 import { logger } from '@/lib/logger';
 import PageTransition from '@/components/PageTransition';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 export default function CohortsPage() {
   const router = useRouter();
   const { participant, isLoading: authLoading } = useAuth();

@@ -25,6 +25,7 @@ import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, 
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
+import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 
 interface ProfileBookContentProps {
   params: Promise<{ participantId: string }>;
@@ -169,11 +170,26 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     }
   }, [sessionLoading, currentParticipant, router]);
 
-  // 14일치 날짜 배열 생성 (2025년 10월 11일부터 14일간)
-  const startDate = new Date(2025, 9, 11); // 2025년 10월 11일 (월은 0부터 시작)
-  const fourteenDays = Array.from({ length: 14 }, (_, i) =>
-    startOfDay(new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000))
-  ); // 10월 11일부터 순차적으로
+  // 14일치 날짜 배열 생성 (코호트의 programStartDate 기준)
+  const startDate = useMemo(() => {
+    if (!cohort) {
+      logger.warn('Cohort data missing in profile view', { participantId, cohortId });
+      return null;
+    }
+    const dateString = cohort.programStartDate || cohort.startDate;
+    if (!dateString) {
+      logger.error('No start date found in cohort', { cohortId: cohort.id });
+      return null;
+    }
+    return new Date(dateString);
+  }, [cohort, participantId, cohortId]);
+
+  const fourteenDays = useMemo(() => {
+    if (!startDate) return [];
+    return Array.from({ length: 14 }, (_, i) =>
+      startOfDay(new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000))
+    );
+  }, [startDate]);
 
   // 모든 질문과 답변 수집 (중복 제거)
   // useMemo로 감싸서 참조 안정성 확보 (무한 루프 방지)
@@ -324,7 +340,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 각 날짜에 대한 제출물 찾기 (dayNumber 추가)
   const dailySubmissions = fourteenDays.map((date, index) => {
     const submission = submissions.find((sub) =>
-      isSameDay(sub.submittedAt.toDate(), date)
+      isSameDay(getTimestampDate(sub.submittedAt), date)
     );
     return {
       date,

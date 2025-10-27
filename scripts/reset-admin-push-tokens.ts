@@ -16,6 +16,8 @@
 import * as admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 // Firebase Admin SDK 초기화
 const serviceAccount = JSON.parse(
@@ -30,8 +32,23 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+const argv = yargs(hideBin(process.argv))
+  .option('dry-run', {
+    type: 'boolean',
+    default: false,
+    describe: 'Perform read-only checks without updating Firestore',
+  })
+  .help()
+  .alias('h', 'help')
+  .parseSync();
+
 async function resetAdminPushTokens() {
+  const { dryRun } = argv;
+
   console.log('\n🧹 Admin 푸시 토큰 제거 시작...\n');
+  if (dryRun) {
+    console.log('🔍 Dry-run mode enabled. No changes will be written.\n');
+  }
 
   try {
     // admin 참가자 찾기 (ID로 직접 조회)
@@ -69,7 +86,9 @@ async function resetAdminPushTokens() {
       updates.pushTokenUpdatedAt = admin.firestore.FieldValue.delete();
     }
 
-    await adminDoc.ref.update(updates);
+    if (!dryRun) {
+      await adminDoc.ref.update(updates);
+    }
 
     console.log('✅ Admin 푸시 토큰 제거 완료!');
     console.log('\n📋 제거된 내용:');

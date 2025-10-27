@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { memo } from 'react';
 import { format } from 'date-fns';
 import type { ReadingSubmission } from '@/types/database';
@@ -47,18 +48,20 @@ const HistoryWeekRow = memo(function HistoryWeekRow({
                   <span className="text-xs font-bold text-blue-700">OT</span>
                 </div>
               ) : day.hasSubmission ? (
-                <img
+                <Image
                   src={bookmarkCompleted}
                   alt="완료"
                   width={40}
                   height={40}
+                  unoptimized
                 />
               ) : (
-                <img
+                <Image
                   src={bookmarkEmpty}
                   alt="미완료"
                   width={40}
                   height={40}
+                  unoptimized
                 />
               )}
             </div>

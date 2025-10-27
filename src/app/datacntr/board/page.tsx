@@ -14,6 +14,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, BookCheck } from 'lucide-react';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 interface BoardData {
   participant: Participant;
   submissions: Map<string, ReadingSubmission>; // key: YYYY-MM-DD
@@ -95,7 +98,7 @@ export default function DataCenterBoardPage() {
         const participantIds = participants.map(p => p.id);
         const submissionsRef = collection(db, 'reading_submissions');
 
-        let submissions: ReadingSubmission[] = [];
+        const submissions: ReadingSubmission[] = [];
 
         // Firestore IN constraint: max 30 items per query (using 10 for safety)
         const chunkSize = 10;

@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Image, Sparkles } from 'lucide-react';
+import { FileText, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ReviewQualityData {
@@ -80,7 +80,7 @@ export default function ReviewQualityPanel({ data, isLoading }: ReviewQualityPan
         <div className="rounded-lg p-4 border bg-card">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <Image className="h-5 w-5 text-muted-foreground" />
+              <ImageIcon className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">가치관 답변 작성률</p>
                 <div className="flex items-baseline gap-2 mt-1">

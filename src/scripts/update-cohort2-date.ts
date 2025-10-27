@@ -8,6 +8,7 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { readFileSync } from 'fs';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -17,7 +18,9 @@ if (getApps().length === 0) {
   const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './firebase-service-account.json';
 
   try {
-    const serviceAccount = require(path.resolve(process.cwd(), serviceAccountPath));
+    const serviceAccount = JSON.parse(
+      readFileSync(path.resolve(process.cwd(), serviceAccountPath), 'utf-8')
+    );
 
     initializeApp({
       credential: cert(serviceAccount),

@@ -370,3 +370,22 @@ firebase deploy          # Firebase 배포
 **문서 상태**: ✅ 종합 문서화 완료 (7개 신규 문서 추가)
 
 Built with ❤️ using [EasyNext](https://github.com/easynext/easynext)
+
+### Dry-run 옵션
+
+데이터 정리/초기화 스크립트는 `--dry-run` 플래그를 제공해 실제로 데이터를 변경하지 않고 결과를 미리 확인할 수 있습니다.
+
+사용 예시:
+
+```bash
+# 모든 푸시 토큰 초기화를 시뮬레이션 (실제 변경 없음)
+npm run reset:push-tokens -- --dry-run
+
+# admin 푸시 토큰 정리를 시뮬레이션
+npm run reset:admin-push -- --dry-run
+
+# FCM 사용자 Web Push 정리를 시뮬레이션
+node scripts/cleanup-android-webpush.mjs --dry-run
+```
+
+실제 변경을 적용하려면 `--dry-run` 없이 실행하고, `reset:push-tokens`는 기본 확인 프롬프트를 제공하며 `--force`로 건너뛸 수 있습니다.

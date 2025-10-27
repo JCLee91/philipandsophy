@@ -9,6 +9,9 @@ import DataTable, { Column } from '@/components/datacntr/table/DataTable';
 import type { Cohort } from '@/types/database';
 import { cohortParticipantSchema, type CohortParticipant } from '@/types/datacntr';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 interface CohortDetailPageProps {
   params: Promise<{ cohortId: string }>;
 }

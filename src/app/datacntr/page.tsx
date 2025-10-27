@@ -11,6 +11,9 @@ import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
 import AIChatPanel from '@/components/datacntr/AIChatPanel';
 import { Users, BookOpen, Bell, FileText, BellRing } from 'lucide-react';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 export default function DataCenterPage() {
   const { user } = useAuth();
   const { data: cohorts = [], isLoading: cohortsLoading } = useAllCohorts();

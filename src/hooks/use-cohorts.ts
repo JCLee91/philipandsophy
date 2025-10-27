@@ -47,11 +47,17 @@ export const useActiveCohorts = () => {
 /**
  * Get cohort by ID
  */
-export const useCohort = (id?: string) => {
+type UseCohortOptions = {
+  initialData?: Cohort | null;
+};
+
+export const useCohort = (id?: string, options?: UseCohortOptions) => {
   return useQuery({
     queryKey: cohortKeys.detail(id || ''),
     queryFn: () => getCohortById(id!),
     enabled: !!id,
+    initialData: options?.initialData ?? undefined,
+    placeholderData: options?.initialData ?? undefined,
   });
 };
 

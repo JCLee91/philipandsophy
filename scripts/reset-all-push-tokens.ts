@@ -22,6 +22,8 @@ import * as admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import * as readline from 'readline';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 // Firebase Admin SDK 초기화
 const serviceAccount = JSON.parse(
@@ -61,18 +63,40 @@ async function confirmReset(): Promise<boolean> {
 /**
  * 모든 푸시 토큰 리셋
  */
+const argv = yargs(hideBin(process.argv))
+  .option('dry-run', {
+    type: 'boolean',
+    default: false,
+    describe: 'Perform a read-only run without writing changes to Firestore',
+  })
+  .option('force', {
+    type: 'boolean',
+    default: false,
+    describe: 'Skip confirmation prompt even outside dry-run mode',
+  })
+  .help()
+  .alias('h', 'help')
+  .parseSync();
+
 async function resetAllPushTokens() {
+  const { dryRun, force } = argv;
+
   console.log('🔄 Starting push token reset...\n');
 
-  // 확인 프롬프트
-  const confirmed = await confirmReset();
+  if (!force) {
+    const confirmed = await confirmReset();
 
-  if (!confirmed) {
-    console.log('\n❌ Reset cancelled by user.');
-    return;
+    if (!confirmed) {
+      console.log('\n❌ Reset cancelled by user.');
+      return;
+    }
   }
 
-  console.log('\n✅ Confirmed. Starting reset process...\n');
+  if (dryRun) {
+    console.log('\n🔍 Dry-run mode enabled. No changes will be written.\n');
+  } else {
+    console.log('\n✅ Confirmed. Starting reset process...\n');
+  }
 
   const participantsRef = db.collection('participants');
   const snapshot = await participantsRef.get();
@@ -127,9 +151,11 @@ async function resetAllPushTokens() {
 
     // 업데이트 적용
     if (needsUpdate) {
-      await doc.ref.update(updates);
+      if (!dryRun) {
+        await doc.ref.update(updates);
+      }
       totalReset++;
-      console.log(`  ✅ [${participantId}] Reset complete\n`);
+      console.log(`  ✅ [${participantId}] ${dryRun ? 'Would reset (dry-run)' : 'Reset complete'}\n`);
     } else {
       console.log(`  ⏭️  [${participantId}] No tokens to reset\n`);
     }

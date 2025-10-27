@@ -39,11 +39,17 @@ export function useParticipants() {
 /**
  * 참가자 ID로 조회
  */
-export function useParticipant(id: string | undefined) {
+type UseParticipantOptions = {
+  initialData?: Participant | null;
+};
+
+export function useParticipant(id: string | undefined, options?: UseParticipantOptions) {
   return useQuery({
     queryKey: PARTICIPANT_KEYS.detail(id || ''),
     queryFn: () => (id ? getParticipantById(id) : null),
     enabled: !!id,
+    initialData: options?.initialData ?? undefined,
+    placeholderData: options?.initialData ?? undefined,
   });
 }
 
@@ -68,7 +74,14 @@ export function useParticipantByPhone(phoneNumber: string | undefined) {
  * 💡 사용처: 일반 페이지 (참가자 리스트 등)
  * 실시간 동기화가 필요한 경우 useParticipantsByCohortRealtime 사용
  */
-export function useParticipantsByCohort(cohortId: string | undefined) {
+type UseParticipantsByCohortOptions = {
+  initialData?: Participant[];
+};
+
+export function useParticipantsByCohort(
+  cohortId: string | undefined,
+  options?: UseParticipantsByCohortOptions
+) {
   return useQuery({
     queryKey: PARTICIPANT_KEYS.byCohort(cohortId || ''),
     queryFn: () => (cohortId ? getParticipantsByCohort(cohortId) : []),
@@ -78,6 +91,8 @@ export function useParticipantsByCohort(cohortId: string | undefined) {
     refetchOnMount: false, // 마운트 시 자동 refetch 안 함
     refetchOnWindowFocus: false, // 창 포커스 시 refetch 안 함
     notifyOnChangeProps: ['data', 'error'],
+    initialData: options?.initialData ?? undefined,
+    placeholderData: options?.initialData ?? undefined,
   });
 }
 

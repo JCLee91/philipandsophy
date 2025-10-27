@@ -155,8 +155,10 @@ export default function BookSearchAutocomplete({
 
   // Bug #3, #6 Fix: Cleanup on unmount
   useEffect(() => {
+    const cache = searchCache.current;
+
     return () => {
-      searchCache.current.clear(); // Bug #3: Clear cache
+      cache.clear(); // Bug #3: Clear cache
       setDebouncedValue(''); // Bug #6: Clear pending debounce
       setSearchResults([]);
       setShowDropdown(false);

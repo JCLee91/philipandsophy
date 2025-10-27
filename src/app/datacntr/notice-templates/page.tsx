@@ -9,6 +9,9 @@ import { CATEGORY_LABELS } from '@/lib/firebase/notice-templates';
 import EditTemplateModal from '@/components/datacntr/EditTemplateModal';
 import { logger } from '@/lib/logger';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 export default function NoticeTemplatesPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();

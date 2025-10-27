@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, MessageSquare, CheckCheck, Clock } from 'lucide-react';
@@ -8,6 +9,9 @@ import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { DirectMessage } from '@/types/database';
 
+
+// ✅ Disable static generation - requires runtime data
+export const dynamic = 'force-dynamic';
 interface MessageWithParticipant extends DirectMessage {
   senderName: string;
   receiverName: string;
@@ -139,10 +143,13 @@ export default function MessagesPage() {
               <p className="text-gray-700">{message.content}</p>
               {message.imageUrl && (
                 <div className="mt-3">
-                  <img
+                  <Image
                     src={message.imageUrl}
                     alt="메시지 이미지"
-                    className="max-w-xs rounded-lg border border-gray-200"
+                    width={400}
+                    height={400}
+                    className="max-w-xs rounded-lg border border-gray-200 h-auto w-full"
+                    unoptimized
                   />
                 </div>
               )}

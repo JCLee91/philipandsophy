@@ -67,7 +67,8 @@
     "update:cohort-active": "tsx src/scripts/update-cohort-active-status.ts",
     "stats": "tsx scripts/show-database-statistics.ts",
     "stats:cohort1": "tsx scripts/generate-cohort1-statistics.ts",
-    "stats:special": "tsx scripts/generate-special-rankings.ts"
+    "stats:special": "tsx scripts/generate-special-rankings.ts",
+    "test:firestore-smoke": "tsx scripts/stage2-firestore-smoke.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.53",
@@ -108,7 +109,9 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@firebase/rules-unit-testing": "^5.0.0",
     "@tailwindcss/typography": "^0.5.10",
+    "@tanstack/react-query-devtools": "^5.90.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -119,6 +122,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.20.6",
     "typescript": "^5",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "yargs": "^18.0.0"
   }
 }
