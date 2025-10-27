@@ -37,7 +37,7 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v4'; // Increment version to force update
+const CACHE_NAME = 'philipandsophy-v5'; // Increment version to force update
 const urlsToCache = [
   '/',
   '/app',
@@ -112,7 +112,19 @@ self.addEventListener('fetch', (event) => {
 
   // Never cache API requests (always fetch fresh data)
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch((error) => {
+        console.error('[Unified SW] API fetch failed:', error);
+        return new Response(
+          JSON.stringify({ error: 'Network request failed' }),
+          {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      })
+    );
     return;
   }
 
@@ -124,13 +136,32 @@ self.addEventListener('fetch', (event) => {
         if (event.request.method === 'GET' && response.ok) {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME)
-            .then((cache) => cache.put(event.request, responseToCache));
+            .then((cache) => cache.put(event.request, responseToCache))
+            .catch((error) => {
+              console.warn('[Unified SW] Failed to cache response:', error);
+            });
         }
         return response;
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('[Unified SW] Fetch failed:', error);
         // Network failed, try cache
-        return caches.match(event.request);
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            console.log('[Unified SW] Serving from cache:', event.request.url);
+            return cachedResponse;
+          }
+          // No cache available, return error response
+          console.error('[Unified SW] No cache available for:', event.request.url);
+          return new Response(
+            'Network error and no cached version available',
+            {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'text/plain' }
+            }
+          );
+        });
       })
   );
 });
