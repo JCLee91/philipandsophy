@@ -107,7 +107,9 @@ function TodayLibraryContent() {
 
       if (showAllProfiles) {
         // Step 2-3: 마지막 날 - 전체 참가자 로드 (본인 + 슈퍼관리자 제외)
-        const allSnapshot = await getDocs(participantsRef);
+        // ✅ cohortId 필터 추가
+        const q = query(participantsRef, where('cohortId', '==', cohortId));
+        const allSnapshot = await getDocs(q);
         participants = allSnapshot.docs
           .map((doc) => ({
             id: doc.id,
