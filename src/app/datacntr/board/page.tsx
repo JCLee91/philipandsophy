@@ -261,14 +261,17 @@ export default function DataCenterBoardPage() {
                             </Badge>
                           </div>
                         </TableCell>
-                        {dates.map((date) => {
+                        {dates.map((date, index) => {
                           const submission = row.submissions.get(date);
                           const today = format(new Date(), 'yyyy-MM-dd');
                           const isFuture = date > today;
+                          const isFirstDay = index === 0; // 첫 날은 OT
 
                           return (
                             <TableCell key={date} className="text-center px-2">
-                              {isFuture ? (
+                              {isFirstDay ? (
+                                <span className="inline-block text-blue-600 font-bold text-xs">OT</span>
+                              ) : isFuture ? (
                                 <span className="inline-block text-gray-300 font-bold text-sm">-</span>
                               ) : submission ? (
                                 <span
