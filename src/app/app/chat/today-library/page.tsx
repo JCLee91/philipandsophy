@@ -421,15 +421,16 @@ function TodayLibraryContent() {
                 {/* Empty State Message */}
                 <div className="space-y-3">
                   <h3 className="font-bold text-lg text-gray-900">
-                    AI가 답변을 분석해서
-                    <br />
-                    프로필 북을 섞고 있어요
+                    첫 인증을 완료했어요! 🎉
                   </h3>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      멤버들이 제출한 답변들은
+                      프로필 북은 <strong className="text-gray-900">인증 다음날 오후 4시</strong>부터
                       <br />
-                      인증 다음날 오후 4시에 열어볼 수 있어요
+                      열어볼 수 있어요
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      지금은 AI가 모든 멤버의 답변을 분석하고 있어요
                     </p>
                   </div>
                 </div>
