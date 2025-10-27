@@ -1,11 +1,32 @@
 import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
 import { streamText } from 'ai';
 import { NextRequest } from 'next/server';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 
+// 환경 변수로 모델 선택
+function getAIModel() {
+  const provider = process.env.AI_PROVIDER || 'openai'; // 기본값: openai
+  const modelName = process.env.AI_MODEL || 'gpt-4o-mini'; // 기본값: gpt-4o-mini
+
+  switch (provider) {
+    case 'anthropic':
+      return anthropic(modelName);
+    case 'google':
+      return google(modelName);
+    case 'openai':
+    default:
+      return openai(modelName);
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    console.log('🤖 AI Chat API 호출됨');
+    const provider = process.env.AI_PROVIDER || 'openai';
+    const modelName = process.env.AI_MODEL || 'gpt-4o-mini';
+
+    console.log('🤖 AI Chat API 호출됨', { provider, model: modelName });
 
     // 관리자 권한 확인
     const auth = await requireWebAppAdmin(req);
@@ -34,8 +55,9 @@ ${dataContext || '⚠️ 데이터가 로드되지 않았습니다. 사용자에
 
     console.log('💬 AI 응답 생성 중...');
 
+    const model = getAIModel();
     const result = streamText({
-      model: openai('gpt-5-mini'),
+      model,
       system: systemPrompt,
       messages,
     });

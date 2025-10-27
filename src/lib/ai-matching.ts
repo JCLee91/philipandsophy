@@ -1,17 +1,26 @@
-import OpenAI from 'openai';
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
 import { logger } from './logger';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import type { DailyMatchingReasons, DailyParticipantAssignment } from '@/types/database';
+import { z } from 'zod';
 
-// OpenAI 클라이언트는 함수 내부에서 생성 (환경 변수 로드 후)
-function getOpenAIClient() {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY 환경 변수가 설정되지 않았습니다.');
+// 환경 변수로 모델 선택
+function getAIModel() {
+  const provider = process.env.AI_PROVIDER || 'openai'; // 기본값: openai
+  const modelName = process.env.AI_MODEL || 'gpt-4o-mini'; // 기본값: gpt-4o-mini
+
+  switch (provider) {
+    case 'anthropic':
+      return anthropic(modelName);
+    case 'google':
+      return google(modelName);
+    case 'openai':
+    default:
+      return openai(modelName);
   }
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    timeout: 600000, // 600초 (10분) 타임아웃
-  });
 }
 
 export interface ParticipantAnswer {
@@ -25,70 +34,61 @@ export interface MatchingResult {
   assignments: Record<string, DailyParticipantAssignment>;
 }
 
-interface RawMatchingReasons {
-  similar?: unknown;
-  opposite?: unknown;
-  summary?: unknown;
-}
+// Zod 스키마 정의 (Vercel AI SDK용)
+const matchingReasonsSchema = z.object({
+  similar: z.string(),
+  opposite: z.string(),
+  summary: z.string().optional(),
+});
 
-interface RawParticipantAssignment {
-  similar?: unknown;
-  opposite?: unknown;
-  reasons?: RawMatchingReasons;
-}
+const participantAssignmentSchema = z.object({
+  similar: z.array(z.string()),
+  opposite: z.array(z.string()),
+  reasons: matchingReasonsSchema,
+});
 
-interface RawMatchingResponse {
-  assignments?: Record<string, RawParticipantAssignment>;
-}
+const matchingResponseSchema = z.object({
+  assignments: z.record(participantAssignmentSchema),
+});
+
+// 타입 추론
+type RawMatchingReasons = z.infer<typeof matchingReasonsSchema>;
+type RawParticipantAssignment = z.infer<typeof participantAssignmentSchema>;
+type RawMatchingResponse = z.infer<typeof matchingResponseSchema>;
 
 const DEFAULT_REASON_PLACEHOLDER = '사유가 제공되지 않았습니다.';
 
 /**
- * 매칭 이유 정규화 함수 (통합 버전)
- * - null/undefined 처리
- * - 문자열 trim 및 검증
- * - placeholder 자동 주입
+ * 매칭 이유 정규화 함수 (Vercel AI SDK 버전)
+ * Zod 스키마로 이미 타입이 검증되어 있으므로 간단한 fallback만 처리
  */
-function normalizeReasons(reasons?: unknown): DailyMatchingReasons {
-  // null/undefined는 placeholder 반환
-  if (!reasons || typeof reasons !== 'object') {
-    logger.warn('AI matching reasons missing or invalid, using placeholder', { reasons });
-    return {
-      similar: DEFAULT_REASON_PLACEHOLDER,
-      opposite: DEFAULT_REASON_PLACEHOLDER,
-    };
-  }
-
-  const r = reasons as Record<string, unknown>;
+function normalizeReasons(reasons: RawMatchingReasons): DailyMatchingReasons {
   const result: DailyMatchingReasons = {
-    similar: typeof r.similar === 'string' && r.similar.trim()
-      ? r.similar.trim()
-      : DEFAULT_REASON_PLACEHOLDER,
-    opposite: typeof r.opposite === 'string' && r.opposite.trim()
-      ? r.opposite.trim()
-      : DEFAULT_REASON_PLACEHOLDER,
+    similar: reasons.similar?.trim() || DEFAULT_REASON_PLACEHOLDER,
+    opposite: reasons.opposite?.trim() || DEFAULT_REASON_PLACEHOLDER,
   };
 
   // summary는 선택적
-  if (typeof r.summary === 'string' && r.summary.trim()) {
-    result.summary = r.summary.trim();
+  if (reasons.summary?.trim()) {
+    result.summary = reasons.summary.trim();
   }
 
   return result;
 }
 
+/**
+ * ID 목록 정규화 함수 (Vercel AI SDK 버전)
+ * Zod 스키마로 이미 string[]이 보장되므로 검증 로직 단순화
+ */
 function normalizeIds(
-  ids: unknown,
+  ids: string[],
   validIds: Set<string>,
   excludeId?: string
 ): string[] {
-  if (!Array.isArray(ids)) return [];
-
   const unique = new Set<string>();
   const result: string[] = [];
 
-  ids.forEach((value) => {
-    const id = String(value);
+  ids.forEach((id) => {
     if (!validIds.has(id)) return;
     if (excludeId && id === excludeId) return;
     if (unique.has(id)) return;
@@ -151,8 +151,6 @@ async function _matchParticipantsByAI(
   if (participants.length < 4) {
     throw new Error('최소 4명의 참가자가 필요합니다.');
   }
-
-  const openai = getOpenAIClient();
 
   try {
     const participantPromptList = participants
@@ -252,38 +250,31 @@ ${participantPromptList}
 JSON만 반환하세요.
 `;
 
-    logger.info('🤖 OpenAI API 호출 시작', {
-      model: 'gpt-5-mini',
+    const model = getAIModel();
+    const provider = process.env.AI_PROVIDER || 'openai';
+    const modelName = process.env.AI_MODEL || 'gpt-4o-mini';
+
+    logger.info('🤖 AI API 호출 시작 (Vercel AI SDK)', {
+      provider,
+      model: modelName,
       participantCount: participants.length,
       promptLength: prompt.length,
     });
 
     const apiStartTime = Date.now();
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-5-mini',
-      messages: [
-        {
-          role: 'system',
-          content:
-            '당신은 독서 모임 매칭 전문가입니다. 모든 참가자에게 개별적으로 분석한 고유한 추천을 제공하세요. 규칙을 정확히 따르고 JSON만 반환하세요.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      response_format: { type: 'json_object' },
+    const { object: raw } = await generateObject({
+      model,
+      schema: matchingResponseSchema,
+      system: '당신은 독서 모임 매칭 전문가입니다. 모든 참가자에게 개별적으로 분석한 고유한 추천을 제공하세요. 규칙을 정확히 따르고 JSON만 반환하세요.',
+      prompt,
     });
     const apiDuration = Date.now() - apiStartTime;
 
-    logger.info('✅ OpenAI API 응답 완료', {
+    logger.info('✅ AI API 응답 완료', {
+      provider,
+      model: modelName,
       duration: `${(apiDuration / 1000).toFixed(1)}초`,
-      tokensUsed: completion.usage?.total_tokens,
     });
-
-    const responseText = completion.choices[0].message.content;
-    if (!responseText) {
-      throw new Error('AI 응답이 비어있습니다.');
-    }
-
-    const raw = JSON.parse(responseText) as RawMatchingResponse;
     const validIds = new Set(participants.map((p) => p.id));
 
     if (!raw.assignments) {
