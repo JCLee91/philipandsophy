@@ -7,6 +7,7 @@ import SplashScreen from '@/features/auth/components/SplashScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 import { appRoutes } from '@/lib/navigation';
+import { useAllCohorts } from '@/hooks/use-cohorts';
 
 // ✅ Disable static generation - requires runtime authentication state
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,7 @@ export const dynamic = 'force-dynamic';
 export default function Home() {
   const router = useRouter();
   const { participant, participantStatus, isLoading } = useAuth();
+  const { data: cohorts = [], isLoading: cohortsLoading } = useAllCohorts();
   const [showSplash, setShowSplash] = useState(true);
 
   // ✅ 인앱 브라우저 감지 및 외부 브라우저로 리다이렉트
@@ -52,21 +54,42 @@ export default function Home() {
 
   // ✅ participant가 ready 상태이면 채팅으로 바로 이동
   useEffect(() => {
-    if (!isLoading && participantStatus === 'ready' && participant) {
-      logger.info('사용자 로그인 감지, 채팅으로 이동', {
-        participantId: participant.id,
-        cohortId: participant.cohortId,
-        isAdministrator: participant.isAdministrator,
-        isSuperAdmin: participant.isSuperAdmin,
-      });
-      // 관리자와 일반 사용자 모두 바로 채팅으로 이동
-      // (활성 코호트가 자동으로 설정되어 있음)
-      router.replace(appRoutes.chat(participant.cohortId));
+    if (!isLoading && !cohortsLoading && participantStatus === 'ready' && participant) {
+      let targetCohortId: string;
+
+      // 관리자는 활성 코호트로, 일반 사용자는 자신의 코호트로 이동
+      if (participant.isAdministrator || participant.isSuperAdmin) {
+        const activeCohort = cohorts.find(cohort => cohort.isActive);
+
+        if (activeCohort) {
+          targetCohortId = activeCohort.id;
+          logger.info('관리자 로그인 감지, 활성 코호트로 이동', {
+            participantId: participant.id,
+            activeCohortId: activeCohort.id,
+            activeCohortName: activeCohort.name,
+          });
+        } else {
+          // 활성 코호트가 없으면 첫 번째 코호트로
+          targetCohortId = cohorts[0]?.id || participant.cohortId;
+          logger.warn('활성 코호트 없음, 첫 번째 코호트로 이동', {
+            participantId: participant.id,
+            targetCohortId,
+          });
+        }
+      } else {
+        targetCohortId = participant.cohortId;
+        logger.info('일반 사용자 로그인 감지, 자신의 코호트로 이동', {
+          participantId: participant.id,
+          cohortId: participant.cohortId,
+        });
+      }
+
+      router.replace(appRoutes.chat(targetCohortId));
     }
-  }, [isLoading, participantStatus, participant, router]);
+  }, [isLoading, cohortsLoading, participantStatus, participant, cohorts, router]);
 
   // ✅ 스플래시 화면 표시 (로딩 중이거나 초기 진입 시)
-  if (showSplash || isLoading) {
+  if (showSplash || isLoading || cohortsLoading) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
