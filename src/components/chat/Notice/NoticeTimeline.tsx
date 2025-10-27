@@ -2,6 +2,7 @@ import { RefObject, useMemo } from 'react';
 import NoticeItem from '@/components/NoticeItem';
 import { Notice } from '@/types/database';
 import { formatDate, formatTime } from '@/lib/utils';
+import { getTimestampMillis } from '@/lib/firebase/timestamp-utils';
 
 interface NoticeTimelineProps {
   notices: Notice[];
@@ -31,7 +32,7 @@ export function NoticeTimeline({
       const dateKey = formatDate(notice.createdAt);
       if (!acc[dateKey]) {
         acc[dateKey] = {
-          timestamp: notice.createdAt.toDate().getTime(),
+          timestamp: getTimestampMillis(notice.createdAt),
           label: dateKey,
           notices: [],
         };

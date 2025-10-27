@@ -6,6 +6,7 @@ import { DirectMessage, Participant } from '@/types/database';
 import { formatMessageTime } from '@/lib/message-grouping';
 import { APP_CONSTANTS } from '@/constants/app';
 import { getFirstName } from '@/lib/utils';
+import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 
 interface MessageGroupProps {
   senderId: string;
@@ -55,7 +56,7 @@ export default function MessageGroup({
 
   // 마지막 메시지의 시간
   const lastMessage = messages[messages.length - 1];
-  const timestamp = formatMessageTime(lastMessage.createdAt.toDate());
+  const timestamp = formatMessageTime(getTimestampDate(lastMessage.createdAt));
 
   return (
     <div className={`flex gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>

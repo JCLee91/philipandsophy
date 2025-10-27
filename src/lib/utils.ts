@@ -4,6 +4,7 @@ import { RefObject } from "react";
 import { format, isToday, isYesterday } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { Timestamp } from 'firebase/firestore';
+import { getTimestampDate, type SerializedTimestamp } from '@/lib/firebase/timestamp-utils';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,9 +45,10 @@ export const scrollToBottom = (
 /**
  * Firebase Timestamp를 날짜 문자열로 포맷
  * 오늘이면 '오늘', 어제면 '어제', 그 외에는 'M월 d일' 형식
+ * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
-export const formatDate = (timestamp: Timestamp): string => {
-  const date = timestamp.toDate();
+export const formatDate = (timestamp: Timestamp | SerializedTimestamp): string => {
+  const date = getTimestampDate(timestamp);
   if (isToday(date)) return '오늘';
   if (isYesterday(date)) return '어제';
   return format(date, 'M월 d일', { locale: ko });
@@ -55,18 +57,20 @@ export const formatDate = (timestamp: Timestamp): string => {
 /**
  * Firebase Timestamp를 시간 문자열로 포맷
  * '오전/오후 h:mm' 형식
+ * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
-export const formatTime = (timestamp: Timestamp): string => {
-  const date = timestamp.toDate();
+export const formatTime = (timestamp: Timestamp | SerializedTimestamp): string => {
+  const date = getTimestampDate(timestamp);
   return format(date, 'a h:mm', { locale: ko });
 };
 
 /**
  * Firebase Timestamp를 간단한 날짜 포맷으로 변환
  * 'M/d' 형식
+ * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
-export const formatShortDate = (timestamp: Timestamp): string => {
-  const date = timestamp.toDate();
+export const formatShortDate = (timestamp: Timestamp | SerializedTimestamp): string => {
+  const date = getTimestampDate(timestamp);
   return format(date, 'M/d', { locale: ko });
 };
 
