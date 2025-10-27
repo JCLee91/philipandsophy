@@ -33,15 +33,40 @@ export async function POST(
     const db = getAdminDb();
     const cohortRef = db.collection('cohorts').doc(cohortId);
 
-    await cohortRef.update({
-      isActive,
-      updatedAt: Timestamp.now(),
+    // 트랜잭션으로 하나만 활성화 보장
+    await db.runTransaction(async (transaction) => {
+      // 1. 현재 cohort 상태 확인
+      const cohortDoc = await transaction.get(cohortRef);
+      if (!cohortDoc.exists) {
+        throw new Error('Cohort를 찾을 수 없습니다');
+      }
+
+      // 2. 활성화하려는 경우, 다른 모든 cohort를 비활성화
+      if (isActive) {
+        const allCohortsSnapshot = await db.collection('cohorts').get();
+        allCohortsSnapshot.docs.forEach((doc) => {
+          if (doc.id !== cohortId) {
+            transaction.update(doc.ref, {
+              isActive: false,
+              updatedAt: Timestamp.now(),
+            });
+          }
+        });
+        logger.info(`모든 다른 cohort 비활성화 완료. 활성화: ${cohortId}`);
+      }
+
+      // 3. 현재 cohort 상태 업데이트
+      transaction.update(cohortRef, {
+        isActive,
+        updatedAt: Timestamp.now(),
+      });
     });
 
     return NextResponse.json({
       success: true,
       cohortId,
       isActive,
+      message: isActive ? '해당 기수가 활성화되었습니다. 다른 기수는 자동으로 비활성화되었습니다.' : '해당 기수가 비활성화되었습니다.',
     });
   } catch (error) {
     logger.error('기수 활성화 상태 변경 실패', error);
