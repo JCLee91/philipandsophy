@@ -68,8 +68,17 @@ export default function CustomNotificationsPage() {
   // Fetch cohorts on mount
   useEffect(() => {
     const fetchCohorts = async () => {
+      if (!user) {
+        return;
+      }
+
       try {
-        const response = await fetch('/api/datacntr/cohorts/list');
+        const idToken = await user.getIdToken();
+        const response = await fetch('/api/datacntr/cohorts/list', {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error('Failed to fetch cohorts');
@@ -102,12 +111,12 @@ export default function CustomNotificationsPage() {
     };
 
     fetchCohorts();
-  }, [toast]);
+  }, [user, toast]);
 
   // Fetch participants when cohort or target type changes
   useEffect(() => {
     const fetchParticipants = async () => {
-      if (!formData.cohortId) {
+      if (!user || !formData.cohortId) {
         setParticipants([]);
         setSelectedParticipantIds([]);
         return;
@@ -122,12 +131,17 @@ export default function CustomNotificationsPage() {
 
       setLoadingParticipants(true);
       try {
+        const idToken = await user.getIdToken();
         const endpoint =
           formData.targetType === 'unverified'
             ? `/api/datacntr/participants/unverified?cohortId=${formData.cohortId}`
             : `/api/datacntr/participants/list?cohortId=${formData.cohortId}`;
 
-        const response = await fetch(endpoint);
+        const response = await fetch(endpoint, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error('Failed to fetch participants');
@@ -154,7 +168,7 @@ export default function CustomNotificationsPage() {
     };
 
     fetchParticipants();
-  }, [formData.cohortId, formData.targetType, toast]);
+  }, [user, formData.cohortId, formData.targetType, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,12 +355,12 @@ export default function CustomNotificationsPage() {
                     <SelectValue placeholder="코호트를 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cohorts.length === 0 && (
-                      <SelectItem value="" disabled>
+                    {cohorts.length === 0 ? (
+                      <div className="px-2 py-1.5 text-sm text-gray-500">
                         코호트가 없습니다
-                      </SelectItem>
-                    )}
-                    {cohorts.map((cohort) => (
+                      </div>
+                    ) : (
+                      cohorts.map((cohort) => (
                       <SelectItem key={cohort.id} value={cohort.id}>
                         <div className="flex items-center gap-2">
                           <span>{cohort.name}</span>
@@ -357,7 +371,8 @@ export default function CustomNotificationsPage() {
                           )}
                         </div>
                       </SelectItem>
-                    ))}
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
