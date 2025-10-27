@@ -217,12 +217,9 @@ export async function POST(request: NextRequest) {
  * 특정 날짜의 매칭 결과 조회
  */
 export async function GET(request: NextRequest) {
-  console.log('📡 [GET /api/admin/matching] 요청 시작');
-
   // 관리자 권한 검증
   const { error: authError } = await requireWebAppAdmin(request);
   if (authError) {
-    console.error('❌ [GET /api/admin/matching] 권한 검증 실패');
     return authError;
   }
 
@@ -231,10 +228,7 @@ export async function GET(request: NextRequest) {
     const cohortId = searchParams.get('cohortId');
     const date = searchParams.get('date') || getTodayString();
 
-    console.log('📊 [GET /api/admin/matching] 파라미터:', { cohortId, date });
-
     if (!cohortId) {
-      console.error('❌ [GET /api/admin/matching] cohortId 없음');
       return NextResponse.json(
         { error: 'cohortId가 필요합니다.' },
         { status: 400 }
@@ -245,11 +239,9 @@ export async function GET(request: NextRequest) {
     const db = getAdminDb();
 
     // Cohort 문서에서 매칭 결과 가져오기
-    console.log(`🔍 [GET /api/admin/matching] Cohort 조회 중: ${cohortId}`);
     const cohortDoc = await db.collection('cohorts').doc(cohortId).get();
 
     if (!cohortDoc.exists) {
-      console.error(`❌ [GET /api/admin/matching] Cohort ${cohortId} 없음`);
       return NextResponse.json(
         { error: 'Cohort를 찾을 수 없습니다.' },
         { status: 404 }
@@ -257,13 +249,9 @@ export async function GET(request: NextRequest) {
     }
 
     const dailyFeaturedParticipants = cohortDoc.data()?.dailyFeaturedParticipants || {};
-    console.log('📅 [GET /api/admin/matching] 저장된 매칭 날짜 목록:', Object.keys(dailyFeaturedParticipants));
-
     const matchingEntry = dailyFeaturedParticipants[date];
 
     if (!matchingEntry) {
-      console.warn(`⚠️ [GET /api/admin/matching] ${date} 날짜의 매칭 결과 없음`);
-      console.log('💡 사용 가능한 날짜:', Object.keys(dailyFeaturedParticipants).join(', ') || '없음');
       return NextResponse.json(
         {
           error: '해당 날짜의 매칭 결과가 없습니다.',
@@ -273,8 +261,6 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
-
-    console.log('✅ [GET /api/admin/matching] 매칭 결과 반환 성공');
 
     // v3.0+ 형식: assignments 필드가 존재
     const normalizedMatching = {

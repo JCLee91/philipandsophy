@@ -66,8 +66,8 @@ export async function GET(request: NextRequest) {
       endDate = new Date(cohortEndDate);
       endDate.setHours(23, 59, 59, 999);
 
-      // 총 일수 계산
-      totalDays = differenceInDays(endDate, startDate) + 1; // +1: 시작일 포함
+      // 총 일수 계산 (첫 날 OT 제외)
+      totalDays = differenceInDays(endDate, startDate); // OT 제외: 시작일 미포함
     } else {
       // cohortId가 없으면 기존 방식 (최근 N일)
       const days = parseInt(searchParams.get('days') || '7', 10);

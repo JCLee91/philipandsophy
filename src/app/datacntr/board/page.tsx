@@ -172,9 +172,9 @@ export default function DataCenterBoardPage() {
     );
   }
 
-  // Calculate statistics
+  // Calculate statistics (첫 날 OT 제외)
   const totalParticipants = boardData.length;
-  const totalDays = dates.length;
+  const totalDays = dates.length - 1; // 첫 날(OT) 제외
   const totalSubmissions = boardData.reduce((sum, row) => sum + row.submissions.size, 0);
 
   return (
@@ -250,7 +250,7 @@ export default function DataCenterBoardPage() {
                 </TableHeader>
                 <TableBody>
                   {boardData.map((row) => {
-                    const completionRate = (row.submissions.size / dates.length) * 100;
+                    const completionRate = (row.submissions.size / (dates.length - 1)) * 100; // OT 제외
                     return (
                       <TableRow key={row.participant.id}>
                         <TableCell className="sticky left-0 z-10 bg-background font-medium">
@@ -261,11 +261,19 @@ export default function DataCenterBoardPage() {
                             </Badge>
                           </div>
                         </TableCell>
-                        {dates.map((date) => {
+                        {dates.map((date, index) => {
                           const submission = row.submissions.get(date);
+                          const today = format(new Date(), 'yyyy-MM-dd');
+                          const isFuture = date > today;
+                          const isFirstDay = index === 0; // 첫 날은 OT
+
                           return (
                             <TableCell key={date} className="text-center px-2">
-                              {submission ? (
+                              {isFirstDay ? (
+                                <span className="inline-block text-blue-600 font-bold text-xs">OT</span>
+                              ) : isFuture ? (
+                                <span className="inline-block text-gray-300 font-bold text-sm">-</span>
+                              ) : submission ? (
                                 <span
                                   className="inline-block text-green-600 font-bold text-xl cursor-help"
                                   title={submission.bookTitle}

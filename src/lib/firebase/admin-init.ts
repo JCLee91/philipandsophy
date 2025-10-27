@@ -61,10 +61,8 @@ export function getFirebaseAdmin() {
 
   // Storage Bucket 이름 확인
   const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-  console.log('🪣 [Firebase Admin Init] Storage Bucket:', storageBucket);
 
   if (!storageBucket) {
-    console.error('❌ [Firebase Admin Init] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET 환경 변수 없음');
     throw new Error(
       'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.\n' +
       '.env.local 파일에 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com 추가하세요.'
@@ -73,25 +71,17 @@ export function getFirebaseAdmin() {
 
   // Firebase Admin 앱 초기화 (이미 초기화된 경우 재사용)
   if (!getApps().length) {
-    console.log('🚀 [Firebase Admin Init] 새로운 앱 초기화 중...');
     cachedApp = initializeApp({
       credential: cert(credentialSource),
       storageBucket,
     });
-    console.log('✅ [Firebase Admin Init] 앱 초기화 완료');
   } else {
-    console.log('♻️  [Firebase Admin Init] 기존 앱 재사용');
     cachedApp = getApps()[0];
   }
 
   // Firestore 및 Storage 인스턴스 생성
-  console.log('📦 [Firebase Admin Init] Firestore 인스턴스 생성 중...');
   cachedDb = getFirestore();
-  console.log('✅ [Firebase Admin Init] Firestore 인스턴스 생성 완료');
-
-  console.log('🪣 [Firebase Admin Init] Storage Bucket 인스턴스 생성 중...');
   cachedBucket = getStorage().bucket();
-  console.log('✅ [Firebase Admin Init] Storage Bucket 인스턴스 생성 완료');
 
   return { app: cachedApp, db: cachedDb, bucket: cachedBucket };
 }

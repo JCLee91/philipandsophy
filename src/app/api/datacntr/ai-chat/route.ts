@@ -1,12 +1,28 @@
 import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
 import { streamText } from 'ai';
 import { NextRequest } from 'next/server';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 
+// 환경 변수로 모델 선택
+function getAIModel() {
+  const provider = process.env.AI_PROVIDER || 'openai'; // 기본값: openai
+  const modelName = process.env.AI_MODEL || 'gpt-4o-mini'; // 기본값: gpt-4o-mini
+
+  switch (provider) {
+    case 'anthropic':
+      return anthropic(modelName);
+    case 'google':
+      return google(modelName);
+    case 'openai':
+    default:
+      return openai(modelName);
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    console.log('🤖 AI Chat API 호출됨');
-
     // 관리자 권한 확인
     const auth = await requireWebAppAdmin(req);
     if (auth.error) {
@@ -14,7 +30,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { messages, dataContext } = await req.json();
-    console.log('📨 받은 메시지 수:', messages.length);
 
     // System prompt
     const systemPrompt = `당신은 필립앤소피 독서 클럽의 데이터 분석 AI 어시스턴트입니다.
@@ -32,10 +47,9 @@ ${dataContext || '⚠️ 데이터가 로드되지 않았습니다. 사용자에
 ❌ "cohortId가 1인 participants를 조회한 결과 22명입니다"
 ✅ "1기는 총 22명이 참여하고 있어요"`;
 
-    console.log('💬 AI 응답 생성 중...');
-
+    const model = getAIModel();
     const result = streamText({
-      model: openai('gpt-5-mini'),
+      model,
       system: systemPrompt,
       messages,
     });
