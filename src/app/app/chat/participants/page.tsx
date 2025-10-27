@@ -17,6 +17,7 @@ import {
 import UnifiedButton from '@/components/UnifiedButton';
 import { Check, MessageSquare, User, BookOpen, LogOut, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useViewMode } from '@/contexts/ViewModeContext';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
@@ -146,7 +147,10 @@ function ParticipantsPageContent() {
 
   const { participant, isLoading: sessionLoading, logout } = useAuth();
   const currentUserId = participant?.id || '';
-  const isAdmin = participant?.isSuperAdmin === true || participant?.isAdministrator === true;
+
+  // ViewMode 사용: 설정에서 모드를 전환하면 즉시 반영
+  const { viewMode } = useViewMode();
+  const isAdmin = viewMode === 'admin';
 
   const { data: participants = [], isLoading: participantsLoading } = useParticipantsByCohort(cohortId || undefined);
   const { data: verifiedIds } = useVerifiedToday();

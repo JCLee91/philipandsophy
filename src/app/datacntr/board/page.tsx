@@ -172,9 +172,9 @@ export default function DataCenterBoardPage() {
     );
   }
 
-  // Calculate statistics
+  // Calculate statistics (첫 날 OT 제외)
   const totalParticipants = boardData.length;
-  const totalDays = dates.length;
+  const totalDays = dates.length - 1; // 첫 날(OT) 제외
   const totalSubmissions = boardData.reduce((sum, row) => sum + row.submissions.size, 0);
 
   return (
@@ -250,7 +250,7 @@ export default function DataCenterBoardPage() {
                 </TableHeader>
                 <TableBody>
                   {boardData.map((row) => {
-                    const completionRate = (row.submissions.size / dates.length) * 100;
+                    const completionRate = (row.submissions.size / (dates.length - 1)) * 100; // OT 제외
                     return (
                       <TableRow key={row.participant.id}>
                         <TableCell className="sticky left-0 z-10 bg-background font-medium">
