@@ -835,7 +835,7 @@ export const sendMatchingNotifications = onRequest(
     }
 
     try {
-      // Get all participants in cohort (including admins)
+      // Get all participants in cohort
       const participantsSnapshot = await getCohortParticipants(cohortId);
 
       if (participantsSnapshot.empty) {
@@ -843,12 +843,36 @@ export const sendMatchingNotifications = onRequest(
         return;
       }
 
-      // ✅ Send push notification to all participants (dual-path support)
+      // ✅ Get all administrators (they should receive ALL matching notifications)
+      const adminsSnapshot = await getAllAdministrators();
+
+      // Combine cohort participants + all admins (deduplicate by ID)
+      const recipientMap = new Map<string, admin.firestore.QueryDocumentSnapshot>();
+
+      // Add cohort participants
+      participantsSnapshot.docs.forEach((doc) => {
+        recipientMap.set(doc.id, doc);
+      });
+
+      // Add all admins (overwrites if already in cohort)
+      adminsSnapshot.docs.forEach((doc) => {
+        recipientMap.set(doc.id, doc);
+      });
+
+      const allRecipients = Array.from(recipientMap.values());
+
+      logger.info(`Matching recipients`, {
+        cohortParticipants: participantsSnapshot.size,
+        administrators: adminsSnapshot.size,
+        totalRecipients: allRecipients.length,
+      });
+
+      // ✅ Send push notification to all recipients (dual-path support)
       let totalFCM = 0;
       let totalWebPush = 0;
       let totalSuccess = 0;
 
-      const pushPromises = participantsSnapshot.docs.map(async (doc) => {
+      const pushPromises = allRecipients.map(async (doc) => {
         const participantId = doc.id;
 
         // Get all tokens and subscriptions for this participant
@@ -881,7 +905,9 @@ export const sendMatchingNotifications = onRequest(
       logger.info(`Matching notifications sent (dual-path)`, {
         cohortId,
         date,
-        totalParticipants: participantsSnapshot.size,
+        cohortParticipants: participantsSnapshot.size,
+        administrators: adminsSnapshot.size,
+        totalRecipients: allRecipients.length,
         totalFCM,
         totalWebPush,
         totalSuccess,
@@ -889,7 +915,9 @@ export const sendMatchingNotifications = onRequest(
 
       response.status(200).json({
         success: true,
-        totalParticipants: participantsSnapshot.size,
+        cohortParticipants: participantsSnapshot.size,
+        administrators: adminsSnapshot.size,
+        totalRecipients: allRecipients.length,
         totalFCM,
         totalWebPush,
         notificationsSent: totalSuccess,
