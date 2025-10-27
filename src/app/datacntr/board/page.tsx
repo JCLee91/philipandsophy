@@ -263,9 +263,14 @@ export default function DataCenterBoardPage() {
                         </TableCell>
                         {dates.map((date) => {
                           const submission = row.submissions.get(date);
+                          const today = format(new Date(), 'yyyy-MM-dd');
+                          const isFuture = date > today;
+
                           return (
                             <TableCell key={date} className="text-center px-2">
-                              {submission ? (
+                              {isFuture ? (
+                                <span className="inline-block text-gray-300 font-bold text-sm">-</span>
+                              ) : submission ? (
                                 <span
                                   className="inline-block text-green-600 font-bold text-xl cursor-help"
                                   title={submission.bookTitle}

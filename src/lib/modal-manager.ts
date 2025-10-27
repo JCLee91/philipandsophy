@@ -82,6 +82,26 @@ class ModalStateManager {
       }
     });
 
+    // react-remove-scroll이 pointer block을 위해 추가한 클래스도 정리
+    const bodyClasses = Array.from(document.body.classList);
+    bodyClasses
+      .filter(
+        (className) =>
+          className.startsWith('block-interactivity-') || className.startsWith('allow-interactivity-'),
+      )
+      .forEach((className) => {
+        document.body.classList.remove(className);
+      });
+
+    // allow-interactivity-* 클래스가 남아있는 요소도 함께 정리 (언마운트된 경우 안전)
+    document.querySelectorAll<HTMLElement>('[class*="allow-interactivity-"]').forEach((element) => {
+      element.classList.forEach((className) => {
+        if (className.startsWith('allow-interactivity-')) {
+          element.classList.remove(className);
+        }
+      });
+    });
+
     // 강제 reflow (브라우저가 CSS 미디어 쿼리 재계산)
     void document.body.offsetHeight;
 
