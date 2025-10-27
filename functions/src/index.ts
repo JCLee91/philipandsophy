@@ -1116,7 +1116,18 @@ export const scheduledMatchingPreview = onSchedule(
         });
       }
 
-      logger.info(`✅ Scheduled matching completed: preview → confirm → notify`, {
+      // 6. Preview 문서 상태 업데이트 (pending → confirmed)
+      try {
+        await previewRef.update({status: "confirmed"});
+        logger.info(`Preview status updated to confirmed`, {
+          previewId: previewRef.id,
+        });
+      } catch (updateError: any) {
+        logger.error(`Failed to update preview status`, updateError);
+        // 상태 업데이트 실패는 로그만 남기고 계속 진행
+      }
+
+      logger.info(`✅ Scheduled matching completed: preview → confirm → notify → update`, {
         cohortId,
         date: previewResult.date,
         totalParticipants: previewResult.totalParticipants,

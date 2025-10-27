@@ -632,10 +632,54 @@ function MatchingPageContent() {
         logger.error('Firestore matching_previews 업데이트 실패', firestoreError);
       }
 
-      toast({
-        title: '매칭 적용 완료',
-        description: '오늘의 서재에서 참가자들이 확인할 수 있습니다.',
-      });
+      // 매칭 알림 전송 (프로필북 도착 푸시)
+      try {
+        logger.info('매칭 알림 전송 시작', { cohortId, date: previewResult.date });
+
+        const notificationResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/sendMatchingNotifications`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              cohortId,
+              date: previewResult.date,
+            }),
+          }
+        );
+
+        if (!notificationResponse.ok) {
+          const notificationError = await notificationResponse.json();
+          logger.error('매칭 알림 전송 실패', {
+            status: notificationResponse.status,
+            error: notificationError,
+          });
+          // 알림 실패는 사용자에게 경고만 표시 (매칭은 이미 완료됨)
+          toast({
+            title: '매칭 적용 완료',
+            description: '매칭은 완료되었으나 알림 전송에 실패했습니다.',
+            variant: 'default',
+          });
+        } else {
+          const notificationResult = await notificationResponse.json();
+          logger.info('매칭 알림 전송 완료', {
+            cohortId,
+            date: previewResult.date,
+            notificationsSent: notificationResult.notificationsSent,
+          });
+          toast({
+            title: '매칭 적용 완료',
+            description: '오늘의 서재에서 참가자들이 확인할 수 있습니다. 푸시 알림이 전송되었습니다.',
+          });
+        }
+      } catch (notificationError) {
+        logger.error('매칭 알림 전송 중 예외 발생', notificationError);
+        // 알림 실패는 로그만 남기고 계속 진행
+        toast({
+          title: '매칭 적용 완료',
+          description: '오늘의 서재에서 참가자들이 확인할 수 있습니다.',
+        });
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : '매칭 저장 중 오류가 발생했습니다.';
