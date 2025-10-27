@@ -21,14 +21,6 @@ import { defineString } from "firebase-functions/params";
 import * as webpush from "web-push";
 import { logger } from "./lib/logger";
 import {
-  truncateContent,
-  truncateToken,
-  getCohortParticipants,
-  getPushTokens,
-  PushTokenEntry,
-  WebPushSubscriptionData,
-} from "./lib/helpers";
-import {
   NOTIFICATION_CONFIG,
   NOTIFICATION_MESSAGES,
   NOTIFICATION_ROUTES,
@@ -115,6 +107,52 @@ async function getCohortParticipants(
     .collection("participants")
     .where("cohortId", "==", cohortId)
     .get();
+}
+
+/**
+ * Helper: Get all administrators (super admins + general admins)
+ *
+ * Returns participants where:
+ * - isSuperAdmin === true OR
+ * - isAdministrator === true
+ */
+async function getAllAdministrators(): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
+  const db = admin.firestore();
+
+  // Query 1: Get super admins
+  const superAdminsQuery = db
+    .collection("participants")
+    .where("isSuperAdmin", "==", true);
+
+  // Query 2: Get general admins
+  const generalAdminsQuery = db
+    .collection("participants")
+    .where("isAdministrator", "==", true);
+
+  const [superAdminsSnapshot, generalAdminsSnapshot] = await Promise.all([
+    superAdminsQuery.get(),
+    generalAdminsQuery.get(),
+  ]);
+
+  // Combine results and deduplicate by ID
+  const adminMap = new Map<string, admin.firestore.QueryDocumentSnapshot>();
+
+  superAdminsSnapshot.docs.forEach((doc) => {
+    adminMap.set(doc.id, doc);
+  });
+
+  generalAdminsSnapshot.docs.forEach((doc) => {
+    adminMap.set(doc.id, doc);
+  });
+
+  // Return a mock QuerySnapshot with combined docs
+  // Note: This is a simplified version that returns the docs array
+  // The actual QuerySnapshot interface is complex, but we only need .docs and .size
+  return {
+    docs: Array.from(adminMap.values()),
+    size: adminMap.size,
+    empty: adminMap.size === 0,
+  } as admin.firestore.QuerySnapshot<admin.firestore.DocumentData>;
 }
 
 /**
@@ -648,15 +686,39 @@ export const onNoticeCreated = onDocumentCreated(
       return;
     }
 
+    // ✅ Get all administrators (they should receive ALL notices regardless of cohortId)
+    const adminsSnapshot = await getAllAdministrators();
+
+    // Combine cohort participants + all admins (deduplicate by ID)
+    const recipientMap = new Map<string, admin.firestore.QueryDocumentSnapshot>();
+
+    // Add cohort participants
+    participantsSnapshot.docs.forEach((doc) => {
+      recipientMap.set(doc.id, doc);
+    });
+
+    // Add all admins (overwrites if already in cohort)
+    adminsSnapshot.docs.forEach((doc) => {
+      recipientMap.set(doc.id, doc);
+    });
+
+    const allRecipients = Array.from(recipientMap.values());
+
+    logger.info(`Notice recipients`, {
+      cohortParticipants: participantsSnapshot.size,
+      administrators: adminsSnapshot.size,
+      totalRecipients: allRecipients.length,
+    });
+
     // Truncate long notice for body
     const noticeBody = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
-    // ✅ Send push notification to all participants (dual-path support)
+    // ✅ Send push notification to all recipients (cohort + admins, dual-path support)
     let totalFCM = 0;
     let totalWebPush = 0;
     let totalSuccess = 0;
 
-    const pushPromises = participantsSnapshot.docs.map(async (doc) => {
+    const pushPromises = allRecipients.map(async (doc) => {
       const participantId = doc.id;
 
       // Get all tokens and subscriptions for this participant
