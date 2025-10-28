@@ -26,11 +26,13 @@ export const cohortKeys = {
 
 /**
  * Get all cohorts
+ * @param options.enabled - Enable/disable query (default: true)
  */
-export const useAllCohorts = () => {
+export const useAllCohorts = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: cohortKeys.all,
     queryFn: getAllCohorts,
+    enabled: options?.enabled ?? true,
   });
 };
 
