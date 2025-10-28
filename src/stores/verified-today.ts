@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { useEffect } from 'react';
 import { subscribeTodayVerified } from '@/lib/firebase';
-import { getTodayString } from '@/lib/date-utils';
+import { getTodayString, getSubmissionDate } from '@/lib/date-utils';
 import { APP_CONSTANTS } from '@/constants/app';
 
 interface VerifiedTodayState {
@@ -28,7 +28,7 @@ interface VerifiedTodayState {
 export const useVerifiedTodayStore = create<VerifiedTodayState>((set, get) => ({
   verifiedIds: new Set(),
   isLoading: true,
-  currentDate: getTodayString(), // KST 타임존 사용
+  currentDate: getSubmissionDate(), // 새벽 2시 마감 정책 적용
   subscriberCount: 0,
   unsubscribe: null,
   dateCheckInterval: null,
@@ -42,10 +42,10 @@ export const useVerifiedTodayStore = create<VerifiedTodayState>((set, get) => ({
 
     // 첫 번째 구독자일 때만 Firebase 구독 시작
     if (newCount === 1) {
-      const currentDate = state.currentDate;
+      const currentDate = getSubmissionDate(); // 새벽 2시 마감 정책 적용
 
       // Firebase 실시간 구독
-      console.log('🔍 [VerifiedToday] 구독 시작:', { currentDate });
+      console.log('🔍 [VerifiedToday] 구독 시작 (새벽 2시 마감):', { currentDate });
       const unsubscribeFn = subscribeTodayVerified((ids) => {
         console.log('🔍 [VerifiedToday] 데이터 수신:', {
           date: currentDate,
@@ -88,12 +88,12 @@ export const useVerifiedTodayStore = create<VerifiedTodayState>((set, get) => ({
     }
   },
 
-  // 날짜 변화 체크 (자정 감지)
+  // 날짜 변화 체크 (자정 및 새벽 2시 감지)
   checkDateChange: () => {
     const state = get();
-    const today = getTodayString(); // KST 타임존 사용
+    const submissionDate = getSubmissionDate(); // 새벽 2시 마감 정책 적용
 
-    if (today !== state.currentDate) {
+    if (submissionDate !== state.currentDate) {
       // 날짜가 바뀌면 기존 구독 해제하고 새로 구독
       if (state.unsubscribe) {
         state.unsubscribe();
@@ -101,10 +101,10 @@ export const useVerifiedTodayStore = create<VerifiedTodayState>((set, get) => ({
 
       const unsubscribeFn = subscribeTodayVerified((ids) => {
         set({ verifiedIds: ids, isLoading: false });
-      }, today);
+      }, submissionDate);
 
       set({
-        currentDate: today,
+        currentDate: submissionDate,
         unsubscribe: unsubscribeFn,
         verifiedIds: new Set(),
         isLoading: true,

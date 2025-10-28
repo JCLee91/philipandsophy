@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
-import { getTodayString, getYesterdayString } from '@/lib/date-utils';
+import { getTodayString, getMatchingTargetDate } from '@/lib/date-utils';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. 어제의 질문 가져오기 (매칭은 어제 제출 기반)
-    const yesterday = getYesterdayString();
-    const yesterdayQuestion = getDailyQuestionText(yesterday);
+    // 1. 매칭 대상 날짜의 질문 가져오기 (새벽 2시 마감 정책 적용)
+    const targetDate = getMatchingTargetDate(); // 새벽 2시 마감 고려한 매칭 대상 날짜
+    const targetQuestion = getDailyQuestionText(targetDate);
     const today = getTodayString(); // 매칭 결과는 오늘 날짜로 저장
 
     // 2. Firebase Admin 초기화 및 DB 가져오기
@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
     // 3. 어제 제출한 참가자들의 답변 가져오기 (매칭 대상)
     const submissionsSnapshot = await db
       .collection('reading_submissions')
-      .where('submissionDate', '==', yesterday)
-      .where('dailyQuestion', '==', yesterdayQuestion)
+      .where('submissionDate', '==', targetDate)
+      .where('dailyQuestion', '==', targetQuestion)
       .get();
 
     if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 5. AI 매칭 수행 (검증 없음 - 관리자가 수동으로 검토/조정)
-    const matching = await matchParticipantsByAI(yesterdayQuestion, participantAnswers);
+    const matching = await matchParticipantsByAI(targetQuestion, participantAnswers);
 
     // 7. Cohort 문서에 매칭 결과 저장
     const cohortRef = db.collection('cohorts').doc(cohortId);
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       date: today, // 매칭 결과는 오늘 날짜로 반환
-      question: yesterdayQuestion, // 질문은 어제 질문 (어제 제출 데이터 기반)
+      question: targetQuestion, // 질문은 대상 날짜의 질문
       totalParticipants: participantAnswers.length,
       matching,
       submissionStats: {

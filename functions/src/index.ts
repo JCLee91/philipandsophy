@@ -1089,6 +1089,10 @@ export const scheduledMatchingPreview = onSchedule(
     memory: "1GiB",
   },
   async (event) => {
+    // ⛔ 자동 매칭 임시 비활성화
+    logger.info("🤖 Scheduled matching is currently disabled");
+    return;
+
     logger.info("🤖 Scheduled matching preview started");
 
     try {

@@ -51,15 +51,16 @@ const PROGRAM_START_DATE = new Date(2025, 9, 11); // 월은 0부터 시작
 /**
  * Get a daily question based on current date or specific date
  * 10월 11일부터 14일간 각 질문이 정확히 1번씩 나옵니다.
- * 
+ *
  * - 10월 11일: 1번째 질문
  * - 10월 12일: 2번째 질문
  * - ...
  * - 10월 24일: 14번째 질문
- * 
+ *
  * @param dateString - Optional date string in 'YYYY-MM-DD' format. If not provided, uses today's date.
+ * @param useSubmissionDate - If true, applies 2 AM policy (00:00-01:59 returns previous day's question)
  */
-export function getDailyQuestion(dateString?: string): DailyQuestion {
+export function getDailyQuestion(dateString?: string, useSubmissionDate: boolean = false): DailyQuestion {
   let targetDate: Date;
 
   if (dateString) {
@@ -68,6 +69,15 @@ export function getDailyQuestion(dateString?: string): DailyQuestion {
     targetDate = new Date(year, month - 1, day);
   } else {
     targetDate = new Date();
+  }
+
+  // 새벽 2시 정책 적용 (useSubmissionDate가 true일 때만)
+  if (useSubmissionDate && !dateString) {
+    const hour = new Date().getHours();
+    // 새벽 0시~1시 59분이면 전날 질문 사용
+    if (hour >= 0 && hour < 2) {
+      targetDate.setDate(targetDate.getDate() - 1);
+    }
   }
 
   // 프로그램 시작일로부터 경과한 일수 계산
@@ -89,7 +99,23 @@ export function getDailyQuestion(dateString?: string): DailyQuestion {
 /**
  * Get only the question text (for backward compatibility)
  * @param dateString - Optional date string in 'YYYY-MM-DD' format. If not provided, uses today's date.
+ * @param useSubmissionDate - If true, applies 2 AM policy
  */
-export function getDailyQuestionText(dateString?: string): string {
-  return getDailyQuestion(dateString).question;
+export function getDailyQuestionText(dateString?: string, useSubmissionDate: boolean = false): string {
+  return getDailyQuestion(dateString, useSubmissionDate).question;
+}
+
+/**
+ * Get previous day's question for compensation
+ * Used for users who submitted between midnight and 2 AM
+ * @param currentDateString - Current date string in 'YYYY-MM-DD' format
+ */
+export function getPreviousDayQuestion(currentDateString: string): DailyQuestion {
+  const [year, month, day] = currentDateString.split('-').map(Number);
+  const currentDate = new Date(year, month - 1, day);
+  const previousDate = new Date(currentDate);
+  previousDate.setDate(previousDate.getDate() - 1);
+
+  const previousDateString = `${previousDate.getFullYear()}-${String(previousDate.getMonth() + 1).padStart(2, '0')}-${String(previousDate.getDate()).padStart(2, '0')}`;
+  return getDailyQuestion(previousDateString);
 }

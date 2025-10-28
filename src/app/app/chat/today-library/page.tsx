@@ -337,7 +337,7 @@ function TodayLibraryContent() {
                     프로필 북을 열어볼 수 없어요
                   </h1>
                   <p className="font-medium text-body-base text-text-secondary">
-                    밤 12시까지 독서를 인증하고
+                    새벽 2시까지 독서를 인증하고
                     <br />
                     멤버들의 프로필 북을 읽어보세요
                   </p>
@@ -488,7 +488,7 @@ function TodayLibraryContent() {
                   <p className="font-medium text-body-base text-text-secondary">
                     {showAllProfiles
                       ? '14일간의 여정을 마치며 모든 멤버의 프로필을 공개합니다'
-                      : '밤 12시까지만 읽을 수 있어요'
+                      : '새벽 2시까지만 읽을 수 있어요'
                     }
                   </p>
                 </div>

@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, X, Loader2 } from 'lucide-react';
-import { getTodayString, getYesterdayString } from '@/lib/date-utils';
+import { getTodayString, getMatchingTargetDate } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { CARD_STYLES } from '@/constants/ui';
@@ -56,7 +56,15 @@ function MatchingPageContent() {
   const [error, setError] = useState<string | null>(null);
 
   // 날짜 정의 (useMemo로 메모이제이션 - 불필요한 재계산 방지)
-  const submissionDate = useMemo(() => getYesterdayString(), []); // 제출 날짜 (어제 제출 데이터 조회용)
+  // getMatchingTargetDate()를 사용해서 API와 일관성 유지
+  const submissionDate = useMemo(() => {
+    try {
+      return getMatchingTargetDate();
+    } catch (error) {
+      // 새벽 0-2시는 매칭 불가
+      return '';
+    }
+  }, []);
   const submissionQuestion = useMemo(() => getDailyQuestionText(submissionDate), [submissionDate]);
 
   // 오늘 날짜 (Firestore 매칭 키 & localStorage 키로 사용)

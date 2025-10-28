@@ -41,6 +41,8 @@
     "check:cohorts": "tsx src/scripts/check-cohort-participants.ts",
     "check:yesterday-submissions": "tsx src/scripts/check-yesterday-submissions.ts",
     "fix:yesterday-books": "tsx src/scripts/fix-yesterday-books.ts",
+    "fix:submission-dates": "tsx src/scripts/fix-submission-dates-2am-policy.ts",
+    "fix:midnight-submissions": "tsx src/scripts/fix-midnight-submissions.ts",
     "random-matching": "tsx src/scripts/random-matching.ts",
     "add:backdated-submission": "tsx src/scripts/add-backdated-submission.ts",
     "update:occupations": "tsx src/scripts/update-all-occupations.ts",

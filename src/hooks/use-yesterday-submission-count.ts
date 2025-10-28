@@ -3,14 +3,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
-import { getYesterdayString } from '@/lib/date-utils';
+import { getMatchingTargetDate } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
 
 /**
- * 어제 제출 현황 실시간 카운트 Hook
- * 매칭 대상 참가자 수를 실시간으로 표시
+ * 매칭 대상 제출 현황 실시간 카운트 Hook
+ * 프로필북 전달 대상 참가자 수를 실시간으로 표시
  * Firebase onSnapshot으로 자동 업데이트
  * 🔒 해당 코호트 참가자만 필터링 (다중 코호트 운영 시 데이터 혼입 방지)
+ *
+ * 새벽 2시 마감 정책 적용:
+ * - 02:00~23:59: 어제 제출자가 매칭 대상
+ * - 00:00~01:59: 이틀 전 제출자가 매칭 대상 (어제는 아직 마감 안 됨)
  */
 export function useYesterdaySubmissionCount(cohortId?: string) {
   const [count, setCount] = useState<number>(0);
@@ -27,7 +31,8 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
       return;
     }
 
-    const yesterday = getYesterdayString();
+    // 새벽 2시 마감 정책 적용된 매칭 대상 날짜
+    const targetDate = getMatchingTargetDate();
 
     setIsLoading(true);
     setError(null);
@@ -36,7 +41,7 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
     const db = getDb();
     const q = query(
       collection(db, 'reading_submissions'),
-      where('submissionDate', '==', yesterday)
+      where('submissionDate', '==', targetDate)
     );
 
     const unsubscribe = onSnapshot(
@@ -67,7 +72,7 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
           })
           .catch((err) => {
             if (isMountedRef.current) {
-              logger.error('어제 제출 참가자 필터링 실패', err);
+              logger.error('매칭 대상 참가자 필터링 실패', err);
               setError(err as Error);
               setIsLoading(false);
             }
@@ -75,7 +80,7 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
       },
       (err) => {
         if (isMountedRef.current) {
-          logger.error('어제 제출 현황 조회 실패', err);
+          logger.error('매칭 대상 제출 현황 조회 실패', err);
           setError(err as Error);
           setIsLoading(false);
         }

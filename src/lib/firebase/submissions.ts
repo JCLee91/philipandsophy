@@ -16,7 +16,7 @@ import {
   onSnapshot,
   QuerySnapshot,
 } from 'firebase/firestore';
-import { getTodayString } from '@/lib/date-utils';
+import { getTodayString, getSubmissionDate } from '@/lib/date-utils';
 import { getDb } from './client';
 import { ReadingSubmission, COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
@@ -43,12 +43,13 @@ export async function createSubmission(
 ): Promise<string> {
   const db = getDb();
   const now = Timestamp.now();
-  const submissionDate = getTodayString(); // KST 타임존 사용
+  const submissionDate = getSubmissionDate(); // 새벽 2시 마감 정책 적용
 
   console.log('🔍 [createSubmission] 제출 생성:', {
     submissionDate,
     participantId: data.participantId,
-    status: data.status
+    status: data.status,
+    note: '새벽 0-2시 제출은 전날 날짜로 처리'
   });
 
   const docRef = await addDoc(collection(db, COLLECTIONS.READING_SUBMISSIONS), {

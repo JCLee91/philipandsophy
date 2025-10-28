@@ -3,14 +3,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
-import { getTodayString } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
 
 /**
  * 오늘 제출 현황 실시간 카운트 Hook
- * 내일 매칭 대상 참가자 수를 실시간으로 표시
+ * 오늘 인증한 참가자 수를 실시간으로 표시
  * Firebase onSnapshot으로 자동 업데이트
  * 🔒 해당 코호트 참가자만 필터링 (다중 코호트 운영 시 데이터 혼입 방지)
+ *
+ * 새벽 2시 마감 정책 적용:
+ * - 02:00~23:59: 오늘 날짜로 카운트
+ * - 00:00~01:59: 전날 날짜로 카운트 (아직 마감 안 됨)
  */
 export function useTodaySubmissionCount(cohortId?: string) {
   const [count, setCount] = useState<number>(0);
@@ -27,7 +31,8 @@ export function useTodaySubmissionCount(cohortId?: string) {
       return;
     }
 
-    const today = getTodayString();
+    // 새벽 2시 마감 정책 적용된 제출 날짜
+    const submissionDate = getSubmissionDate();
 
     setIsLoading(true);
     setError(null);
@@ -36,7 +41,7 @@ export function useTodaySubmissionCount(cohortId?: string) {
     const db = getDb();
     const q = query(
       collection(db, 'reading_submissions'),
-      where('submissionDate', '==', today)
+      where('submissionDate', '==', submissionDate)
     );
 
     const unsubscribe = onSnapshot(

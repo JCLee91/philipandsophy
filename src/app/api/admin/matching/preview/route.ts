@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { matchParticipantsByAI, ParticipantAnswer } from '@/lib/ai-matching';
-import { getYesterdayString, getTodayString } from '@/lib/date-utils';
+import { getMatchingTargetDate, getTodayString } from '@/lib/date-utils';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. 날짜 정의
-    const submissionDate = getYesterdayString(); // 제출 날짜 (어제 데이터)
+    // 1. 날짜 정의 (새벽 2시 마감 정책 적용)
+    const submissionDate = getMatchingTargetDate(); // 매칭 대상 날짜 (새벽 2시 마감 고려)
     const matchingDate = getTodayString(); // 매칭 실행 날짜 (오늘 Firebase 키로 사용)
     const submissionQuestion = getDailyQuestionText(submissionDate);
 

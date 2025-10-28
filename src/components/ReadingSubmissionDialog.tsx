@@ -25,7 +25,8 @@ import type { NaverBook } from '@/lib/naver-book-api';
 import { logger } from '@/lib/logger';
 import { SUBMISSION_VALIDATION, IMAGE_OPTIMIZATION } from '@/constants/validation';
 import { format } from 'date-fns';
-import { getTodayString } from '@/lib/date-utils';
+import { toZonedTime } from 'date-fns-tz';
+import { getTodayString, getSubmissionDate } from '@/lib/date-utils';
 import { validateImageFile, compressImageIfNeeded } from '@/lib/image-validation';
 import type { ReadingSubmission } from '@/types/database';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
@@ -37,6 +38,38 @@ interface ReadingSubmissionDialogProps {
   participationCode: string;
   cohortId: string; // 🆕 기수 ID
   existingSubmission?: ReadingSubmission; // 수정 모드: 기존 제출물
+}
+
+/**
+ * 보상 대상 여부 확인 (완전 투명하게 처리)
+ * 10/28 00:00-01:59에 제출한 사용자가 10/28 오늘 다시 접속한 경우
+ *
+ * @param submissions - 사용자의 모든 제출 기록
+ * @returns 보상 필요 여부
+ */
+function checkNeedsCompensation(submissions: ReadingSubmission[]): boolean {
+  // 현재 날짜가 2025-10-28인지 확인 (오늘)
+  const today = getTodayString();
+  if (today !== '2025-10-28') {
+    return false;
+  }
+
+  // 10/27 날짜로 저장된 제출물 찾기
+  // (새벽 2시 정책에 의해 10/28 00:00-01:59 제출이 10/27로 저장됨)
+  const oct27Submission = submissions.find(sub => sub.submissionDate === '2025-10-27');
+  if (!oct27Submission || !oct27Submission.submittedAt) {
+    return false;
+  }
+
+  // submittedAt 타임스탬프를 한국 시간으로 변환
+  const submittedAtDate = oct27Submission.submittedAt.toDate();
+  const submittedAtKST = toZonedTime(submittedAtDate, 'Asia/Seoul');
+  const hour = submittedAtKST.getHours();
+  const day = submittedAtKST.getDate();
+
+  // 10/28 00:00-01:59에 제출했으면 보상 대상
+  // (실제 제출 시각이 28일 새벽이어야 함)
+  return day === 28 && hour >= 0 && hour < 2;
 }
 
 export default function ReadingSubmissionDialog({
@@ -141,15 +174,27 @@ export default function ReadingSubmissionDialog({
 
       // 신규 제출 모드: 오늘의 질문 동적 로딩
       const loadDailyQuestion = async () => {
-        const today = getTodayString();
-        const question = await getDailyQuestion(cohortId, today);
+        // 새벽 2시 정책 적용: 제출 날짜 기준으로 질문 가져오기
+        const submissionDate = getSubmissionDate();
+
+        // 보상 로직: 10/28 00:00-01:59 제출자가 10/28(오늘) 다시 인증하는 경우
+        // 10/27 질문을 보여줘야 함 (누락된 질문, 자연스럽게 UI 표시 없이)
+        const needsCompensation = checkNeedsCompensation(allSubmissions);
+
+        let questionDate = submissionDate;
+        if (needsCompensation) {
+          // 10/28 오늘 10/27 질문을 보여줌 (어제 놓친 질문)
+          questionDate = '2025-10-27';
+        }
+
+        const question = await getDailyQuestion(cohortId, questionDate);
         if (question && isMounted) {
           setDailyQuestion(question);
         }
 
-        // 오늘 이미 제출했는지 확인
+        // 오늘 이미 제출했는지 확인 (새벽 2시 마감 정책 적용)
         const todaySubmission = allSubmissions.find(
-          (sub) => sub.submissionDate === today
+          (sub) => sub.submissionDate === submissionDate
         );
         if (isMounted) {
           setAlreadySubmittedToday(!!todaySubmission);

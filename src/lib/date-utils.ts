@@ -26,6 +26,68 @@ export function getTodayString(): string {
 }
 
 /**
+ * 한국 시간(KST) 기준 제출 날짜를 반환 (새벽 2시 마감 정책 적용)
+ *
+ * 새벽 2시까지는 전날 날짜로 처리합니다.
+ * - 00:00~01:59: 전날 날짜 반환
+ * - 02:00~23:59: 오늘 날짜 반환
+ *
+ * @returns 제출 날짜 문자열 (예: "2025-10-15")
+ *
+ * @example
+ * // 10월 16일 새벽 1시 30분
+ * getSubmissionDate(); // "2025-10-15" (전날로 처리)
+ *
+ * // 10월 16일 오전 10시
+ * getSubmissionDate(); // "2025-10-16" (오늘로 처리)
+ */
+export function getSubmissionDate(): string {
+  const nowUTC = new Date();
+  const nowKST = toZonedTime(nowUTC, KOREA_TIMEZONE);
+  const hour = nowKST.getHours();
+
+  // 새벽 0시~1시 59분: 전날로 처리
+  if (hour < 2) {
+    const yesterdayKST = subDays(nowKST, 1);
+    return format(yesterdayKST, 'yyyy-MM-dd');
+  }
+
+  // 새벽 2시~23시 59분: 오늘로 처리
+  return format(nowKST, 'yyyy-MM-dd');
+}
+
+/**
+ * 한국 시간(KST) 기준 매칭용 어제 날짜를 반환 (새벽 2시 마감 정책 적용)
+ *
+ * 매칭은 "어제" 제출된 데이터를 기반으로 실행됩니다.
+ * 새벽 0시~2시는 매칭 실행을 차단합니다 (데이터 정합성 보장).
+ *
+ * @returns 매칭 대상 날짜 문자열 (예: "2025-10-14")
+ * @throws 새벽 0시~1시 59분에는 Error 발생
+ *
+ * @example
+ * // 10월 16일 새벽 1시
+ * getMatchingTargetDate(); // Error: "새벽 0시~2시는 매칭을 실행할 수 없습니다."
+ *
+ * // 10월 16일 오전 10시
+ * getMatchingTargetDate(); // "2025-10-15" (어제)
+ */
+export function getMatchingTargetDate(): string {
+  const nowUTC = new Date();
+  const nowKST = toZonedTime(nowUTC, KOREA_TIMEZONE);
+  const hour = nowKST.getHours();
+
+  // 새벽 0시~1시 59분: 매칭 차단
+  if (hour < 2) {
+    throw new Error('새벽 0시~2시는 매칭을 실행할 수 없습니다. 데이터 마감 시간 이후에 다시 시도해주세요.');
+  }
+
+  // 새벽 2시~23시 59분: 어제 날짜 반환
+  const yesterdayKST = subDays(nowKST, 1);
+  return format(yesterdayKST, 'yyyy-MM-dd');
+}
+
+/**
  * 한국 시간(KST) 기준 어제 날짜를 YYYY-MM-DD 형식으로 반환
  *
  * 프로필북 매칭은 어제 제출된 독서 인증을 기반으로 실행됩니다.
@@ -79,11 +141,11 @@ export function getPreviousDayString(dateString: string): string {
  * @template T - submittedAt 필드를 가진 제출물 타입
  * @param submissions - 필터링할 제출물 배열
  * @param cutoffDate - ISO 날짜 문자열 (YYYY-MM-DD) 또는 null (필터링 안 함)
- * @returns cutoff 날짜까지의 제출물 (해당일 23:59:59.999 KST 포함)
+ * @returns cutoff 날짜까지의 제출물 (다음날 새벽 01:59:59.999 KST 포함)
  *
  * @example
  * const filtered = filterSubmissionsByDate(allSubmissions, '2025-10-11');
- * // Returns: 2025-10-11 23:59:59.999 KST 이전 제출물
+ * // Returns: 2025-10-12 01:59:59.999 KST 이전 제출물 (다음날 새벽 2시까지)
  *
  * @example
  * const all = filterSubmissionsByDate(allSubmissions, null);
@@ -112,8 +174,10 @@ export function filterSubmissionsByDate<T extends { id?: string; submittedAt: Ti
     return submissions; // 미래 날짜면 필터링 안 함
   }
 
-  // KST 기준 cutoff 날짜 설정 (해당일 끝까지 포함)
-  const cutoffDateKST = toZonedTime(`${cutoffDate}T23:59:59.999`, KOREA_TIMEZONE);
+  // KST 기준 cutoff 날짜 설정 (다음날 새벽 2시까지 포함)
+  // 정책 변경: 밤 12시 → 새벽 2시 마감
+  const nextDay = addDays(parseISO(cutoffDate), 1);
+  const cutoffDateKST = toZonedTime(`${format(nextDay, 'yyyy-MM-dd')}T01:59:59.999`, KOREA_TIMEZONE);
 
   return submissions.filter(sub => {
     // Null/undefined timestamp 체크
