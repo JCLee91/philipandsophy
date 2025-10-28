@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 6. 임시 매칭 로직: 질문별로 다르게 처리
-    let finalMatching: { assignments: any[] };
+    let finalMatching: { assignments: any };
 
     if (dawnGroupAnswers.length > 0 && mainGroupAnswers.length >= MATCHING_CONFIG.MIN_PARTICIPANTS) {
       // 6-1. 메인 그룹 (13명) AI 매칭 실행
