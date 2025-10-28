@@ -297,7 +297,10 @@ function ParticipantsPageContent() {
           <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-4 pt-4 pb-[60px]">
             <UnifiedButton
               variant="destructive"
-              onClick={logout}
+              onClick={async () => {
+                await logout();
+                router.push('/app');
+              }}
               icon={<LogOut className="h-5 w-5" />}
             >
               로그아웃

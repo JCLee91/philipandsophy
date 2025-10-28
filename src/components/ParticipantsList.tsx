@@ -21,6 +21,7 @@ import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
+import { useRouter } from 'next/navigation';
 
 import type { Participant } from '@/types/database';
 
@@ -177,6 +178,7 @@ export default function ParticipantsList({
 }: ParticipantsListProps) {
   useModalCleanup(open);
 
+  const router = useRouter();
   const { data: verifiedIds } = useVerifiedToday();
   const { logout, participant } = useAuth();
 
@@ -280,7 +282,10 @@ export default function ParticipantsList({
           <div className="border-t px-4 pt-4 pb-[60px]">
             <button
               type="button"
-              onClick={logout}
+              onClick={async () => {
+                await logout();
+                router.push('/app');
+              }}
               className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-medium text-destructive hover:bg-destructive/10 transition-colors duration-normal"
             >
               <LogOut className="h-5 w-5" />
