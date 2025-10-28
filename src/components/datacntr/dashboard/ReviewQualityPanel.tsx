@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ReviewQualityData {
   averageReviewLength: number;
-  longReviewPercentage: number;
-  dailyAnswerPercentage: number;
+  averageDailyAnswerLength: number;
 }
 
 interface ReviewQualityPanelProps {
@@ -22,7 +21,6 @@ export default function ReviewQualityPanel({ data, isLoading }: ReviewQualityPan
           <div className="h-6 w-48 shimmer rounded" />
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="h-20 shimmer rounded" />
           <div className="h-20 shimmer rounded" />
           <div className="h-20 shimmer rounded" />
         </CardContent>
@@ -52,51 +50,16 @@ export default function ReviewQualityPanel({ data, isLoading }: ReviewQualityPan
           </div>
         </div>
 
-        {/* 긴 리뷰 비율 */}
+        {/* 평균 가치관 답변 길이 */}
         <div className="rounded-lg p-4 border bg-card">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">긴 리뷰 비율 (200자 이상)</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-2xl font-bold">{data.longReviewPercentage}%</p>
-                  {data.longReviewPercentage >= 50 && (
-                    <span className="text-xs text-muted-foreground font-medium">우수</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all"
-              style={{ width: `${data.longReviewPercentage}%` }}
-            />
-          </div>
-        </div>
-
-        {/* 가치관 답변 작성률 */}
-        <div className="rounded-lg p-4 border bg-card">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <ImageIcon className="h-5 w-5 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">가치관 답변 작성률</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-2xl font-bold">{data.dailyAnswerPercentage}%</p>
-                  {data.dailyAnswerPercentage >= 70 && (
-                    <span className="text-xs text-muted-foreground font-medium">우수</span>
-                  )}
-                </div>
+                <p className="text-sm font-medium text-muted-foreground">평균 가치관 답변 길이</p>
+                <p className="text-2xl font-bold mt-1">{data.averageDailyAnswerLength}자</p>
               </div>
             </div>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all"
-              style={{ width: `${data.dailyAnswerPercentage}%` }}
-            />
           </div>
         </div>
 

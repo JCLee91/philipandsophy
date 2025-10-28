@@ -72,8 +72,9 @@ export async function GET(request: NextRequest) {
 
     // 5. 리뷰 품질 데이터
     let totalReviewLength = 0;
-    let longReviewCount = 0; // 200자 이상
-    let hasDailyAnswerCount = 0; // 가치관 답변 작성
+    let reviewCount = 0;
+    let totalDailyAnswerLength = 0;
+    let dailyAnswerCount = 0;
     const uniqueDates = new Set<string>();
 
     nonAdminSubmissions.forEach((doc) => {
@@ -105,16 +106,18 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // 리뷰 품질
+      // 리뷰 평균 길이
       const review = data.review || '';
-      totalReviewLength += review.length;
-      if (review.length >= 200) {
-        longReviewCount++;
+      if (review.trim().length > 0) {
+        totalReviewLength += review.length;
+        reviewCount++;
       }
 
-      // 가치관 답변 작성 여부
-      if (data.dailyAnswer && data.dailyAnswer.trim().length > 0) {
-        hasDailyAnswerCount++;
+      // 가치관 답변 평균 길이
+      const dailyAnswer = data.dailyAnswer || '';
+      if (dailyAnswer.trim().length > 0) {
+        totalDailyAnswerLength += dailyAnswer.length;
+        dailyAnswerCount++;
       }
     });
 
@@ -134,9 +137,8 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // 리뷰 품질 지표
-    const averageReviewLength = totalSubmissions > 0 ? Math.round(totalReviewLength / totalSubmissions) : 0;
-    const longReviewPercentage = totalSubmissions > 0 ? Math.round((longReviewCount / totalSubmissions) * 100) : 0;
-    const dailyAnswerPercentage = totalSubmissions > 0 ? Math.round((hasDailyAnswerCount / totalSubmissions) * 100) : 0;
+    const averageReviewLength = reviewCount > 0 ? Math.round(totalReviewLength / reviewCount) : 0;
+    const averageDailyAnswerLength = dailyAnswerCount > 0 ? Math.round(totalDailyAnswerLength / dailyAnswerCount) : 0;
 
     return NextResponse.json({
       timeDistribution: timeDistributionPercent,
@@ -148,8 +150,7 @@ export async function GET(request: NextRequest) {
       },
       reviewQuality: {
         averageReviewLength,
-        longReviewPercentage,
-        dailyAnswerPercentage,
+        averageDailyAnswerLength,
       },
     });
   } catch (error) {

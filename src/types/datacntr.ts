@@ -167,7 +167,6 @@ export interface SubmissionAnalytics {
   };
   reviewQuality: {
     averageReviewLength: number;
-    longReviewPercentage: number;
-    dailyAnswerPercentage: number;
+    averageDailyAnswerLength: number;
   };
 }
