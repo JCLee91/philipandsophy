@@ -401,11 +401,23 @@ JSON만 반환하세요.
     });
 
     const apiStartTime = Date.now();
+
+    // Google Gemini를 위한 설정 (z.record 미지원 대응)
+    const isGoogleProvider = (process.env.AI_PROVIDER || 'openai') === 'google';
+
     const { object: raw } = await generateObject({
       model,
       schema: matchingResponseSchema,
       system: '당신은 독서 모임 매칭 전문가입니다. 모든 참가자에게 개별적으로 분석한 고유한 추천을 제공하세요. 규칙을 정확히 따르고 JSON만 반환하세요.',
       prompt,
+      // Google Gemini는 z.record를 지원하지 않으므로 structuredOutputs 비활성화
+      ...(isGoogleProvider && {
+        experimental_providerOptions: {
+          google: {
+            structuredOutputs: false,
+          },
+        },
+      }),
     });
     const apiDuration = Date.now() - apiStartTime;
 

@@ -50,6 +50,7 @@
     "fix:admin-fields": "tsx src/scripts/fix-admin-fields.ts",
     "update:admin-to-administrator": "tsx src/scripts/update-admin-to-administrator.ts",
     "upload:cohort2-images": "tsx scripts/upload-cohort2-images.ts",
+    "upload:yanggwon-profile": "tsx scripts/upload-yanggwon-profile.ts",
     "debug:participants-cohort": "tsx src/scripts/debug-participants-by-cohort.ts",
     "check:push-notifications": "tsx src/scripts/check-push-notifications.ts",
     "cleanup:legacy-push-fields": "tsx scripts/remove-legacy-push-fields.ts",
