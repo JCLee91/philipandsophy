@@ -151,23 +151,46 @@ function Step3Content() {
     setIsSaving(true);
 
     try {
-      let bookImageUrl = '';
+      const draftData: {
+        bookImageUrl?: string;
+        bookTitle?: string;
+        bookAuthor?: string;
+        bookCoverUrl?: string;
+        bookDescription?: string;
+        review?: string;
+        dailyQuestion?: string;
+        dailyAnswer?: string;
+      } = {};
 
-      // 이미지가 있으면 업로드
-      if (imageFile) {
-        bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+      // 이미지가 있으면 업로드 (File 객체인 경우만)
+      if (imageFile && imageFile instanceof File) {
+        draftData.bookImageUrl = await uploadReadingImage(imageFile, participationCode);
       }
 
-      await saveDraft(participantId, participationCode, {
-        bookImageUrl: bookImageUrl || undefined,
-        bookTitle: selectedBook?.title || manualTitle || undefined,
-        bookAuthor: selectedBook?.author || undefined,
-        bookCoverUrl: selectedBook?.image || undefined,
-        bookDescription: selectedBook?.description || undefined,
-        review: review || undefined,
-        dailyQuestion: dailyQuestion?.question || undefined,
-        dailyAnswer: dailyAnswer || undefined,
-      });
+      // 각 필드는 값이 있을 때만 포함 (undefined로 덮어쓰기 방지)
+      if (selectedBook?.title || manualTitle) {
+        draftData.bookTitle = selectedBook?.title || manualTitle;
+      }
+      if (selectedBook?.author) {
+        draftData.bookAuthor = selectedBook.author;
+      }
+      if (selectedBook?.image) {
+        draftData.bookCoverUrl = selectedBook.image;
+      }
+      if (selectedBook?.description) {
+        draftData.bookDescription = selectedBook.description;
+      }
+      if (review) {
+        draftData.review = review;
+      }
+      if (dailyQuestion?.question) {
+        draftData.dailyQuestion = dailyQuestion.question;
+      }
+      if (dailyAnswer) {
+        draftData.dailyAnswer = dailyAnswer;
+      }
+
+      await saveDraft(participantId, participationCode, draftData);
 
       toast({
         title: '임시 저장되었습니다',
