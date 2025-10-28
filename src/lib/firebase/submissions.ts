@@ -312,7 +312,8 @@ export async function saveDraft(
   const now = Timestamp.now();
   const submissionDate = getSubmissionDate();
 
-  // 기존 draft 확인
+  // 기존 draft 확인 - getDraftSubmission의 두 번째 인자는 사용하지 않지만, 일관성을 위해 cohortId 형태로 전달
+  // 실제로는 participantId로 검색하므로 문제 없음
   const existingDraft = await getDraftSubmission(participantId, participationCode);
 
   const draftData = {

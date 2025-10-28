@@ -36,7 +36,8 @@ function Step1Content() {
   // 메타 정보 설정
   useEffect(() => {
     if (participant && cohortId) {
-      setMetaInfo(participant.id, cohortId, cohortId, existingSubmissionId || undefined);
+      // participationCode는 participant.id를 사용 (Storage 경로: reading_submissions/{participant.id}/)
+      setMetaInfo(participant.id, participant.id, cohortId, existingSubmissionId || undefined);
     }
   }, [participant, cohortId, existingSubmissionId, setMetaInfo]);
 
