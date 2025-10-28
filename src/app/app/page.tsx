@@ -17,9 +17,14 @@ export default function Home() {
   const { participant, participantStatus, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
-  // 관리자만 활성 코호트 조회 (일반 사용자는 불필요)
-  const isAdmin = participant?.isAdministrator || participant?.isSuperAdmin;
-  const { data: activeCohorts = [] } = useActiveCohorts();
+  const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
+  const {
+    data: activeCohorts = [],
+    isLoading: activeCohortsLoading,
+  } = useActiveCohorts({
+    enabled: isAdminUser,
+    refetchOnWindowFocus: false,
+  });
 
   // ✅ 인앱 브라우저 감지 및 외부 브라우저로 리다이렉트
   useEffect(() => {
@@ -58,32 +63,30 @@ export default function Home() {
   // ✅ participant가 ready 상태이면 채팅으로 바로 이동
   useEffect(() => {
     if (!isLoading && participantStatus === 'ready' && participant) {
-      let targetCohortId: string;
+      let targetCohortId: string | null = null;
 
       // 관리자는 활성 코호트로, 일반 사용자는 자신의 코호트로 이동
-      if (participant.isAdministrator || participant.isSuperAdmin) {
-        // 활성 코호트 중 첫 번째 사용 (보통 1개만 활성)
+      if (isAdminUser) {
         const activeCohort = activeCohorts[0];
 
         if (activeCohort) {
           targetCohortId = activeCohort.id;
-
-        } else {
+        } else if (!activeCohortsLoading) {
           // 활성 코호트가 없으면 자신의 코호트로
           targetCohortId = participant.cohortId;
-
         }
       } else {
         targetCohortId = participant.cohortId;
-
       }
 
-      router.replace(appRoutes.chat(targetCohortId));
+      if (targetCohortId) {
+        router.replace(appRoutes.chat(targetCohortId));
+      }
     }
-  }, [isLoading, participantStatus, participant, activeCohorts, router]);
+  }, [isLoading, participantStatus, participant, activeCohorts, activeCohortsLoading, isAdminUser, router]);
 
   // ✅ 스플래시 화면 표시 (로딩 중이거나 초기 진입 시)
-  if (showSplash || isLoading) {
+  if (showSplash || isLoading || (isAdminUser && activeCohortsLoading)) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 

@@ -77,18 +77,15 @@ export const fetchChatCohort = cache(async (cohortId: string): Promise<Cohort | 
 export const fetchChatInitialData = cache(
   async (cohortId: string): Promise<{
     cohort: Cohort | null;
-    participants: Participant[];
     notices: Notice[];
   }> => {
-    const [cohort, participants, notices] = await Promise.all([
+    const [cohort, notices] = await Promise.all([
       fetchChatCohort(cohortId),
-      fetchChatParticipants(cohortId),
       fetchChatNotices(cohortId),
     ]);
 
     return {
       cohort,
-      participants,
       notices,
     };
   }

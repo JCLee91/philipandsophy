@@ -155,17 +155,17 @@ export interface ReadingSubmission {
   id: string; // 문서 ID
   participantId: string; // 참가자 ID (Participant.id)
   participationCode: string; // 참여 코드
-  bookTitle: string; // 책 제목 (필수)
+  bookTitle?: string; // 책 제목 (임시저장 시 선택, 제출 시 필수)
   bookAuthor?: string; // 책 저자 (선택)
   bookCoverUrl?: string; // 책 표지 이미지 URL (네이버 API에서 가져온 표지, 선택)
   bookDescription?: string; // 책 소개글 (네이버 API에서 가져온 설명, 선택)
-  bookImageUrl: string; // 책 사진 (사용자가 찍은 인증 사진, 필수)
-  review: string; // 간단 감상평 (필수)
-  dailyQuestion: string; // 오늘의 질문 (필수)
-  dailyAnswer: string; // 오늘의 질문에 대한 답변 (필수)
-  submittedAt: Timestamp; // 제출 일시
-  submissionDate: string; // 제출 날짜 (YYYY-MM-DD 형식, 날짜 비교용)
-  status: 'pending' | 'approved' | 'rejected'; // ⚠️ DEPRECATED: 승인 상태 (모든 제출은 자동 승인됨, DB 호환성을 위해 유지)
+  bookImageUrl?: string; // 책 사진 (임시저장 시 선택, 제출 시 필수)
+  review?: string; // 간단 감상평 (임시저장 시 선택, 제출 시 필수)
+  dailyQuestion?: string; // 오늘의 질문 (임시저장 시 선택, 제출 시 필수)
+  dailyAnswer?: string; // 오늘의 질문에 대한 답변 (임시저장 시 선택, 제출 시 필수)
+  submittedAt?: Timestamp; // 제출 일시 (임시저장 시 null)
+  submissionDate?: string; // 제출 날짜 (YYYY-MM-DD 형식, 임시저장 시 선택)
+  status: 'draft' | 'pending' | 'approved' | 'rejected'; // draft: 임시저장, approved: 제출 완료
   reviewNote?: string; // ⚠️ DEPRECATED: 검토 메모 (승인 프로세스 제거됨, DB 호환성을 위해 유지)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시

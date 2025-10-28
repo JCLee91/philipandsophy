@@ -4,13 +4,14 @@ import Image from 'next/image';
 
 interface BackHeaderProps {
   onBack: () => void;
-  title?: string; // 제목을 선택적으로 만듦
+  title?: string;
+  variant?: 'center' | 'left'; // 중앙 정렬 or 왼쪽 정렬
 }
 
-export default function BackHeader({ onBack, title }: BackHeaderProps) {
+export default function BackHeader({ onBack, title, variant = 'center' }: BackHeaderProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background safe-area-header">
-      <div className="container mx-auto flex h-14 max-w-2xl items-center px-6 relative">
+    <header className="fixed top-0 left-0 right-0 z-[999] border-b bg-background safe-area-header isolate">
+      <div className="container mx-auto flex h-14 items-center px-6 relative">
         <button
           type="button"
           onClick={onBack}
@@ -24,8 +25,13 @@ export default function BackHeader({ onBack, title }: BackHeaderProps) {
             height={20}
           />
         </button>
-        {title && (
+        {title && variant === 'center' && (
           <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold pointer-events-none">
+            {title}
+          </h1>
+        )}
+        {title && variant === 'left' && (
+          <h1 className="ml-2 text-lg font-bold">
             {title}
           </h1>
         )}

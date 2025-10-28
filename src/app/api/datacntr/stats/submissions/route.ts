@@ -3,7 +3,7 @@ import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
-import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
+import { timestampToKST } from '@/lib/datacntr/timestamp';
 
 /**
  * 독서 인증 분석 통계 API
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
       const data = doc.data();
 
       // 시간대별 분포
-      const submittedAt = safeTimestampToDate(data.submittedAt);
+      const submittedAt = timestampToKST(data.submittedAt);
       if (submittedAt) {
         const hour = submittedAt.getHours();
         if (hour >= 6 && hour < 9) timeDistribution['06-09']++;
@@ -93,7 +93,11 @@ export async function GET(request: NextRequest) {
         else timeDistribution['00-06']++;
 
         // 날짜 수집 (일일 평균 계산용)
-        const dateKey = submittedAt.toISOString().split('T')[0];
+        const dateKey = [
+          submittedAt.getFullYear(),
+          String(submittedAt.getMonth() + 1).padStart(2, '0'),
+          String(submittedAt.getDate()).padStart(2, '0'),
+        ].join('-');
         uniqueDates.add(dateKey);
       }
 

@@ -76,6 +76,8 @@ export function useParticipantByPhone(phoneNumber: string | undefined) {
  */
 type UseParticipantsByCohortOptions = {
   initialData?: Participant[];
+  enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
 };
 
 export function useParticipantsByCohort(
@@ -85,11 +87,11 @@ export function useParticipantsByCohort(
   return useQuery({
     queryKey: PARTICIPANT_KEYS.byCohort(cohortId || ''),
     queryFn: () => (cohortId ? getParticipantsByCohort(cohortId) : []),
-    enabled: !!cohortId,
+    enabled: options?.enabled ?? !!cohortId,
     staleTime: 30 * 60 * 1000, // 30분
     gcTime: 60 * 60 * 1000, // 60분
     refetchOnMount: false, // 마운트 시 자동 refetch 안 함
-    refetchOnWindowFocus: false, // 창 포커스 시 refetch 안 함
+    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false, // 창 포커스 시 refetch 안 함
     notifyOnChangeProps: ['data', 'error'],
     initialData: options?.initialData ?? undefined,
     placeholderData: options?.initialData ?? undefined,

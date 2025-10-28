@@ -43,6 +43,8 @@ export function useNotices() {
  */
 type UseNoticesByCohortOptions = {
   initialData?: Notice[];
+  enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
 };
 
 export function useNoticesByCohort(
@@ -52,8 +54,11 @@ export function useNoticesByCohort(
   return useQuery({
     queryKey: NOTICE_KEYS.byCohort(cohortId || ''),
     queryFn: () => (cohortId ? getNoticesByCohort(cohortId) : []),
-    enabled: !!cohortId,
+    enabled: options?.enabled ?? !!cohortId,
     staleTime: CACHE_TIMES.SEMI_DYNAMIC, // 1분
+    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
     initialData: options?.initialData ?? undefined,
     placeholderData: options?.initialData ?? undefined,
   });

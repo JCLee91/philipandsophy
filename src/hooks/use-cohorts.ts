@@ -24,25 +24,39 @@ export const cohortKeys = {
   detail: (id: string) => ['cohorts', id] as const,
 };
 
+type UseAllCohortsOptions = {
+  enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
+};
+
 /**
  * Get all cohorts
  * @param options.enabled - Enable/disable query (default: true)
+ * @param options.refetchOnWindowFocus - Control window focus refetch (default: false)
  */
-export const useAllCohorts = (options?: { enabled?: boolean }) => {
+export const useAllCohorts = (options?: UseAllCohortsOptions) => {
   return useQuery({
     queryKey: cohortKeys.all,
     queryFn: getAllCohorts,
     enabled: options?.enabled ?? true,
+    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
   });
 };
 
 /**
  * Get active cohorts only
  */
-export const useActiveCohorts = () => {
+type UseActiveCohortsOptions = {
+  enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
+};
+
+export const useActiveCohorts = (options?: UseActiveCohortsOptions) => {
   return useQuery({
     queryKey: cohortKeys.active,
     queryFn: getActiveCohorts,
+    enabled: options?.enabled ?? true,
+    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
   });
 };
 

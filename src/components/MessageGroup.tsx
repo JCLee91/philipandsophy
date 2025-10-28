@@ -17,6 +17,7 @@ interface MessageGroupProps {
   currentUser: Participant | null;
   otherUser: Participant;
   onImageClick: (imageUrl: string) => void;
+  isFirstGroup?: boolean; // LCP 최적화: 첫 번째 그룹 여부
 }
 
 /**
@@ -39,6 +40,7 @@ export default function MessageGroup({
   currentUser,
   otherUser,
   onImageClick,
+  isFirstGroup = false,
 }: MessageGroupProps) {
   const isMine = senderId === currentUserId;
   const isFromAdminTeam = otherUser.id === 'admin-team';
@@ -101,6 +103,7 @@ export default function MessageGroup({
                   fill
                   sizes="192px"
                   className="object-cover rounded"
+                  priority={isFirstGroup && messages[0].id === msg.id}
                 />
               </div>
             )}

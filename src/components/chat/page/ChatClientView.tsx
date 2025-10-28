@@ -23,7 +23,6 @@ import Header from '@/components/Header';
 import NoticeTimeline from '@/components/chat/Notice/NoticeTimeline';
 import PageTransition from '@/components/PageTransition';
 import DirectMessageDialog from '@/components/chat/DM/DirectMessageDialog';
-import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
 import NoticeWriteDialog from '@/components/NoticeWriteDialog';
 import NoticeEditDialog from '@/components/NoticeEditDialog';
@@ -64,7 +63,6 @@ export function ChatClientView({
   const dmDialog = useDirectMessageDialogState();
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
-  const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -77,13 +75,45 @@ export function ChatClientView({
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined, {
     initialData: initialCohort ?? undefined,
   });
+  const isAdmin = useIsAdminMode();
+
+  const initialParticipantsLoaded = Boolean(initialParticipants && initialParticipants.length > 0);
+  const [shouldLoadParticipants, setShouldLoadParticipants] = useState(isAdmin || initialParticipantsLoaded);
   const {
     data: participants = [],
     isLoading: participantsLoading,
   } = useParticipantsByCohort(cohortId || undefined, {
-    initialData: initialParticipants,
+    initialData: shouldLoadParticipants ? initialParticipants : undefined,
+    enabled: !!cohortId && !!participant && shouldLoadParticipants,
+    refetchOnWindowFocus: false,
   });
-  const isAdmin = useIsAdminMode();
+
+  useEffect(() => {
+    if (isAdmin) {
+      setShouldLoadParticipants(true);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (initialParticipantsLoaded) {
+      setShouldLoadParticipants(true);
+    }
+  }, [initialParticipantsLoaded]);
+
+  useEffect(() => {
+    if (participantsOpen) {
+      setShouldLoadParticipants(true);
+    }
+  }, [participantsOpen]);
+
+  const {
+    data: noticesData = [],
+    isLoading: noticesLoading,
+  } = useNoticesByCohort(cohortId || undefined, {
+    initialData: initialNotices,
+    enabled: !!cohortId && !!participant,
+    refetchOnWindowFocus: false,
+  });
 
   const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);
   const todaySubmission = submissions.find((sub) => sub.submissionDate === getTodayString());
@@ -95,9 +125,6 @@ export function ChatClientView({
   const isDay1 = currentDay === 1;
   const isAfterDay14 = currentDay !== null && currentDay > 14;
 
-  const { data: noticesData = [], isLoading } = useNoticesByCohort(cohortId || undefined, {
-    initialData: initialNotices,
-  });
   const noticeActions = useNoticeActions();
 
   const latestNoticeId = useMemo(() => {
@@ -185,7 +212,7 @@ export function ChatClientView({
   }, [sessionLoading, participant, cohortId]);
 
   useEffect(() => {
-    if (!isLoading && noticesData.length > 0 && latestNoticeRef.current) {
+    if (!noticesLoading && noticesData.length > 0 && latestNoticeRef.current) {
       latestNoticeRef.current.scrollIntoView({
         behavior: 'auto',
         block: 'center',
@@ -193,7 +220,7 @@ export function ChatClientView({
       });
 
     }
-  }, [isLoading, noticesData.length]);
+  }, [noticesLoading, noticesData.length]);
 
   const handleDMClick = useCallback(
     (participant: Participant) => {
@@ -236,6 +263,8 @@ export function ChatClientView({
       return;
     }
 
+    setShouldLoadParticipants(true);
+
     if (isIosStandalone) {
       setParticipantsOpen(false);
       setIsNavigating(true);
@@ -261,10 +290,12 @@ export function ChatClientView({
   }, [cohortId, router]);
 
   const handleOpenSubmissionDialog = useCallback(() => {
-    setSubmissionDialogOpen(true);
-  }, []);
+    router.push(appRoutes.submitStep1(cohortId!));
+  }, [cohortId, router]);
 
-  if (sessionLoading || cohortLoading || !participant || !cohort || !cohortId || participantsLoading) {
+  const blockingParticipantsLoading = shouldLoadParticipants && participantsLoading;
+
+  if (sessionLoading || cohortLoading || !participant || !cohort || !cohortId || blockingParticipantsLoading) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden pt-14">
@@ -305,15 +336,6 @@ export function ChatClientView({
           currentUserId={currentUserId || ''}
           currentUser={participant}
           otherUser={dmDialog.target}
-        />
-
-        <ReadingSubmissionDialog
-          open={submissionDialogOpen && !!cohortId}
-          onOpenChange={setSubmissionDialogOpen}
-          participantId={currentUserId || ''}
-          participationCode={currentUserId || ''}
-          cohortId={cohortId || ''}
-          existingSubmission={todaySubmission || undefined}
         />
 
         <ProfileImageDialog

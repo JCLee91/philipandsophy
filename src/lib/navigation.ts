@@ -65,4 +65,25 @@ export const appRoutes = {
     });
     return `/app/program?${params}`;
   },
+
+  /**
+   * 독서 인증 Step 1 - 이미지 업로드
+   * @param cohortId - 기수 ID
+   */
+  submitStep1: (cohortId: string) => {
+    const params = new URLSearchParams({
+      cohort: cohortId,
+    });
+    return `/app/submit/step1?${params}`;
+  },
+
+  /**
+   * 독서 인증 Step 2 - 책 제목
+   */
+  submitStep2: '/app/submit/step2',
+
+  /**
+   * 독서 인증 Step 3 - 질문 답변
+   */
+  submitStep3: '/app/submit/step3',
 } as const;

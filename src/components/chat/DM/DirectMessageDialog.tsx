@@ -1,7 +1,6 @@
 'use client';
 import { logger } from '@/lib/logger';
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import UnifiedButton from '@/components/UnifiedButton';
@@ -20,6 +19,7 @@ import { groupMessagesByDate } from '@/lib/message-grouping';
 import Image from 'next/image';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { useDirectMessageActions } from '@/hooks/chat/useDirectMessageActions';
+import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -36,11 +36,6 @@ export default function DirectMessageDialog({
   currentUser,
   otherUser,
 }: DirectMessageDialogProps) {
-  // ✅ Early return BEFORE any hooks to prevent React Rules of Hooks violation
-  if (!otherUser) {
-    return null;
-  }
-
   useModalCleanup(open);
 
   const [messageContent, setMessageContent] = useState('');
@@ -51,10 +46,10 @@ export default function DirectMessageDialog({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(0);
+  const keyboardHeight = useKeyboardHeight();
 
   const conversationId = useMemo(() => {
-    if (!currentUserId) {
-
+    if (!currentUserId || !otherUser) {
       return '';
     }
 
@@ -174,18 +169,37 @@ export default function DirectMessageDialog({
   const canSendMessage = messageContent.trim().length > 0 || !!imageFile;
 
   const displayName =
-    currentUser?.isSuperAdmin || currentUser?.isAdministrator ? otherUser.name : APP_CONSTANTS.ADMIN_NAME;
+    currentUser?.isSuperAdmin || currentUser?.isAdministrator ? otherUser?.name || '' : APP_CONSTANTS.ADMIN_NAME;
   const profileImageUrl =
     currentUser?.isSuperAdmin || currentUser?.isAdministrator
-      ? otherUser.profileImageCircle || otherUser.profileImage
+      ? otherUser?.profileImageCircle || otherUser?.profileImage
       : '/favicon.webp';
+
+  // Early returns AFTER all hooks
+  if (!otherUser || !open) return null;
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg h-[600px] flex flex-col p-0">
-          <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle className="flex items-center gap-3">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+        onClick={() => onOpenChange(false)}
+        aria-hidden="true"
+      />
+
+      {/* Dialog */}
+      <div
+        className="fixed inset-x-4 z-50 max-w-lg mx-auto transition-all duration-300"
+        style={{
+          top: keyboardHeight > 0 ? '1rem' : '50%',
+          transform: keyboardHeight > 0 ? 'none' : 'translateY(-50%)',
+          height: keyboardHeight > 0 ? `calc(100vh - 2rem - ${keyboardHeight}px)` : '600px',
+        }}
+      >
+        <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b px-5 py-4">
+            <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={profileImageUrl} alt={displayName} />
                 <AvatarFallback>
@@ -193,23 +207,32 @@ export default function DirectMessageDialog({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-semibold">{displayName}</div>
+                <h2 className="text-lg font-bold">{displayName}</h2>
+                <p className="text-xs text-gray-500">1:1 메시지</p>
               </div>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">1:1 메시지</DialogDescription>
-          </DialogHeader>
+            </div>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="flex items-center justify-center h-11 w-11 -mr-2 rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:bg-gray-200"
+              aria-label="닫기"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
 
+          {/* Messages */}
           <div
             ref={messageContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+            className="flex-1 overflow-y-auto px-5 py-4 space-y-4"
           >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                 메시지를 보내보세요
               </div>
             ) : (
-              dateSections.map((section) => (
+              dateSections.map((section, sectionIndex) => (
                 <div key={section.date.getTime()}>
                   <DateDivider label={section.dateLabel} />
                   <div className="space-y-2">
@@ -224,6 +247,7 @@ export default function DirectMessageDialog({
                         currentUser={currentUser}
                         otherUser={otherUser}
                         onImageClick={setSelectedImage}
+                        isFirstGroup={sectionIndex === 0 && groupIndex === 0}
                       />
                     ))}
                   </div>
@@ -236,7 +260,7 @@ export default function DirectMessageDialog({
               <div className="sticky bottom-2 flex justify-center pointer-events-none animate-in fade-in-0 slide-in-from-bottom-4 duration-normal">
                 <button
                   onClick={scrollToBottomAndHideButton}
-                  className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-normal active:scale-95"
+                  className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-full shadow-lg hover:bg-gray-800 hover:shadow-xl transition-all duration-normal active:scale-95"
                 >
                   <ArrowDown className="h-4 w-4 animate-bounce" />
                   <span className="text-sm font-semibold">새 메시지</span>
@@ -245,6 +269,7 @@ export default function DirectMessageDialog({
             )}
           </div>
 
+          {/* Footer Input */}
           <div className={FOOTER_STYLES.INPUT_CONTAINER}>
             {imagePreview && (
               <div
@@ -299,8 +324,8 @@ export default function DirectMessageDialog({
               />
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
 
       <ImageViewerDialog
         open={!!selectedImage}

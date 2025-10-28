@@ -143,16 +143,12 @@ service cloud.firestore {
       allow read: if isSignedIn();
 
       // 생성: 본인의 participantId만 사용
+      // status: 'draft'(임시저장) 또는 'approved'(제출) 모두 허용
       allow create: if isSignedIn() &&
         isOwnParticipant(request.resource.data.participantId) &&
         request.resource.data.participantId is string &&
         request.resource.data.participationCode is string &&
-        request.resource.data.bookTitle is string &&
-        request.resource.data.bookImageUrl is string &&
-        request.resource.data.review is string &&
-        request.resource.data.dailyQuestion is string &&
-        request.resource.data.dailyAnswer is string &&
-        request.resource.data.status == 'approved';
+        (request.resource.data.status == 'draft' || request.resource.data.status == 'approved');
 
       // 수정/삭제: 본인이 작성한 것만
       allow update, delete: if isSignedIn() &&

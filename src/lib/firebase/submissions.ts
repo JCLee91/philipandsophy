@@ -258,3 +258,92 @@ export function subscribeTodayVerified(
 
   return unsubscribe;
 }
+
+/**
+ * 임시저장된 제출물 조회 (참가자별)
+ */
+export async function getDraftSubmission(
+  participantId: string,
+  cohortId: string
+): Promise<ReadingSubmission | null> {
+  const db = getDb();
+
+  // 해당 참가자의 오늘 날짜 draft 찾기
+  const submissionDate = getSubmissionDate();
+  const q = query(
+    collection(db, COLLECTIONS.READING_SUBMISSIONS),
+    where('participantId', '==', participantId),
+    where('status', '==', 'draft'),
+    where('submissionDate', '==', submissionDate),
+    orderBy('updatedAt', 'desc')
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return null;
+  }
+
+  const doc = querySnapshot.docs[0];
+  return {
+    id: doc.id,
+    ...doc.data(),
+  } as ReadingSubmission;
+}
+
+/**
+ * 임시저장 (새로 생성 또는 업데이트)
+ */
+export async function saveDraft(
+  participantId: string,
+  participationCode: string,
+  data: {
+    bookImageUrl?: string; // 이미 업로드된 이미지 URL
+    bookTitle?: string;
+    bookAuthor?: string;
+    bookCoverUrl?: string;
+    bookDescription?: string;
+    review?: string;
+    dailyAnswer?: string;
+    dailyQuestion?: string;
+  }
+): Promise<string> {
+  const db = getDb();
+  const now = Timestamp.now();
+  const submissionDate = getSubmissionDate();
+
+  // 기존 draft 확인
+  const existingDraft = await getDraftSubmission(participantId, participationCode);
+
+  const draftData = {
+    participantId,
+    participationCode,
+    ...data,
+    submissionDate,
+    status: 'draft' as const,
+    updatedAt: now,
+  };
+
+  if (existingDraft) {
+    // 기존 draft 업데이트
+    const docRef = doc(db, COLLECTIONS.READING_SUBMISSIONS, existingDraft.id);
+    await updateDoc(docRef, draftData);
+    return existingDraft.id;
+  } else {
+    // 새 draft 생성
+    const docRef = await addDoc(collection(db, COLLECTIONS.READING_SUBMISSIONS), {
+      ...draftData,
+      createdAt: now,
+    });
+    return docRef.id;
+  }
+}
+
+/**
+ * 임시저장 삭제
+ */
+export async function deleteDraft(draftId: string): Promise<void> {
+  const db = getDb();
+  const docRef = doc(db, COLLECTIONS.READING_SUBMISSIONS, draftId);
+  await deleteDoc(docRef);
+}

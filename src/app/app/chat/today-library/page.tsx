@@ -9,7 +9,6 @@ import HeaderNavigation from '@/components/HeaderNavigation';
 import FooterActions from '@/components/FooterActions';
 import BlurDivider from '@/components/BlurDivider';
 import UnifiedButton from '@/components/UnifiedButton';
-import ReadingSubmissionDialog from '@/components/ReadingSubmissionDialog';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,8 +52,6 @@ function TodayLibraryContent() {
     [viewerSubmissionDates]
   );
 
-  // 독서 인증 다이얼로그 상태
-  const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
 
   const matchingLookup = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
@@ -200,7 +197,7 @@ function TodayLibraryContent() {
   if (sessionLoading || cohortLoading || participantsLoading || viewerSubmissionLoading) {
     return (
       <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden">
+        <div className="app-shell flex flex-col overflow-hidden pt-14">
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="app-main-content flex-1 overflow-y-auto bg-background">
@@ -320,7 +317,7 @@ function TodayLibraryContent() {
     };
     return (
       <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden">
+        <div className="app-shell flex flex-col overflow-hidden pt-14">
           <HeaderNavigation title="오늘의 서재" />
 
           {/* Main Content */}
@@ -376,7 +373,7 @@ function TodayLibraryContent() {
               </UnifiedButton>
               <UnifiedButton
                 variant="primary"
-                onClick={() => setSubmissionDialogOpen(true)}
+                onClick={() => router.push(appRoutes.submitStep1(cohortId!))}
                 className="flex-1"
               >
                 독서 인증하기
@@ -384,14 +381,6 @@ function TodayLibraryContent() {
             </div>
           </FooterActions>
 
-          {/* 독서 인증 다이얼로그 */}
-          <ReadingSubmissionDialog
-            open={submissionDialogOpen && !!cohortId}
-            onOpenChange={setSubmissionDialogOpen}
-            participantId={currentUserId || ''}
-            participationCode={currentUserId || ''}
-            cohortId={cohortId || ''}
-          />
         </div>
       </PageTransition>
     );
@@ -402,7 +391,7 @@ function TodayLibraryContent() {
   if (allFeaturedIds.length === 0 && !showAllProfiles) {
     return (
       <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden">
+        <div className="app-shell flex flex-col overflow-hidden pt-14">
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="app-main-content flex flex-1 overflow-y-auto items-center justify-center bg-background">
@@ -469,7 +458,7 @@ function TodayLibraryContent() {
 
   return (
     <PageTransition>
-      <div className="app-shell flex flex-col overflow-hidden">
+      <div className="app-shell flex flex-col overflow-hidden pt-14">
         <HeaderNavigation title="오늘의 서재" />
 
         {/* Main Content */}
@@ -573,7 +562,7 @@ function TodayLibraryContent() {
 function LoadingSkeleton() {
   return (
     <PageTransition>
-      <div className="app-shell flex flex-col overflow-hidden">
+      <div className="app-shell flex flex-col overflow-hidden pt-14">
         <HeaderNavigation title="오늘의 서재" />
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-4 w-full">

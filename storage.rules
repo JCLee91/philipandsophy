@@ -3,10 +3,9 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // ============================================
-    // MVP Storage 보안 규칙
+    // Storage 보안 규칙 (Firebase Authentication 기반)
     // ============================================
-    // Custom Claims 기반 간결한 규칙
-    // 관리자 설정: Firebase Functions에서 request.auth.token.admin = true 설정 필요
+    // 전화번호 인증을 통한 Firebase Auth 사용
     // ============================================
 
     // Helper Functions

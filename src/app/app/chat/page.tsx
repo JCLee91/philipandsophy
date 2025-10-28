@@ -39,7 +39,6 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
     <ChatClientViewWithSuspense
       initialCohortId={cohortId}
       initialCohort={initialData.cohort}
-      initialParticipants={initialData.participants}
       initialNotices={initialData.notices}
     />
   );
