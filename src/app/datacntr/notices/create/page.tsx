@@ -51,7 +51,7 @@ export default function NoticeCreatePage() {
         const data = await response.json();
         setCohorts(data);
       } catch (error) {
-        logger.error('코호트 조회 실패 (notice-create)', error);
+
         alert('코호트 목록을 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);
@@ -138,7 +138,7 @@ export default function NoticeCreatePage() {
       alert(isDraft ? '공지가 임시저장되었습니다.' : '공지가 작성되었습니다.');
       router.push('/datacntr/notices');
     } catch (error) {
-      logger.error('공지 작성 실패 (notice-create)', error);
+
       alert(error instanceof Error ? error.message : '공지 작성 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);

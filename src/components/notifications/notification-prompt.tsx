@@ -42,16 +42,13 @@ export function NotificationPrompt() {
     let cleanup: (() => void) | undefined;
 
     const checkAndShowPrompt = async () => {
-      logger.info('[NotificationPrompt] Component mounted');
 
       // 브라우저가 알림을 지원하는지 확인
       if (!('Notification' in window)) {
-        logger.info('[NotificationPrompt] Notification API not supported');
+
         setIsCheckingToken(false);
         return;
       }
-
-      logger.info('[NotificationPrompt] Current permission:', Notification.permission);
 
       // 현재 알림 권한 상태 확인
       setPermission(Notification.permission);
@@ -76,15 +73,8 @@ export function NotificationPrompt() {
           const webPushSubs = Array.isArray(data.webPushSubscriptions) ? data.webPushSubscriptions : [];
           const hasAnyToken = pushTokens.length > 0 || webPushSubs.length > 0;
 
-          logger.info('[NotificationPrompt] Status check (simplified)', {
-            participantId,
-            hasAnyToken,
-            pushTokensCount: pushTokens.length,
-            webPushSubsCount: webPushSubs.length,
-          });
-
           if (hasAnyToken) {
-            logger.info('[NotificationPrompt] User already has push enabled, skipping prompt');
+
             setIsCheckingToken(false);
             return;
           }
@@ -96,14 +86,14 @@ export function NotificationPrompt() {
 
         // 페이지 로드 후 일정 시간 뒤에 프롬프트 표시
         const timer = setTimeout(() => {
-          logger.info('[NotificationPrompt] Showing prompt now');
+
           setShowPrompt(true);
           setIsCheckingToken(false);
         }, UI_CONSTANTS.NOTIFICATION_PROMPT_DELAY);
 
         cleanup = () => clearTimeout(timer);
       } catch (error) {
-        logger.error('[NotificationPrompt] Error checking push token', error);
+
         setIsCheckingToken(false);
       }
     };
@@ -120,7 +110,7 @@ export function NotificationPrompt() {
     const capturedParticipantId = participantId;
 
     if (!capturedParticipantId) {
-      logger.error('Cannot initialize push notifications: participantId not found');
+
       toast({
         variant: 'destructive',
         title: '사용자 정보를 불러오는 중입니다',
@@ -138,7 +128,6 @@ export function NotificationPrompt() {
       setShowPrompt(false);
 
       if (result === 'granted') {
-        logger.info('Notification permission granted, initializing push notifications...');
 
         // 2. FCM 지원 여부 확인 후 messaging 인스턴스 생성
         const { isFCMSupported } = await import('@/lib/firebase/webpush');
@@ -150,9 +139,6 @@ export function NotificationPrompt() {
 
         if (initResult) {
           setCleanup(() => initResult.cleanup);
-          logger.info('Push notifications initialized successfully', {
-            participantId: capturedParticipantId,
-          });
 
           // 3. 환영 알림 표시 (localStorage 사용 안 함)
           try {
@@ -165,13 +151,13 @@ export function NotificationPrompt() {
               tag: 'welcome-notification',
               requireInteraction: false,
             });
-            logger.info('Welcome notification sent via Service Worker');
+
           } catch (notificationError) {
             // 알림 표시 실패해도 전체 흐름은 계속 진행
-            logger.warn('Welcome notification failed, but push token was saved', notificationError);
+
           }
         } else {
-          logger.error('Failed to get FCM token');
+
           toast({
             variant: 'destructive',
             title: '알림 설정 실패',
@@ -179,11 +165,11 @@ export function NotificationPrompt() {
           });
         }
       } else if (result === 'denied') {
-        logger.warn('Notification permission denied', { result });
+
         // 브라우저 설정에서 차단됨 - 프롬프트만 닫기 (localStorage 사용 안 함)
       }
     } catch (error) {
-      logger.error('Error requesting notification permission', error);
+
       toast({
         variant: 'destructive',
         title: '알림 설정 오류',

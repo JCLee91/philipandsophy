@@ -114,7 +114,7 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
           }
         }
       } catch (error) {
-        logger.error('데이터 로드 실패:', error);
+
         toast({
           title: '오류',
           description: '데이터를 불러오는데 실패했습니다.',
@@ -170,7 +170,7 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
         description: '1기의 질문을 불러왔습니다.',
       });
     } catch (error) {
-      logger.error('질문 복사 실패:', error);
+
       toast({
         title: '오류',
         description: '질문을 복사하는데 실패했습니다.',
@@ -217,7 +217,7 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
         description: 'Daily Questions가 저장되었습니다.',
       });
     } catch (error) {
-      logger.error('저장 실패:', error);
+
       toast({
         title: '오류',
         description: error instanceof Error ? error.message : '저장에 실패했습니다.',

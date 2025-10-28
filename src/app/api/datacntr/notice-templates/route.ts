@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ templates });
   } catch (error) {
-    logger.error('템플릿 조회 실패 (datacntr-notice-templates)', error);
+
     return NextResponse.json(
       { error: '템플릿 조회 중 오류가 발생했습니다' },
       { status: 500 }
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       templateId: id,
     });
   } catch (error) {
-    logger.error('템플릿 생성 실패 (datacntr-notice-templates)', error);
+
     return NextResponse.json(
       { error: '템플릿 생성 중 오류가 발생했습니다' },
       { status: 500 }

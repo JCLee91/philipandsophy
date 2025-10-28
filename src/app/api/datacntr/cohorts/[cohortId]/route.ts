@@ -71,7 +71,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       participants: participantsWithStats,
     });
   } catch (error) {
-    logger.error('코호트 상세 조회 실패 (datacntr-cohort-detail)', error);
+
     return NextResponse.json(
       { error: '코호트 상세 조회 중 오류가 발생했습니다' },
       { status: 500 }

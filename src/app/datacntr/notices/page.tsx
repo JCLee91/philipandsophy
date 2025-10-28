@@ -181,7 +181,7 @@ export default function NoticesPage() {
           setCohorts(Array.isArray(data) ? data : []);
         }
       } catch (error) {
-        logger.error('기수 목록 조회 실패 (notices-page)', error);
+
       }
     };
 
@@ -329,7 +329,7 @@ export default function NoticesPage() {
         throw new Error('순서 변경 실패');
       }
     } catch (error) {
-      logger.error('공지 순서 변경 실패 (notices-page)', error);
+
       alert('순서 변경 중 오류가 발생했습니다');
       // 실패 시 원래 데이터로 복구
       await handleTemplateSuccess();
@@ -373,7 +373,7 @@ export default function NoticesPage() {
         setNotices(data);
       }
     } catch (error) {
-      logger.error('공지 삭제 실패 (notices-page)', error);
+
       alert(error instanceof Error ? error.message : '공지 삭제 중 오류가 발생했습니다');
     }
   };

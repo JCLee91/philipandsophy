@@ -86,14 +86,14 @@ function MatchingPageContent() {
 
       // 버전 체크
       if (parsed.version && parsed.version !== STORAGE_VERSION) {
-        logger.warn('Outdated localStorage schema, clearing', { key });
+
         localStorage.removeItem(key);
         return null;
       }
 
       // TTL 체크 (타임스탬프가 있는 경우)
       if (parsed.timestamp && Date.now() - parsed.timestamp > STORAGE_TTL) {
-        logger.warn('Expired localStorage data, clearing', { key });
+
         localStorage.removeItem(key);
         return null;
       }
@@ -101,14 +101,14 @@ function MatchingPageContent() {
       // 데이터 구조 검증 (data 필드 또는 직접 MatchingResponse 형태)
       const data = parsed.data || parsed;
       if (!data.matching || !data.date) {
-        logger.error('Invalid localStorage data structure', { key });
+
         localStorage.removeItem(key);
         return null;
       }
 
       return data;
     } catch (error) {
-      logger.error('localStorage parsing error', { key, error });
+
       // 손상된 데이터 제거
       try {
         localStorage.removeItem(key);
@@ -128,7 +128,7 @@ function MatchingPageContent() {
       };
       localStorage.setItem(key, JSON.stringify(stored));
     } catch (error) {
-      logger.error('localStorage save error', { key, error });
+
     }
   }, []); // 상수만 사용하므로 dependency 불필요
 
@@ -149,22 +149,21 @@ function MatchingPageContent() {
         // 이 코호트의 매칭 관련 키이지만 오늘 날짜가 아닌 경우 삭제
         if (key.startsWith(`matching-preview-${cohortId}-`) && !key.includes(todayDate)) {
           localStorage.removeItem(key);
-          logger.info('전날 프리뷰 캐시 삭제', { key });
+
         }
         if (key.startsWith(`matching-confirmed-${cohortId}-`) && !key.includes(todayDate)) {
           localStorage.removeItem(key);
-          logger.info('전날 확정 캐시 삭제', { key });
+
         }
         if (key.startsWith(`matching-in-progress-${cohortId}-`) && !key.includes(todayDate)) {
           localStorage.removeItem(key);
-          logger.info('전날 진행중 플래그 삭제', { key });
+
         }
       });
     } catch (storageError) {
-      logger.error('localStorage 정리 실패', storageError);
+
     }
 
-    logger.info('매칭 페이지 상태 초기화', { cohortId, submissionDate, todayDate });
   }, [cohortId, submissionDate, todayDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY]);
 
   // ✅ Solution 3: localStorage 체크를 동기로 처리하여 초기 렌더링 블로킹 제거
@@ -185,7 +184,7 @@ function MatchingPageContent() {
         });
 
         localStorage.removeItem(IN_PROGRESS_KEY);
-        logger.warn('중단된 매칭 작업 감지', { timestamp, elapsedMinutes });
+
       }
 
       // 2. 로컬 스토리지 복원 우선 (동기, 즉시 표시)
@@ -199,10 +198,6 @@ function MatchingPageContent() {
           return; // 확정 결과가 있으면 프리뷰는 무시
         }
 
-        logger.info('Stale confirmed result ignored', {
-          storedDate: savedConfirmed.date,
-          todayDate,
-        });
       }
 
       // ✅ 2-B. 프리뷰 결과 복원 (확정 결과가 없을 때만)
@@ -212,14 +207,11 @@ function MatchingPageContent() {
           setPreviewResult(savedPreview);
           setMatchingState('previewing');
         } else {
-          logger.info('Stale preview result ignored', {
-            storedDate: savedPreview.date,
-            todayDate,
-          });
+
         }
       }
     } catch (error) {
-      logger.error('localStorage 처리 실패', error);
+
     }
 
     // 3. Firestore에서 확정된 매칭 또는 프리뷰 조회 (비동기, UI 블로킹 안 함)
@@ -284,15 +276,9 @@ function MatchingPageContent() {
             if (data.date !== todayDate) {
               try {
                 await updateDoc(previewDoc.ref, { status: 'expired' });
-                logger.info('Stale preview marked as expired', {
-                  staleDate: data.date,
-                  todayDate,
-                });
+
               } catch (updateError) {
-                logger.warn('Failed to expire stale preview', {
-                  staleDate: data.date,
-                  error: updateError,
-                });
+
               }
               continue;
             }
@@ -372,12 +358,7 @@ function MatchingPageContent() {
         const invalidSimilarIds = similarTargets.filter(id => !participantsById.has(id));
         const invalidOppositeIds = oppositeTargets.filter(id => !participantsById.has(id));
         if (invalidSimilarIds.length > 0 || invalidOppositeIds.length > 0) {
-          logger.warn('매칭 결과에 존재하지 않는 참가자 ID 발견', {
-            viewerId: participant.id,
-            viewerName: participant.name,
-            invalidSimilarIds,
-            invalidOppositeIds,
-          });
+
         }
 
         return {
@@ -440,7 +421,7 @@ function MatchingPageContent() {
     try {
       const headers = await getAdminHeaders();
       if (!headers) {
-        logger.error('인증 실패: ID Token을 가져올 수 없습니다.');
+
         return;
       }
 
@@ -460,7 +441,7 @@ function MatchingPageContent() {
         setMatchingState('confirmed');
       }
     } catch (error) {
-      logger.error('매칭 결과 로드 실패', error);
+
     }
   }, [cohortId, todayDate, hasFetchedInitialResult]);
 
@@ -493,7 +474,7 @@ function MatchingPageContent() {
       localStorage.setItem(IN_PROGRESS_KEY, Date.now().toString());
 
     } catch (storageError) {
-      logger.error('로컬 스토리지 플래그 설정 실패', storageError);
+
     }
 
     try {
@@ -522,7 +503,7 @@ function MatchingPageContent() {
         saveToStorage(PREVIEW_STORAGE_KEY, data);
 
       } catch (storageError) {
-        logger.error('로컬 스토리지 저장 실패', storageError);
+
       }
 
       const matchedCount =
@@ -541,7 +522,7 @@ function MatchingPageContent() {
         localStorage.removeItem(IN_PROGRESS_KEY);
 
       } catch (storageError) {
-        logger.error('로컬 스토리지 플래그 제거 실패', storageError);
+
       }
     } catch (error) {
       const errorMessage =
@@ -556,9 +537,9 @@ function MatchingPageContent() {
       // 실패 시에도 중단 플래그 제거 (재시도 가능하도록)
       try {
         localStorage.removeItem(IN_PROGRESS_KEY);
-        logger.info('매칭 작업 실패, 플래그 제거', { submissionDate });
+
       } catch (storageError) {
-        logger.error('로컬 스토리지 플래그 제거 실패', storageError);
+
       }
     } finally {
       setIsProcessing(false);
@@ -605,7 +586,7 @@ function MatchingPageContent() {
         localStorage.setItem(CONFIRMED_STORAGE_KEY, JSON.stringify(previewResult)); // 확정 결과 저장
 
       } catch (storageError) {
-        logger.error('로컬 스토리지 저장 실패', storageError);
+
       }
 
       // Firestore matching_previews 상태 업데이트 (자동 생성된 preview가 있다면)
@@ -633,14 +614,14 @@ function MatchingPageContent() {
         }
       } catch (firestoreError) {
         // Firestore 업데이트 실패는 로그만 남기고 계속 진행
-        logger.error('Firestore matching_previews 업데이트 실패', firestoreError);
+
       }
 
       // 매칭 알림 전송 (프로필북 도착 푸시)
       try {
         // 🔒 환경변수 검증
         if (!process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL) {
-          logger.error('CRITICAL: NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL is not set');
+
           toast({
             title: '매칭 적용 완료',
             description: '매칭은 완료되었으나 푸시 알림 설정이 누락되었습니다. 관리자에게 문의하세요.',
@@ -649,8 +630,6 @@ function MatchingPageContent() {
           // 알림 전송 건너뛰고 계속 진행
           return;
         }
-
-        logger.info('매칭 알림 전송 시작', { cohortId, date: previewResult.date });
 
         const notificationResponse = await fetch(
           `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/sendMatchingNotifications`,
@@ -666,10 +645,7 @@ function MatchingPageContent() {
 
         if (!notificationResponse.ok) {
           const notificationError = await notificationResponse.json();
-          logger.error('매칭 알림 전송 실패', {
-            status: notificationResponse.status,
-            error: notificationError,
-          });
+
           // 알림 실패는 사용자에게 경고만 표시 (매칭은 이미 완료됨)
           toast({
             title: '매칭 적용 완료',
@@ -678,18 +654,14 @@ function MatchingPageContent() {
           });
         } else {
           const notificationResult = await notificationResponse.json();
-          logger.info('매칭 알림 전송 완료', {
-            cohortId,
-            date: previewResult.date,
-            notificationsSent: notificationResult.notificationsSent,
-          });
+
           toast({
             title: '매칭 적용 완료',
             description: '오늘의 서재에서 참가자들이 확인할 수 있습니다. 푸시 알림이 전송되었습니다.',
           });
         }
       } catch (notificationError) {
-        logger.error('매칭 알림 전송 중 예외 발생', notificationError);
+
         // 알림 실패는 로그만 남기고 계속 진행
         toast({
           title: '매칭 적용 완료',

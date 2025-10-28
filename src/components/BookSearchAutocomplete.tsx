@@ -52,7 +52,7 @@ export default function BookSearchAutocomplete({
     if (initialBook) {
       // Validate initialBook has required fields
       if (!initialBook.title) {
-        logger.error('initialBook missing title field', initialBook);
+
         return;
       }
       setSelectedBook(initialBook);
@@ -118,7 +118,7 @@ export default function BookSearchAutocomplete({
         setShowDropdown(cleanedBooks.length > 0);
       } catch (error) {
         if (!aborted) {
-          logger.error('책 검색 실패:', error);
+
           setSearchResults([]);
           setShowDropdown(false);
         }

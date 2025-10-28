@@ -133,7 +133,7 @@ export const useMarkAsRead = () => {
           context.previousMessages
         );
       }
-      logger.error('메시지 읽음 처리 실패:', error);
+
     },
     onSuccess: (_, variables) => {
 

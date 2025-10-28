@@ -314,7 +314,7 @@ export async function updateParticipantBookInfo(
     } catch (error) {
       retries++;
       if (retries >= MAX_RETRIES) {
-        logger.error('updateParticipantBookInfo failed after retries:', error);
+
         throw error;
       }
       // Exponential backoff

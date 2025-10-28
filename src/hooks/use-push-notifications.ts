@@ -78,7 +78,7 @@ export function usePushNotifications(
       return newPermission;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error');
-      logger.error('Error requesting notification permission', error);
+
       setError(error);
       return 'denied';
     }
@@ -112,10 +112,10 @@ export function usePushNotifications(
       await autoRefreshPushToken(messaging, participantId);
 
       setIsInitialized(true);
-      logger.info('Push notifications initialized successfully', { participantId });
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to initialize push notifications');
-      logger.error('Error initializing push notifications', error);
+
       setError(error);
     } finally {
       setIsLoading(false);
@@ -155,11 +155,10 @@ export function usePushNotifications(
         const fcmSupported = await isFCMSupported();
         const messaging = fcmSupported ? getMessaging(getFirebaseApp()) : null;
 
-        logger.info('[usePushNotifications] Checking token on mount for iOS PWA...', { participantId });
         await autoRefreshPushToken(messaging, participantId);
-        logger.info('[usePushNotifications] Token check on mount completed', { participantId });
+
       } catch (error) {
-        logger.error('[usePushNotifications] Error checking token on mount', error);
+
       }
     };
 
@@ -175,9 +174,9 @@ export function usePushNotifications(
           const messaging = fcmSupported ? getMessaging(getFirebaseApp()) : null;
 
           await autoRefreshPushToken(messaging, participantId);
-          logger.info('[usePushNotifications] Auto-refreshed push token (interval)', { participantId });
+
         } catch (error) {
-          logger.error('[usePushNotifications] Error auto-refreshing push token', error);
+
         }
       },
       7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
@@ -193,7 +192,7 @@ export function usePushNotifications(
     return () => {
       if (cleanup) {
         cleanup();
-        logger.info('Push notification listener cleaned up');
+
       }
     };
   }, [cleanup]);

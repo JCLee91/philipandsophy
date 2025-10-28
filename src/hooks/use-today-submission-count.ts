@@ -72,7 +72,7 @@ export function useTodaySubmissionCount(cohortId?: string) {
           })
           .catch((err) => {
             if (isMountedRef.current) {
-              logger.error('오늘 제출 참가자 필터링 실패', err);
+
               setError(err as Error);
               setIsLoading(false);
             }
@@ -80,7 +80,7 @@ export function useTodaySubmissionCount(cohortId?: string) {
       },
       (err) => {
         if (isMountedRef.current) {
-          logger.error('오늘 제출 현황 조회 실패', err);
+
           setError(err as Error);
           setIsLoading(false);
         }

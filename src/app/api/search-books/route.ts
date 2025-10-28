@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     const clientSecret = process.env.NAVER_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      logger.error('Naver API credentials are missing');
+
       return NextResponse.json(
         { error: 'Server configuration error. Please contact administrator.' },
         { status: 500 }
@@ -128,7 +128,6 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error('Naver API error:', { status: response.status, error: errorText });
 
       return NextResponse.json(
         {
@@ -153,7 +152,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    logger.error('Search books API error:', error);
 
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -29,12 +29,7 @@ export function useImageUpload() {
         description: validation.error,
         variant: 'destructive',
       });
-      logger.warn('이미지 검증 실패:', {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        error: validation.error
-      });
+
       return;
     }
 
@@ -52,7 +47,7 @@ export function useImageUpload() {
         description: '이미지를 불러올 수 없습니다. 다른 이미지를 시도해주세요.',
         variant: 'destructive',
       });
-      logger.error('FileReader 에러:', { fileName: file.name });
+
       setImageFile(null);
       setImagePreview(null);
     };

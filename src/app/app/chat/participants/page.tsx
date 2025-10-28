@@ -210,7 +210,7 @@ function ParticipantsPageContent() {
     if (!participant || !cohortId) {
       hasRedirectedRef.current = true;
       setIsRedirecting(true);
-      logger.warn('ParticipantsPage: 세션 또는 cohortId 없음, /app으로 리다이렉트');
+
       router.replace('/app');
     }
     // router는 Next.js useRouter에서 반환되는 안정적인 객체이므로 의존성 배열에 불필요

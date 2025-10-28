@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   let isInternalCall = false;
   if (internalSecret && expectedSecret && internalSecret === expectedSecret) {
     isInternalCall = true;
-    logger.info('[Matching Preview] Internal service authenticated via secret');
+
   }
 
   // 내부 호출이 아니면 관리자 권한 검증
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       return error;
     }
-    logger.info('[Matching Preview] Admin user authenticated', { userId: user.id });
+
   }
 
   try {
@@ -49,12 +49,6 @@ export async function POST(request: NextRequest) {
     const matchingDate = getTodayString(); // 매칭 실행 날짜 (오늘 Firebase 키로 사용)
     const submissionQuestion = getDailyQuestionText(submissionDate);
 
-    logger.info('매칭 날짜 정보', {
-      submissionDate,
-      matchingDate,
-      submissionQuestion: submissionQuestion.substring(0, 50) + '...',
-    });
-
     // 2. Firebase Admin 초기화 및 DB 가져오기
     const db = getAdminDb();
 
@@ -64,11 +58,6 @@ export async function POST(request: NextRequest) {
       .collection('reading_submissions')
       .where('submissionDate', '==', submissionDate)
       .get();
-
-    logger.info('제출 현황', {
-      totalSubmissions: submissionsSnapshot.size,
-      targetDate: submissionDate,
-    });
 
     if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
       return NextResponse.json(
@@ -122,20 +111,13 @@ export async function POST(request: NextRequest) {
 
       // 🔒 다른 코호트 참가자 제외 (다중 코호트 운영 시 데이터 혼입 방지)
       if (!participant.cohortId || participant.cohortId !== cohortId) {
-        logger.warn('코호트 불일치로 제외', {
-          participantId,
-          expectedCohort: cohortId,
-          actualCohort: participant.cohortId || 'undefined',
-        });
+
         continue;
       }
 
       // 슈퍼 관리자만 매칭에서 제외 (일반 관리자는 매칭 대상 포함)
       if (participant.isSuperAdmin) {
-        logger.info('슈퍼 관리자 매칭에서 제외', {
-          participantId,
-          name: participant.name,
-        });
+
         continue;
       }
 
@@ -150,12 +132,7 @@ export async function POST(request: NextRequest) {
       if (submission.dailyQuestion === submissionQuestion) {
         mainGroupAnswers.push(participantAnswer);
       } else {
-        logger.warn('다른 질문에 답변한 참가자 (새벽 제출자)', {
-          participantId,
-          name: participant.name,
-          expectedQuestion: submissionQuestion.substring(0, 30) + '...',
-          actualQuestion: submission.dailyQuestion.substring(0, 30) + '...',
-        });
+
         dawnGroupAnswers.push(participantAnswer);
       }
     }
@@ -175,27 +152,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    logger.info('매칭 프리뷰 시작 (Human-in-the-loop)', {
-      totalCount: participantAnswers.length,
-      mainGroupCount: mainGroupAnswers.length,
-      dawnGroupCount: dawnGroupAnswers.length,
-      mainMaleCount: mainGroupAnswers.filter(p => p.gender === 'male').length,
-      mainFemaleCount: mainGroupAnswers.filter(p => p.gender === 'female').length,
-    });
-
     // 6. 임시 매칭 로직: 질문별로 다르게 처리
     let finalMatching: { assignments: any };
 
     if (dawnGroupAnswers.length > 0 && mainGroupAnswers.length >= MATCHING_CONFIG.MIN_PARTICIPANTS) {
       // 6-1. 메인 그룹 (13명) AI 매칭 실행
-      logger.info('메인 그룹 AI 매칭 시작', {
-        participants: mainGroupAnswers.length,
-        question: submissionQuestion.substring(0, 50) + '...'
-      });
+
       const mainGroupMatching = await matchParticipantsByAI(submissionQuestion, mainGroupAnswers);
 
       // 6-2. 새벽 그룹 (4명)용 랜덤 매칭 생성 (성별 균형 검증 포함)
-      logger.info('새벽 그룹 랜덤 매칭 시작', { participants: dawnGroupAnswers.length });
 
       const dawnAssignments: any[] = [];
       for (const dawnParticipant of dawnGroupAnswers) {
@@ -228,14 +193,7 @@ export async function POST(request: NextRequest) {
           oppositePicks.filter(p => p.gender === 'female').length === 1;
 
         if (!similarBalanced || !oppositeBalanced) {
-          logger.warn('새벽 참가자 성별 균형 미달', {
-            participantId: dawnParticipant.id,
-            name: dawnParticipant.name,
-            similarBalanced,
-            oppositeBalanced,
-            similarCount: similarPicks.length,
-            oppositeCount: oppositePicks.length
-          });
+
         }
 
         dawnAssignments.push({
@@ -249,13 +207,6 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        logger.info('새벽 참가자 랜덤 매칭 완료', {
-          participantId: dawnParticipant.id,
-          name: dawnParticipant.name,
-          assignedBooks: similarIds.length + oppositeIds.length,
-          similarBalanced,
-          oppositeBalanced
-        });
       }
 
       // 6-3. 두 그룹 결과 합치기
@@ -274,17 +225,11 @@ export async function POST(request: NextRequest) {
         assignments: combinedAssignments
       };
 
-      logger.info('임시 매칭 완료', {
-        mainGroupMatches: Object.keys(mainGroupMatching.assignments).length,
-        dawnGroupMatches: dawnAssignments.length,
-        totalMatches: Object.keys(combinedAssignments).length
-      });
-
     } else {
       // 일반 매칭 (모두 같은 질문에 답변한 경우)
-      logger.info('일반 AI 매칭 시작 (프리뷰 모드)', { totalParticipants: participantAnswers.length });
+
       finalMatching = await matchParticipantsByAI(submissionQuestion, participantAnswers);
-      logger.info('AI 매칭 완료 (프리뷰 모드)');
+
     }
 
     const matching = finalMatching;
@@ -326,7 +271,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('매칭 프리뷰 실패', error);
+
     return NextResponse.json(
       {
         error: '매칭 실행 중 오류가 발생했습니다.',

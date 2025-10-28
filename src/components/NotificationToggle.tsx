@@ -68,7 +68,7 @@ export function NotificationToggle() {
       const participantSnap = await getDoc(participantRef);
 
       if (!participantSnap.exists()) {
-        logger.warn('[NotificationToggle] Participant not found', { participantId });
+
         setIsEnabled(false);
         return;
       }
@@ -81,23 +81,16 @@ export function NotificationToggle() {
 
       const hasAnyToken = pushTokens.length > 0 || webPushSubs.length > 0;
 
-      logger.info('[NotificationToggle] Status check (simplified)', {
-        participantId,
-        hasAnyToken,
-        pushTokensCount: pushTokens.length,
-        webPushSubsCount: webPushSubs.length,
-      });
-
       setIsEnabled(hasAnyToken);
 
       // 브라우저 권한이 명시적으로 denied면 정리
       if (hasAnyToken && getNotificationPermission() === 'denied') {
-        logger.warn('[NotificationToggle] Permission denied, cleaning up');
+
         await removePushTokenFromFirestore(participantId);
         setIsEnabled(false);
       }
     } catch (error) {
-      logger.error('[NotificationToggle] Error checking status', error);
+
     } finally {
       setIsStatusLoading(false);
     }
@@ -142,11 +135,7 @@ export function NotificationToggle() {
 
         const initResult = await initializePushNotifications(messaging, participantId);
         if (!initResult) {
-          logger.error('[enableNotifications] initializePushNotifications returned null', {
-            participantId,
-            hasMessaging: !!messaging,
-            permission: Notification.permission,
-          });
+
           throw new Error('Push initialization failed');
         }
 
@@ -156,7 +145,7 @@ export function NotificationToggle() {
         await checkNotificationStatus(participantId);
       }
     } catch (error) {
-      logger.error('[enableNotifications] Error', error);
+
       setErrorMessage('알림 설정 중 오류가 발생했습니다');
       if (participantId) {
         await checkNotificationStatus(participantId);
@@ -189,7 +178,7 @@ export function NotificationToggle() {
           const messaging = getMessaging(getFirebaseApp());
           await deleteToken(messaging);
         } catch (error) {
-          logger.warn('[disableNotifications] FCM delete failed (non-critical)', error);
+
         }
       } else if (channel === 'webpush') {
         // Web Push: 로컬 Firestore + PushSubscription 제거
@@ -206,7 +195,7 @@ export function NotificationToggle() {
       // 3. 상태 재확인
       await checkNotificationStatus(participantId);
     } catch (error) {
-      logger.error('[disableNotifications] Error', error);
+
       setErrorMessage('알림 해제 중 오류가 발생했습니다');
       if (participantId) {
         await checkNotificationStatus(participantId);

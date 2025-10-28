@@ -191,7 +191,7 @@ export function ChatClientView({
         block: 'center',
         inline: 'nearest',
       });
-      logger.info('[Scroll Effect] Scrolled to latest notice');
+
     }
   }, [isLoading, noticesData.length]);
 
@@ -228,7 +228,7 @@ export function ChatClientView({
 
   const handleParticipantsClick = useCallback(() => {
     if (!cohortId) {
-      logger.warn('cohortId가 없어 참가자 목록을 열 수 없습니다');
+
       return;
     }
 

@@ -121,7 +121,7 @@ export default function CohortCreatePage() {
           description: `${parsed.length}명의 참가자를 불러왔습니다.`,
         });
       } catch (error) {
-        logger.error('CSV 파싱 실패:', error);
+
         toast({
           title: '오류',
           description: 'CSV 파일을 읽는데 실패했습니다.',
@@ -230,7 +230,7 @@ export default function CohortCreatePage() {
       router.push('/datacntr/cohorts');
 
     } catch (error) {
-      logger.error('기수 생성 실패:', error);
+
       toast({
         title: '오류',
         description: error instanceof Error ? error.message : '기수 생성에 실패했습니다.',

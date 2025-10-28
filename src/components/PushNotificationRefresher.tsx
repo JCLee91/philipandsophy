@@ -27,7 +27,6 @@ export function PushNotificationRefresher() {
     // 앱 진입 시 토큰 갱신 체크 (7일 경과 시 자동 갱신)
     const refreshToken = async () => {
       try {
-        logger.info('[PushNotificationRefresher] Checking token refresh...');
 
         // Check FCM support before creating messaging instance
         const { isFCMSupported } = await import('@/lib/firebase/webpush');
@@ -36,7 +35,7 @@ export function PushNotificationRefresher() {
 
         await autoRefreshPushToken(messaging, participant.id);
       } catch (error) {
-        logger.error('[PushNotificationRefresher] Failed to refresh token', error);
+
         // 에러가 발생해도 무시 (사용자 경험에 영향 없음)
       }
     };

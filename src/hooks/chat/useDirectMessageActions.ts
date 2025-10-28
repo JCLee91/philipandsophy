@@ -87,7 +87,7 @@ export function useDirectMessageActions({
 
         return true;
       } catch (error) {
-        logger.error('메시지 전송 실패:', error);
+
         if (!(error instanceof Error && error.message.includes('storage/'))) {
           toast({
             title: '메시지 전송 실패',

@@ -75,7 +75,7 @@ export default function EditTemplateModal({
       onSuccess();
       onClose();
     } catch (err) {
-      logger.error('템플릿 수정 실패 (EditTemplateModal)', err);
+
       setError(err instanceof Error ? err.message : '템플릿 수정 중 오류가 발생했습니다');
     } finally {
       setIsSubmitting(false);

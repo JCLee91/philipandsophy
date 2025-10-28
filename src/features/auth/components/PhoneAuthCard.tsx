@@ -53,7 +53,7 @@ export default function PhoneAuthCard() {
         setPhoneNumber(formatted);
       }
     } catch (error) {
-      logger.error('마지막 전화번호 불러오기 실패:', error);
+
     }
   }, []);
 
@@ -72,7 +72,7 @@ export default function PhoneAuthCard() {
       recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
 
     } catch (error) {
-      logger.error('reCAPTCHA 초기화 실패:', error);
+
       if (isMounted) {
         setError(AUTH_ERROR_MESSAGES.CAPTCHA_INIT_FAILED);
       }
@@ -89,7 +89,7 @@ export default function PhoneAuthCard() {
 
         } catch (error) {
           // Cleanup 실패는 로그만 (non-blocking)
-          logger.warn('reCAPTCHA cleanup 실패 (무시됨):', error);
+
         } finally {
           recaptchaVerifierRef.current = null;
         }
@@ -167,9 +167,9 @@ export default function PhoneAuthCard() {
 
       // SMS 전송 성공 → 인증 코드 입력 단계로 이동
       setStep('code');
-      logger.info('SMS 전송 성공');
+
     } catch (error: any) {
-      logger.error('SMS 전송 실패:', error);
+
       setError(error.message || AUTH_ERROR_MESSAGES.SMS_SEND_FAILED);
     } finally {
       setIsSubmitting(false);
@@ -198,14 +198,12 @@ export default function PhoneAuthCard() {
         verificationCode
       );
 
-      logger.info('Firebase 로그인 성공', { uid: userCredential.user.uid });
-
       // 마지막 로그인 전화번호 저장
       try {
         const cleanNumber = phoneNumber.replace(/-/g, '');
         localStorage.setItem(LAST_PHONE_KEY, cleanNumber);
       } catch (error) {
-        logger.error('전화번호 저장 실패:', error);
+
       }
 
       // Firestore에서 participant 조회
@@ -228,7 +226,7 @@ export default function PhoneAuthCard() {
             await linkFirebaseUid(participant.id, userCredential.user.uid);
 
             // ✅ UID 연결 직후 AuthContext가 최신 participant 데이터를 가져오도록 재시도
-            logger.info('AuthContext participant 재조회 요청');
+
             await retryParticipantFetch();
 
             // ✅ AuthContext가 ready 상태가 될 때까지 대기 (최대 3초)
@@ -240,13 +238,12 @@ export default function PhoneAuthCard() {
               while (Date.now() - startTime < maxWaitTime) {
                 // ✅ ref를 사용하여 최신 participantStatus 값 읽기
                 if (participantStatusRef.current === 'ready') {
-                  logger.info('AuthContext ready 상태 확인됨');
+
                   return true;
                 }
                 await new Promise(resolve => setTimeout(resolve, checkInterval));
               }
 
-              logger.warn('AuthContext ready 대기 시간 초과 (3초), 계속 진행');
               return false;
             };
 
@@ -261,12 +258,10 @@ export default function PhoneAuthCard() {
         return;
       }
 
-      logger.info('참가자 조회 성공', { participantId: participant.id });
-
       // 채팅 페이지로 이동 (Firebase Auth가 자동으로 세션 관리)
       router.replace(appRoutes.chat(participant.cohortId));
     } catch (error: any) {
-      logger.error('인증 코드 확인 실패:', error);
+
       setError(error.message || AUTH_ERROR_MESSAGES.AUTH_FAILED);
 
       // 보안: 인증 실패 시 confirmationResult 초기화 (brute force 방지)
@@ -291,7 +286,7 @@ export default function PhoneAuthCard() {
     try {
       await retryParticipantFetch();
     } catch (error) {
-      logger.error('Participant 재시도 실패:', error);
+
     } finally {
       setIsRetrying(false);
     }

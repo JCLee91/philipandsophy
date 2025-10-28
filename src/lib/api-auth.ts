@@ -22,7 +22,7 @@ export async function verifyAuthIdToken(idToken: string): Promise<{ email: strin
       uid: decodedToken.uid,
     };
   } catch (error) {
-    logger.error('ID Token 검증 실패:', error);
+
     return null;
   }
 }
@@ -87,9 +87,6 @@ export async function requireAuthToken(
       .get();
 
     if (snapshot.empty) {
-      logger.warn('Data center access denied - participant not found', {
-        firebaseUid: decoded.uid,
-      });
 
       return {
         participant: null,
@@ -112,10 +109,6 @@ export async function requireAuthToken(
     } as Participant;
 
     if (participant.isSuperAdmin !== true && participant.isAdministrator !== true) {
-      logger.warn('Data center access denied - insufficient privileges', {
-        participantId: participant.id,
-        firebaseUid: decoded.uid,
-      });
 
       return {
         participant: null,
@@ -138,7 +131,7 @@ export async function requireAuthToken(
       error: null,
     };
   } catch (error) {
-    logger.error('Data center auth verification failed', error);
+
     return {
       participant: null,
       firebaseUid: null,
@@ -192,10 +185,7 @@ export async function requireWebAppAuth(
       .get();
 
     if (snapshot.empty) {
-      logger.warn('Firebase UID와 연결된 Participant 없음', {
-        uid: decodedToken.uid,
-        phoneNumber: decodedToken.phone_number,
-      });
+
       return {
         user: null,
         error: NextResponse.json(
@@ -215,7 +205,6 @@ export async function requireWebAppAuth(
 
     return { user: participant, error: null };
   } catch (error: any) {
-    logger.error('Firebase ID Token 검증 실패 (웹앱):', error);
 
     // ID Token 만료 여부 체크
     if (error.code === 'auth/id-token-expired') {
@@ -272,7 +261,7 @@ export async function requireWebAppAdmin(
   const hasAdminPrivileges = user?.isAdministrator === true || user?.isSuperAdmin === true;
 
   if (!hasAdminPrivileges) {
-    logger.warn('관리자 권한 없음', { participantId: user?.id, name: user?.name });
+
     return {
       user: null,
       error: NextResponse.json(

@@ -203,7 +203,7 @@ export function subscribeParticipantSubmissions(
       callback(submissions);
     },
     (error) => {
-      logger.error('Firebase 실시간 구독 에러:', error);
+
       callback([]); // 에러 시 빈 배열
     }
   );
@@ -251,7 +251,6 @@ export function subscribeTodayVerified(
     (error) => {
       // Firebase 에러 처리 (네트워크, 권한 등)
 
-      logger.error('Firebase 실시간 구독 에러:', error);
       // 에러 발생 시 빈 Set 반환 (fallback)
       callback(new Set());
     }

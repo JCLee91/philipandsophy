@@ -69,7 +69,7 @@ export function useSubmissionCount(cohortId?: string, date?: string) {
           })
           .catch((err) => {
             if (isMountedRef.current) {
-              logger.error('참가자 필터링 실패', err);
+
               setError(err as Error);
               setIsLoading(false);
             }
@@ -77,7 +77,7 @@ export function useSubmissionCount(cohortId?: string, date?: string) {
       },
       (err) => {
         if (isMountedRef.current) {
-          logger.error('실시간 제출 현황 조회 실패', err);
+
           setError(err as Error);
           setIsLoading(false);
         }

@@ -186,16 +186,8 @@ function validateMatching(
       recommendationCounts.size
     ).toFixed(1);
 
-    logger.info('✅ 매칭 검증 성공', {
-      totalParticipants: participants.length,
-      avgRecommendations,
-      message: '모든 검증 통과: 4명 추천, 성별 균형, 자기 제외',
-    });
   } else {
-    logger.error('❌ 매칭 검증 실패', {
-      errorCount: errors.length,
-      errors: errors.slice(0, 5), // 처음 5개만 로깅
-    });
+
   }
 
   return {
@@ -279,17 +271,9 @@ async function _matchParticipantsByAI(
   // 성별 분포 사전 검증
   const genderValidation = validateGenderDistribution(participants);
   if (!genderValidation.valid) {
-    logger.error('❌ 성별 분포 사전 검증 실패', {
-      errors: genderValidation.errors,
-      stats: genderValidation.stats,
-    });
+
     throw new Error(`성별 균형 매칭 불가: ${genderValidation.errors.join('; ')}`);
   }
-
-  logger.info('✅ 성별 분포 사전 검증 통과', {
-    stats: genderValidation.stats,
-    totalParticipants: participants.length,
-  });
 
   try {
     const participantPromptList = participants
@@ -402,13 +386,6 @@ JSON만 반환하세요.
     const provider = process.env.AI_PROVIDER || 'openai';
     const modelName = process.env.AI_MODEL || 'gpt-4o-mini';
 
-    logger.info('🤖 AI API 호출 시작 (Vercel AI SDK)', {
-      provider,
-      model: modelName,
-      participantCount: participants.length,
-      promptLength: prompt.length,
-    });
-
     const apiStartTime = Date.now();
 
     const { object: raw } = await generateObject({
@@ -419,11 +396,6 @@ JSON만 반환하세요.
     });
     const apiDuration = Date.now() - apiStartTime;
 
-    logger.info('✅ AI API 응답 완료', {
-      provider,
-      model: modelName,
-      duration: `${(apiDuration / 1000).toFixed(1)}초`,
-    });
     const validIds = new Set(participants.map((p) => p.id));
 
     if (!raw.assignments || !Array.isArray(raw.assignments)) {
@@ -446,7 +418,7 @@ JSON만 반환하세요.
 
       if (!entry) {
         missingAssignments.push(participant.name);
-        logger.error(`❌ AI가 ${participant.name}(${participant.id})에 대한 추천을 생성하지 않았습니다.`);
+
         continue;
       }
 
@@ -456,10 +428,10 @@ JSON만 반환하세요.
 
       // 추천이 부족한 경우 경고 로그
       if (similarIds.length < 2) {
-        logger.warn(`${participant.name}의 similar 추천이 ${similarIds.length}명뿐입니다.`);
+
       }
       if (oppositeIds.length < 2) {
-        logger.warn(`${participant.name}의 opposite 추천이 ${oppositeIds.length}명뿐입니다.`);
+
       }
 
       // 정확히 2명씩만 할당 (AI가 더 많이 제공하더라도)
@@ -473,7 +445,7 @@ JSON만 반환하세요.
     // 누락된 assignments 에러 처리
     if (missingAssignments.length > 0) {
       const errorMsg = `AI가 ${missingAssignments.length}명에 대한 추천을 생성하지 않았습니다: ${missingAssignments.join(', ')}`;
-      logger.error(`🚨 ${errorMsg}`);
+
       throw new Error(`매칭 생성 실패: ${errorMsg}. AI 매칭을 다시 실행해주세요.`);
     }
 
@@ -484,23 +456,13 @@ JSON만 반환하세요.
     const validation = validateMatching(matching, participants);
 
     if (!validation.valid) {
-      logger.error('🚨 매칭 검증 실패', {
-        errors: validation.errors,
-        action: '관리자가 수동으로 조정 필요',
-      });
+
       // 검증 실패해도 일단 결과는 반환 (관리자가 수동 조정 가능)
     }
 
-    logger.info('✅ AI 매칭 완료 (수동 검토 대기)', {
-      question,
-      participantCount: participants.length,
-      assignmentsCount: Object.keys(assignments).length,
-      validationPassed: validation.valid,
-    });
-
     return matching;
   } catch (error) {
-    logger.error('AI 매칭 실패:', error);
+
     throw error;
   }
 }
@@ -513,7 +475,6 @@ export async function matchParticipantsByAI(
   question: string,
   participants: ParticipantAnswer[]
 ): Promise<MatchingResult> {
-  logger.info('AI 매칭 시작 (Human-in-the-loop)', { participantCount: participants.length });
 
   // 단순히 내부 함수 호출 (retry 없음)
   return await _matchParticipantsByAI(question, participants);

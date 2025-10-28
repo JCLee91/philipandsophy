@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
         createdIds.push(noticeRef.id);
       } catch (error) {
-        logger.error(`템플릿 ${templateId}에서 공지 생성 실패`, error);
+
         // 하나 실패해도 계속 진행
       }
     }
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       noticeIds: createdIds,
     });
   } catch (error) {
-    logger.error('템플릿에서 공지 생성 실패 (datacntr-notices-from-templates)', error);
+
     return NextResponse.json(
       { error: '공지 생성 중 오류가 발생했습니다' },
       { status: 500 }

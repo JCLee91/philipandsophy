@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(participantsWithStats);
   } catch (error) {
-    logger.error('참가자 조회 실패 (datacntr-participants)', error);
+
     return NextResponse.json(
       { error: '참가자 조회 중 오류가 발생했습니다' },
       { status: 500 }

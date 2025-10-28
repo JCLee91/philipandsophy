@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
     adminUser = user;
   } else {
-    logger.info('Internal call detected, skipping admin auth');
+
     adminUser = { id: 'system', name: 'Scheduled Function' };
   }
 
@@ -53,10 +53,7 @@ export async function POST(request: NextRequest) {
       MatchingSchema.parse(matching);
     } catch (validationError) {
       if (validationError instanceof z.ZodError) {
-        logger.error('매칭 데이터 형식 오류', {
-          errors: validationError.errors,
-          matching,
-        });
+
         return NextResponse.json(
           {
             error: 'matching 데이터 형식이 올바르지 않습니다.',
@@ -115,13 +112,6 @@ export async function POST(request: NextRequest) {
           updatedAt: admin.firestore.Timestamp.now(),
         });
 
-        logger.info('매칭 결과 저장 완료', {
-          cohortId,
-          date: matchingDate,
-          adminId: adminUser!.id,
-          adminName: adminUser!.name,
-          participantCount: Object.keys(matching.assignments || {}).length,
-        });
       });
     } catch (transactionError) {
       if (transactionError instanceof Error) {
@@ -149,7 +139,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('매칭 확인 및 저장 실패', error);
+
     return NextResponse.json(
       {
         error: '매칭 저장 중 오류가 발생했습니다.',

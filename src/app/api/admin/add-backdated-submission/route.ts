@@ -54,12 +54,6 @@ export async function POST(request: NextRequest) {
 
     const docRef = await db.collection('reading_submissions').add(submissionData);
 
-    logger.info('과거 제출 데이터 추가 완료', {
-      docId: docRef.id,
-      participantId,
-      submissionDate,
-    });
-
     return NextResponse.json({
       success: true,
       docId: docRef.id,
@@ -68,7 +62,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('과거 제출 데이터 추가 실패', error);
+
     return NextResponse.json(
       {
         error: '제출 데이터 추가 중 오류가 발생했습니다.',

@@ -81,7 +81,7 @@ export async function sendPushToUser(
     const participantSnap = await participantRef.get();
 
     if (!participantSnap.exists) {
-      logger.warn('Participant not found', { participantId });
+
       return false;
     }
 
@@ -104,7 +104,7 @@ export async function sendPushToUser(
     }
 
     if (tokens.length === 0) {
-      logger.warn('No push tokens found for participant', { participantId });
+
       return false;
     }
 
@@ -141,14 +141,6 @@ export async function sendPushToUser(
     // Send push notification to all devices
     const response = await admin.messaging().sendEachForMulticast(message);
 
-    logger.info('Push notification sent to user devices', {
-      participantId,
-      totalDevices: tokens.length,
-      successCount: response.successCount,
-      failureCount: response.failureCount,
-      type: payload.type,
-    });
-
     // ✅ Handle failed tokens (remove invalid/expired tokens)
     if (response.failureCount > 0) {
       const failedTokenEntries: PushTokenEntry[] = [];
@@ -167,11 +159,7 @@ export async function sendPushToUser(
 
             if (tokenEntry) {
               failedTokenEntries.push(tokenEntry);
-              logger.warn('Removing invalid/expired push token', {
-                participantId,
-                deviceId: tokenEntry.deviceId,
-                errorCode,
-              });
+
             }
           }
         }
@@ -198,18 +186,14 @@ export async function sendPushToUser(
             .update({
               pushNotificationEnabled: false,
             });
-          logger.info('All push tokens invalid, disabled push notifications', { participantId });
+
         }
       }
     }
 
     return response.successCount > 0;
   } catch (error: any) {
-    logger.error('Error sending push notification', {
-      error,
-      participantId,
-      type: payload.type,
-    });
+
     return false;
   }
 }
@@ -272,7 +256,7 @@ export async function sendPushToMultipleUsers(
     }
 
     if (tokens.length === 0) {
-      logger.warn('No valid push tokens found', { participantCount: participantIds.length });
+
       return 0;
     }
 
@@ -333,11 +317,6 @@ export async function sendPushToMultipleUsers(
               failedTokensByParticipant.get(participantId)!.push(tokenEntry);
             }
 
-            logger.warn('Removing invalid/expired push token', {
-              participantId,
-              deviceId: tokenEntry?.deviceId,
-              errorCode,
-            });
           }
         }
       }
@@ -373,30 +352,16 @@ export async function sendPushToMultipleUsers(
             await participantRef.update({
               pushNotificationEnabled: false,
             });
-            logger.info('All push tokens invalid, disabled push notifications', { participantId });
+
           }
         }
       }
 
-      logger.warn('Removed expired/invalid push tokens', {
-        affectedParticipants: failedTokensByParticipant.size,
-      });
     }
-
-    logger.info('Multicast push notification sent', {
-      totalTokens: tokens.length,
-      successCount: response.successCount,
-      failureCount: response.failureCount,
-      type: payload.type,
-    });
 
     return response.successCount;
   } catch (error) {
-    logger.error('Error sending multicast push notification', {
-      error,
-      participantCount: participantIds.length,
-      type: payload.type,
-    });
+
     return 0;
   }
 }
@@ -429,13 +394,13 @@ export async function sendPushToCohort(
     const participantIds = snapshot.docs.map((doc) => doc.id);
 
     if (participantIds.length === 0) {
-      logger.warn('No participants found in cohort', { cohortId });
+
       return 0;
     }
 
     return await sendPushToMultipleUsers(participantIds, payload);
   } catch (error) {
-    logger.error('Error sending push to cohort', { error, cohortId });
+
     return 0;
   }
 }

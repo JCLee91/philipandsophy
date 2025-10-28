@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
 
       const submittedAt = safeTimestampToDate(data.submittedAt);
       if (!submittedAt) {
-        logger.warn('제출 타임스탬프 누락', { docId: doc.id, submissionDate: data.submissionDate });
+
         return;
       }
       const date = format(submittedAt, 'yyyy-MM-dd');
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(activities);
   } catch (error) {
-    logger.error('활동 지표 조회 실패', error);
+
     return NextResponse.json(
       { error: '활동 지표 조회 중 오류가 발생했습니다' },
       { status: 500 }

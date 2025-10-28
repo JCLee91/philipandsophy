@@ -37,7 +37,7 @@ export default function DataCenterBoardPage() {
 
         const db = getDb();
         if (!db) {
-          logger.error('Firebase DB not initialized');
+
           return;
         }
 
@@ -62,7 +62,7 @@ export default function DataCenterBoardPage() {
         }
 
         if (!targetCohort) {
-          logger.error('No cohort found');
+
           return;
         }
 
@@ -141,7 +141,7 @@ export default function DataCenterBoardPage() {
 
         setBoardData(data);
       } catch (error) {
-        logger.error('Failed to load board data', error);
+
       } finally {
         setLoading(false);
       }

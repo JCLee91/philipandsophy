@@ -66,8 +66,6 @@ export const getMessagesByConversation = async (
     orderBy('createdAt', 'asc')
   );
 
-  logger.info('[getMessagesByConversation] 메시지 조회 시작', { conversationId });
-
   try {
     const snapshot = await getDocs(q);
 
@@ -76,10 +74,7 @@ export const getMessagesByConversation = async (
       ...doc.data(),
     })) as DirectMessage[];
   } catch (error) {
-    logger.error('[getMessagesByConversation] 조회 실패', {
-      conversationId,
-      error: error instanceof Error ? error.message : String(error),
-    });
+
     throw error;
   }
 };
@@ -263,7 +258,7 @@ export const subscribeToMessages = (
       callback(messages);
     },
     (error) => {
-      logger.error('subscribeToMessages failed:', error);
+
       callback([]); // Fallback to empty array on error
     }
   );

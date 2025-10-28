@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ cohorts });
   } catch (error) {
-    logger.error('Failed to fetch cohorts:', error);
+
     return NextResponse.json(
       { error: 'Failed to fetch cohorts' },
       { status: 500 }

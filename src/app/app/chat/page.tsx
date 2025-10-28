@@ -28,7 +28,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
   try {
     initialData = await fetchChatInitialData(cohortId);
   } catch (error) {
-    logger.error('[ChatPage] Failed to fetch initial chat data', error);
+
   }
 
   if (!initialData || !initialData.cohort) {

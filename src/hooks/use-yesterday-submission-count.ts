@@ -81,7 +81,7 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
           })
           .catch((err) => {
             if (isMountedRef.current) {
-              logger.error('매칭 대상 참가자 필터링 실패', err);
+
               setError(err as Error);
               setIsLoading(false);
             }
@@ -89,7 +89,7 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
       },
       (err) => {
         if (isMountedRef.current) {
-          logger.error('매칭 대상 제출 현황 조회 실패', err);
+
           setError(err as Error);
           setIsLoading(false);
         }

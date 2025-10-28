@@ -23,15 +23,9 @@ export async function DELETE(
     const db = getAdminDb();
     await db.collection(COLLECTIONS.NOTICES).doc(noticeId).delete();
 
-    logger.info('공지 삭제 성공', {
-      noticeId,
-      adminId: user.id,
-      adminName: user.name
-    });
-
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    logger.error('Failed to delete notice', error);
+
     return NextResponse.json({ error: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }

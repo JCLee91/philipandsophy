@@ -27,18 +27,12 @@ export async function GET(req: NextRequest) {
 
     const db = getAdminDb();
 
-    // 선택한 기수의 데이터만 조회
-
-    console.time('Firestore Query');
-
     const [cohortDoc, participantsSnap, allSubmissionsSnap, noticesSnap] = await Promise.all([
       db.collection(COLLECTIONS.COHORTS).doc(cohortId).get(),
       db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get(),
       db.collection(COLLECTIONS.READING_SUBMISSIONS).get(),
       db.collection(COLLECTIONS.NOTICES).where('cohortId', '==', cohortId).get(),
     ]);
-
-    console.timeEnd('Firestore Query');
 
     if (!cohortDoc.exists) {
 

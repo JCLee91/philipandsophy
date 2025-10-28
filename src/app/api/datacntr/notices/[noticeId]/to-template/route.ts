@@ -78,7 +78,7 @@ export async function POST(
       message: '공지가 템플릿으로 저장되었습니다',
     });
   } catch (error) {
-    logger.error('공지를 템플릿으로 저장 실패 (datacntr-notices-to-template)', error);
+
     return NextResponse.json(
       { error: '템플릿 저장 중 오류가 발생했습니다' },
       { status: 500 }

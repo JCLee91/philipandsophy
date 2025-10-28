@@ -61,7 +61,7 @@ export async function PUT(
       templateId,
     });
   } catch (error) {
-    logger.error('템플릿 수정 실패 (datacntr-notice-templates)', error);
+
     return NextResponse.json(
       { error: '템플릿 수정 중 오류가 발생했습니다' },
       { status: 500 }
@@ -104,7 +104,7 @@ export async function DELETE(
       templateId,
     });
   } catch (error) {
-    logger.error('템플릿 삭제 실패 (datacntr-notice-templates)', error);
+
     return NextResponse.json(
       { error: '템플릿 삭제 중 오류가 발생했습니다' },
       { status: 500 }

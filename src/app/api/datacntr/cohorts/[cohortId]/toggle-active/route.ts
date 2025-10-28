@@ -55,7 +55,7 @@ export async function POST(
             });
           }
         });
-        logger.info(`모든 다른 cohort 비활성화 완료. 활성화: ${cohortId}`);
+
       }
 
       // 4. 현재 cohort 상태 업데이트
@@ -72,7 +72,7 @@ export async function POST(
       message: isActive ? '해당 기수가 활성화되었습니다. 다른 기수는 자동으로 비활성화되었습니다.' : '해당 기수가 비활성화되었습니다.',
     });
   } catch (error) {
-    logger.error('기수 활성화 상태 변경 실패', error);
+
     return NextResponse.json(
       { error: '기수 활성화 상태 변경에 실패했습니다' },
       { status: 500 }

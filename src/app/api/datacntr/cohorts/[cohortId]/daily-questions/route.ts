@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json(questions);
   } catch (error) {
-    logger.error('Daily Questions 조회 실패', error);
+
     return NextResponse.json(
       { error: 'Daily Questions 조회 중 오류가 발생했습니다' },
       { status: 500 }
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       message: 'Daily Questions가 저장되었습니다',
     });
   } catch (error) {
-    logger.error('Daily Questions 저장 실패', error);
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Daily Questions 저장 중 오류가 발생했습니다' },
       { status: 500 }

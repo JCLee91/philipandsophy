@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(messagesWithParticipant);
   } catch (error) {
-    logger.error('메시지 조회 실패 (datacntr-messages)', error);
+
     return NextResponse.json(
       { error: '메시지 조회 중 오류가 발생했습니다' },
       { status: 500 }

@@ -43,16 +43,13 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
   // 모드 설정 함수
   const setViewMode = (mode: ViewMode) => {
     if (!canSwitchMode && mode === 'admin') {
-      logger.warn('[ViewModeContext] 관리자 권한이 없어 모드 전환 불가', {
-        requestedMode: mode,
-        canSwitchMode,
-      });
+
       return;
     }
 
     setViewModeState(mode);
     localStorage.setItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE, mode);
-    logger.info('[ViewModeContext] view mode 변경', { mode });
+
   };
 
   // 모드 토글 함수

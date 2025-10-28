@@ -49,10 +49,10 @@ export function initializeFirebase() {
           tabManager: persistentMultipleTabManager(),
         }),
       });
-      logger.info('Firestore initialized with (default) database, persistent cache and multi-tab sync');
+
     } catch (cacheError) {
       // Safari Private Mode or IndexedDB disabled
-      logger.warn('Persistent cache 실패, 메모리 캐시 사용:', cacheError);
+
       db = initializeFirestore(app, {});
     }
 
@@ -64,17 +64,16 @@ export function initializeFirebase() {
     // 브라우저를 닫아도 로그인 유지
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
-        logger.info('Firebase Auth persistence 설정 완료 (localStorage)');
+
       })
       .catch((error) => {
-        logger.warn('Firebase Auth persistence 설정 실패 (기본값 사용):', error);
+
       });
 
     initialized = true;
 
     return { app, db, storage, auth };
   } catch (error: any) {
-    logger.error('Firebase 초기화 실패:', error);
 
     // 초기화 실패 시 최소한의 동작을 위한 fallback
     if (error.code === 'app/duplicate-app') {
@@ -88,11 +87,11 @@ export function initializeFirebase() {
         // Fallback에서도 persistence 설정
         setPersistence(auth, browserLocalPersistence)
           .catch((error) => {
-            logger.warn('Fallback persistence 설정 실패:', error);
+
           });
 
         initialized = true;
-        logger.info('기존 Firebase 앱 재사용');
+
         return { app, db, storage, auth };
       }
     }

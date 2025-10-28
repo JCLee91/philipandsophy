@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       unverifiedCount: unverifiedParticipants.length,
     });
   } catch (error) {
-    logger.error('Failed to fetch unverified participants:', error);
+
     return NextResponse.json(
       { error: 'Failed to fetch unverified participants' },
       { status: 500 }

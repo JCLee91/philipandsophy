@@ -28,7 +28,7 @@ export async function GET(
       const adminAuth = getAdminAuth();
       decodedToken = await adminAuth.verifyIdToken(idToken);
     } catch (error) {
-      logger.error('ID 토큰 검증 실패 (notices-get-api)', error);
+
       return NextResponse.json({ error: '유효하지 않은 인증 토큰' }, { status: 401 });
     }
 
@@ -54,7 +54,7 @@ export async function GET(
 
     return NextResponse.json(noticeData);
   } catch (error) {
-    logger.error('공지 조회 API 오류', error);
+
     return NextResponse.json(
       { error: '공지 조회 중 오류가 발생했습니다' },
       { status: 500 }
@@ -87,7 +87,7 @@ export async function PUT(
       const adminAuth = getAdminAuth();
       decodedToken = await adminAuth.verifyIdToken(idToken);
     } catch (error) {
-      logger.error('ID 토큰 검증 실패 (notices-update-api)', error);
+
       return NextResponse.json({ error: '유효하지 않은 인증 토큰' }, { status: 401 });
     }
 
@@ -150,7 +150,7 @@ export async function PUT(
         await file.makePublic();
         imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
       } catch (error) {
-        logger.error('이미지 업로드 실패 (notices-update-api)', error);
+
         return NextResponse.json(
           { error: '이미지 업로드에 실패했습니다' },
           { status: 500 }
@@ -179,11 +179,7 @@ export async function PUT(
     const shouldSendNotification = oldStatus === 'draft' && newStatus === 'published';
 
     if (shouldSendNotification) {
-      logger.info('임시저장 공지 발행: 수동 푸시 알림 전송이 필요합니다', {
-        noticeId,
-        cohortId,
-        message: '임시저장된 공지를 발행할 때는 onNoticeCreated가 트리거되지 않으므로, 별도 푸시 알림 로직이 필요합니다',
-      });
+
     }
 
     return NextResponse.json({
@@ -193,7 +189,7 @@ export async function PUT(
       published: newStatus === 'published',
     });
   } catch (error) {
-    logger.error('공지 수정 API 오류', error);
+
     return NextResponse.json(
       { error: '공지 수정 중 오류가 발생했습니다' },
       { status: 500 }
@@ -226,7 +222,7 @@ export async function DELETE(
       const adminAuth = getAdminAuth();
       decodedToken = await adminAuth.verifyIdToken(idToken);
     } catch (error) {
-      logger.error('ID 토큰 검증 실패 (notices-delete-api)', error);
+
       return NextResponse.json({ error: '유효하지 않은 인증 토큰' }, { status: 401 });
     }
 
@@ -243,7 +239,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('공지 삭제 API 오류', error);
+
     return NextResponse.json(
       { error: '공지 삭제 중 오류가 발생했습니다' },
       { status: 500 }

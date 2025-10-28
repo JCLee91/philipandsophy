@@ -17,7 +17,7 @@ export async function getFirebaseIdToken(): Promise<string | null> {
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
-      logger.warn('getFirebaseIdToken: No authenticated user');
+
       return null;
     }
 
@@ -25,7 +25,7 @@ export async function getFirebaseIdToken(): Promise<string | null> {
     const idToken = await currentUser.getIdToken(true);
     return idToken;
   } catch (error) {
-    logger.error('Failed to get Firebase ID token', error);
+
     return null;
   }
 }
@@ -43,7 +43,7 @@ export async function getAdminHeaders(
   const idToken = await getFirebaseIdToken();
 
   if (!idToken) {
-    logger.error('Cannot create admin headers: No ID token available');
+
     return null;
   }
 
@@ -85,14 +85,13 @@ export async function fetchWithTokenRefresh(
     const data = await response.json();
 
     if (data.code === 'TOKEN_EXPIRED') {
-      logger.warn('Token expired, signing out and redirecting to login');
 
       // 로그아웃하고 로그인 페이지로 이동
       try {
         const auth = getFirebaseAuth();
         await signOut(auth);
       } catch (error) {
-        logger.error('Sign out failed:', error);
+
       }
 
       if (typeof window !== 'undefined') {

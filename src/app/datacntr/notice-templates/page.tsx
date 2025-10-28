@@ -46,7 +46,7 @@ export default function NoticeTemplatesPage() {
         const data = await response.json();
         setTemplates(data.templates);
       } catch (error) {
-        logger.error('템플릿 조회 실패 (notice-templates-page)', error);
+
       } finally {
         setIsLoading(false);
       }
@@ -72,7 +72,7 @@ export default function NoticeTemplatesPage() {
         setTemplates(data.templates);
       }
     } catch (error) {
-      logger.error('템플릿 새로고침 실패 (notice-templates-page)', error);
+
     }
   };
 
@@ -106,7 +106,7 @@ export default function NoticeTemplatesPage() {
       alert(`템플릿 "${title}"이(가) 삭제되었습니다.`);
       await refreshTemplates();
     } catch (error) {
-      logger.error('템플릿 삭제 실패 (notice-templates-page)', error);
+
       alert(error instanceof Error ? error.message : '템플릿 삭제 중 오류가 발생했습니다');
     }
   };

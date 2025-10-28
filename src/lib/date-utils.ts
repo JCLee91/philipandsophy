@@ -125,7 +125,7 @@ export function getYesterdayString(): string {
 export function getPreviousDayString(dateString: string): string {
   const date = parseISO(dateString);
   if (!isValid(date)) {
-    logger.warn('Invalid date format in getPreviousDayString', { dateString });
+
     return dateString; // Fallback to original if invalid
   }
   const previousDay = subDays(date, 1);
@@ -164,13 +164,13 @@ export function filterSubmissionsByDate<T extends { id?: string; submittedAt: Ti
   // 입력 검증: 날짜 형식 확인
   const parsedDate = parseISO(cutoffDate);
   if (!isValid(parsedDate)) {
-    logger.warn('Invalid cutoffDate format', { cutoffDate });
+
     return submissions; // 잘못된 형식이면 필터링 안 함
   }
 
   // 미래 날짜 방지 (스포일러 방지)
   if (isFuture(parsedDate)) {
-    logger.warn('Future cutoffDate detected', { cutoffDate });
+
     return submissions; // 미래 날짜면 필터링 안 함
   }
 
@@ -182,7 +182,7 @@ export function filterSubmissionsByDate<T extends { id?: string; submittedAt: Ti
   return submissions.filter(sub => {
     // Null/undefined timestamp 체크
     if (!sub.submittedAt) {
-      logger.warn('Missing submittedAt timestamp', { submissionId: sub.id || 'unknown' });
+
       return false;
     }
 

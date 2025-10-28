@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    logger.error('독서 인증 분석 조회 실패', error);
+
     return NextResponse.json(
       { error: '독서 인증 분석 조회 중 오류가 발생했습니다' },
       { status: 500 }

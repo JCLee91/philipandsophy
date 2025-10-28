@@ -97,7 +97,6 @@ export const AUTH_ERROR_MESSAGES = {
     'Firebase app must be initialized before accessing Auth. Call initializeFirebase() in your app providers first.',
 } as const;
 
-
 /**
  * reCAPTCHA 설정
  */

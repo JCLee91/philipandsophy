@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(noticesWithCohort);
   } catch (error) {
-    logger.error('공지사항 조회 실패 (datacntr-notices)', error);
+
     return NextResponse.json(
       { error: '공지사항 조회 중 오류가 발생했습니다' },
       { status: 500 }

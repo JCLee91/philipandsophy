@@ -28,17 +28,13 @@ export default function DataCenterLayout({ children }: DataCenterLayoutProps) {
 
     // 고아 계정 처리 (Firebase Auth O, Participant X)
     if (user && participantStatus === 'missing') {
-      logger.warn('고아 계정 감지: 자동 로그아웃 후 로그인 페이지로 이동', {
-        uid: user.uid,
-        email: user.email,
-      });
 
       logout()
         .then(() => {
           router.push('/datacntr/login');
         })
         .catch((error) => {
-          logger.error('자동 로그아웃 실패 - 강제 리다이렉트:', error);
+
           // 로그아웃 실패 시 window.location으로 강제 이동 (순환 참조 방지)
           window.location.href = '/datacntr/login';
         });
@@ -47,7 +43,7 @@ export default function DataCenterLayout({ children }: DataCenterLayoutProps) {
 
     // 미로그인 상태 처리
     if (!user) {
-      logger.info('미로그인 상태 감지 → 로그인 페이지로 리다이렉트');
+
       router.push('/datacntr/login');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

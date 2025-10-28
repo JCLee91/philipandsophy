@@ -28,14 +28,14 @@ export default function Home() {
 
     // 카카오톡 인앱 브라우저
     if (userAgent.includes('kakaotalk')) {
-      logger.info('카카오톡 인앱 브라우저 감지, 외부 브라우저로 리다이렉트');
+
       window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
       return;
     }
 
     // 라인 인앱 브라우저 (쿼리 파라미터 방식)
     if (userAgent.includes('line')) {
-      logger.info('라인 인앱 브라우저 감지, 외부 브라우저로 리다이렉트');
+
       const separator = currentUrl.includes('?') ? '&' : '?';
       window.location.href = `${currentUrl}${separator}openExternalBrowser=1`;
       return;
@@ -43,14 +43,14 @@ export default function Home() {
 
     // 인스타그램 인앱 브라우저
     if (userAgent.includes('instagram')) {
-      logger.info('인스타그램 인앱 브라우저 감지, 안내 메시지 표시');
+
       // 인스타그램은 URL 스킴이 없어서 사용자에게 안내만 가능
       // 필요시 안내 모달 추가
     }
 
     // 페이스북 인앱 브라우저
     if (userAgent.includes('fbav') || userAgent.includes('fban')) {
-      logger.info('페이스북 인앱 브라우저 감지, 안내 메시지 표시');
+
       // 페이스북도 URL 스킴 미지원
     }
   }, []);
@@ -67,11 +67,7 @@ export default function Home() {
 
         if (activeCohort) {
           targetCohortId = activeCohort.id;
-          logger.info('관리자 로그인 감지, 활성 코호트로 이동', {
-            participantId: participant.id,
-            activeCohortId: activeCohort.id,
-            activeCohortName: activeCohort.name,
-          });
+
         } else {
           // 활성 코호트가 없으면 자신의 코호트로
           targetCohortId = participant.cohortId;
@@ -79,10 +75,7 @@ export default function Home() {
         }
       } else {
         targetCohortId = participant.cohortId;
-        logger.info('일반 사용자 로그인 감지, 자신의 코호트로 이동', {
-          participantId: participant.id,
-          cohortId: participant.cohortId,
-        });
+
       }
 
       router.replace(appRoutes.chat(targetCohortId));

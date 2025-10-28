@@ -62,7 +62,7 @@ function generateDeviceId(): string {
       return existingId;
     }
   } catch (error) {
-    logger.warn('localStorage read failed (Safari Private Mode?)', { error });
+
   }
 
   // 3. 새로운 device ID 생성 (fingerprint 기반)
@@ -85,12 +85,9 @@ function generateDeviceId(): string {
   cachedDeviceId = deviceId;
   try {
     localStorage.setItem('device-id', deviceId);
-    logger.info('Generated new device ID (cached in memory + localStorage)', { deviceId });
+
   } catch (error) {
-    logger.warn('localStorage write failed (Safari Private Mode?), using memory-only cache', {
-      deviceId,
-      error,
-    });
+
   }
 
   return deviceId;
@@ -150,7 +147,7 @@ export function detectPushChannel(): PushChannel {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   if (!isStandalone && !isDevelopment) {
-    logger.info('[detectPushChannel] Not in PWA/standalone mode - push unsupported');
+
     return 'unsupported';
   }
 
@@ -161,15 +158,15 @@ export function detectPushChannel(): PushChannel {
 
   // iOS PWA → Web Push only
   if (isiOS) {
-    logger.info('[detectPushChannel] iOS PWA detected - using Web Push');
+
     return 'webpush';
   }
 
   // Android PWA or Development browser → FCM
   if (isDevelopment && !isStandalone) {
-    logger.info('[detectPushChannel] Development mode browser - using FCM');
+
   } else {
-    logger.info('[detectPushChannel] Android PWA detected - using FCM');
+
   }
   return 'fcm';
 }
@@ -188,7 +185,7 @@ export async function buildAuthorizedJsonHeaders(): Promise<Record<string, strin
 
     const user = auth.currentUser;
     if (!user) {
-      logger.error('No authenticated user found for push subscription API call');
+
       return null;
     }
 
@@ -198,7 +195,7 @@ export async function buildAuthorizedJsonHeaders(): Promise<Record<string, strin
       Authorization: `Bearer ${idToken}`,
     };
   } catch (error) {
-    logger.error('Failed to build auth headers for push subscription API', error);
+
     return null;
   }
 }
@@ -213,11 +210,9 @@ export async function buildAuthorizedJsonHeaders(): Promise<Record<string, strin
  */
 async function ensureServiceWorkerReady(): Promise<ServiceWorkerRegistration> {
   if (!('serviceWorker' in navigator)) {
-    logger.error('[ensureServiceWorkerReady] Service Worker not supported');
+
     throw new Error('Service Worker not supported');
   }
-
-  logger.info('[ensureServiceWorkerReady] Waiting for service worker to be ready...');
 
   try {
     // 10초 타임아웃으로 무한 대기 방지
@@ -230,14 +225,9 @@ async function ensureServiceWorkerReady(): Promise<ServiceWorkerRegistration> {
       timeoutPromise
     ]);
 
-    logger.info('[ensureServiceWorkerReady] Service worker is ready', {
-      scope: registration.scope,
-      scriptURL: registration.active?.scriptURL,
-    });
-
     return registration;
   } catch (error) {
-    logger.error('[ensureServiceWorkerReady] Failed to get ready service worker', error);
+
     throw error;
   }
 }
@@ -249,16 +239,16 @@ async function ensureServiceWorkerReady(): Promise<ServiceWorkerRegistration> {
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!isPushNotificationSupported()) {
-    logger.warn('Push notifications not supported');
+
     return 'denied';
   }
 
   try {
     const permission = await Notification.requestPermission();
-    logger.info('Notification permission:', permission);
+
     return permission;
   } catch (error) {
-    logger.error('Error requesting notification permission', error);
+
     return 'denied';
   }
 }
@@ -288,7 +278,7 @@ export async function getFCMToken(messaging: Messaging): Promise<string | null> 
     const vapidKey = process.env.NEXT_PUBLIC_FCM_VAPID_KEY;
 
     if (!vapidKey) {
-      logger.error('VAPID key not found in environment variables');
+
       throw new Error('VAPID key not configured');
     }
 
@@ -299,14 +289,14 @@ export async function getFCMToken(messaging: Messaging): Promise<string | null> 
     });
 
     if (currentToken) {
-      logger.info('FCM token obtained');
+
       return currentToken;
     } else {
-      logger.warn('No FCM token available. Request permission first.');
+
       return null;
     }
   } catch (error) {
-    logger.error('Error getting FCM token', error);
+
     return null;
   }
 }
@@ -343,7 +333,7 @@ export async function savePushTokenToFirestore(
       const participantSnap = await transaction.get(participantRef);
 
       if (!participantSnap.exists()) {
-        logger.error('[savePushTokenToFirestore] Participant not found', { participantId });
+
         throw new Error('Participant not found');
       }
 
@@ -365,14 +355,8 @@ export async function savePushTokenToFirestore(
       });
     });
 
-    logger.info('Push token saved to Firestore (single device)', {
-      participantId,
-      deviceId,
-      type,
-      tokenPrefix: token.substring(0, 20) + '...',
-    });
   } catch (error) {
-    logger.error('Error saving push token to Firestore', error);
+
     throw error;
   }
 }
@@ -416,7 +400,7 @@ export async function getPushTokenFromFirestore(
 
     return null;
   } catch (error) {
-    logger.error('Error getting push token from Firestore', error);
+
     return null;
   }
 }
@@ -443,7 +427,7 @@ export async function removePushTokenFromFirestore(
       const participantSnap = await transaction.get(participantRef);
 
       if (!participantSnap.exists()) {
-        logger.warn('[removePushTokenFromFirestore] Participant not found', { participantId });
+
         return;
       }
 
@@ -455,10 +439,6 @@ export async function removePushTokenFromFirestore(
       });
     });
 
-    logger.info('[removePushTokenFromFirestore] All push tokens removed', {
-      participantId,
-    });
-
     // ✅ 브라우저 PushManager에서도 구독 해제 (Web Push)
     try {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -467,15 +447,15 @@ export async function removePushTokenFromFirestore(
           const subscription = await registration.pushManager.getSubscription();
           if (subscription) {
             await subscription.unsubscribe();
-            logger.info('[removePushTokenFromFirestore] Browser subscription unsubscribed');
+
           }
         }
       }
     } catch (error) {
-      logger.warn('[removePushTokenFromFirestore] Failed to unsubscribe (non-critical)', error);
+
     }
   } catch (error) {
-    logger.error('[removePushTokenFromFirestore] Error removing push tokens', error);
+
     throw error;
   }
 }
@@ -494,7 +474,7 @@ async function initializeFCM(
   try {
     const token = await getFCMToken(messaging);
     if (!token) {
-      logger.error('[initializeFCM] Failed to get FCM token');
+
       return null;
     }
 
@@ -504,14 +484,9 @@ async function initializeFCM(
     // Setup foreground message handler
     const cleanup = setupForegroundMessageHandler(messaging);
 
-    logger.info('[initializeFCM] FCM initialized successfully', {
-      participantId,
-      tokenPrefix: token.substring(0, 20) + '...',
-    });
-
     return { token, cleanup };
   } catch (error) {
-    logger.error('[initializeFCM] Error initializing FCM', error);
+
     return null;
   }
 }
@@ -528,21 +503,21 @@ async function initializeWebPush(
   try {
     const vapidKey = process.env.NEXT_PUBLIC_WEBPUSH_VAPID_KEY;
     if (!vapidKey) {
-      logger.error('[initializeWebPush] VAPID key not found');
+
       return null;
     }
 
     // Create Web Push subscription
     const subscription = await createWebPushSubscription(vapidKey);
     if (!subscription) {
-      logger.error('[initializeWebPush] Failed to create subscription');
+
       return null;
     }
 
     // Save Web Push subscription with type (requires authentication)
     const headers = await buildAuthorizedJsonHeaders();
     if (!headers) {
-      logger.error('[initializeWebPush] No auth headers - user not logged in');
+
       throw new Error('Authentication required for Web Push subscription');
     }
 
@@ -559,21 +534,16 @@ async function initializeWebPush(
 
     if (!response.ok) {
       const errorData = await response.json();
-      logger.error('[initializeWebPush] Failed to save subscription', errorData);
+
       throw new Error(`Failed to save Web Push subscription: ${errorData.error || 'Unknown error'}`);
     }
-
-    logger.info('[initializeWebPush] Web Push initialized successfully', {
-      participantId,
-      endpoint: subscription.endpoint,
-    });
 
     return {
       token: subscription.endpoint,
       cleanup: () => {}, // No cleanup needed for Web Push
     };
   } catch (error) {
-    logger.error('[initializeWebPush] Error initializing Web Push', error);
+
     return null;
   }
 }
@@ -598,7 +568,7 @@ export async function initializePushNotifications(
     // Check current permission status
     const permission = getNotificationPermission();
     if (permission === 'denied') {
-      logger.warn('[initializePushNotifications] Permission denied');
+
       return null;
     }
 
@@ -606,7 +576,7 @@ export async function initializePushNotifications(
     if (permission !== 'granted') {
       const newPermission = await requestNotificationPermission();
       if (newPermission !== 'granted') {
-        logger.warn('[initializePushNotifications] User denied permission');
+
         return null;
       }
     }
@@ -614,13 +584,11 @@ export async function initializePushNotifications(
     // Detect platform channel
     const channel = detectPushChannel();
 
-    logger.info('[initializePushNotifications] Channel detected', { channel });
-
     // Initialize based on channel
     switch (channel) {
       case 'fcm':
         if (!messaging) {
-          logger.error('[initializePushNotifications] FCM requires messaging instance');
+
           return null;
         }
         return await initializeFCM(messaging, participantId);
@@ -630,11 +598,11 @@ export async function initializePushNotifications(
 
       case 'unsupported':
       default:
-        logger.info('[initializePushNotifications] Push notifications not supported on this platform');
+
         return null;
     }
   } catch (error) {
-    logger.error('[initializePushNotifications] Error initializing push notifications', error);
+
     return null;
   }
 }
@@ -659,14 +627,13 @@ export async function refreshPushToken(
   // Check if refresh is already in progress
   const existingPromise = tokenRefreshPromises.get(participantId);
   if (existingPromise) {
-    logger.info('Token refresh already in progress, reusing promise', { participantId });
+
     return existingPromise;
   }
 
   // Create new refresh promise
   const refreshPromise = (async () => {
     try {
-      logger.info('Refreshing push token', { participantId });
 
       // Get current token from Firestore
       const storedToken = await getPushTokenFromFirestore(participantId);
@@ -675,25 +642,21 @@ export async function refreshPushToken(
       const newToken = await getFCMToken(messaging);
 
       if (!newToken) {
-        logger.error('Failed to get new FCM token');
+
         return null;
       }
 
       // If token changed, update Firestore
       if (storedToken !== newToken) {
-        logger.info('Push token changed, updating Firestore', {
-          participantId,
-          oldTokenPrefix: storedToken?.substring(0, 20) + '...',
-          newTokenPrefix: newToken.substring(0, 20) + '...',
-        });
+
         await savePushTokenToFirestore(participantId, newToken, 'fcm'); // FCM refresh only
       } else {
-        logger.info('Push token unchanged', { participantId });
+
       }
 
       return newToken;
     } catch (error) {
-      logger.error('Error refreshing push token', error);
+
       return null;
     } finally {
       // Clean up promise from map
@@ -716,7 +679,6 @@ export async function refreshPushToken(
  */
 function setupForegroundMessageHandler(messaging: Messaging): () => void {
   const unsubscribe = onMessage(messaging, (payload) => {
-    logger.info('Foreground message received', payload);
 
     // Foreground에서는 FCM notification이 자동으로 표시되지 않음
     // 하지만 여기서 showNotification을 호출하면 "from 필립앤소피"가 붙음
@@ -745,9 +707,7 @@ export async function shouldRefreshPushToken(participantId: string): Promise<boo
     const data = participantSnap.data();
 
     if (data?.pushNotificationEnabled === false) {
-      logger.info('Push notifications disabled, skipping token refresh', {
-        participantId,
-      });
+
       return false;
     }
     // pushTokens 배열에서 가장 오래된 토큰 확인
@@ -757,10 +717,6 @@ export async function shouldRefreshPushToken(participantId: string): Promise<boo
       : [];
 
     if (pushTokens.length === 0) {
-      logger.info('No stored FCM tokens; skipping automatic refresh', {
-        participantId,
-        hasWebPush: webPushSubscriptions.length > 0,
-      });
       return false;
     }
 
@@ -780,7 +736,7 @@ export async function shouldRefreshPushToken(participantId: string): Promise<boo
 
     return latestUpdate < sevenDaysAgo;
   } catch (error) {
-    logger.error('Error checking push token refresh status', error);
+
     return false;
   }
 }
@@ -800,19 +756,19 @@ export async function autoRefreshPushToken(
 ): Promise<void> {
   try {
     if (!messaging) {
-      logger.info('Skipping token refresh: messaging instance not provided (likely Safari)');
+
       return;
     }
 
     const needsRefresh = await shouldRefreshPushToken(participantId);
 
     if (needsRefresh) {
-      logger.info('Push token needs refresh', { participantId });
+
       await refreshPushToken(messaging, participantId);
     } else {
-      logger.info('Push token is up to date', { participantId });
+
     }
   } catch (error) {
-    logger.error('Error auto-refreshing push token', error);
+
   }
 }

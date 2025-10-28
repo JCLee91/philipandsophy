@@ -172,12 +172,12 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 14일치 날짜 배열 생성 (코호트의 programStartDate 기준)
   const startDate = useMemo(() => {
     if (!cohort) {
-      logger.warn('Cohort data missing in profile view', { participantId, cohortId });
+
       return null;
     }
     const dateString = cohort.programStartDate || cohort.startDate;
     if (!dateString) {
-      logger.error('No start date found in cohort', { cohortId: cohort.id });
+
       return null;
     }
     return new Date(dateString);
@@ -233,18 +233,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const isFeatured = accessibleProfileIds.has(participantId);
 
   // 디버깅: 매칭 정보 로그
-  logger.info('매칭 정보 상세', {
-    matchingLookup: matchingLookup ? { date: matchingLookup.date } : null,
-    assignmentsKeys: Object.keys(assignments),
-    currentUserId,
-    viewerAssignment: viewerAssignment ? {
-      similar: viewerAssignment.similar,
-      opposite: viewerAssignment.opposite,
-    } : null,
-    accessibleProfileIds: Array.from(accessibleProfileIds),
-    participantId,
-    isFeatured,
-  });
 
   // 매칭 이유 추출 (현재 보는 프로필이 similar인지 opposite인지 확인)
   const matchingReason = useMemo(() => {
@@ -269,12 +257,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
     // 경고 로깅: 데이터 불일치 감지
     if (isSimilar || isOpposite) {
-      logger.warn('Matching reason missing despite being featured', {
-        participantId,
-        isSimilar,
-        isOpposite,
-        hasReasons: !!viewerAssignment.reasons,
-      });
+
     }
 
     return null;
@@ -292,20 +275,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     (isVerifiedToday && viewerHasAccessForDate && isFeatured);  // 평소 (매칭된 4명만)
 
   // 디버깅 로그
-  logger.info('프로필북 접근 권한 체크', {
-    participantId,
-    currentUserId,
-    isSelf,
-    isSuperAdmin,
-    isVerifiedToday,
-    viewerSubmissionDates: Array.from(viewerSubmissionDates),
-    allowedMatchingDates: Array.from(allowedMatchingDates),
-    effectiveMatchingDate,
-    submissionCutoffDate,
-    viewerHasAccessForDate,
-    isFeatured,
-    hasAccess,
-  });
 
   // 로딩 상태
   if (sessionLoading || participantLoading || submissionsLoading || viewerSubmissionLoading) {

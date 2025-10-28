@@ -41,7 +41,7 @@ export function initRecaptcha(
 
     },
     'expired-callback': () => {
-      logger.warn('reCAPTCHA expired');
+
     },
   });
 }
@@ -68,10 +68,10 @@ export async function sendSmsVerification(
       e164Number,
       recaptchaVerifier
     );
-    logger.info('SMS 전송 성공');
+
     return confirmationResult;
   } catch (error: any) {
-    logger.error('SMS 전송 실패:', error);
+
     throw new Error(AUTH_ERROR_MESSAGES.SMS_SEND_FAILED);
   }
 }
@@ -96,10 +96,10 @@ export async function confirmSmsCode(
 
   try {
     const userCredential = await confirmationResult.confirm(cleanCode);
-    logger.info('인증 코드 확인 성공', { uid: userCredential.user.uid });
+
     return userCredential;
   } catch (error: any) {
-    logger.error('인증 코드 확인 실패:', error);
+
     throw new Error(AUTH_ERROR_MESSAGES.AUTH_FAILED);
   }
 }
@@ -121,10 +121,10 @@ export async function signInWithPhoneCredential(
 
   try {
     const userCredential = await signInWithCredential(auth, credential);
-    logger.info('전화번호 로그인 성공', { uid: userCredential.user.uid });
+
     return userCredential;
   } catch (error: any) {
-    logger.error('전화번호 로그인 실패:', error);
+
     throw new Error(AUTH_ERROR_MESSAGES.AUTH_FAILED);
   }
 }
@@ -137,9 +137,9 @@ export async function signOut(): Promise<void> {
 
   try {
     await firebaseSignOut(auth);
-    logger.info('로그아웃 성공');
+
   } catch (error) {
-    logger.error('로그아웃 실패:', error);
+
     throw new Error(AUTH_ERROR_MESSAGES.LOGOUT_FAILED);
   }
 }

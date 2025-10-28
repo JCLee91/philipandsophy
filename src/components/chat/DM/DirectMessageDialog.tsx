@@ -54,7 +54,7 @@ export default function DirectMessageDialog({
 
   const conversationId = useMemo(() => {
     if (!currentUserId) {
-      logger.warn('[DirectMessageDialog] Missing currentUserId', { currentUserId });
+
       return '';
     }
 
@@ -67,13 +67,6 @@ export default function DirectMessageDialog({
     } else {
       result = getConversationId(currentUserId);
     }
-
-    logger.info('[DirectMessageDialog] conversationId generated', {
-      currentUserId,
-      otherUserId: otherUser.id,
-      isAdmin: currentUser?.isAdministrator || currentUser?.isSuperAdmin,
-      conversationId: result,
-    });
 
     return result;
   }, [otherUser, currentUser, currentUserId]);

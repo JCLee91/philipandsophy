@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       updatedCount: noticeOrders.length,
     });
   } catch (error) {
-    logger.error('공지사항 순서 변경 실패 (datacntr-notices-reorder)', error);
+
     return NextResponse.json(
       { error: '순서 변경 중 오류가 발생했습니다' },
       { status: 500 }

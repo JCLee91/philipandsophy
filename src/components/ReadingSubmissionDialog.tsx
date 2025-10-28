@@ -218,7 +218,7 @@ export default function ReadingSubmissionDialog({
             setIsAutoFilled(true);
           }
         } catch (error) {
-          logger.error('Failed to load current book info:', error);
+
           if (isMounted) {
             toast({
               title: '책 정보 로드 실패',
@@ -263,10 +263,7 @@ export default function ReadingSubmissionDialog({
 
       // 압축 로그 (10MB 이상일 때만)
       if (file.size >= 10 * 1024 * 1024) {
-        logger.info('이미지 압축 완료', {
-          original: (file.size / 1024 / 1024).toFixed(1) + 'MB',
-          compressed: (processedFile.size / 1024 / 1024).toFixed(1) + 'MB',
-        });
+
       }
 
       // 이미지 미리보기
@@ -286,7 +283,7 @@ export default function ReadingSubmissionDialog({
 
       reader.readAsDataURL(processedFile);
     } catch (error) {
-      logger.error('Image processing error:', error);
+
       toast({
         title: '이미지 처리 실패',
         description: error instanceof Error ? error.message : '이미지를 처리할 수 없습니다. 다른 이미지를 시도해주세요.',
@@ -459,7 +456,6 @@ export default function ReadingSubmissionDialog({
       setIsAutoFilled(false);
       onOpenChange(false);
     } catch (error) {
-      logger.error('Submission error:', error);
 
       // 사용자 친화적인 에러 메시지
       const errorMessage = error instanceof Error

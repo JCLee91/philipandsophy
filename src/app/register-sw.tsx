@@ -26,11 +26,9 @@ import { logger } from '@/lib/logger';
 async function waitForController(timeoutMs: number = 5000): Promise<void> {
   // 이미 컨트롤러가 있으면 즉시 반환
   if (navigator.serviceWorker.controller) {
-    logger.info('[RegisterSW] Controller already active');
+
     return;
   }
-
-  logger.info('[RegisterSW] Waiting for controller...');
 
   // ✅ 리스너 정리를 위한 변수
   let onControllerChange: (() => void) | null = null;
@@ -39,7 +37,7 @@ async function waitForController(timeoutMs: number = 5000): Promise<void> {
     new Promise<void>((resolve) => {
       onControllerChange = () => {
         if (navigator.serviceWorker.controller) {
-          logger.info('[RegisterSW] Controller activated via event');
+
           resolve();
         }
       };
@@ -47,7 +45,7 @@ async function waitForController(timeoutMs: number = 5000): Promise<void> {
     }),
     new Promise<void>((_, reject) => {
       setTimeout(() => {
-        logger.warn('[RegisterSW] Controller timeout - continuing anyway');
+
         reject(new Error('Controller timeout'));
       }, timeoutMs);
     }),
@@ -63,7 +61,7 @@ async function waitForController(timeoutMs: number = 5000): Promise<void> {
       if (onControllerChange) {
         navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
       }
-      logger.warn('[RegisterSW] Proceeding without controller');
+
     });
 }
 
@@ -71,7 +69,7 @@ export default function RegisterServiceWorker() {
   useEffect(() => {
     // Service Worker가 지원되지 않으면 종료
     if (!('serviceWorker' in navigator)) {
-      logger.warn('[RegisterSW] Service Worker not supported');
+
       return;
     }
 
@@ -92,14 +90,14 @@ export default function RegisterServiceWorker() {
 
       switch (type) {
         case 'SW_INSTALLING':
-          logger.info('[RegisterSW] Service worker installing', { version });
+
           break;
         case 'SW_ACTIVATED':
-          logger.info('[RegisterSW] Service worker activated', { version });
+
           try {
             window.localStorage.setItem('pns-sw-version', version || 'unknown');
           } catch (error) {
-            logger.warn('[RegisterSW] Failed to persist sw version', error);
+
           }
           window.dispatchEvent(new CustomEvent('pns-sw-activated', { detail: { version } }));
           break;
@@ -110,51 +108,34 @@ export default function RegisterServiceWorker() {
 
     const registerUnifiedServiceWorker = async () => {
       try {
-        logger.info('[RegisterSW] Starting service worker registration...');
 
         // Step 1: 기존 등록 확인 (있으면 재사용)
         let registration = await navigator.serviceWorker.getRegistration();
 
         if (registration) {
-          logger.info('[RegisterSW] Service worker already registered', {
-            scope: registration.scope,
-            state: registration.active?.state || 'no active worker',
-          });
+
         } else {
           // Step 2: 없으면 새로 등록
-          logger.info('[RegisterSW] Registering new service worker at /sw.js');
+
           registration = await navigator.serviceWorker.register('/sw.js', {
             scope: '/',
           });
 
-          logger.info('[RegisterSW] Service worker registered successfully', {
-            scope: registration.scope,
-            state: registration.active
-              ? 'active'
-              : registration.waiting
-              ? 'waiting'
-              : registration.installing
-              ? 'installing'
-              : 'unknown',
-          });
         }
 
         // Step 3: 컨트롤러 확보 대기 (iOS 최적화)
         await waitForController(5000);
-        logger.info('[RegisterSW] Service worker controller ready');
 
         navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
 
         // Step 4: 업데이트 체크 (개발 중에는 자주 업데이트됨)
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
-          logger.info('[RegisterSW] Service worker update found');
 
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // 새 버전이 설치되었고, 기존 워커가 아직 컨트롤 중
-                logger.info('[RegisterSW] New service worker installed, waiting for activation');
 
                 // 사용자에게 새로고침 유도 (선택사항)
                 // if (confirm('새 버전이 있습니다. 새로고침하시겠습니까?')) {
@@ -168,11 +149,11 @@ export default function RegisterServiceWorker() {
 
         // ✅ 주기적 업데이트 체크 (1시간마다) - cleanup을 위해 ID 저장
         updateIntervalId = setInterval(() => {
-          logger.info('[RegisterSW] Checking for service worker updates...');
+
           registration.update();
         }, 60 * 60 * 1000);
       } catch (error) {
-        logger.error('[RegisterSW] Failed to register service worker', error);
+
       }
     };
 
@@ -187,7 +168,7 @@ export default function RegisterServiceWorker() {
       // setInterval 정리
       if (updateIntervalId) {
         clearInterval(updateIntervalId);
-        logger.info('[RegisterSW] Cleared update interval');
+
       }
     };
   }, []);

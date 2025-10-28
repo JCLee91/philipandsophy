@@ -53,24 +53,21 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           setAuthLoading(false);
 
           if (currentUser) {
-            logger.info('Auth state: 로그인됨', {
-              uid: currentUser.uid,
-              email: currentUser.email,
-            });
+
           } else {
-            logger.info('Auth state: 로그아웃됨');
+
             // ✅ localStorage에서 participantId 제거
             try {
               localStorage.removeItem('participantId');
             } catch (error) {
-              logger.error('Failed to remove participantId from localStorage:', error);
+
             }
             deleteClientCookie('pns-participant');
             deleteClientCookie('pns-cohort');
           }
         });
       } catch (error) {
-        logger.error('Auth 초기화 실패:', error);
+
         if (mounted) {
           setAuthLoading(false);
         }
@@ -99,9 +96,9 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       await signOut(auth);
       deleteClientCookie('pns-participant');
       deleteClientCookie('pns-cohort');
-      logger.info('로그아웃 성공');
+
     } catch (error) {
-      logger.error('로그아웃 실패:', error);
+
       throw error;
     }
   };

@@ -61,7 +61,7 @@ export default function NoticeEditPage() {
           setImagePreview(notice.imageUrl);
         }
       } catch (error) {
-        logger.error('공지 조회 실패 (notice-edit)', error);
+
         alert('공지를 불러오는데 실패했습니다.');
         router.push('/datacntr/notices');
       } finally {
@@ -90,7 +90,7 @@ export default function NoticeEditPage() {
           setCohorts(data);
         }
       } catch (error) {
-        logger.error('코호트 조회 실패 (notice-edit)', error);
+
       }
     };
 
@@ -184,7 +184,7 @@ export default function NoticeEditPage() {
       alert(isDraft ? '공지가 임시저장되었습니다.' : '공지가 발행되었습니다.');
       router.push('/datacntr/notices');
     } catch (error) {
-      logger.error('공지 수정 실패 (notice-edit)', error);
+
       alert(error instanceof Error ? error.message : '공지 수정 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);

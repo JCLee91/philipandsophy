@@ -84,7 +84,7 @@ export function useNoticeActions() {
         });
         return true;
       } catch (error) {
-        logger.error('공지 작성 실패:', error);
+
         if (!(error instanceof Error && error.message.includes('storage/'))) {
           toast({
             title: '공지 작성 실패',
@@ -113,7 +113,7 @@ export function useNoticeActions() {
         });
         return true;
       } catch (error) {
-        logger.error('공지 수정 실패:', error);
+
         toast({
           title: '공지 수정 실패',
           description: '공지 내용을 수정하지 못했습니다. 다시 시도해주세요.',
@@ -131,7 +131,7 @@ export function useNoticeActions() {
         await deleteNoticeMutation.mutateAsync(noticeId);
         return true;
       } catch (error) {
-        logger.error('공지 삭제 실패:', error);
+
         toast({
           title: '공지 삭제 실패',
           description: '공지 삭제에 실패했습니다. 다시 시도해주세요.',

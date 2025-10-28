@@ -32,7 +32,7 @@ function getAdminConfig(): AdminAppConfig | null {
         privateKey: parsed.private_key,
       };
     } catch (error) {
-      logger.error('Failed to parse FIREBASE_SERVICE_ACCOUNT', error);
+
     }
   }
 
@@ -84,13 +84,13 @@ function initializeAdminApp() {
       '3. FIREBASE_SERVICE_ACCOUNT_PATH (file path)'
     );
     initializationError = error;
-    logger.error('Firebase Admin initialization failed', error);
+
     throw error;
   } catch (error) {
     // 초기화 에러 저장 (재시도 방지)
 
     initializationError = error as Error;
-    logger.error('Firebase Admin initialization error', error);
+
     throw error;
   }
 }
@@ -103,7 +103,7 @@ function getAdminApp(): admin.app.App | null {
   try {
     return initializeAdminApp();
   } catch (error) {
-    logger.error('Failed to get Firebase Admin app', error);
+
     return null;
   }
 }

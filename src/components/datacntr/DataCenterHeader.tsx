@@ -31,7 +31,7 @@ export default function DataCenterHeader() {
           setCohorts(Array.isArray(data) ? data : []);
         }
       } catch (error) {
-        logger.error('기수 목록 조회 실패 (datacntr-header)', error);
+
       }
     };
 
@@ -41,12 +41,11 @@ export default function DataCenterHeader() {
   const handleLogout = async () => {
     try {
       await logout();
-      logger.info('Data Center 로그아웃 성공');
 
       // 로그아웃 후 로그인 페이지로 리다이렉트
       window.location.href = '/datacntr/login';
     } catch (error) {
-      logger.error('로그아웃 실패:', error);
+
     }
   };
 

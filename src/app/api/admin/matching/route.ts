@@ -97,31 +97,19 @@ export async function POST(request: NextRequest) {
 
       // 🔒 다른 코호트 참가자 제외 (다중 코호트 운영 시 데이터 혼입 방지)
       if (!participant.cohortId || participant.cohortId !== cohortId) {
-        logger.warn('코호트 불일치로 제외', {
-          participantId,
-          expectedCohort: cohortId,
-          actualCohort: participant.cohortId || 'undefined',
-        });
+
         continue;
       }
 
       // 슈퍼 관리자만 매칭에서 제외 (일반 관리자는 매칭 대상 포함)
       if (participant.isSuperAdmin) {
-        logger.info('슈퍼 관리자 매칭에서 제외', {
-          participantId,
-          name: participant.name,
-        });
+
         continue;
       }
 
       // 질문이 다른 경우 로깅 (새벽 제출자)
       if (submission.dailyQuestion !== targetQuestion) {
-        logger.warn('다른 질문에 답변한 참가자 (새벽 제출자)', {
-          participantId,
-          name: participant.name,
-          expectedQuestion: targetQuestion.substring(0, 30) + '...',
-          actualQuestion: submission.dailyQuestion.substring(0, 30) + '...',
-        });
+
       }
 
       participantAnswers.push({
@@ -143,12 +131,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    logger.info('매칭 시작 (Human-in-the-loop)', {
-      totalCount: participantAnswers.length,
-      maleCount: participantAnswers.filter(p => p.gender === 'male').length,
-      femaleCount: participantAnswers.filter(p => p.gender === 'female').length,
-    });
 
     // 5. AI 매칭 수행 (검증 없음 - 관리자가 수동으로 검토/조정)
     const matching = await matchParticipantsByAI(targetQuestion, participantAnswers);
@@ -211,7 +193,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('매칭 실행 실패', error);
+
     return NextResponse.json(
       {
         error: '매칭 실행 중 오류가 발생했습니다.',
@@ -285,7 +267,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('매칭 결과 조회 실패', error);
+
     return NextResponse.json(
       {
         error: '매칭 결과 조회 중 오류가 발생했습니다.',

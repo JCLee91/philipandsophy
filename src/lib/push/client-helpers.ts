@@ -26,7 +26,7 @@ import { isPushEnabledForDevice } from './helpers';
  */
 export function isPushEnabledForCurrentDevice(data: any): boolean {
   if (typeof window === 'undefined') {
-    logger.warn('[isPushEnabledForCurrentDevice] Called on server, returning false');
+
     return false;
   }
 
@@ -35,12 +35,12 @@ export function isPushEnabledForCurrentDevice(data: any): boolean {
   try {
     deviceId = localStorage.getItem('device-id') || '';
   } catch (error) {
-    logger.warn('[isPushEnabledForCurrentDevice] localStorage unavailable', error);
+
     return false;
   }
 
   if (!deviceId) {
-    logger.warn('[isPushEnabledForCurrentDevice] No deviceId found');
+
     return false;
   }
 
@@ -63,7 +63,7 @@ export function getCurrentDeviceId(): string {
   try {
     return localStorage.getItem('device-id') || '';
   } catch (error) {
-    logger.warn('[getCurrentDeviceId] localStorage unavailable', error);
+
     return '';
   }
 }

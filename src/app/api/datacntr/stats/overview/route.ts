@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(stats);
   } catch (error) {
-    logger.error('통계 조회 실패', error);
+
     return NextResponse.json(
       { error: '통계 조회 중 오류가 발생했습니다' },
       { status: 500 }

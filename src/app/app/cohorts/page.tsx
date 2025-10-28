@@ -20,13 +20,13 @@ export default function CohortsPage() {
   // 권한 체크 및 자동 진입: 관리자는 활성 코호트로 자동 이동
   useEffect(() => {
     if (!authLoading && !participant) {
-      logger.warn('코호트 선택: 로그인 필요');
+
       router.replace('/app');
       return;
     }
 
     if (!authLoading && participant && !participant.isAdministrator && !participant.isSuperAdmin) {
-      logger.warn('코호트 선택: 관리자 권한 필요', { participantId: participant.id });
+
       // 일반 사용자는 자신의 코호트로 바로 이동
       router.replace(appRoutes.chat(participant.cohortId));
       return;
@@ -37,10 +37,7 @@ export default function CohortsPage() {
       const activeCohort = cohorts.find(cohort => cohort.isActive);
 
       if (activeCohort) {
-        logger.info('활성 코호트로 자동 진입', {
-          cohortId: activeCohort.id,
-          cohortName: activeCohort.name
-        });
+
         router.replace(appRoutes.chat(activeCohort.id));
       } else {
 
@@ -51,7 +48,6 @@ export default function CohortsPage() {
   // 코호트 선택 처리
   const handleSelectCohort = (cohortId: string) => {
     setSelectedCohortId(cohortId);
-    logger.info('코호트 선택됨', { cohortId });
 
     // 채팅 페이지로 이동
     router.push(appRoutes.chat(cohortId));

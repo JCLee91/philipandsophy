@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(cohorts);
   } catch (error) {
-    logger.error('코호트 조회 실패 (datacntr-cohorts)', error);
+
     return NextResponse.json(
       { error: '코호트 조회 중 오류가 발생했습니다' },
       { status: 500 }
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
         }
       } catch (error) {
-        logger.error('Daily Questions 복사 실패 (무시됨)', error);
+
         // 실패해도 코호트 생성은 성공으로 처리
       }
     }
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('코호트 생성 실패 (datacntr-cohorts)', error);
+
     return NextResponse.json(
       { error: '코호트 생성 중 오류가 발생했습니다' },
       { status: 500 }

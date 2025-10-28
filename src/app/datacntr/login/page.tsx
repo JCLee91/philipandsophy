@@ -50,7 +50,7 @@ export default function DataCenterLoginPage() {
         description: '참가자 정보 확인을 다시 시도했습니다.',
       });
     } catch (error) {
-      logger.error('Participant 재시도 실패:', error);
+
       toast({
         title: '재시도 실패',
         description: '참가자 정보 확인에 실패했습니다.',
@@ -72,7 +72,7 @@ export default function DataCenterLoginPage() {
         recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
 
       } catch (error) {
-        logger.error('reCAPTCHA 초기화 실패:', error);
+
         setError('인증 시스템 초기화에 실패했습니다.');
       }
     }, 500);
@@ -83,7 +83,7 @@ export default function DataCenterLoginPage() {
         try {
           recaptchaVerifierRef.current.clear();
         } catch (error) {
-          logger.warn('reCAPTCHA cleanup 실패:', error);
+
         } finally {
           recaptchaVerifierRef.current = null;
         }
@@ -131,7 +131,7 @@ export default function DataCenterLoginPage() {
 
       setStep('code');
     } catch (error: any) {
-      logger.error('SMS 발송 실패:', error);
+
       setError(error.message || '인증번호 발송에 실패했습니다.');
       toast({
         title: '발송 실패',
@@ -160,7 +160,6 @@ export default function DataCenterLoginPage() {
         confirmationResultRef.current,
         verificationCode
       );
-      logger.info('로그인 성공');
 
       try {
         const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid } = await import('@/lib/firebase');
@@ -176,11 +175,7 @@ export default function DataCenterLoginPage() {
           if (participantRecord && participantRecord.firebaseUid !== currentUid) {
             await linkFirebaseUid(participantRecord.id, currentUid);
             didLinkFirebaseUid = true;
-            logger.info('Firebase UID 연결/업데이트 완료 (datacntr)', {
-              participantId: participantRecord.id,
-              newFirebaseUid: currentUid,
-              phoneNumber: participantRecord.phoneNumber,
-            });
+
             participantRecord = {
               ...participantRecord,
               firebaseUid: currentUid,
@@ -189,11 +184,9 @@ export default function DataCenterLoginPage() {
         }
 
         if (!participantRecord) {
-          logger.warn('Firebase UID로 참가자 정보를 찾을 수 없습니다 (datacntr)', {
-            uid: currentUid,
-          });
+
         } else if (didLinkFirebaseUid && participantStatusRef.current !== 'ready') {
-          logger.info('AuthContext participant 재조회 요청 (datacntr)');
+
           await retryParticipantFetch();
 
           const waitForReady = async () => {
@@ -203,20 +196,19 @@ export default function DataCenterLoginPage() {
 
             while (Date.now() - startTime < maxWaitTime) {
               if (participantStatusRef.current === 'ready') {
-                logger.info('AuthContext ready 상태 확인됨 (datacntr)');
+
                 return true;
               }
               await new Promise(resolve => setTimeout(resolve, checkInterval));
             }
 
-            logger.warn('AuthContext ready 대기 시간 초과 (datacntr)');
             return false;
           };
 
           await waitForReady();
         }
       } catch (linkError) {
-        logger.error('Firebase UID 동기화 실패 (datacntr):', linkError);
+
       }
 
       toast({
@@ -226,7 +218,7 @@ export default function DataCenterLoginPage() {
 
       router.push('/datacntr');
     } catch (error: any) {
-      logger.error('인증 실패:', error);
+
       setError(error.message || '인증에 실패했습니다.');
       toast({
         title: '인증 실패',

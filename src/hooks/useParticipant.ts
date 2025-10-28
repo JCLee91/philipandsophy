@@ -25,7 +25,7 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
         const participant = await getParticipantByFirebaseUid(firebaseUid);
 
         if (!participant) {
-          logger.warn('Participant not found for Firebase UID', { firebaseUid });
+
           deleteClientCookie('pns-participant');
           deleteClientCookie('pns-cohort');
           return null;
@@ -36,7 +36,7 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
           localStorage.setItem('participantId', participant.id);
 
         } catch (error) {
-          logger.error('Failed to save participantId to localStorage:', error);
+
         }
 
         // ✅ 쿠키에도 participant 정보 저장 (서버 사이드 라우팅 보호용)
@@ -47,15 +47,9 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
           deleteClientCookie('pns-cohort');
         }
 
-        logger.info('Participant 조회 성공', {
-          participantId: participant.id,
-          name: participant.name,
-          isAdministrator: participant.isAdministrator,
-        });
-
         return participant;
       } catch (error) {
-        logger.error('Participant 조회 실패', { firebaseUid, error });
+
         throw error;
       }
     },

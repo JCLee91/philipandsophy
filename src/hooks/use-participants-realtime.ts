@@ -57,12 +57,7 @@ export function useParticipantsByCohortRealtime(cohortId: string | undefined) {
 
         // 디버깅 로그 (development only)
         if (process.env.NODE_ENV === 'development') {
-          logger.info('참가자 리스트 업데이트', {
-            cohortId,
-            count: participantsList.length,
-            fromCache,
-            source: fromCache ? 'cache' : 'network',
-          });
+
         }
 
         setParticipants(participantsList);
@@ -72,7 +67,6 @@ export function useParticipantsByCohortRealtime(cohortId: string | undefined) {
       (err) => {
         if (!isMountedRef.current) return;
 
-        logger.error('참가자 리스트 실시간 조회 실패', err);
         setError(err as Error);
         setIsLoading(false);
       }

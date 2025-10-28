@@ -33,14 +33,14 @@ export async function getDailyQuestion(
     // 1. Cohort 정보 가져오기
     const cohort = await getCohortById(cohortId);
     if (!cohort) {
-      logger.error('Cohort not found:', cohortId);
+
       return null;
     }
 
     // 2. programStartDate 기준으로 Day 계산 (fallback to startDate for backward compatibility)
     const programStart = cohort.programStartDate || cohort.startDate;
     if (!programStart) {
-      logger.error('Neither programStartDate nor startDate set for cohort:', cohortId);
+
       return null;
     }
 
@@ -50,7 +50,7 @@ export async function getDailyQuestion(
 
     // 3. 범위 체크 (1-14일)
     if (dayNumber < 1 || dayNumber > 14) {
-      logger.warn('Day out of range:', { date, dayNumber, cohortId });
+
       return null;
     }
 
@@ -60,14 +60,14 @@ export async function getDailyQuestion(
     );
 
     if (!questionDoc.exists()) {
-      logger.warn('Daily question not found:', { cohortId, dayNumber, date });
+
       return null;
     }
 
     return { id: questionDoc.id, ...questionDoc.data() } as DailyQuestion;
 
   } catch (error) {
-    logger.error('Failed to get daily question:', error);
+
     return null;
   }
 }
@@ -111,7 +111,7 @@ export async function getAllDailyQuestions(
     })) as DailyQuestion[];
 
   } catch (error) {
-    logger.error('Failed to get all daily questions:', error);
+
     return [];
   }
 }
@@ -172,10 +172,8 @@ export async function createDailyQuestions(
 
     await Promise.all(promises);
 
-    logger.info('Daily questions created', { cohortId, count: 14 });
-
   } catch (error) {
-    logger.error('Failed to create daily questions:', error);
+
     throw error;
   }
 }
@@ -207,13 +205,8 @@ export async function copyDailyQuestions(
       }))
     );
 
-    logger.info('Daily questions copied', {
-      from: sourceCohortId,
-      to: targetCohortId,
-    });
-
   } catch (error) {
-    logger.error('Failed to copy daily questions:', error);
+
     throw error;
   }
 }

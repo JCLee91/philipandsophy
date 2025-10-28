@@ -59,13 +59,9 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
 
       const url = `/api/datacntr/ai-chat/refresh?cohortId=${selectedCohortId}`;
 
-      console.time('API Response Time');
-
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${idToken}` },
       });
-
-      console.timeEnd('API Response Time');
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

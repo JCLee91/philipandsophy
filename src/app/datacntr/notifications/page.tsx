@@ -99,7 +99,7 @@ export default function CustomNotificationsPage() {
         }
 
       } catch (error) {
-        logger.error('코호트 목록 조회 실패', error);
+
         toast({
           title: '코호트 조회 실패',
           description: '코호트 목록을 불러올 수 없습니다.',
@@ -152,7 +152,7 @@ export default function CustomNotificationsPage() {
         setSelectedParticipantIds([]); // Reset selection when cohort or type changes
 
       } catch (error) {
-        logger.error('참가자 목록 조회 실패', error);
+
         toast({
           title: '참가자 조회 실패',
           description: '참가자 목록을 불러올 수 없습니다.',
@@ -233,8 +233,6 @@ export default function CustomNotificationsPage() {
         requestBody.participantIds = selectedParticipantIds;
       }
 
-      logger.info('커스텀 알림 전송 시작', requestBody);
-
       const response = await fetch('/api/admin/notifications/custom', {
         method: 'POST',
         headers: {
@@ -251,8 +249,6 @@ export default function CustomNotificationsPage() {
 
       const result = await response.json();
 
-      logger.info('커스텀 알림 전송 완료', result);
-
       toast({
         title: '알림 전송 완료',
         description: `${result.totalRecipients}명에게 알림을 전송했습니다. (FCM: ${result.totalFCM}, Web Push: ${result.totalWebPush}, 성공: ${result.notificationsSent})`,
@@ -265,7 +261,7 @@ export default function CustomNotificationsPage() {
         body: '',
       });
     } catch (error) {
-      logger.error('커스텀 알림 전송 실패', error);
+
       toast({
         title: '알림 전송 실패',
         description: error instanceof Error ? error.message : '알 수 없는 오류',

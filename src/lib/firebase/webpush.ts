@@ -58,13 +58,13 @@ export async function isFCMSupported(): Promise<boolean> {
     const supported = await isSupported();
 
     if (!supported) {
-      logger.info('FCM not supported by Firebase messaging library');
+
       return false;
     }
 
     return true;
   } catch (error) {
-    logger.error('Error checking FCM support', error);
+
     return false;
   }
 }
@@ -95,7 +95,7 @@ export async function createWebPushSubscription(
 ): Promise<PushSubscription | null> {
   try {
     if (!isWebPushSupported()) {
-      logger.warn('Web Push not supported');
+
       return null;
     }
 
@@ -106,9 +106,7 @@ export async function createWebPushSubscription(
     const existingSubscription = await registration.pushManager.getSubscription();
 
     if (existingSubscription) {
-      logger.info('Already subscribed to Web Push', {
-        endpoint: existingSubscription.endpoint,
-      });
+
       return existingSubscription;
     }
 
@@ -118,13 +116,9 @@ export async function createWebPushSubscription(
       applicationServerKey: urlBase64ToUint8Array(vapidKey),
     });
 
-    logger.info('Created Web Push subscription', {
-      endpoint: subscription.endpoint,
-    });
-
     return subscription;
   } catch (error) {
-    logger.error('Error creating Web Push subscription', error);
+
     return null;
   }
 }
@@ -143,13 +137,13 @@ export async function unsubscribeWebPush(): Promise<boolean> {
 
     if (subscription) {
       await subscription.unsubscribe();
-      logger.info('Unsubscribed from Web Push');
+
       return true;
     }
 
     return false;
   } catch (error) {
-    logger.error('Error unsubscribing from Web Push', error);
+
     return false;
   }
 }
@@ -199,7 +193,7 @@ export async function getCurrentWebPushSubscription(): Promise<PushSubscription 
 
     return await registration.pushManager.getSubscription();
   } catch (error) {
-    logger.warn('Cannot get Web Push subscription (timeout or error)', error);
+
     return null;
   }
 }
