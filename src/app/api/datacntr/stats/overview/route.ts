@@ -24,6 +24,21 @@ export async function GET(request: NextRequest) {
     // 오늘 날짜 (KST) - submissionDate 필드를 사용해 타임존 이슈 제거
     const todayString = getTodayString();
 
+    // Cohort 정보 조회 (총 인증률 계산을 위해)
+    let cohortData = null;
+    let elapsedDays = 0;
+    if (cohortId) {
+      const cohortDoc = await db.collection(COLLECTIONS.COHORTS).doc(cohortId).get();
+      if (cohortDoc.exists) {
+        cohortData = cohortDoc.data();
+        // 경과 일수 계산 (시작일부터 오늘까지, 첫 날 OT 제외)
+        const startDate = new Date(cohortData.startDate);
+        const today = new Date(todayString);
+        const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        elapsedDays = Math.max(0, daysDiff); // OT 제외하지 않고 실제 경과 일수
+      }
+    }
+
     // 1. 참가자 조회 (cohortId 필터링)
     const participantsSnapshot = cohortId
       ? await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
@@ -158,6 +173,15 @@ export async function GET(request: NextRequest) {
       ? Math.round((allSubmissions.length / nonSuperAdminParticipants.length) * 10) / 10 // 소수점 1자리
       : 0;
 
+    // 총 인증률 계산
+    // 총 참가자 × 경과 일수 = 최대 가능 인증 수
+    // 실제 인증 수 / 최대 가능 인증 수 × 100 = 총 인증률
+    let totalSubmissionRate = 0;
+    if (cohortId && elapsedDays > 0 && nonSuperAdminParticipants.length > 0) {
+      const maxPossibleSubmissions = nonSuperAdminParticipants.length * elapsedDays;
+      totalSubmissionRate = Math.round((allSubmissions.length / maxPossibleSubmissions) * 100);
+    }
+
     const stats: OverviewStats = {
       averageSubmissionsPerParticipant,
       totalParticipants: nonSuperAdminParticipants.length,
@@ -170,6 +194,7 @@ export async function GET(request: NextRequest) {
       moderateParticipants,
       dormantParticipants,
       weeklyParticipationRate,
+      totalSubmissionRate,
     };
 
     return NextResponse.json(stats);

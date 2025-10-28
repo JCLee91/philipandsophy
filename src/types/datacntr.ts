@@ -19,6 +19,8 @@ export interface OverviewStats {
   dormantParticipants: number; // 7일 이상 미활동
   // 주간 참여율
   weeklyParticipationRate: number; // 이번 주 인증 참가자 비율 (0-100)
+  // 총 인증률
+  totalSubmissionRate: number; // 전체 기간 총 인증률 (0-100)
 }
 
 // 활동 지표 (일별)

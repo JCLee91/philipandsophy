@@ -9,7 +9,7 @@ import { useDatacntrStore } from '@/stores/datacntr-store';
 import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
 import AIChatPanel from '@/components/datacntr/AIChatPanel';
-import { Users, BookOpen, Bell, FileText, BellRing } from 'lucide-react';
+import { Users, BookOpen, FileText, BellRing, TrendingUp } from 'lucide-react';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -82,11 +82,12 @@ export default function DataCenterPage() {
           isLoading={statsLoading}
         />
         <MetricCard
-          title="공지사항"
-          value={stats?.totalNotices ?? 0}
-          icon={Bell}
+          title="총 인증률"
+          value={stats?.totalSubmissionRate ?? 0}
+          icon={TrendingUp}
           color="blue"
           isLoading={statsLoading}
+          subtitle="%"
         />
       </div>
 
