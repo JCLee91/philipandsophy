@@ -66,6 +66,7 @@ function Step1Content() {
           // URL에서 File 객체 생성 (다음 단계 진행 가능하도록)
           const file = await createFileFromUrl(draft.bookImageUrl);
           setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
+          setImageStorageUrl(draft.bookImageUrl);
           toast({
             title: '임시 저장된 내용을 불러왔습니다',
             description: '이어서 작성하실 수 있습니다.',
@@ -79,7 +80,7 @@ function Step1Content() {
     };
 
     loadDraft();
-  }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, toast]);
+  }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, toast]);
 
   // 인증 확인
   useEffect(() => {
@@ -135,6 +136,7 @@ function Step1Content() {
 
   const handleRemoveImage = () => {
     setImageFile(null, null);
+    setImageStorageUrl(null);
   };
 
   const handleSaveDraft = async () => {
@@ -149,18 +151,18 @@ function Step1Content() {
     setIsSaving(true);
 
     try {
-      const draftData: { bookImageUrl?: string } = {};
+      let storedUrl = imageStorageUrl;
 
-      // 이미지가 있으면 업로드 (File 객체인 경우만)
-      if (imageFile && imageFile instanceof File && !imageStorageUrl) {
-        const uploadedUrl = await uploadReadingImage(imageFile, participationCode);
-        draftData.bookImageUrl = uploadedUrl;
-        setImageStorageUrl(uploadedUrl);
-      } else if (imageStorageUrl) {
-        draftData.bookImageUrl = imageStorageUrl;
+      if (imageFile && imageFile instanceof File && !storedUrl) {
+        storedUrl = await uploadReadingImage(imageFile, participationCode);
+        setImageStorageUrl(storedUrl);
       }
 
-      await saveDraft(participantId, participationCode, draftData);
+      await saveDraft(
+        participantId,
+        participationCode,
+        storedUrl ? { bookImageUrl: storedUrl } : {}
+      );
 
       toast({
         title: '임시 저장되었습니다',
@@ -206,11 +208,7 @@ function Step1Content() {
         setImageStorageUrl(bookImageUrl);
       }
 
-      // draft 저장은 백그라운드에서 진행 (페이지 이동을 블로킹하지 않음)
-      saveDraft(participantId, participationCode, { bookImageUrl }).catch((err) => {
-        // 실패해도 사용자에게는 알리지 않음 (Step2에서 다시 저장됨)
-        console.error('Background draft save failed:', err);
-      });
+      await saveDraft(participantId, participationCode, { bookImageUrl });
 
       // 이미지 업로드 완료되면 바로 다음 페이지로
       router.push(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
