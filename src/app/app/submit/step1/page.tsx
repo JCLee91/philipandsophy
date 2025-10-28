@@ -53,7 +53,7 @@ function Step1Content() {
 
   // 임시저장 자동 불러오기
   useEffect(() => {
-    if (!participant || !cohortId || existingSubmissionId) return;
+    if (!participant || !cohortId || existingSubmissionId || imageFile) return;
 
     const loadDraft = async () => {
       setIsLoadingDraft(true);
@@ -80,7 +80,7 @@ function Step1Content() {
 
     loadDraft();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, toast]);
+  }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, toast]);
 
   // 인증 확인
   useEffect(() => {
