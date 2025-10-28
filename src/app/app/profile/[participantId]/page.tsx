@@ -552,7 +552,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
             <DialogContent className="profile-reading-dialog-ios-safe sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-base">
-                  {formatShortDate(selectedSubmission.submittedAt)} 독서 기록
+                  {selectedSubmission.submissionDate
+                    ? format(new Date(selectedSubmission.submissionDate), 'M/d', { locale: ko })
+                    : formatShortDate(selectedSubmission.submittedAt)} 독서 기록
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 max-h-[60vh] overflow-y-auto">
