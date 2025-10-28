@@ -39,7 +39,6 @@ function Step1Content() {
     participationCode,
   } = useSubmissionFlowStore();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
 
   // 메타 정보 설정
@@ -137,48 +136,6 @@ function Step1Content() {
   const handleRemoveImage = () => {
     setImageFile(null, null);
     setImageStorageUrl(null);
-  };
-
-  const handleSaveDraft = async () => {
-    if (!participantId || !participationCode) {
-      toast({
-        title: '세션 정보가 없습니다',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      let storedUrl = imageStorageUrl;
-
-      if (imageFile && imageFile instanceof File && !storedUrl) {
-        storedUrl = await uploadReadingImage(imageFile, participationCode);
-        setImageStorageUrl(storedUrl);
-      }
-
-      await saveDraft(
-        participantId,
-        participationCode,
-        storedUrl ? { bookImageUrl: storedUrl } : {}
-      );
-
-      toast({
-        title: '임시 저장되었습니다',
-        description: '언제든 다시 돌아와서 작성을 이어갈 수 있습니다.',
-      });
-
-      // 페이지 이동 제거 - 현재 페이지에 머물기
-    } catch (error) {
-      toast({
-        title: '임시 저장 실패',
-        description: error instanceof Error ? error.message : '다시 시도해주세요.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const handleNext = async () => {
