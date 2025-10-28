@@ -135,7 +135,7 @@ export default function DataTable<T extends { id: string }>({
               <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                 {columns.map((col, idx) => (
                   <td key={idx} className="px-6 py-4 text-sm text-gray-900">
-                    {col.render ? col.render(item) : String(item[col.key] ?? '-')}
+                    {col.render ? col.render(item) : String((item as any)[col.key] ?? '-')}
                   </td>
                 ))}
               </tr>
