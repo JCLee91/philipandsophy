@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
-import { validateImageFile, compressImageIfNeeded } from '@/lib/image-validation';
+import { validateImageFile, compressImageIfNeeded, createFileFromUrl } from '@/lib/image-validation';
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { useToast } from '@/hooks/use-toast';
 import { saveDraft, uploadReadingImage } from '@/lib/firebase';
@@ -36,7 +36,7 @@ function Step1Content() {
   // 메타 정보 설정
   useEffect(() => {
     if (participant && cohortId) {
-      setMetaInfo(participant.id, participant.id, cohortId, existingSubmissionId || undefined);
+      setMetaInfo(participant.id, cohortId, cohortId, existingSubmissionId || undefined);
     }
   }, [participant, cohortId, existingSubmissionId, setMetaInfo]);
 
@@ -51,7 +51,9 @@ function Step1Content() {
         const draft = await getDraftSubmission(participant.id, cohortId);
 
         if (draft?.bookImageUrl) {
-          setImageFile(null, draft.bookImageUrl);
+          // URL에서 File 객체 생성 (다음 단계 진행 가능하도록)
+          const file = await createFileFromUrl(draft.bookImageUrl);
+          setImageFile(file, draft.bookImageUrl);
           toast({
             title: '임시 저장된 내용을 불러왔습니다',
             description: '이어서 작성하실 수 있습니다.',
@@ -135,16 +137,15 @@ function Step1Content() {
     setIsSaving(true);
 
     try {
-      let bookImageUrl = '';
+      const draftData: { bookImageUrl?: string } = {};
 
-      // 이미지가 있으면 업로드
-      if (imageFile) {
-        bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+      // 이미지가 있으면 업로드 (File 객체인 경우만)
+      if (imageFile && imageFile instanceof File) {
+        draftData.bookImageUrl = await uploadReadingImage(imageFile, participationCode);
       }
+      // imageFile이 없지만 imagePreview(URL)가 있는 경우는 필드 미포함 (기존 URL 유지)
 
-      await saveDraft(participantId, participationCode, {
-        bookImageUrl: bookImageUrl || undefined,
-      });
+      await saveDraft(participantId, participationCode, draftData);
 
       toast({
         title: '임시 저장되었습니다',

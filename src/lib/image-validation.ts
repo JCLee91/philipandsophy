@@ -41,6 +41,22 @@ export function validateImageFile(
 }
 
 /**
+ * URL에서 File 객체 생성 (임시저장 복원용)
+ *
+ * @param url - 이미지 URL (Firebase Storage URL)
+ * @param filename - 파일명 (기본: 'restored-image.jpg')
+ * @returns File 객체
+ */
+export async function createFileFromUrl(
+  url: string,
+  filename: string = 'restored-image.jpg'
+): Promise<File> {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new File([blob], filename, { type: blob.type });
+}
+
+/**
  * 간단한 이미지 압축 (10MB 이상만 압축)
  *
  * @param file - 압축할 이미지 파일

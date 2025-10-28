@@ -176,21 +176,38 @@ function Step2Content() {
     setIsSaving(true);
 
     try {
-      let bookImageUrl = '';
+      const draftData: {
+        bookImageUrl?: string;
+        bookTitle?: string;
+        bookAuthor?: string;
+        bookCoverUrl?: string;
+        bookDescription?: string;
+        review?: string;
+      } = {};
 
-      // 이미지가 있으면 업로드
-      if (imageFile) {
-        bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+      // 이미지가 있으면 업로드 (File 객체인 경우만)
+      if (imageFile && imageFile instanceof File) {
+        draftData.bookImageUrl = await uploadReadingImage(imageFile, participationCode);
       }
 
-      await saveDraft(participantId, participationCode, {
-        bookImageUrl: bookImageUrl || undefined,
-        bookTitle: selectedBook?.title || manualTitle || undefined,
-        bookAuthor: selectedBook?.author || undefined,
-        bookCoverUrl: selectedBook?.image || undefined,
-        bookDescription: selectedBook?.description || undefined,
-        review: review || undefined,
-      });
+      // 각 필드는 값이 있을 때만 포함 (undefined로 덮어쓰기 방지)
+      if (selectedBook?.title || manualTitle) {
+        draftData.bookTitle = selectedBook?.title || manualTitle;
+      }
+      if (selectedBook?.author) {
+        draftData.bookAuthor = selectedBook.author;
+      }
+      if (selectedBook?.image) {
+        draftData.bookCoverUrl = selectedBook.image;
+      }
+      if (selectedBook?.description) {
+        draftData.bookDescription = selectedBook.description;
+      }
+      if (review) {
+        draftData.review = review;
+      }
+
+      await saveDraft(participantId, participationCode, draftData);
 
       toast({
         title: '임시 저장되었습니다',
@@ -214,10 +231,11 @@ function Step2Content() {
   };
 
   const handleNext = () => {
-    if (!selectedBook) {
+    // 책 정보 검증: selectedBook 또는 manualTitle 중 하나는 있어야 함
+    if (!selectedBook && !manualTitle.trim()) {
       toast({
-        title: '책을 선택해주세요',
-        description: '검색 결과에서 책을 선택해주세요.',
+        title: '책 제목을 입력해주세요',
+        description: '검색 결과에서 선택하거나 직접 입력해주세요.',
         variant: 'destructive',
       });
       return;
@@ -261,7 +279,15 @@ function Step2Content() {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="도서명을 입력하세요"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchQuery.trim()) {
+                        // 엔터키를 누르면 검색어를 수동 입력 제목으로 사용
+                        setManualTitle(searchQuery.trim());
+                        setSearchQuery('');
+                        setShowDropdown(false);
+                      }
+                    }}
+                    placeholder="도서명을 검색하거나 직접 입력 후 엔터"
                     className="pl-10 h-12 text-base"
                     disabled={isLoadingBookTitle}
                   />
@@ -294,6 +320,44 @@ function Step2Content() {
                     ))}
                   </div>
                 )}
+
+                {/* 수동 입력 안내 */}
+                {searchQuery.trim() && !isSearching && searchResults.length === 0 && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    검색 결과가 없습니다. 엔터를 누르면 "{searchQuery}"로 직접 입력됩니다.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* 수동 입력된 책 제목 표시 */}
+            {!selectedBook && manualTitle && (
+              <div className="relative border-b-[2px] border-solid rounded-t-[4px] px-3 py-3 min-h-[67px] bg-gray-50" style={{ borderBottomColor: '#6b7280' }}>
+                <div className="flex items-start gap-3">
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] tracking-[-0.14px]">
+                        {manualTitle}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setManualTitle('')}
+                        className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
+                        aria-label="제목 지우기"
+                      >
+                        <Image
+                          src="/image/today-library/ri_pencil-fill.svg"
+                          alt="제목 변경"
+                          width={18}
+                          height={18}
+                        />
+                      </button>
+                    </div>
+                    <p className="text-[12px] leading-[1.4] text-[#8f98a3] tracking-[-0.12px]">
+                      직접 입력
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -352,7 +416,7 @@ function Step2Content() {
                 onChange={(e) => setReview(e.target.value)}
                 placeholder='예시) "너무 슬픈 일을 겪은 사람은, 슬프다는 말조차 쉽게 할 수 없게 돼." 이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다.'
                 className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400"
-                disabled={!selectedBook}
+                disabled={!selectedBook && !manualTitle.trim()}
               />
               <p className="text-xs text-muted-foreground text-right">
                 ({review.length}자)
