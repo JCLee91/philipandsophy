@@ -16,7 +16,7 @@ import { useCohort } from '@/hooks/use-cohorts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { getInitials, formatShortDate } from '@/lib/utils';
-import { format, subDays, startOfDay, isSameDay } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
@@ -25,7 +25,6 @@ import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, 
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
-import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 
 interface ProfileBookContentProps {
   params: Promise<{ participantId: string }>;
@@ -338,10 +337,10 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const cohortNumber = cohort?.name ? parseInt(cohort.name.match(/\d+/)?.[0] || '0', 10) : undefined;
 
   // 각 날짜에 대한 제출물 찾기 (dayNumber 추가)
+  // ✅ 새벽 2시 정책: submissionDate 필드 사용 (submittedAt 시각이 아님)
   const dailySubmissions = fourteenDays.map((date, index) => {
-    const submission = submissions.find((sub) =>
-      isSameDay(getTimestampDate(sub.submittedAt), date)
-    );
+    const dateString = format(date, 'yyyy-MM-dd');
+    const submission = submissions.find((sub) => sub.submissionDate === dateString);
     return {
       date,
       submission,
