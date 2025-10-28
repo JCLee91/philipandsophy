@@ -56,13 +56,14 @@ export default function CustomNotificationsPage() {
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({
-    targetType: 'cohort' as 'cohort' | 'participants' | 'unverified',
+    targetType: 'cohort' as 'cohort' | 'participants' | 'unverified' | 'admins-only',
     cohortId: '',
     participantIds: '',
     title: '',
     body: '',
     route: '/app/chat',
     type: 'custom',
+    includeAdmins: true, // 관리자 포함 여부 (기본값: true)
   });
 
   // Fetch cohorts on mount
@@ -220,6 +221,7 @@ export default function CustomNotificationsPage() {
         body: formData.body,
         route: formData.route,
         type: formData.type,
+        includeAdmins: formData.includeAdmins, // 관리자 포함 여부
       };
 
       if (formData.targetType === 'cohort') {
@@ -227,6 +229,10 @@ export default function CustomNotificationsPage() {
       } else if (formData.targetType === 'unverified') {
         // Send to all unverified participants (automatically fetched from API)
         requestBody.participantIds = participants.map((p) => p.id);
+      } else if (formData.targetType === 'admins-only') {
+        // Send to admins only (empty participantIds array, backend will fetch admins)
+        requestBody.participantIds = [];
+        requestBody.includeAdmins = true; // Force include admins
       } else {
         // Use selected participant IDs
         requestBody.participantIds = selectedParticipantIds;
@@ -333,6 +339,18 @@ export default function CustomNotificationsPage() {
                   className="h-4 w-4"
                 />
                 <span>미인증 참여자</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="admins-only"
+                  checked={formData.targetType === 'admins-only'}
+                  onChange={(e) =>
+                    setFormData({ ...formData, targetType: 'admins-only' })
+                  }
+                  className="h-4 w-4"
+                />
+                <span>내부 테스팅용</span>
               </label>
             </div>
           </div>
@@ -621,6 +639,22 @@ export default function CustomNotificationsPage() {
             placeholder="알림 타입 선택"
           />
 
+          {/* Include Admins Checkbox (disabled for admins-only mode) */}
+          {formData.targetType !== 'admins-only' && (
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="includeAdmins"
+                checked={formData.includeAdmins}
+                onChange={(e) => setFormData({ ...formData, includeAdmins: e.target.checked })}
+                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+              />
+              <label htmlFor="includeAdmins" className="text-sm font-medium text-gray-700 cursor-pointer">
+                관리자에게도 알림 전송
+              </label>
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="flex justify-end gap-4">
             <button
@@ -637,6 +671,7 @@ export default function CustomNotificationsPage() {
                   body: '',
                   route: '/app/chat',
                   type: 'custom',
+                  includeAdmins: true,
                 });
                 setSelectedParticipantIds([]);
               }}

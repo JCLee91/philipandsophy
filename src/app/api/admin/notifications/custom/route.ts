@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { cohortId, participantIds, title, body: notificationBody, route, type } = body;
+    const { cohortId, participantIds, title, body: notificationBody, route, type, includeAdmins = true } = body;
 
     // Validate required fields
     if (!title || !notificationBody || !route || !type) {
@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
         body: notificationBody,
         route,
         type,
+        includeAdmins,
       }),
     });
 

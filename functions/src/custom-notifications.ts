@@ -15,6 +15,48 @@ import {
 import * as webpush from "web-push";
 import { NOTIFICATION_CONFIG } from "./constants/notifications";
 
+/**
+ * Get all administrators (super admins + general admins)
+ */
+async function getAllAdministrators(): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
+  const db = admin.firestore();
+
+  // Query 1: Get super admins
+  const superAdminsQuery = db
+    .collection("participants")
+    .where("isSuperAdmin", "==", true);
+
+  // Query 2: Get general admins
+  const generalAdminsQuery = db
+    .collection("participants")
+    .where("isAdministrator", "==", true);
+
+  const [superAdminsSnapshot, generalAdminsSnapshot] = await Promise.all([
+    superAdminsQuery.get(),
+    generalAdminsQuery.get(),
+  ]);
+
+  // Combine results and deduplicate by ID
+  const adminMap = new Map<string, admin.firestore.QueryDocumentSnapshot>();
+
+  superAdminsSnapshot.docs.forEach((doc) => {
+    adminMap.set(doc.id, doc);
+  });
+
+  generalAdminsSnapshot.docs.forEach((doc) => {
+    adminMap.set(doc.id, doc);
+  });
+
+  // Convert Map to array and create a QuerySnapshot-like object
+  const combinedDocs = Array.from(adminMap.values());
+
+  return {
+    docs: combinedDocs,
+    size: combinedDocs.length,
+    empty: combinedDocs.length === 0,
+  } as admin.firestore.QuerySnapshot<admin.firestore.DocumentData>;
+}
+
 // ✅ Web Push VAPID 설정
 const publicVapidKey = process.env.WEBPUSH_VAPID_PUBLIC_KEY;
 const privateVapidKey = process.env.WEBPUSH_VAPID_PRIVATE_KEY;
@@ -213,7 +255,7 @@ export const sendCustomNotification = onRequest(
       }
     }
 
-    const { cohortId, participantIds, title, body, route, type } = request.body;
+    const { cohortId, participantIds, title, body, route, type, includeAdmins = true } = request.body;
 
     // Validate required fields
     if (!title || !body || !route || !type) {
@@ -224,8 +266,8 @@ export const sendCustomNotification = onRequest(
       return;
     }
 
-    // Must provide either cohortId or participantIds
-    if (!cohortId && (!participantIds || participantIds.length === 0)) {
+    // Must provide either cohortId or participantIds (unless admins-only mode)
+    if (!cohortId && (!participantIds || participantIds.length === 0) && !includeAdmins) {
       response.status(400).json({
         error: "Missing recipients",
         message: "Either cohortId or participantIds must be provided",
@@ -254,8 +296,22 @@ export const sendCustomNotification = onRequest(
         targetParticipantIds = participantIds;
       }
 
+      // ✅ 관리자 포함 여부에 따라 수신자 목록 확장
+      let finalRecipientIds = targetParticipantIds;
+
+      if (includeAdmins) {
+        logger.info("Including administrators in custom notification");
+        const adminsSnapshot = await getAllAdministrators();
+        const adminIds = adminsSnapshot.docs.map(doc => doc.id);
+
+        // 중복 제거 (Set 사용)
+        const recipientSet = new Set([...targetParticipantIds, ...adminIds]);
+        finalRecipientIds = Array.from(recipientSet);
+      }
+
       logger.info("Sending custom notifications", {
-        recipientCount: targetParticipantIds.length,
+        recipientCount: finalRecipientIds.length,
+        includeAdmins,
         title,
         type,
         route,
@@ -266,7 +322,7 @@ export const sendCustomNotification = onRequest(
       let totalWebPush = 0;
       let totalSuccess = 0;
 
-      const pushPromises = targetParticipantIds.map(async (participantId) => {
+      const pushPromises = finalRecipientIds.map(async (participantId) => {
         // Get all tokens and subscriptions for this participant
         const { tokens, entriesMap, webPushSubscriptions } = await getPushTokens(participantId);
 
@@ -298,7 +354,7 @@ export const sendCustomNotification = onRequest(
 
       logger.info("Custom notifications sent successfully (dual-path)", {
         cohortId: cohortId || "N/A",
-        totalRecipients: targetParticipantIds.length,
+        totalRecipients: finalRecipientIds.length,
         totalFCM,
         totalWebPush,
         totalSuccess,
@@ -308,7 +364,7 @@ export const sendCustomNotification = onRequest(
 
       response.status(200).json({
         success: true,
-        totalRecipients: targetParticipantIds.length,
+        totalRecipients: finalRecipientIds.length,
         totalFCM,
         totalWebPush,
         notificationsSent: totalSuccess,
