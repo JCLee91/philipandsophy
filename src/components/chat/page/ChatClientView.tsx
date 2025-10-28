@@ -267,7 +267,7 @@ export function ChatClientView({
   if (sessionLoading || cohortLoading || !participant || !cohort || !cohortId || participantsLoading) {
     return (
       <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden">
+        <div className="app-shell flex flex-col overflow-hidden pt-14">
           <HeaderSkeleton />
           <NoticeListSkeleton />
           <FooterActionsSkeleton />
@@ -286,7 +286,7 @@ export function ChatClientView({
         isAdmin={isAdmin}
       />
       <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden">
+        <div className="app-shell flex flex-col overflow-hidden pt-14">
 
         <ChatParticipantsSheet
           participants={participants}
