@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       books: bookList,
     });
   } catch (error: any) {
-    console.error('책 목록 추출 실패:', error);
+
     return NextResponse.json(
       { success: false, error: error.message || '책 목록 추출 실패' },
       { status: 500 }

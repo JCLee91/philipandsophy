@@ -4,7 +4,6 @@ import Image from 'next/image';
 import '../../styles/landing.css';
 import Footer from '@/components/Footer';
 
-
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 export default function ProgramPage() {

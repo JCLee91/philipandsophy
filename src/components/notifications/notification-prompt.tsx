@@ -58,10 +58,7 @@ export function NotificationPrompt() {
 
       // ✅ participantStatus가 'ready'이고 participantId가 있을 때만 진행
       if (participantStatus !== 'ready' || !participantId) {
-        logger.debug('[NotificationPrompt] Waiting for participant...', {
-          participantStatus,
-          hasParticipantId: !!participantId,
-        });
+
         setIsCheckingToken(false);
         return;
       }
@@ -96,7 +93,6 @@ export function NotificationPrompt() {
         // 2. 조건: Firestore에 토큰 없음 (localStorage 무시)
         // - permission 상관없이 Firestore 기준으로만 판단
         // - "나중에" 클릭해도 다음번에 또 프롬프트 표시 (설정에서 끄면 됨)
-        logger.debug('[NotificationPrompt] Will show prompt after delay (Firestore has no token)');
 
         // 페이지 로드 후 일정 시간 뒤에 프롬프트 표시
         const timer = setTimeout(() => {

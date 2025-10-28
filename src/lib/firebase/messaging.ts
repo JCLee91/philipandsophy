@@ -58,7 +58,7 @@ function generateDeviceId(): string {
     const existingId = localStorage.getItem('device-id');
     if (existingId) {
       cachedDeviceId = existingId;
-      logger.debug('Device ID from localStorage', { deviceId: existingId });
+
       return existingId;
     }
   } catch (error) {
@@ -400,9 +400,7 @@ export async function getPushTokenFromFirestore(
     const data = participantSnap.data();
 
     if (data?.pushNotificationEnabled === false) {
-      logger.debug('Push notifications disabled for participant, no token expected', {
-        participantId,
-      });
+
       return null;
     }
     const deviceId = getDeviceId();
@@ -412,15 +410,10 @@ export async function getPushTokenFromFirestore(
     const deviceToken = pushTokens.find((entry) => entry.deviceId === deviceId);
 
     if (deviceToken?.token) {
-      logger.debug('Found push token for current device in pushTokens array', {
-        participantId,
-        deviceId,
-        tokenPrefix: deviceToken.token.substring(0, 20) + '...',
-      });
+
       return deviceToken.token;
     }
 
-    logger.debug('No push token found for participant', { participantId, deviceId });
     return null;
   } catch (error) {
     logger.error('Error getting push token from Firestore', error);

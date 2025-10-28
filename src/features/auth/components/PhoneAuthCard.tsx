@@ -61,7 +61,7 @@ export default function PhoneAuthCard() {
   useEffect(() => {
     // Strict Mode 대응: 이미 초기화되었으면 스킵
     if (recaptchaVerifierRef.current) {
-      logger.debug('reCAPTCHA 이미 초기화됨 (Strict Mode skip)');
+
       return;
     }
 
@@ -70,7 +70,7 @@ export default function PhoneAuthCard() {
     // ✅ Firebase는 이미 초기화되어 있으므로 지연 없이 즉시 초기화
     try {
       recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
-      logger.debug('reCAPTCHA 초기화 완료');
+
     } catch (error) {
       logger.error('reCAPTCHA 초기화 실패:', error);
       if (isMounted) {
@@ -86,7 +86,7 @@ export default function PhoneAuthCard() {
       if (recaptchaVerifierRef.current) {
         try {
           recaptchaVerifierRef.current.clear();
-          logger.debug('reCAPTCHA cleanup 완료');
+
         } catch (error) {
           // Cleanup 실패는 로그만 (non-blocking)
           logger.warn('reCAPTCHA cleanup 실패 (무시됨):', error);
@@ -226,11 +226,6 @@ export default function PhoneAuthCard() {
           // 따라서 항상 현재 Firebase UID로 업데이트 (안전함)
           if (participant.firebaseUid !== userCredential.user.uid) {
             await linkFirebaseUid(participant.id, userCredential.user.uid);
-            logger.info('Firebase UID 연결/업데이트 완료', {
-              participantId: participant.id,
-              oldFirebaseUid: participant.firebaseUid || 'none',
-              newFirebaseUid: userCredential.user.uid,
-            });
 
             // ✅ UID 연결 직후 AuthContext가 최신 participant 데이터를 가져오도록 재시도
             logger.info('AuthContext participant 재조회 요청');

@@ -21,8 +21,6 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
         return null;
       }
 
-      logger.debug('Participant 조회 시작', { firebaseUid });
-
       try {
         const participant = await getParticipantByFirebaseUid(firebaseUid);
 
@@ -36,7 +34,7 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
         // ✅ localStorage에 participantId 저장 (푸시 알림용)
         try {
           localStorage.setItem('participantId', participant.id);
-          logger.debug('Participant ID saved to localStorage', { participantId: participant.id });
+
         } catch (error) {
           logger.error('Failed to save participantId to localStorage:', error);
         }

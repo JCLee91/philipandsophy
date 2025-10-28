@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ALLOWED_EMAIL_DOMAINS, PHONE_VALIDATION } from '@/constants/auth';
 import { Loader2, Shield, Mail, Phone, User } from 'lucide-react';
 
-
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 export default function SettingsPage() {

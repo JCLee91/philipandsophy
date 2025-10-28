@@ -57,7 +57,7 @@ ${dataContext || '⚠️ 데이터가 로드되지 않았습니다. 사용자에
     return result.toTextStreamResponse();
 
   } catch (error) {
-    console.error('❌ AI Chat error:', error);
+
     return new Response(JSON.stringify({ error: 'AI 채팅 중 오류가 발생했습니다' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

@@ -94,7 +94,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
 
     await batch.commit();
-    logger.info('Daily Questions 저장 완료', { cohortId, count: questions.length });
 
     return NextResponse.json({
       success: true,

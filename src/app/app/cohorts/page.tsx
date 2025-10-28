@@ -9,7 +9,6 @@ import { appRoutes } from '@/lib/navigation';
 import { logger } from '@/lib/logger';
 import PageTransition from '@/components/PageTransition';
 
-
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 export default function CohortsPage() {
@@ -44,7 +43,7 @@ export default function CohortsPage() {
         });
         router.replace(appRoutes.chat(activeCohort.id));
       } else {
-        logger.warn('활성 코호트 없음, 코호트 선택 화면 유지');
+
       }
     }
   }, [authLoading, cohortsLoading, participant, cohorts, router]);

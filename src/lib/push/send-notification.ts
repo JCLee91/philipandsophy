@@ -89,7 +89,7 @@ export async function sendPushToUser(
 
     // ✅ Check pushNotificationEnabled flag first
     if (participantData?.pushNotificationEnabled === false) {
-      logger.debug('Push notifications disabled for participant', { participantId });
+
       return false;
     }
 
@@ -100,7 +100,7 @@ export async function sendPushToUser(
     // ✅ Priority 2: Fallback to legacy pushToken if array is empty
     if (tokens.length === 0 && participantData?.pushToken) {
       tokens.push(participantData.pushToken);
-      logger.debug('Using legacy pushToken (pushTokens array is empty)', { participantId });
+
     }
 
     if (tokens.length === 0) {
@@ -244,7 +244,7 @@ export async function sendPushToMultipleUsers(
 
         // ✅ Skip if push notifications are disabled
         if (participantData?.pushNotificationEnabled === false) {
-          logger.debug('Skipping participant (push notifications disabled)', { participantId });
+
           continue;
         }
 
@@ -266,7 +266,7 @@ export async function sendPushToMultipleUsers(
             participantId,
             tokenEntry: null, // Legacy token has no entry object
           });
-          logger.debug('Using legacy pushToken for participant', { participantId });
+
         }
       }
     }

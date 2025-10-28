@@ -45,13 +45,6 @@ export async function createSubmission(
   const now = Timestamp.now();
   const submissionDate = getSubmissionDate(); // 새벽 2시 마감 정책 적용
 
-  console.log('🔍 [createSubmission] 제출 생성:', {
-    submissionDate,
-    participantId: data.participantId,
-    status: data.status,
-    note: '새벽 0-2시 제출은 전날 날짜로 처리'
-  });
-
   const docRef = await addDoc(collection(db, COLLECTIONS.READING_SUBMISSIONS), {
     ...data,
     submissionDate,
@@ -163,7 +156,6 @@ export async function updateSubmission(
   });
 }
 
-
 /**
  * 제출물 삭제
  */
@@ -230,12 +222,6 @@ export function subscribeTodayVerified(
 ): () => void {
   const db = getDb();
 
-  console.log('🔍 [subscribeTodayVerified] 쿼리 시작:', {
-    targetDate,
-    collection: COLLECTIONS.READING_SUBMISSIONS,
-    statusFilter: ['pending', 'approved']
-  });
-
   const q = query(
     collection(db, COLLECTIONS.READING_SUBMISSIONS),
     where('submissionDate', '==', targetDate),
@@ -260,18 +246,11 @@ export function subscribeTodayVerified(
         });
       });
 
-      console.log('🔍 [subscribeTodayVerified] 결과:', {
-        targetDate,
-        count: participantIds.size,
-        participantIds: Array.from(participantIds),
-        submissions
-      });
-
       callback(participantIds);
     },
     (error) => {
       // Firebase 에러 처리 (네트워크, 권한 등)
-      console.error('🔍 [subscribeTodayVerified] Firebase 에러:', error);
+
       logger.error('Firebase 실시간 구독 에러:', error);
       // 에러 발생 시 빈 Set 반환 (fallback)
       callback(new Set());

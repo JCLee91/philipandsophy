@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       const participant = participantDataMap.get(participantId);
 
       if (!participant) {
-        logger.warn('참가자 정보를 찾을 수 없음', { participantId });
+
         continue;
       }
 

@@ -113,16 +113,6 @@ export async function POST(request: NextRequest) {
 
     const noticeRef = await db.collection('notices').add(noticeData);
 
-    logger.info('공지 작성 완료', {
-      noticeId: noticeRef.id,
-      cohortId,
-      author: authorName,
-      status: finalStatus,
-      isDraft: finalStatus === 'draft',
-      hasImage: !!imageUrl,
-      willTriggerPush: finalStatus !== 'draft',
-    });
-
     return NextResponse.json({
       success: true,
       noticeId: noticeRef.id,

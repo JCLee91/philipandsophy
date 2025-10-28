@@ -104,7 +104,7 @@ export default function RegisterServiceWorker() {
           window.dispatchEvent(new CustomEvent('pns-sw-activated', { detail: { version } }));
           break;
         default:
-          logger.debug('[RegisterSW] Received service worker message', { type, version });
+
       }
     };
 

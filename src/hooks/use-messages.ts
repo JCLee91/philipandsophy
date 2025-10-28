@@ -136,7 +136,7 @@ export const useMarkAsRead = () => {
       logger.error('메시지 읽음 처리 실패:', error);
     },
     onSuccess: (_, variables) => {
-      console.log('[DM] 🔄 읽음 처리 성공, 캐시 무효화', variables);
+
       // Invalidate unread count 캐시
       queryClient.invalidateQueries({
         queryKey: messageKeys.unread(variables.conversationId, variables.userId),

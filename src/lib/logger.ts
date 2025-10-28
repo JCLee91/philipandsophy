@@ -12,21 +12,16 @@ export const logger = {
   error: (message: string, errorOrData?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
       if (errorOrData instanceof Error) {
-        console.error(message, {
-          name: errorOrData.name,
-          message: errorOrData.message,
-          stack: errorOrData.stack,
-        });
+
       } else if (errorOrData !== undefined) {
         // 일반 객체나 값을 JSON으로 직렬화하여 출력
         try {
-          console.error(message, JSON.stringify(errorOrData, null, 2));
         } catch {
           // 순환 참조 등으로 직렬화 실패 시 원본 출력
-          console.error(message, errorOrData);
+
         }
       } else {
-        console.error(message);
+
       }
     }
     // TODO: 프로덕션에서 Sentry 등으로 전송
@@ -40,7 +35,7 @@ export const logger = {
    */
   warn: (message: string, data?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
-      console.warn(message, data);
+
     }
   },
 
@@ -49,7 +44,7 @@ export const logger = {
    */
   info: (message: string, data?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(message, data);
+
     }
   },
 
@@ -58,7 +53,7 @@ export const logger = {
    */
   debug: (message: string, data?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
-      console.debug(message, data);
+
     }
   },
 };

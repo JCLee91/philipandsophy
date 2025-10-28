@@ -39,30 +39,26 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
 
   // 데이터 새로고침
   const handleRefreshData = async () => {
-    console.log('🔄 [프론트] 데이터 새로고침 시작');
 
     if (!user || isRefreshing) {
-      console.warn('⚠️ [프론트] 사용자 없거나 이미 새로고침 중');
+
       return;
     }
 
     // 'all'이거나 유효하지 않은 cohortId는 거부
     if (!selectedCohortId || selectedCohortId === 'all') {
-      console.error('❌ [프론트] cohortId 유효하지 않음:', selectedCohortId);
+
       alert('특정 기수를 선택해주세요.');
       return;
     }
 
-    console.log('📊 [프론트] 선택된 cohortId:', selectedCohortId);
-
     setIsRefreshing(true);
     try {
-      console.log('🔐 [프론트] Firebase ID Token 획득 중...');
+
       const idToken = await user.getIdToken();
-      console.log('✅ [프론트] ID Token 획득 완료');
 
       const url = `/api/datacntr/ai-chat/refresh?cohortId=${selectedCohortId}`;
-      console.log('📡 [프론트] API 요청:', url);
+
       console.time('API Response Time');
 
       const response = await fetch(url, {
@@ -70,34 +66,24 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
       });
 
       console.timeEnd('API Response Time');
-      console.log('📦 [프론트] 응답 상태:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('❌ [프론트] 응답 에러:', errorData);
+
         throw new Error(`데이터 로드 실패: ${response.status}`);
       }
 
-      console.log('📥 [프론트] JSON 파싱 중...');
       const data = await response.json();
-      console.log('✅ [프론트] 데이터 수신 완료:', {
-        contextLength: data.context?.length || 0,
-        timestamp: data.timestamp,
-      });
 
       setDataContext(data.context);
       setLastUpdated(new Date());
-      console.log('🎉 [프론트] 데이터 새로고침 완료!');
+
     } catch (error) {
-      console.error('💥 [프론트] 데이터 새로고침 실패:', error);
-      console.error('오류 상세:', {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
-      });
+
       alert('데이터 로드에 실패했습니다. 콘솔을 확인해주세요.');
     } finally {
       setIsRefreshing(false);
-      console.log('🏁 [프론트] 새로고침 종료');
+
     }
   };
 
@@ -144,7 +130,6 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        console.log('📦 Chunk:', chunk);
 
         // 단순하게 모든 텍스트 누적 (포맷 무시)
         assistantMessage += chunk;
@@ -159,10 +144,8 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
         });
       }
 
-      console.log('✅ 최종 메시지:', assistantMessage);
-
     } catch (error) {
-      console.error('AI Chat error:', error);
+
       setMessages(prev => [
         ...prev,
         { role: 'assistant', content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.' }

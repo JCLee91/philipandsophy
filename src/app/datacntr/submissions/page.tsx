@@ -17,7 +17,6 @@ import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
 
-
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 interface SubmissionWithParticipant extends ReadingSubmission {
@@ -70,7 +69,7 @@ export default function SubmissionsPage() {
         setSubmissions(data);
         setFilteredSubmissions(data);
       } catch (error) {
-        console.error(error);
+
       } finally {
         setIsLoading(false);
       }
@@ -104,7 +103,7 @@ export default function SubmissionsPage() {
         const data = await response.json();
         setAnalytics(data);
       } catch (error) {
-        console.error(error);
+
       } finally {
         setAnalyticsLoading(false);
       }

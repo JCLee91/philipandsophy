@@ -27,7 +27,7 @@ export default function ServiceWorkerUpdateListener() {
       });
 
       if (version) {
-        console.info('[ServiceWorkerUpdateListener] Activated version:', version);
+
       }
     };
 

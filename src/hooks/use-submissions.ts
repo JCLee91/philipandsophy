@@ -27,7 +27,6 @@ export const SUBMISSION_KEYS = {
   verifiedToday: () => [...SUBMISSION_KEYS.all, 'verified-today'] as const,
 };
 
-
 /**
  * 참가자별 제출물 조회
  */
@@ -94,7 +93,6 @@ export function useParticipantSubmissionsRealtime(
   return { data: submissions, isLoading };
 }
 
-
 /**
  * 제출물 생성
  */
@@ -139,7 +137,6 @@ export function useUpdateSubmission() {
     },
   });
 }
-
 
 /**
  * 제출물 삭제

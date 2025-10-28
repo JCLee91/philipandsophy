@@ -186,15 +186,6 @@ export async function PUT(
       });
     }
 
-    logger.info('공지 수정 완료', {
-      noticeId,
-      cohortId,
-      oldStatus,
-      newStatus,
-      statusChanged: oldStatus !== newStatus,
-      hasImage: !!imageUrl,
-    });
-
     return NextResponse.json({
       success: true,
       noticeId,
@@ -249,11 +240,6 @@ export async function DELETE(
 
     // 4. 공지 삭제
     await db.collection('notices').doc(noticeId).delete();
-
-    logger.info('공지 삭제 완료', {
-      noticeId,
-      deletedBy: decodedToken.uid,
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

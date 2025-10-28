@@ -88,7 +88,7 @@ function initializeAdminApp() {
     throw error;
   } catch (error) {
     // 초기화 에러 저장 (재시도 방지)
-    console.error('💥 [Firebase Admin] 초기화 실패:', error);
+
     initializationError = error as Error;
     logger.error('Firebase Admin initialization error', error);
     throw error;
@@ -116,7 +116,7 @@ export function getAdminDb() {
   // 로그 제거 (너무 자주 호출되어 로그 폭주)
   const app = getAdminApp();
   if (!app) {
-    console.error('❌ [Firebase Admin] app이 null입니다');
+
     throw new Error('Firebase Admin is not initialized. Check your credentials.');
   }
 

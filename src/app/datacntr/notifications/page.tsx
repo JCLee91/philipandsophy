@@ -98,7 +98,6 @@ export default function CustomNotificationsPage() {
           setFormData((prev) => ({ ...prev, cohortId: cohortsList[0].id }));
         }
 
-        logger.info('코호트 목록 조회 완료', { count: cohortsList.length });
       } catch (error) {
         logger.error('코호트 목록 조회 실패', error);
         toast({
@@ -152,10 +151,6 @@ export default function CustomNotificationsPage() {
         setParticipants(data.participants);
         setSelectedParticipantIds([]); // Reset selection when cohort or type changes
 
-        logger.info('참가자 목록 조회 완료', {
-          type: formData.targetType,
-          count: data.participants.length,
-        });
       } catch (error) {
         logger.error('참가자 목록 조회 실패', error);
         toast({

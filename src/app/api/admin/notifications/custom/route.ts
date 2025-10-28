@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   try {
     // 🔒 환경변수 검증 (배포 시 필수)
     if (!process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL) {
-      console.error('CRITICAL: NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL is not set');
+
       return NextResponse.json(
         {
           error: 'Server configuration error',
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       type,
     });
   } catch (error) {
-    console.error('Custom notification API error:', error);
+
     return NextResponse.json(
       {
         error: 'Internal server error',

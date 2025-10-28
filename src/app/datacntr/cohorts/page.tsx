@@ -8,7 +8,6 @@ import { Loader2, Calendar, Users, CheckCircle, XCircle } from 'lucide-react';
 import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import type { Cohort } from '@/types/database';
 
-
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 export default function CohortsPage() {
@@ -92,7 +91,7 @@ export default function CohortsPage() {
 
       alert(`기수가 ${currentStatus ? '종료' : '진행중'}으로 변경되었습니다.`);
     } catch (error) {
-      console.error(error);
+
       alert('상태 변경에 실패했습니다.');
     } finally {
       setUpdatingCohortId(null);

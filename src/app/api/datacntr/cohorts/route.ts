@@ -83,7 +83,6 @@ export async function POST(request: NextRequest) {
     });
 
     const cohortId = cohortRef.id;
-    logger.info('코호트 생성 완료', { cohortId, name });
 
     // 2. 참가자 생성
     const batch = db.batch();
@@ -106,7 +105,6 @@ export async function POST(request: NextRequest) {
     }
 
     await batch.commit();
-    logger.info('참가자 생성 완료', { cohortId, count: participants.length });
 
     // 3. Daily Questions 처리
     if (questionsOption === 'copy') {
@@ -142,10 +140,7 @@ export async function POST(request: NextRequest) {
           });
 
           await questionsBatch.commit();
-          logger.info('Daily Questions 복사 완료', {
-            cohortId,
-            count: sourceQuestionsSnapshot.size
-          });
+
         }
       } catch (error) {
         logger.error('Daily Questions 복사 실패 (무시됨)', error);

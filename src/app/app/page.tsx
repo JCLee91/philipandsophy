@@ -75,10 +75,7 @@ export default function Home() {
         } else {
           // 활성 코호트가 없으면 자신의 코호트로
           targetCohortId = participant.cohortId;
-          logger.warn('활성 코호트 없음, 관리자 본인 코호트로 이동', {
-            participantId: participant.id,
-            targetCohortId,
-          });
+
         }
       } else {
         targetCohortId = participant.cohortId;

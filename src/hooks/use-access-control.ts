@@ -58,15 +58,6 @@ export function useAccessControl(): AccessControlResult {
 
   // 🔍 디버깅: 인증 상태 확인
   if (userId) {
-    console.log('🔍 [AccessControl]', {
-      userId,
-      isVerified,
-      isSuperAdmin,
-      isLocked,
-      verifiedIdsSize: verifiedIds?.size,
-      verifiedIdsHasUser: verifiedIds?.has(userId),
-      allVerifiedIds: Array.from(verifiedIds || []),
-    });
   }
 
   return {

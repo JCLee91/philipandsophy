@@ -12,7 +12,6 @@ import TablePagination from '@/components/datacntr/table/TablePagination';
 import { dataCenterParticipantSchema, type DataCenterParticipant } from '@/types/datacntr';
 import FormSelect from '@/components/datacntr/form/FormSelect';
 
-
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 type ParticipantRow = DataCenterParticipant;
@@ -77,7 +76,7 @@ export default function ParticipantsPage() {
         setParticipants(parsedData);
         setFilteredParticipants(parsedData);
       } catch (error) {
-        console.error(error);
+
       } finally {
         setIsLoading(false);
       }

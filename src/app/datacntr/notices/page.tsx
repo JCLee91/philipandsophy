@@ -208,7 +208,7 @@ export default function NoticesPage() {
         const data = await response.json();
         setNotices(data);
       } catch (error) {
-        console.error(error);
+
       } finally {
         setIsLoading(false);
       }

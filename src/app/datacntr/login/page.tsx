@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { phoneFormatUtils } from '@/constants/phone-format';
 
-
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 type AuthStep = 'phone' | 'code';
@@ -71,7 +70,7 @@ export default function DataCenterLoginPage() {
     const timer = setTimeout(() => {
       try {
         recaptchaVerifierRef.current = initRecaptcha('recaptcha-container', 'invisible');
-        logger.debug('reCAPTCHA 초기화 완료');
+
       } catch (error) {
         logger.error('reCAPTCHA 초기화 실패:', error);
         setError('인증 시스템 초기화에 실패했습니다.');

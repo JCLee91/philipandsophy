@@ -23,7 +23,6 @@ import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
 import { getTodayString, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth } from '@/lib/date-utils';
 
-
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 type FeaturedParticipant = Participant & { theme: 'similar' | 'opposite' };

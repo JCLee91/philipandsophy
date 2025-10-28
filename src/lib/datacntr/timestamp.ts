@@ -49,7 +49,7 @@ export function safeTimestampToDate(timestamp: any): Date | null {
 
     return null;
   } catch (error) {
-    console.error('Timestamp 변환 실패:', error);
+
     return null;
   }
 }

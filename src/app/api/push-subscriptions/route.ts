@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       subscription: newSubscription,
     });
   } catch (error) {
-    console.error('[API] Error saving Web Push subscription:', error);
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -172,7 +172,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Web Push subscription removed',
     });
   } catch (error) {
-    console.error('[API] Error removing Web Push subscription:', error);
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

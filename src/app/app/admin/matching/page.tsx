@@ -259,7 +259,6 @@ function MatchingPageContent() {
             setMatchingState('confirmed');
             saveToStorage(CONFIRMED_STORAGE_KEY, confirmedFromDb);
 
-            logger.info('✅ DB에서 확정된 매칭 로드 완료', { date: todayDate, count: confirmedFromDb.totalParticipants });
             return; // 확정 매칭이 있으면 프리뷰는 확인 안 함
           }
         }
@@ -322,7 +321,7 @@ function MatchingPageContent() {
         }
       } catch (error) {
         // Firestore 조회 실패는 무시 (localStorage 데이터가 이미 표시됨)
-        logger.debug('Firestore 데이터 조회 실패 (무시)', error);
+
       }
     };
 
@@ -492,7 +491,7 @@ function MatchingPageContent() {
     // 중단 감지용 플래그 설정 (AI 처리 시작 시점 기록)
     try {
       localStorage.setItem(IN_PROGRESS_KEY, Date.now().toString());
-      logger.info('매칭 작업 시작 플래그 설정', { submissionDate });
+
     } catch (storageError) {
       logger.error('로컬 스토리지 플래그 설정 실패', storageError);
     }
@@ -521,7 +520,7 @@ function MatchingPageContent() {
       // 로컬 스토리지에 프리뷰 결과 저장
       try {
         saveToStorage(PREVIEW_STORAGE_KEY, data);
-        logger.info('프리뷰 결과 로컬 스토리지 저장 완료', { submissionDate });
+
       } catch (storageError) {
         logger.error('로컬 스토리지 저장 실패', storageError);
       }
@@ -540,7 +539,7 @@ function MatchingPageContent() {
       // 성공 시 중단 플래그 제거
       try {
         localStorage.removeItem(IN_PROGRESS_KEY);
-        logger.info('매칭 작업 완료, 플래그 제거', { submissionDate });
+
       } catch (storageError) {
         logger.error('로컬 스토리지 플래그 제거 실패', storageError);
       }
@@ -604,7 +603,7 @@ function MatchingPageContent() {
       try {
         localStorage.removeItem(PREVIEW_STORAGE_KEY); // 프리뷰는 삭제
         localStorage.setItem(CONFIRMED_STORAGE_KEY, JSON.stringify(previewResult)); // 확정 결과 저장
-        logger.info('확정 결과 로컬 스토리지 저장 완료', { submissionDate });
+
       } catch (storageError) {
         logger.error('로컬 스토리지 저장 실패', storageError);
       }
@@ -630,10 +629,7 @@ function MatchingPageContent() {
             updateDoc(doc.ref, { status: 'confirmed' })
           );
           await Promise.all(updatePromises);
-          logger.info('Firestore matching_previews 상태 업데이트 완료', {
-            count: snapshot.size,
-            date: submissionDate
-          });
+
         }
       } catch (firestoreError) {
         // Firestore 업데이트 실패는 로그만 남기고 계속 진행

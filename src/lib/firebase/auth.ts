@@ -38,7 +38,7 @@ export function initRecaptcha(
   return new RecaptchaVerifier(auth, containerId, {
     size,
     callback: () => {
-      logger.debug('reCAPTCHA solved');
+
     },
     'expired-callback': () => {
       logger.warn('reCAPTCHA expired');
@@ -61,8 +61,6 @@ export async function sendSmsVerification(
 
   // 기존 유틸리티 함수로 E.164 변환 (DRY)
   const e164Number = phoneFormatUtils.toE164(phoneNumber);
-
-  logger.debug('SMS 전송 시도:', { phoneNumber: e164Number });
 
   try {
     const confirmationResult = await signInWithPhoneNumber(
@@ -89,7 +87,6 @@ export async function confirmSmsCode(
   confirmationResult: ConfirmationResult,
   verificationCode: string
 ): Promise<UserCredential> {
-  logger.debug('인증 코드 확인 시도');
 
   // 인증 코드 길이 검증
   const cleanCode = verificationCode.replace(/[^\d]/g, '');

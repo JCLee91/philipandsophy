@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
           .get();
 
         if (!templateDoc.exists) {
-          logger.warn(`템플릿 ${templateId}를 찾을 수 없습니다. 건너뜁니다.`);
+
           continue;
         }
 
