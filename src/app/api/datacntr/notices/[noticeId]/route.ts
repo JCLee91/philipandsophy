@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin, getAdminAuth } from '@/lib/firebase/admin-init';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { logger } from '@/lib/logger';
+import { APP_CONSTANTS } from '@/constants/app';
 
 /**
  * GET /api/datacntr/notices/[noticeId]
@@ -161,6 +161,7 @@ export async function PUT(
     // 8. 공지 업데이트
     const updateData: Record<string, any> = {
       cohortId,
+      author: APP_CONSTANTS.ADMIN_NAME, // 항상 "필립앤소피"로 고정
       content: content.trim(),
       status: newStatus,
       updatedAt: new Date(),

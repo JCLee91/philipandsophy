@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin, getAdminAuth } from '@/lib/firebase/admin-init';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { logger } from '@/lib/logger';
+import { APP_CONSTANTS } from '@/constants/app';
 
 /**
  * POST /api/datacntr/notices/create
@@ -50,23 +50,7 @@ export async function POST(request: NextRequest) {
     // 5. Firebase Admin 초기화
     const { db, bucket } = getFirebaseAdmin();
 
-    // 6. 작성자 정보 조회
-    const participantsSnapshot = await db
-      .collection('participants')
-      .where('firebaseUid', '==', decodedToken.uid)
-      .limit(1)
-      .get();
-
-    if (participantsSnapshot.empty) {
-      return NextResponse.json(
-        { error: '참여자 정보를 찾을 수 없습니다' },
-        { status: 404 }
-      );
-    }
-
-    const authorName = participantsSnapshot.docs[0].data().name || '운영자';
-
-    // 7. 이미지 업로드 (있는 경우)
+    // 6. 이미지 업로드 (있는 경우)
     let imageUrl: string | undefined;
 
     if (imageFile) {
@@ -98,11 +82,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 8. 공지 생성
+    // 7. 공지 생성
     const finalStatus = status || 'published';
     const noticeData = {
       cohortId,
-      author: authorName,
+      author: APP_CONSTANTS.ADMIN_NAME, // 항상 "필립앤소피"로 고정
       content: content.trim(),
       status: finalStatus, // draft or published
       isCustom: true,
