@@ -38,6 +38,8 @@ function ParticipantRow({
   verified,
   onDMClick,
   onProfileClick,
+  onProfileBookClick,
+  cohortId,
   isOpen,
   onOpenChange,
 }: {
@@ -47,6 +49,8 @@ function ParticipantRow({
   verified: boolean;
   onDMClick?: (participant: Participant) => void;
   onProfileClick: (participant: Participant) => void;
+  onProfileBookClick: (participant: Participant) => void;
+  cohortId: string | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -105,7 +109,11 @@ function ParticipantRow({
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onProfileClick(participant)}>
               <User className="mr-2 h-4 w-4" />
-              프로필 보기
+              프로필 카드
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onProfileBookClick(participant)}>
+              <BookOpen className="mr-2 h-4 w-4" />
+              프로필 북
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -275,6 +283,8 @@ function ParticipantsPageContent() {
                   verified={verified}
                   onDMClick={handleDMClick}
                   onProfileClick={setSelectedParticipant}
+                  onProfileBookClick={handleProfileBookClick}
+                  cohortId={cohortId}
                   isOpen={openDropdownId === participant.id}
                   onOpenChange={(open) => setOpenDropdownId(open ? participant.id : null)}
                 />
