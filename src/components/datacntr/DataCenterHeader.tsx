@@ -42,6 +42,9 @@ export default function DataCenterHeader() {
     try {
       await logout();
       logger.info('Data Center 로그아웃 성공');
+
+      // 로그아웃 후 로그인 페이지로 리다이렉트
+      window.location.href = '/datacntr/login';
     } catch (error) {
       logger.error('로그아웃 실패:', error);
     }

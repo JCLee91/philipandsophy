@@ -82,7 +82,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. 참가자 정보와 답변 수집 (Batch read로 N+1 쿼리 최적화)
-    const participantAnswers: ParticipantAnswer[] = [];
     const submissionsMap = new Map<string, SubmissionData>();
 
     // 4-1. 중복 제거 및 제출물 수집
@@ -109,7 +108,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4-4. 참가자 정보와 제출물 결합
+    // 4-4. 참가자 정보와 제출물 결합 (질문별로 분리)
+    const mainGroupAnswers: ParticipantAnswer[] = []; // 같은 질문 답변자 (13명)
+    const dawnGroupAnswers: ParticipantAnswer[] = []; // 다른 질문 답변자 (4명)
+
     for (const [participantId, submission] of submissionsMap.entries()) {
       const participant = participantDataMap.get(participantId);
 
@@ -137,23 +139,29 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // 질문이 다른 경우 로깅 (새벽 제출자)
-      if (submission.dailyQuestion !== submissionQuestion) {
+      const participantAnswer: ParticipantAnswer = {
+        id: participantId,
+        name: participant.name,
+        answer: submission.dailyAnswer,
+        gender: participant.gender,
+      };
+
+      // 질문별로 그룹 분리
+      if (submission.dailyQuestion === submissionQuestion) {
+        mainGroupAnswers.push(participantAnswer);
+      } else {
         logger.warn('다른 질문에 답변한 참가자 (새벽 제출자)', {
           participantId,
           name: participant.name,
           expectedQuestion: submissionQuestion.substring(0, 30) + '...',
           actualQuestion: submission.dailyQuestion.substring(0, 30) + '...',
         });
+        dawnGroupAnswers.push(participantAnswer);
       }
-
-      participantAnswers.push({
-        id: participantId,
-        name: participant.name,
-        answer: submission.dailyAnswer,
-        gender: participant.gender,
-      });
     }
+
+    // 전체 참가자 리스트 (기존 로직 호환성)
+    const participantAnswers: ParticipantAnswer[] = [...mainGroupAnswers, ...dawnGroupAnswers];
 
     // 5. 필터링 후 참가자 수 재검증 (AI 최소 인원 조건)
     if (participantAnswers.length < MATCHING_CONFIG.MIN_PARTICIPANTS) {
@@ -169,14 +177,117 @@ export async function POST(request: NextRequest) {
 
     logger.info('매칭 프리뷰 시작 (Human-in-the-loop)', {
       totalCount: participantAnswers.length,
-      maleCount: participantAnswers.filter(p => p.gender === 'male').length,
-      femaleCount: participantAnswers.filter(p => p.gender === 'female').length,
+      mainGroupCount: mainGroupAnswers.length,
+      dawnGroupCount: dawnGroupAnswers.length,
+      mainMaleCount: mainGroupAnswers.filter(p => p.gender === 'male').length,
+      mainFemaleCount: mainGroupAnswers.filter(p => p.gender === 'female').length,
     });
 
-    // 6. AI 매칭 수행 (검증 없음 - 관리자가 수동으로 검토/조정)
-    logger.info('AI 매칭 시작 (프리뷰 모드)', { totalParticipants: participantAnswers.length });
-    const matching = await matchParticipantsByAI(submissionQuestion, participantAnswers);
-    logger.info('AI 매칭 완료 (프리뷰 모드)');
+    // 6. 임시 매칭 로직: 질문별로 다르게 처리
+    let finalMatching: { assignments: any[] };
+
+    if (dawnGroupAnswers.length > 0 && mainGroupAnswers.length >= MATCHING_CONFIG.MIN_PARTICIPANTS) {
+      // 6-1. 메인 그룹 (13명) AI 매칭 실행
+      logger.info('메인 그룹 AI 매칭 시작', {
+        participants: mainGroupAnswers.length,
+        question: submissionQuestion.substring(0, 50) + '...'
+      });
+      const mainGroupMatching = await matchParticipantsByAI(submissionQuestion, mainGroupAnswers);
+
+      // 6-2. 새벽 그룹 (4명)용 랜덤 매칭 생성 (성별 균형 검증 포함)
+      logger.info('새벽 그룹 랜덤 매칭 시작', { participants: dawnGroupAnswers.length });
+
+      const dawnAssignments: any[] = [];
+      for (const dawnParticipant of dawnGroupAnswers) {
+        // 메인 그룹에서 랜덤으로 4명 선택 (각 그룹에서 남녀 1:1)
+        const availableMain = [...mainGroupAnswers];
+        const males = availableMain.filter(p => p.gender === 'male');
+        const females = availableMain.filter(p => p.gender === 'female');
+
+        // Similar: 남자 1명 + 여자 1명 랜덤 선택
+        const similarMale = males.sort(() => Math.random() - 0.5).slice(0, 1);
+        const similarFemale = females.sort(() => Math.random() - 0.5).slice(0, 1);
+        const similarPicks = [...similarMale, ...similarFemale];
+
+        // Opposite: 남자 1명 + 여자 1명 랜덤 선택 (similar와 중복되지 않도록)
+        const usedIds = new Set(similarPicks.map(p => p.id));
+        const oppositeMale = males.filter(p => !usedIds.has(p.id)).sort(() => Math.random() - 0.5).slice(0, 1);
+        const oppositeFemale = females.filter(p => !usedIds.has(p.id)).sort(() => Math.random() - 0.5).slice(0, 1);
+        const oppositePicks = [...oppositeMale, ...oppositeFemale];
+
+        const similarIds = similarPicks.map(p => p.id);
+        const oppositeIds = oppositePicks.map(p => p.id);
+
+        // 성별 균형 검증
+        const similarBalanced = similarPicks.length === 2 &&
+          similarPicks.filter(p => p.gender === 'male').length === 1 &&
+          similarPicks.filter(p => p.gender === 'female').length === 1;
+
+        const oppositeBalanced = oppositePicks.length === 2 &&
+          oppositePicks.filter(p => p.gender === 'male').length === 1 &&
+          oppositePicks.filter(p => p.gender === 'female').length === 1;
+
+        if (!similarBalanced || !oppositeBalanced) {
+          logger.warn('새벽 참가자 성별 균형 미달', {
+            participantId: dawnParticipant.id,
+            name: dawnParticipant.name,
+            similarBalanced,
+            oppositeBalanced,
+            similarCount: similarPicks.length,
+            oppositeCount: oppositePicks.length
+          });
+        }
+
+        dawnAssignments.push({
+          participantId: dawnParticipant.id,
+          similar: similarIds,
+          opposite: oppositeIds,
+          reasons: {
+            similar: '랜덤 매칭 (남녀 각 1명)',
+            opposite: '랜덤 매칭 (남녀 각 1명)',
+            overall: '새벽 제출자를 위한 임시 랜덤 매칭'
+          }
+        });
+
+        logger.info('새벽 참가자 랜덤 매칭 완료', {
+          participantId: dawnParticipant.id,
+          name: dawnParticipant.name,
+          assignedBooks: similarIds.length + oppositeIds.length,
+          similarBalanced,
+          oppositeBalanced
+        });
+      }
+
+      // 6-3. 두 그룹 결과 합치기
+      // 새벽 그룹 매칭을 메인 그룹 매칭 Record에 추가
+      const combinedAssignments = { ...mainGroupMatching.assignments };
+
+      for (const dawnAssignment of dawnAssignments) {
+        combinedAssignments[dawnAssignment.participantId] = {
+          similar: dawnAssignment.similar,
+          opposite: dawnAssignment.opposite,
+          reasons: dawnAssignment.reasons
+        };
+      }
+
+      finalMatching = {
+        assignments: combinedAssignments
+      };
+
+      logger.info('임시 매칭 완료', {
+        mainGroupMatches: Object.keys(mainGroupMatching.assignments).length,
+        dawnGroupMatches: dawnAssignments.length,
+        totalMatches: Object.keys(combinedAssignments).length
+      });
+
+    } else {
+      // 일반 매칭 (모두 같은 질문에 답변한 경우)
+      logger.info('일반 AI 매칭 시작 (프리뷰 모드)', { totalParticipants: participantAnswers.length });
+      finalMatching = await matchParticipantsByAI(submissionQuestion, participantAnswers);
+      logger.info('AI 매칭 완료 (프리뷰 모드)');
+    }
+
+    const matching = finalMatching;
 
     // 7. ⚠️ Firebase 저장하지 않음 (프리뷰 모드)
     // 매칭 결과를 response로만 반환

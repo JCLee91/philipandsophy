@@ -160,6 +160,14 @@ service cloud.firestore {
     }
 
     // ============================================
+    // 매칭 프리뷰 (Matching Previews)
+    // ============================================
+    match /matching_previews/{previewId} {
+      allow read: if isSignedIn();     // 로그인한 사용자는 읽기 가능
+      allow write: if isAdminClaim();  // 관리자만 쓰기 가능
+    }
+
+    // ============================================
     // 사용자 메타데이터 (Users) - 향후 구현용
     // ============================================
     match /users/{userId} {

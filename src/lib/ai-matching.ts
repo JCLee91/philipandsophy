@@ -42,14 +42,15 @@ const matchingReasonsSchema = z.object({
 });
 
 const participantAssignmentSchema = z.object({
+  participantId: z.string(), // 배열 방식을 위해 ID 추가
   similar: z.array(z.string()),
   opposite: z.array(z.string()),
   reasons: matchingReasonsSchema,
 });
 
-// Gemini를 위해 더 명시적인 스키마 정의
+// Gemini 호환을 위해 배열 방식으로 변경
 const matchingResponseSchema = z.object({
-  assignments: z.record(z.string(), participantAssignmentSchema),
+  assignments: z.array(participantAssignmentSchema), // z.record 대신 z.array 사용
 });
 
 // 타입 추론
@@ -361,12 +362,13 @@ ${participantPromptList}
 5. 답변의 핵심 메시지에서 추출할 것 (표면적 특징 X)
 
 ========================================
-응답 형식 (JSON만):
+응답 형식 (JSON 배열):
 ========================================
 
 {
-  "assignments": {
-    "참가자ID1": {
+  "assignments": [
+    {
+      "participantId": "참가자ID1",
       "similar": ["idA", "idB"],
       "opposite": ["idC", "idD"],
       "reasons": {
@@ -374,9 +376,17 @@ ${participantPromptList}
         "opposite": "당신과 달리 [대조적 가치관]을 중시하는 [차별화된 관점]이에요"
       }
     },
-    "참가자ID2": { ... },
-    ... (모든 ${participants.length}명 포함)
-  }
+    {
+      "participantId": "참가자ID2",
+      "similar": ["idE", "idF"],
+      "opposite": ["idG", "idH"],
+      "reasons": {
+        "similar": "...",
+        "opposite": "..."
+      }
+    },
+    ... (모든 ${participants.length}명을 배열로 포함)
+  ]
 }
 
 ⚠️ 검증 체크리스트:
@@ -402,22 +412,11 @@ JSON만 반환하세요.
 
     const apiStartTime = Date.now();
 
-    // Google Gemini를 위한 설정 (z.record 미지원 대응)
-    const isGoogleProvider = (process.env.AI_PROVIDER || 'openai') === 'google';
-
     const { object: raw } = await generateObject({
       model,
       schema: matchingResponseSchema,
-      system: '당신은 독서 모임 매칭 전문가입니다. 모든 참가자에게 개별적으로 분석한 고유한 추천을 제공하세요. 규칙을 정확히 따르고 JSON만 반환하세요.',
+      system: '당신은 독서 모임 매칭 전문가입니다. 모든 참가자에게 개별적으로 분석한 고유한 추천을 제공하세요. 규칙을 정확히 따르고 JSON 배열 형식으로 반환하세요.',
       prompt,
-      // Google Gemini는 z.record를 지원하지 않으므로 structuredOutputs 비활성화
-      ...(isGoogleProvider && {
-        experimental_providerOptions: {
-          google: {
-            structuredOutputs: false,
-          },
-        },
-      }),
     });
     const apiDuration = Date.now() - apiStartTime;
 
@@ -428,16 +427,24 @@ JSON만 반환하세요.
     });
     const validIds = new Set(participants.map((p) => p.id));
 
-    if (!raw.assignments) {
-      throw new Error('AI 응답에 assignments 정보가 없습니다.');
+    if (!raw.assignments || !Array.isArray(raw.assignments)) {
+      throw new Error('AI 응답에 assignments 배열이 없습니다.');
     }
 
     const assignments: Record<string, DailyParticipantAssignment> = {};
     const missingAssignments: string[] = [];
 
+    // 배열 형태의 응답을 Record 형태로 변환
+    const assignmentMap = new Map<string, typeof raw.assignments[number]>();
+    for (const assignment of raw.assignments) {
+      if (assignment.participantId) {
+        assignmentMap.set(assignment.participantId, assignment);
+      }
+    }
+
     for (const participant of participants) {
-      const entry = raw.assignments[participant.id];
-      
+      const entry = assignmentMap.get(participant.id);
+
       if (!entry) {
         missingAssignments.push(participant.name);
         logger.error(`❌ AI가 ${participant.name}(${participant.id})에 대한 추천을 생성하지 않았습니다.`);
