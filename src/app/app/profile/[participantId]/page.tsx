@@ -20,6 +20,7 @@ import { format, startOfDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
+import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
 import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, canViewAllProfiles, canViewAllProfilesWithoutAuth, getTodayString } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
@@ -156,7 +157,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     if (isSelf) {
       return rawSubmissions;
     }
-    return filterSubmissionsByDate(rawSubmissions, submissionCutoffDate);
+    // submittedAt이 있는 제출물만 필터링하여 타입 안전성 보장
+    const validSubmissions = rawSubmissions.filter(s => s.submittedAt) as Array<ReadingSubmission & { submittedAt: Timestamp }>;
+    return filterSubmissionsByDate(validSubmissions, submissionCutoffDate);
   }, [rawSubmissions, submissionCutoffDate, isSelf]);
 
   // 세션 검증 (리다이렉트 플래그로 중복 방지)
