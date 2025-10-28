@@ -123,6 +123,7 @@ export interface WebPushSubscriptionData {
 export interface Participant {
   id: string; // 문서 ID
   cohortId: string; // 기수 ID
+  participationCode?: string; // 참여 코드 (Firebase Storage 경로용)
   name: string; // 참가자 이름
   phoneNumber: string; // 전화번호
   gender?: 'male' | 'female' | 'other'; // 성별
