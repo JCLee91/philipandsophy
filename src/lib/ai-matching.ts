@@ -100,44 +100,167 @@ function normalizeIds(
 }
 
 /**
- * 매칭 검증 함수 (단순화 버전)
- * 치명적인 문제만 체크: 추천을 받지 못한 참가자가 있는지 확인
+ * 성별 균형 검증: 2명의 추천이 1남 + 1여로 구성되어 있는지 확인
+ */
+function hasGenderBalance(
+  ids: string[],
+  genderMap: Map<string, 'male' | 'female' | 'other' | undefined>
+): boolean {
+  if (ids.length !== 2) return false;
+
+  const genders = ids
+    .map(id => genderMap.get(id))
+    .filter((g): g is 'male' | 'female' => g === 'male' || g === 'female');
+
+  if (genders.length !== 2) return false;
+
+  const maleCount = genders.filter(g => g === 'male').length;
+  const femaleCount = genders.filter(g => g === 'female').length;
+
+  return maleCount === 1 && femaleCount === 1;
+}
+
+/**
+ * 매칭 검증 함수 (강화 버전)
+ * 1. 모든 참가자가 추천받았는지 확인
+ * 2. 각 참가자가 정확히 4명을 추천받았는지 확인 (2 similar + 2 opposite)
+ * 3. 성별 균형 (1남 + 1여) 확인
  */
 function validateMatching(
   matching: MatchingResult,
   participants: ParticipantAnswer[]
-): void {
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
   const recommendationCounts = new Map<string, number>();
+  const genderMap = new Map(participants.map(p => [p.id, p.gender]));
 
-  // 모든 추천 카운트
+  // 1. 모든 추천 카운트
   for (const assignment of Object.values(matching.assignments)) {
     [...assignment.similar, ...assignment.opposite].forEach(id =>
       recommendationCounts.set(id, (recommendationCounts.get(id) || 0) + 1)
     );
   }
 
-  // 추천을 받지 못한 참가자 찾기 (치명적 오류)
+  // 2. 추천을 받지 못한 참가자 찾기 (치명적 오류)
   const unrecommended = participants.filter(p => !recommendationCounts.has(p.id));
-
   if (unrecommended.length > 0) {
-    logger.error('🚨 치명적 오류: 추천을 받지 못한 참가자 발견', {
-      count: unrecommended.length,
-      names: unrecommended.map(p => p.name),
-      action: 'AI 매칭 재실행 필요',
-    });
-  } else {
+    errors.push(`추천받지 못한 참가자 ${unrecommended.length}명: ${unrecommended.map(p => p.name).join(', ')}`);
+  }
+
+  // 3. 각 참가자의 추천 검증
+  for (const [participantId, assignment] of Object.entries(matching.assignments)) {
+    const participant = participants.find(p => p.id === participantId);
+    const name = participant?.name || participantId;
+
+    // 3-1. 정확히 2명씩 추천했는지 확인
+    if (assignment.similar.length !== 2) {
+      errors.push(`${name}의 similar 추천이 ${assignment.similar.length}명입니다. (2명이어야 함)`);
+    }
+    if (assignment.opposite.length !== 2) {
+      errors.push(`${name}의 opposite 추천이 ${assignment.opposite.length}명입니다. (2명이어야 함)`);
+    }
+
+    // 3-2. 성별 균형 확인 (1남 + 1여)
+    if (!hasGenderBalance(assignment.similar, genderMap)) {
+      errors.push(`${name}의 similar 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.`);
+    }
+    if (!hasGenderBalance(assignment.opposite, genderMap)) {
+      errors.push(`${name}의 opposite 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.`);
+    }
+
+    // 3-3. 자기 자신 제외 확인
+    if (assignment.similar.includes(participantId)) {
+      errors.push(`${name}의 similar 추천에 자기 자신이 포함되어 있습니다.`);
+    }
+    if (assignment.opposite.includes(participantId)) {
+      errors.push(`${name}의 opposite 추천에 자기 자신이 포함되어 있습니다.`);
+    }
+  }
+
+  // 4. 통계 정보 로깅
+  if (errors.length === 0) {
     const avgRecommendations = (
       Array.from(recommendationCounts.values()).reduce((a, b) => a + b, 0) /
       recommendationCounts.size
     ).toFixed(1);
 
-    logger.info('✅ 매칭 검증 완료', {
+    logger.info('✅ 매칭 검증 성공', {
       totalParticipants: participants.length,
       avgRecommendations,
+      message: '모든 검증 통과: 4명 추천, 성별 균형, 자기 제외',
+    });
+  } else {
+    logger.error('❌ 매칭 검증 실패', {
+      errorCount: errors.length,
+      errors: errors.slice(0, 5), // 처음 5개만 로깅
     });
   }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
 }
 
+
+/**
+ * 사전 검증: 성별 균형 매칭이 가능한지 확인
+ * - 각 성별당 최소 2명 필요 (자기 자신 제외하고 1명 추천 가능)
+ * - 성별 정보가 없는 참가자 확인
+ */
+function validateGenderDistribution(participants: ParticipantAnswer[]): {
+  valid: boolean;
+  errors: string[];
+  stats: {
+    male: number;
+    female: number;
+    other: number;
+    unknown: number;
+  };
+} {
+  const errors: string[] = [];
+  const stats = {
+    male: 0,
+    female: 0,
+    other: 0,
+    unknown: 0,
+  };
+
+  // 성별 카운트
+  participants.forEach(p => {
+    if (!p.gender) {
+      stats.unknown++;
+    } else if (p.gender === 'male') {
+      stats.male++;
+    } else if (p.gender === 'female') {
+      stats.female++;
+    } else {
+      stats.other++;
+    }
+  });
+
+  // 성별 정보 누락 확인
+  if (stats.unknown > 0) {
+    const unknownParticipants = participants
+      .filter(p => !p.gender)
+      .map(p => p.name);
+    errors.push(`성별 정보 누락 ${stats.unknown}명: ${unknownParticipants.join(', ')}`);
+  }
+
+  // 최소 인원 확인 (각 성별 최소 2명)
+  if (stats.male < 2) {
+    errors.push(`남성 참가자가 ${stats.male}명입니다. 최소 2명 필요합니다.`);
+  }
+  if (stats.female < 2) {
+    errors.push(`여성 참가자가 ${stats.female}명입니다. 최소 2명 필요합니다.`);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    stats,
+  };
+}
 
 /**
  * OpenAI를 사용하여 일일 질문에 대한 참가자들의 답변을 분석하고
@@ -151,6 +274,21 @@ async function _matchParticipantsByAI(
   if (participants.length < 4) {
     throw new Error('최소 4명의 참가자가 필요합니다.');
   }
+
+  // 성별 분포 사전 검증
+  const genderValidation = validateGenderDistribution(participants);
+  if (!genderValidation.valid) {
+    logger.error('❌ 성별 분포 사전 검증 실패', {
+      errors: genderValidation.errors,
+      stats: genderValidation.stats,
+    });
+    throw new Error(`성별 균형 매칭 불가: ${genderValidation.errors.join('; ')}`);
+  }
+
+  logger.info('✅ 성별 분포 사전 검증 통과', {
+    stats: genderValidation.stats,
+    totalParticipants: participants.length,
+  });
 
   try {
     const participantPromptList = participants
@@ -305,6 +443,7 @@ JSON만 반환하세요.
         logger.warn(`${participant.name}의 opposite 추천이 ${oppositeIds.length}명뿐입니다.`);
       }
 
+      // 정확히 2명씩만 할당 (AI가 더 많이 제공하더라도)
       assignments[participant.id] = {
         similar: similarIds.slice(0, 2),
         opposite: oppositeIds.slice(0, 2),
@@ -322,13 +461,22 @@ JSON만 반환하세요.
     // AI 매칭 완료
     const matching = { assignments };
 
-    // 매칭 검증 (치명적 오류만 체크)
-    validateMatching(matching, participants);
+    // 매칭 검증 (강화된 검증: 4명 추천, 성별 균형, 자기 제외)
+    const validation = validateMatching(matching, participants);
+
+    if (!validation.valid) {
+      logger.error('🚨 매칭 검증 실패', {
+        errors: validation.errors,
+        action: '관리자가 수동으로 조정 필요',
+      });
+      // 검증 실패해도 일단 결과는 반환 (관리자가 수동 조정 가능)
+    }
 
     logger.info('✅ AI 매칭 완료 (수동 검토 대기)', {
       question,
       participantCount: participants.length,
       assignmentsCount: Object.keys(assignments).length,
+      validationPassed: validation.valid,
     });
 
     return matching;

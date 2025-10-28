@@ -32,7 +32,16 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
     }
 
     // 새벽 2시 마감 정책 적용된 매칭 대상 날짜
-    const targetDate = getMatchingTargetDate();
+    // 새벽 0-2시는 에러 대신 빈값 처리
+    let targetDate: string;
+    try {
+      targetDate = getMatchingTargetDate();
+    } catch (err) {
+      // 새벽 0-2시는 카운트 0으로 처리
+      setCount(0);
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
