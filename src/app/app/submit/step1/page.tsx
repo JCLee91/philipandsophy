@@ -28,7 +28,16 @@ function Step1Content() {
   const { participant, isLoading: sessionLoading } = useAuth();
   const { toast } = useToast();
 
-  const { imageFile, imagePreview, setImageFile, setMetaInfo, participantId, participationCode } = useSubmissionFlowStore();
+  const {
+    imageFile,
+    imagePreview,
+    imageStorageUrl,
+    setImageFile,
+    setMetaInfo,
+    setImageStorageUrl,
+    participantId,
+    participationCode,
+  } = useSubmissionFlowStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
@@ -56,7 +65,7 @@ function Step1Content() {
         if (draft?.bookImageUrl) {
           // URL에서 File 객체 생성 (다음 단계 진행 가능하도록)
           const file = await createFileFromUrl(draft.bookImageUrl);
-          setImageFile(file, draft.bookImageUrl);
+          setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
           toast({
             title: '임시 저장된 내용을 불러왔습니다',
             description: '이어서 작성하실 수 있습니다.',
@@ -143,10 +152,13 @@ function Step1Content() {
       const draftData: { bookImageUrl?: string } = {};
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
-      if (imageFile && imageFile instanceof File) {
-        draftData.bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+      if (imageFile && imageFile instanceof File && !imageStorageUrl) {
+        const uploadedUrl = await uploadReadingImage(imageFile, participationCode);
+        draftData.bookImageUrl = uploadedUrl;
+        setImageStorageUrl(uploadedUrl);
+      } else if (imageStorageUrl) {
+        draftData.bookImageUrl = imageStorageUrl;
       }
-      // imageFile이 없지만 imagePreview(URL)가 있는 경우는 필드 미포함 (기존 URL 유지)
 
       await saveDraft(participantId, participationCode, draftData);
 
@@ -188,7 +200,11 @@ function Step1Content() {
     // 이미지 업로드 후 바로 이동 (draft 저장은 백그라운드)
     setIsProcessing(true);
     try {
-      const bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+      let bookImageUrl = imageStorageUrl;
+      if (!bookImageUrl) {
+        bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+        setImageStorageUrl(bookImageUrl);
+      }
 
       // draft 저장은 백그라운드에서 진행 (페이지 이동을 블로킹하지 않음)
       saveDraft(participantId, participationCode, { bookImageUrl }).catch((err) => {

@@ -30,7 +30,19 @@ function Step2Content() {
   const { participant, isLoading: sessionLoading } = useAuth();
   const { toast } = useToast();
 
-  const { imageFile, selectedBook, manualTitle, review, participantId, participationCode, setSelectedBook, setManualTitle, setReview } = useSubmissionFlowStore();
+  const {
+    imageFile,
+    imageStorageUrl,
+    selectedBook,
+    manualTitle,
+    review,
+    participantId,
+    participationCode,
+    setSelectedBook,
+    setManualTitle,
+    setReview,
+    setImageStorageUrl,
+  } = useSubmissionFlowStore();
   const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NaverBook[]>([]);
@@ -187,8 +199,12 @@ function Step2Content() {
       } = {};
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
-      if (imageFile && imageFile instanceof File) {
-        draftData.bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+      if (imageFile && imageFile instanceof File && !imageStorageUrl) {
+        const uploadedUrl = await uploadReadingImage(imageFile, participationCode);
+        draftData.bookImageUrl = uploadedUrl;
+        setImageStorageUrl(uploadedUrl);
+      } else if (imageStorageUrl) {
+        draftData.bookImageUrl = imageStorageUrl;
       }
 
       // 각 필드는 값이 있을 때만 포함 (undefined로 덮어쓰기 방지)

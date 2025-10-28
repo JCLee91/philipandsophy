@@ -52,8 +52,43 @@ export async function createFileFromUrl(
   filename: string = 'restored-image.jpg'
 ): Promise<File> {
   const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('이미지를 불러오지 못했습니다.');
+  }
   const blob = await response.blob();
-  return new File([blob], filename, { type: blob.type });
+  const headerType = response.headers.get('content-type') ?? '';
+  const normalizedType =
+    headerType.startsWith('image/')
+      ? headerType
+      : blob.type && blob.type.startsWith('image/')
+      ? blob.type
+      : guessMimeTypeFromFilename(filename) ?? 'image/jpeg';
+
+  return new File([blob], filename, {
+    type: normalizedType,
+    lastModified: Date.now(),
+  });
+}
+
+function guessMimeTypeFromFilename(name: string): string | null {
+  const extension = name.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'gif':
+      return 'image/gif';
+    case 'webp':
+      return 'image/webp';
+    case 'heic':
+      return 'image/heic';
+    case 'heif':
+      return 'image/heif';
+    default:
+      return null;
+  }
 }
 
 /**

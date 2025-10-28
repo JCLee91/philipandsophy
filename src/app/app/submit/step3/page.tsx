@@ -57,6 +57,7 @@ function Step3Content() {
 
   const {
     imageFile,
+    imageStorageUrl,
     selectedBook,
     manualTitle,
     review,
@@ -64,6 +65,7 @@ function Step3Content() {
     participantId,
     participationCode,
     setDailyAnswer,
+    setImageStorageUrl,
     reset
   } = useSubmissionFlowStore();
 
@@ -163,8 +165,12 @@ function Step3Content() {
       } = {};
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
-      if (imageFile && imageFile instanceof File) {
-        draftData.bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+      if (imageFile && imageFile instanceof File && !imageStorageUrl) {
+        const uploadedUrl = await uploadReadingImage(imageFile, participationCode);
+        draftData.bookImageUrl = uploadedUrl;
+        setImageStorageUrl(uploadedUrl);
+      } else if (imageStorageUrl) {
+        draftData.bookImageUrl = imageStorageUrl;
       }
 
       // 각 필드는 값이 있을 때만 포함 (undefined로 덮어쓰기 방지)
@@ -252,8 +258,12 @@ function Step3Content() {
       );
 
       // 2. 이미지 업로드
-      setUploadStep('이미지 업로드 중...');
-      const bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+      let bookImageUrl = imageStorageUrl;
+      if (!bookImageUrl) {
+        setUploadStep('이미지 업로드 중...');
+        bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+        setImageStorageUrl(bookImageUrl);
+      }
 
       // 3. 제출물 생성
       setUploadStep('제출물 저장 중...');

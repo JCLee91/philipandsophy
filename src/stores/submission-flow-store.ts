@@ -7,6 +7,7 @@ interface SubmissionFlowState {
   // Step 1: 이미지 업로드
   imageFile: File | null;
   imagePreview: string | null;
+  imageStorageUrl: string | null;
 
   // Step 2: 책 정보 + 감상평
   selectedBook: NaverBook | null;
@@ -23,18 +24,20 @@ interface SubmissionFlowState {
   existingSubmissionId: string | null; // 수정 모드일 때
 
   // Actions
-  setImageFile: (file: File | null, preview: string | null) => void;
+  setImageFile: (file: File | null, preview: string | null, storageUrl?: string | null) => void;
   setSelectedBook: (book: NaverBook | null) => void;
   setManualTitle: (title: string) => void;
   setReview: (review: string) => void;
   setDailyAnswer: (answer: string) => void;
   setMetaInfo: (participantId: string, participationCode: string, cohortId: string, existingSubmissionId?: string) => void;
+  setImageStorageUrl: (url: string | null) => void;
   reset: () => void;
 }
 
 const initialState = {
   imageFile: null,
   imagePreview: null,
+  imageStorageUrl: null,
   selectedBook: null,
   manualTitle: '',
   review: '',
@@ -48,7 +51,8 @@ const initialState = {
 export const useSubmissionFlowStore = create<SubmissionFlowState>((set) => ({
   ...initialState,
 
-  setImageFile: (file, preview) => set({ imageFile: file, imagePreview: preview }),
+  setImageFile: (file, preview, storageUrl = null) =>
+    set({ imageFile: file, imagePreview: preview, imageStorageUrl: storageUrl ?? null }),
 
   setSelectedBook: (book) => set({ selectedBook: book }),
 
@@ -60,6 +64,8 @@ export const useSubmissionFlowStore = create<SubmissionFlowState>((set) => ({
 
   setMetaInfo: (participantId, participationCode, cohortId, existingSubmissionId) =>
     set({ participantId, participationCode, cohortId, existingSubmissionId }),
+
+  setImageStorageUrl: (url) => set({ imageStorageUrl: url }),
 
   reset: () => set(initialState),
 }));
