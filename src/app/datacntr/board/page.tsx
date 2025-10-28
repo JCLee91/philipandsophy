@@ -176,6 +176,13 @@ export default function DataCenterBoardPage() {
   const totalDays = dates.length - 1; // 첫 날(OT) 제외
   const totalSubmissions = boardData.reduce((sum, row) => sum + row.submissions.size, 0);
 
+  // Calculate daily submission counts
+  const dailySubmissionCounts = new Map<string, number>();
+  dates.forEach((date) => {
+    const count = boardData.filter((row) => row.submissions.has(date)).length;
+    dailySubmissionCounts.set(date, count);
+  });
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -240,11 +247,22 @@ export default function DataCenterBoardPage() {
                     <TableHead className="sticky left-0 z-10 bg-background min-w-[120px]">
                       참가자
                     </TableHead>
-                    {dates.map((date) => (
-                      <TableHead key={date} className="text-center whitespace-nowrap px-2">
-                        {format(parseISO(date), 'M/d', { locale: ko })}
-                      </TableHead>
-                    ))}
+                    {dates.map((date, index) => {
+                      const count = dailySubmissionCounts.get(date) || 0;
+                      const isFirstDay = index === 0;
+                      return (
+                        <TableHead key={date} className="text-center whitespace-nowrap px-2">
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span>{format(parseISO(date), 'M/d', { locale: ko })}</span>
+                            {!isFirstDay && (
+                              <span className="text-xs text-muted-foreground font-normal">
+                                ({count}명)
+                              </span>
+                            )}
+                          </div>
+                        </TableHead>
+                      );
+                    })}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
