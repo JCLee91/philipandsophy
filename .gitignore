@@ -42,6 +42,9 @@ next-env.d.ts
 .env.local
 firebase-service-account.json
 
+# CORS configuration (contains domain info)
+cors.json
+
 # Vercel environment setup script with sensitive data
 .vercel-env-setup.sh
 *-env-setup.sh

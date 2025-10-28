@@ -50,6 +50,18 @@ export function NotificationPrompt() {
         return;
       }
 
+      // 데스크탑에서는 표시하지 않음 - 모바일과 태블릿만 허용
+      // PWA로 설치된 경우도 체크
+      const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+      // 모바일 기기가 아니고, PWA도 아니고, 터치 기기도 아니면 표시하지 않음
+      if (!isMobileDevice && !isStandalone && !isTouchDevice) {
+        setIsCheckingToken(false);
+        return;
+      }
+
       // 현재 알림 권한 상태 확인
       setPermission(Notification.permission);
 
