@@ -82,6 +82,7 @@ function Step2Content() {
                 publisher: '',
                 pubdate: '',
                 link: '',
+                discount: '',
               });
             } else {
               // 수동 입력 제목만 있으면 manualTitle로 설정
