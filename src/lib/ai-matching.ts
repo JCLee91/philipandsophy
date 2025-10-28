@@ -47,8 +47,9 @@ const participantAssignmentSchema = z.object({
   reasons: matchingReasonsSchema,
 });
 
+// Gemini를 위해 더 명시적인 스키마 정의
 const matchingResponseSchema = z.object({
-  assignments: z.record(participantAssignmentSchema),
+  assignments: z.record(z.string(), participantAssignmentSchema),
 });
 
 // 타입 추론

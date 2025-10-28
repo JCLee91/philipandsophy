@@ -108,13 +108,23 @@ export async function POST(request: NextRequest) {
       }
 
       // 🔒 다른 코호트 참가자 제외 (다중 코호트 운영 시 데이터 혼입 방지)
-      if (participant.cohortId !== cohortId) {
+      // cohortId가 undefined인 경우 현재 cohort로 간주 (레거시 데이터 호환)
+      if (participant.cohortId && participant.cohortId !== cohortId) {
         logger.warn('다른 코호트 참가자 제외', {
           participantId,
           expectedCohort: cohortId,
           actualCohort: participant.cohortId,
         });
         continue;
+      }
+
+      // cohortId가 없는 레거시 참가자 로깅
+      if (!participant.cohortId) {
+        logger.info('레거시 참가자 (cohortId 없음) - 현재 코호트로 간주', {
+          participantId,
+          name: participant.name,
+          assumedCohort: cohortId,
+        });
       }
 
       // 슈퍼 관리자만 매칭에서 제외 (일반 관리자는 매칭 대상 포함)
