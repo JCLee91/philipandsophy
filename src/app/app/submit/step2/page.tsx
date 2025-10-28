@@ -231,7 +231,7 @@ function Step2Content() {
         description: '언제든 다시 돌아와서 작성을 이어갈 수 있습니다.',
       });
 
-      router.push(appRoutes.chat(cohortId!));
+      // 페이지 이동 제거 - 현재 페이지에 머물기
     } catch (error) {
       toast({
         title: '임시 저장 실패',
@@ -247,7 +247,7 @@ function Step2Content() {
     router.back();
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     // 책 정보 검증: selectedBook 또는 manualTitle 중 하나는 있어야 함
     if (!selectedBook && !manualTitle.trim()) {
       toast({
@@ -265,6 +265,51 @@ function Step2Content() {
         variant: 'destructive',
       });
       return;
+    }
+
+    // 자동 임시저장
+    if (participantId && participationCode) {
+      try {
+        const draftData: {
+          bookImageUrl?: string;
+          bookTitle?: string;
+          bookAuthor?: string;
+          bookCoverUrl?: string;
+          bookDescription?: string;
+          review?: string;
+        } = {};
+
+        // 이미지가 있으면 업로드 (File 객체인 경우만)
+        if (imageFile && imageFile instanceof File && !imageStorageUrl) {
+          const uploadedUrl = await uploadReadingImage(imageFile, participationCode);
+          draftData.bookImageUrl = uploadedUrl;
+          setImageStorageUrl(uploadedUrl);
+        } else if (imageStorageUrl) {
+          draftData.bookImageUrl = imageStorageUrl;
+        }
+
+        // 각 필드는 값이 있을 때만 포함
+        if (selectedBook?.title || manualTitle) {
+          draftData.bookTitle = selectedBook?.title || manualTitle;
+        }
+        if (selectedBook?.author) {
+          draftData.bookAuthor = selectedBook.author;
+        }
+        if (selectedBook?.image) {
+          draftData.bookCoverUrl = selectedBook.image;
+        }
+        if (selectedBook?.description) {
+          draftData.bookDescription = selectedBook.description;
+        }
+        if (review) {
+          draftData.review = review;
+        }
+
+        await saveDraft(participantId, participationCode, draftData);
+      } catch (error) {
+        // 임시저장 실패해도 다음 단계로 진행 (에러는 콘솔에만 기록)
+        console.error('Auto-save failed:', error);
+      }
     }
 
     router.push(`${appRoutes.submitStep3}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);

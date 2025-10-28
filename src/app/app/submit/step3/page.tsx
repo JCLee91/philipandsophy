@@ -203,7 +203,7 @@ function Step3Content() {
         description: '언제든 다시 돌아와서 작성을 이어갈 수 있습니다.',
       });
 
-      router.push(appRoutes.chat(cohortId!));
+      // 페이지 이동 제거 - 현재 페이지에 머물기
     } catch (error) {
       toast({
         title: '임시 저장 실패',
