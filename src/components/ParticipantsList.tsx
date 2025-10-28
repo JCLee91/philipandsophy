@@ -41,12 +41,14 @@ function ParticipantItem({
   isAdmin,
   onDMClick,
   onProfileClick,
+  onProfileBookClick,
 }: {
   participant: Participant;
   currentUserId: string;
   isAdmin: boolean;
   onDMClick?: (participant: Participant) => void;
   onProfileClick: (participant: Participant) => void;
+  onProfileBookClick?: (participant: Participant) => void;
 }) {
   const { data: verifiedIds } = useVerifiedToday();
 
@@ -119,6 +121,10 @@ function ParticipantItem({
             <DropdownMenuItem onClick={() => onProfileClick(participant)}>
               <User className="mr-2 h-4 w-4" />
               프로필 보기
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onProfileBookClick?.(participant)}>
+              <BookOpen className="mr-2 h-4 w-4" />
+              프로필북 보기
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -263,6 +269,7 @@ export default function ParticipantsList({
                     isAdmin={isAdmin}
                     onDMClick={onDMClick}
                     onProfileClick={(p) => onProfileClick?.(p)}
+                    onProfileBookClick={onProfileBookClick}
                   />
                 );
               })}
