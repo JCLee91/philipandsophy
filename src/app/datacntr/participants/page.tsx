@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Filter, MoreVertical, BookOpen } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
@@ -11,6 +11,12 @@ import TableSearch from '@/components/datacntr/table/TableSearch';
 import TablePagination from '@/components/datacntr/table/TablePagination';
 import { dataCenterParticipantSchema, type DataCenterParticipant } from '@/types/datacntr';
 import FormSelect from '@/components/datacntr/form/FormSelect';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -198,7 +204,7 @@ export default function ParticipantsPage() {
     {
       key: 'phoneNumber',
       header: '전화번호',
-      width: '18%',
+      width: '15%',
     },
     {
       key: 'hasPushToken',
@@ -227,7 +233,34 @@ export default function ParticipantsPage() {
       header: '가입일',
       sortable: true,
       render: (p) => formatTimestampKST(p.createdAt, 'yy.MM.dd'),
-      width: '12%',
+      width: '10%',
+    },
+    {
+      key: 'actions',
+      header: '액션',
+      width: '8%',
+      render: (p) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <MoreVertical className="h-4 w-4 text-gray-600" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                window.open(`/app/profile/${p.id}`, '_blank');
+              }}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              프로필북 보기
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
     },
   ];
 
