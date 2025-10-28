@@ -49,15 +49,26 @@ export async function POST(request: NextRequest) {
     const matchingDate = getTodayString(); // 매칭 실행 날짜 (오늘 Firebase 키로 사용)
     const submissionQuestion = getDailyQuestionText(submissionDate);
 
+    logger.info('매칭 날짜 정보', {
+      submissionDate,
+      matchingDate,
+      submissionQuestion: submissionQuestion.substring(0, 50) + '...',
+    });
+
     // 2. Firebase Admin 초기화 및 DB 가져오기
     const db = getAdminDb();
 
     // 3. 어제 제출한 참가자들의 답변 가져오기 (매칭 대상)
+    // 날짜만 확인 (질문은 체크하지 않음 - 새벽 제출자는 다른 질문일 수 있음)
     const submissionsSnapshot = await db
       .collection('reading_submissions')
       .where('submissionDate', '==', submissionDate)
-      .where('dailyQuestion', '==', submissionQuestion)
       .get();
+
+    logger.info('제출 현황', {
+      totalSubmissions: submissionsSnapshot.size,
+      targetDate: submissionDate,
+    });
 
     if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
       return NextResponse.json(
@@ -108,23 +119,13 @@ export async function POST(request: NextRequest) {
       }
 
       // 🔒 다른 코호트 참가자 제외 (다중 코호트 운영 시 데이터 혼입 방지)
-      // cohortId가 undefined인 경우 현재 cohort로 간주 (레거시 데이터 호환)
-      if (participant.cohortId && participant.cohortId !== cohortId) {
-        logger.warn('다른 코호트 참가자 제외', {
+      if (!participant.cohortId || participant.cohortId !== cohortId) {
+        logger.warn('코호트 불일치로 제외', {
           participantId,
           expectedCohort: cohortId,
-          actualCohort: participant.cohortId,
+          actualCohort: participant.cohortId || 'undefined',
         });
         continue;
-      }
-
-      // cohortId가 없는 레거시 참가자 로깅
-      if (!participant.cohortId) {
-        logger.info('레거시 참가자 (cohortId 없음) - 현재 코호트로 간주', {
-          participantId,
-          name: participant.name,
-          assumedCohort: cohortId,
-        });
       }
 
       // 슈퍼 관리자만 매칭에서 제외 (일반 관리자는 매칭 대상 포함)
@@ -134,6 +135,16 @@ export async function POST(request: NextRequest) {
           name: participant.name,
         });
         continue;
+      }
+
+      // 질문이 다른 경우 로깅 (새벽 제출자)
+      if (submission.dailyQuestion !== submissionQuestion) {
+        logger.warn('다른 질문에 답변한 참가자 (새벽 제출자)', {
+          participantId,
+          name: participant.name,
+          expectedQuestion: submissionQuestion.substring(0, 30) + '...',
+          actualQuestion: submission.dailyQuestion.substring(0, 30) + '...',
+        });
       }
 
       participantAnswers.push({
