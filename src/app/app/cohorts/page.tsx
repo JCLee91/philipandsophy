@@ -17,33 +17,21 @@ export default function CohortsPage() {
   const { data: cohorts = [], isLoading: cohortsLoading } = useAllCohorts();
   const [selectedCohortId, setSelectedCohortId] = useState<string | null>(null);
 
-  // 권한 체크 및 자동 진입: 관리자는 활성 코호트로 자동 이동
+  // 권한 체크: 일반 사용자는 자신의 코호트로 자동 이동
   useEffect(() => {
     if (!authLoading && !participant) {
-
       router.replace('/app');
       return;
     }
 
     if (!authLoading && participant && !participant.isAdministrator && !participant.isSuperAdmin) {
-
       // 일반 사용자는 자신의 코호트로 바로 이동
       router.replace(appRoutes.chat(participant.cohortId));
       return;
     }
 
-    // 관리자는 활성화된 코호트로 자동 진입
-    if (!authLoading && !cohortsLoading && participant && (participant.isAdministrator || participant.isSuperAdmin)) {
-      const activeCohort = cohorts.find(cohort => cohort.isActive);
-
-      if (activeCohort) {
-
-        router.replace(appRoutes.chat(activeCohort.id));
-      } else {
-
-      }
-    }
-  }, [authLoading, cohortsLoading, participant, cohorts, router]);
+    // 관리자는 코호트 선택 화면 표시 (자동 리디렉션 제거)
+  }, [authLoading, participant, router]);
 
   // 코호트 선택 처리
   const handleSelectCohort = (cohortId: string) => {
