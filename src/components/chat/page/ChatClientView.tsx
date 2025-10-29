@@ -293,11 +293,14 @@ export function ChatClientView({
   const handleOpenSubmissionFlow = useCallback(() => {
     if (!cohortId) return;
 
-    const baseUrl = appRoutes.submitStep1(cohortId);
     if (todaySubmissionId) {
-      router.push(`${baseUrl}&edit=${todaySubmissionId}`);
+      // 수정 모드: Step2로 바로 이동 (이미지 수정 불가)
+      const step2Url = `/app/submit/step2?cohort=${cohortId}&edit=${todaySubmissionId}`;
+      router.push(step2Url);
     } else {
-      router.push(baseUrl);
+      // 신규 제출: Step1부터 시작
+      const step1Url = appRoutes.submitStep1(cohortId);
+      router.push(step1Url);
     }
   }, [cohortId, router, todaySubmissionId]);
 
