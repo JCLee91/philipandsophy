@@ -143,7 +143,7 @@ export default function LandingPage() {
         />
 
         <Image
-          src="/image/PnS_4_nofooter.webp?v=3.0"
+          src="/image/PnS_4_nofooter.webp?v=3.1"
           alt="필립앤소피 가입 안내"
           width={1560}
           height={6728}
