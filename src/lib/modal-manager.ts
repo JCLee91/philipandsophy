@@ -102,6 +102,15 @@ class ModalStateManager {
       });
     });
 
+    // block-interactivity-* 클래스가 남아있는 모든 요소도 정리 (헤더, 본문 등)
+    document.querySelectorAll<HTMLElement>('[class*="block-interactivity-"]').forEach((element) => {
+      element.classList.forEach((className) => {
+        if (className.startsWith('block-interactivity-')) {
+          element.classList.remove(className);
+        }
+      });
+    });
+
     // 강제 reflow (브라우저가 CSS 미디어 쿼리 재계산)
     void document.body.offsetHeight;
 
