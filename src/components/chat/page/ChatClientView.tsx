@@ -106,6 +106,28 @@ export function ChatClientView({
     }
   }, [participantsOpen]);
 
+  // 제출/수정 완료 후 토스트 표시
+  useEffect(() => {
+    const successType = searchParams.get('success');
+    if (successType) {
+      // URL에서 쿼리 파라미터 제거
+      router.replace(appRoutes.chat(cohortId!), { scroll: false });
+
+      // 토스트 표시
+      if (successType === 'submit') {
+        toast({
+          title: '독서 인증 완료 ✅',
+          description: '오늘의 서재에서 다른 멤버들의 프로필을 확인해보세요!',
+        });
+      } else if (successType === 'edit') {
+        toast({
+          title: '독서 인증 수정 완료 ✅',
+          description: '수정된 내용이 저장되었습니다.',
+        });
+      }
+    }
+  }, [searchParams, router, cohortId, toast]);
+
   const {
     data: noticesData = [],
     isLoading: noticesLoading,

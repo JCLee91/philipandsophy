@@ -406,14 +406,9 @@ function Step3Content() {
         }
       }
 
-      toast({
-        title: isEditing ? '독서 인증 수정 완료 ✅' : '독서 인증 완료 ✅',
-        description: isEditing
-          ? '수정된 내용이 저장되었습니다.'
-          : '오늘의 서재에서 다른 멤버들의 프로필을 확인해보세요!',
-      });
-
-      router.push(appRoutes.chat(cohortId!));
+      // 토스트는 메인 화면에서 표시하기 위해 쿼리 파라미터로 전달
+      const successMessage = isEditing ? 'edit' : 'submit';
+      router.push(`${appRoutes.chat(cohortId!)}?success=${successMessage}`);
       // reset() 제거 - 다음 제출 시작 시 자동으로 초기화됨
       return;
     } catch (error) {
