@@ -361,7 +361,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
             className="bg-white rounded-tl-[32px] rounded-tr-[32px] mt-[80px] max-w-[calc(100%-32px)] md:max-w-[420px] mx-auto"
             style={{ minHeight: 'calc(var(--app-viewport-height, 100vh) - 124px)' }}
           >
-            <div className="w-full px-4 sm:px-6 md:px-8">
+            <div className="w-full px-6 sm:px-6 md:px-8">
               {/* 프로필 정보 */}
               <div className="flex flex-col items-center pt-[48px] pb-[32px]">
                 <div className="flex flex-col items-center gap-2 mb-[32px]">

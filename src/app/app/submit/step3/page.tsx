@@ -54,12 +54,15 @@ function Step3Content() {
   const [uploadStep, setUploadStep] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createSubmission = useCreateSubmission();
   const updateSubmission = useUpdateSubmission();
 
-  // Step 2 검증
+  // Step 2 검증 (제출 중일 때는 검증 건너뛰기)
   useEffect(() => {
+    if (isSubmitting) return; // 제출 중이면 검증 안 함
+
     const finalTitle = selectedBook?.title || manualTitle.trim();
     if (!finalTitle && !existingSubmissionId) {
       toast({
@@ -68,7 +71,7 @@ function Step3Content() {
       });
       router.replace(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     }
-  }, [selectedBook, manualTitle, existingSubmissionId, cohortId, router, toast]);
+  }, [selectedBook, manualTitle, existingSubmissionId, cohortId, router, toast, isSubmitting]);
 
   // 인증 확인
   useEffect(() => {
@@ -336,6 +339,7 @@ function Step3Content() {
     const isEditing = Boolean(existingSubmissionId);
 
     setUploading(true);
+    setIsSubmitting(true); // 제출 시작 - 검증 useEffect 비활성화
 
     try {
       setUploadStep('책 정보 저장 중...');
@@ -403,6 +407,7 @@ function Step3Content() {
       router.push(appRoutes.chat(cohortId!));
       setTimeout(() => {
         reset();
+        setIsSubmitting(false); // 리셋 후 플래그도 해제
       }, 100);
     } catch (error) {
       const errorMessage = error instanceof Error
@@ -414,6 +419,7 @@ function Step3Content() {
         description: errorMessage,
         variant: 'destructive',
       });
+      setIsSubmitting(false); // 에러 시에도 플래그 해제
     } finally {
       setUploading(false);
       setUploadStep('');
@@ -433,7 +439,7 @@ function Step3Content() {
         </div>
 
         <main className="app-main-content flex-1 overflow-y-auto pt-[57px]">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-6">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">
             <div className="space-y-1">
               <h2 className="text-lg font-bold">오늘의 질문</h2>
             </div>
@@ -473,7 +479,7 @@ function Step3Content() {
 
         {/* 하단 버튼 */}
         <div className="border-t bg-white">
-          <div className="mx-auto flex w-full max-w-xl gap-2 px-4 pt-4 pb-[60px]">
+          <div className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4 pb-[60px]">
             {!existingSubmissionId && (
               <UnifiedButton
                 variant="outline"

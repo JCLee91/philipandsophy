@@ -713,7 +713,7 @@ function MatchingPageContent() {
         />
 
         <main className="app-main-content flex-1 overflow-y-auto bg-admin-bg-page">
-          <div className="mx-auto max-w-md px-4 py-6 space-y-4">
+          <div className="mx-auto max-w-md px-6 py-6 space-y-4">
             {/* 1. 오늘의 인증 현황 */}
             <div className={CARD_STYLES.CONTAINER}>
               <div className="p-4 space-y-3">

@@ -201,7 +201,7 @@ function TodayLibraryContent() {
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="app-main-content flex-1 overflow-y-auto bg-background">
-            <div className="mx-auto max-w-md px-4 w-full">
+            <div className="mx-auto max-w-md px-6 w-full">
               <div className="pb-6">
                 <div className="flex flex-col gap-12">
                   <div className="flex flex-col gap-3">
@@ -322,7 +322,7 @@ function TodayLibraryContent() {
 
           {/* Main Content */}
           <main className="app-main-content flex-1 overflow-y-auto bg-background">
-            <div className="mx-auto max-w-md px-4 w-full">
+            <div className="mx-auto max-w-md px-6 w-full">
               <div className="pb-6">
                 {/* Header Section */}
                 <div className="flex flex-col gap-12">
@@ -463,7 +463,7 @@ function TodayLibraryContent() {
 
         {/* Main Content */}
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-md px-4 w-full">
+          <div className="mx-auto max-w-md px-6 w-full">
             <div className="pt-6 pb-6">
               <div className="flex flex-col gap-12">
                 {/* Header Section */}
@@ -565,7 +565,7 @@ function LoadingSkeleton() {
       <div className="app-shell flex flex-col overflow-hidden pt-14">
         <HeaderNavigation title="오늘의 서재" />
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-md px-4 w-full">
+          <div className="mx-auto max-w-md px-6 w-full">
             <div className="pb-6">
               <div className="flex flex-col gap-12">
                 <div className="flex flex-col gap-3">

@@ -79,7 +79,7 @@ export default function CohortsPage() {
       <div className="app-shell flex flex-col min-h-screen bg-background">
         {/* 헤더 */}
         <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
-          <div className="max-w-md mx-auto px-4 py-4">
+          <div className="max-w-md mx-auto px-6 py-4">
             <h1 className="text-xl font-bold text-gray-900">코호트 선택</h1>
             <p className="text-sm text-gray-600 mt-1">관리할 기수를 선택하세요</p>
           </div>
@@ -87,7 +87,7 @@ export default function CohortsPage() {
 
         {/* 코호트 리스트 */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-md mx-auto px-4 py-6 space-y-3">
+          <div className="max-w-md mx-auto px-6 py-6 space-y-3">
             {cohorts.map((cohort) => {
               const isSelected = selectedCohortId === cohort.id;
 
@@ -141,7 +141,7 @@ export default function CohortsPage() {
 
         {/* 안내 문구 */}
         <footer className="border-t border-gray-200 bg-gray-50">
-          <div className="max-w-md mx-auto px-4 py-4">
+          <div className="max-w-md mx-auto px-6 py-4">
             <p className="text-xs text-gray-600 text-center">
               관리자 권한으로 모든 코호트에 접근할 수 있습니다
             </p>

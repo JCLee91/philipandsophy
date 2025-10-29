@@ -44,6 +44,7 @@ function Step1Content() {
   } = useSubmissionFlowStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
+  const hasLoadedDraftRef = useRef(false);
 
   // 메타 정보 설정
   useEffect(() => {
@@ -57,8 +58,9 @@ function Step1Content() {
 
   // 임시저장 자동 불러오기
   useEffect(() => {
-    if (!participant || !cohortId || existingSubmissionId || imageFile) return;
+    if (!participant || !cohortId || existingSubmissionId || imageFile || hasLoadedDraftRef.current) return;
 
+    hasLoadedDraftRef.current = true;
     const loadDraft = async () => {
       setIsLoadingDraft(true);
       try {
@@ -209,7 +211,7 @@ function Step1Content() {
   };
 
   const handleNext = async () => {
-    if (!imageFile) {
+    if (!imageFile && !imageStorageUrl) {
       toast({
         title: '이미지를 선택해주세요',
         description: '책의 마지막 페이지를 촬영해주세요.',
@@ -262,7 +264,7 @@ function Step1Content() {
         </div>
 
         <main className="app-main-content flex-1 overflow-y-auto pt-[57px]">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-6">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">
             <div className="space-y-3">
               <h2 className="text-lg font-bold">읽은 책의 마지막 페이지를<br />업로드해 주세요</h2>
               <p className="text-sm text-muted-foreground">
@@ -274,7 +276,7 @@ function Step1Content() {
             {!imagePreview ? (
               <label
                 htmlFor="book-image"
-                className="flex flex-col items-center justify-center min-h-[500px] border-2 border-dashed border-blue-200 rounded-2xl cursor-pointer hover:border-blue-300 transition-colors bg-blue-50/30"
+                className="flex flex-col items-center justify-center aspect-[4/3] w-full border-2 border-dashed border-blue-200 rounded-2xl cursor-pointer hover:border-blue-300 transition-colors bg-blue-50/30"
               >
                 <Upload className="h-12 w-12 text-blue-400 mb-4" />
                 <p className="text-sm font-medium text-gray-700">이미지를 업로드하려면 클릭하세요</p>
@@ -289,13 +291,13 @@ function Step1Content() {
                 />
               </label>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden border-2 border-blue-200">
+              <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border-2 border-blue-200">
                 <Image
                   src={imagePreview}
                   alt="책 마지막 페이지"
-                  width={600}
-                  height={800}
-                  className="w-full h-auto"
+                  width={800}
+                  height={600}
+                  className="w-full h-full object-contain"
                 />
                 <button
                   type="button"
@@ -312,7 +314,7 @@ function Step1Content() {
 
         {/* 하단 버튼 */}
         <div className="border-t bg-white">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-4 pt-4 pb-[60px]">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 pt-4 pb-[60px]">
             <UnifiedButton
               onClick={handleNext}
               disabled={!imageFile || isProcessing}

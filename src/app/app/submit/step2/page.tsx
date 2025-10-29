@@ -407,7 +407,7 @@ function Step2Content() {
         </div>
 
         <main className="app-main-content flex-1 overflow-y-auto pt-[57px]">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-6">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">
             <div className="space-y-1">
               <h2 className="text-lg font-bold">책 제목</h2>
             </div>
@@ -568,7 +568,7 @@ function Step2Content() {
 
         {/* 하단 버튼 */}
         <div className="border-t bg-white">
-          <div className="mx-auto flex w-full max-w-xl gap-2 px-4 pt-4 pb-[60px]">
+          <div className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4 pb-[60px]">
             {!existingSubmissionId && (
               <UnifiedButton variant="outline" onClick={handleSaveDraft} disabled={isSaving} className="flex-1">
                 {isSaving ? '저장 중...' : '임시 저장하기'}

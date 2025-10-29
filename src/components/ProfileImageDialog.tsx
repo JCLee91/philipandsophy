@@ -116,7 +116,7 @@ export default function ProfileImageDialog({
     }}>
       <DialogContent
         hideCloseButton
-        className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-transparent border-0 shadow-none z-[60] place-items-center"
+        className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-transparent border-0 shadow-none place-items-center"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           // ESC 키로 ProfileImageDialog만 닫기 (Sheet는 유지)
