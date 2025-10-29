@@ -75,15 +75,18 @@ function Step3Content() {
   useEffect(() => {
     if (!cohortId || existingSubmissionId) return;
 
+    let hasLoadedDraft = false; // 드래프트 로드 플래그
+
     const loadDraftAndQuestion = async () => {
-      setIsLoadingDraft(true);
       try {
         // 1. 임시저장 불러오기
-        if (participantId && !dailyAnswer) {
+        if (participantId) {
           const { getDraftSubmission } = await import('@/lib/firebase/submissions');
           const draft = await getDraftSubmission(participantId, cohortId);
 
           if (draft?.dailyAnswer) {
+            hasLoadedDraft = true;
+            setIsLoadingDraft(true); // 실제로 불러올 때만 로딩 표시
             setDailyAnswer(draft.dailyAnswer);
             toast({
               title: '임시 저장된 내용을 불러왔습니다',
@@ -101,12 +104,14 @@ function Step3Content() {
       } catch (error) {
         // 에러 무시
       } finally {
-        setIsLoadingDraft(false);
+        if (hasLoadedDraft) {
+          setIsLoadingDraft(false); // 드래프트를 불러왔을 때만 로딩 해제
+        }
       }
     };
 
     loadDraftAndQuestion();
-  }, [cohortId, existingSubmissionId, participantId, dailyAnswer, setDailyAnswer, toast]);
+  }, [cohortId, existingSubmissionId, participantId, setDailyAnswer, toast]);
 
   const handleSaveDraft = async () => {
     if (!participantId || !participationCode) {

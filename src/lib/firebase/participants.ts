@@ -269,11 +269,19 @@ export async function updateParticipantBookInfo(
 
         // 책 제목이 같으면 메타데이터만 업데이트
         if (currentBookTitle === newBookTitle) {
-          transaction.update(docRef, {
-            currentBookAuthor: newBookAuthor || undefined,
-            currentBookCoverUrl: newBookCoverUrl || undefined,
+          const updateData: Record<string, any> = {
             updatedAt: now,
-          });
+          };
+
+          // undefined가 아닌 값만 업데이트 객체에 추가
+          if (newBookAuthor !== undefined && newBookAuthor !== '') {
+            updateData.currentBookAuthor = newBookAuthor;
+          }
+          if (newBookCoverUrl !== undefined && newBookCoverUrl !== '') {
+            updateData.currentBookCoverUrl = newBookCoverUrl;
+          }
+
+          transaction.update(docRef, updateData);
           return;
         }
 
@@ -301,13 +309,21 @@ export async function updateParticipantBookInfo(
         updatedHistory.push(newEntry);
 
         // Firestore 업데이트 (제목 + 메타데이터)
-        transaction.update(docRef, {
+        const updateData: Record<string, any> = {
           currentBookTitle: newBookTitle,
-          currentBookAuthor: newBookAuthor || undefined,
-          currentBookCoverUrl: newBookCoverUrl || undefined,
           bookHistory: updatedHistory,
           updatedAt: now,
-        });
+        };
+
+        // undefined가 아닌 값만 업데이트 객체에 추가
+        if (newBookAuthor !== undefined && newBookAuthor !== '') {
+          updateData.currentBookAuthor = newBookAuthor;
+        }
+        if (newBookCoverUrl !== undefined && newBookCoverUrl !== '') {
+          updateData.currentBookCoverUrl = newBookCoverUrl;
+        }
+
+        transaction.update(docRef, updateData);
       });
 
       return; // Success - exit function
