@@ -32,10 +32,6 @@ function Step1Content() {
     imageFile,
     imagePreview,
     imageStorageUrl,
-    selectedBook,
-    manualTitle,
-    review,
-    dailyAnswer,
     setImageFile,
     setMetaInfo,
     setImageStorageUrl,
@@ -125,6 +121,7 @@ function Step1Content() {
               publisher: '',
               pubdate: '',
               link: '',
+              discount: '',
             });
             setManualTitle('');
           } else {

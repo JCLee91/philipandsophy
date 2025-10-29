@@ -5,11 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
-import { useCreateSubmission } from '@/hooks/use-submissions';
-import { uploadReadingImage, updateParticipantBookInfo, saveDraft, getDraftSubmission, deleteDraft } from '@/lib/firebase';
+import { useCreateSubmission, useUpdateSubmission } from '@/hooks/use-submissions';
+import { uploadReadingImage, updateParticipantBookInfo, saveDraft } from '@/lib/firebase';
 import { getDailyQuestion } from '@/lib/firebase/daily-questions';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
+import { createFileFromUrl } from '@/lib/image-validation';
 import BackHeader from '@/components/BackHeader';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
 import PageTransition from '@/components/PageTransition';
@@ -39,7 +40,11 @@ function Step3Content() {
     dailyAnswer,
     participantId,
     participationCode,
+    setImageFile,
     setDailyAnswer,
+    setSelectedBook,
+    setManualTitle,
+    setReview,
     setImageStorageUrl,
     reset
   } = useSubmissionFlowStore();
@@ -51,6 +56,7 @@ function Step3Content() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
 
   const createSubmission = useCreateSubmission();
+  const updateSubmission = useUpdateSubmission();
 
   // Step 2 검증
   useEffect(() => {
@@ -72,6 +78,7 @@ function Step3Content() {
   }, [sessionLoading, participant, cohortId, router]);
 
   const hasLoadedDraftRef = useRef(false);
+  const hasLoadedExistingRef = useRef(false);
 
   // 임시저장 자동 불러오기 + 일일 질문 로드
   useEffect(() => {
@@ -112,7 +119,117 @@ function Step3Content() {
     loadDraftAndQuestion();
   }, [cohortId, existingSubmissionId, participantId, setDailyAnswer, toast]);
 
+  useEffect(() => {
+    if (!cohortId || !existingSubmissionId || hasLoadedExistingRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadExistingSubmission = async () => {
+      setIsLoadingDraft(true);
+      try {
+        const { getSubmissionById } = await import('@/lib/firebase/submissions');
+        const submission = await getSubmissionById(existingSubmissionId);
+        if (!submission || cancelled) return;
+
+        hasLoadedExistingRef.current = true;
+
+        if (submission.bookImageUrl && !imageStorageUrl) {
+          try {
+            const file = await createFileFromUrl(submission.bookImageUrl);
+            if (!cancelled) {
+              setImageFile(file, submission.bookImageUrl, submission.bookImageUrl);
+            }
+          } catch (error) {
+            if (!cancelled) {
+              setImageFile(null, submission.bookImageUrl, submission.bookImageUrl);
+            }
+          }
+          if (!cancelled) {
+            setImageStorageUrl(submission.bookImageUrl);
+          }
+        }
+
+        if (submission.bookTitle) {
+          if (submission.bookAuthor || submission.bookCoverUrl || submission.bookDescription) {
+            setSelectedBook({
+              title: submission.bookTitle,
+              author: submission.bookAuthor || '',
+              image: submission.bookCoverUrl || '',
+              description: submission.bookDescription || '',
+              isbn: '',
+              publisher: '',
+              pubdate: '',
+              link: '',
+              discount: '',
+            });
+            setManualTitle('');
+          } else {
+            setSelectedBook(null);
+            setManualTitle(submission.bookTitle);
+          }
+        }
+
+        if (submission.review) {
+          setReview(submission.review);
+        }
+
+        if (submission.dailyAnswer) {
+          setDailyAnswer(submission.dailyAnswer);
+        }
+
+        const questionDate = submission.submissionDate || getSubmissionDate();
+        const question = await getDailyQuestion(cohortId, questionDate);
+        if (!cancelled) {
+          setDailyQuestion(
+            question ||
+              (submission.dailyQuestion
+                ? {
+                    id: 'custom',
+                    dayNumber: 0,
+                    date: questionDate,
+                    question: submission.dailyQuestion,
+                    category: '가치관 & 삶',
+                    order: 0,
+                    createdAt: null as any,
+                    updatedAt: null as any,
+                  }
+                : null)
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          toast({
+            title: '제출물 불러오기 실패',
+            description: '이전 제출을 불러오지 못했습니다. 다시 시도해주세요.',
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingDraft(false);
+        }
+      }
+    };
+
+    loadExistingSubmission();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cohortId, existingSubmissionId, imageStorageUrl, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, toast]);
+
   const handleSaveDraft = async () => {
+    if (existingSubmissionId) {
+      toast({
+        title: '임시 저장을 사용할 수 없습니다',
+        description: '제출물 수정 시에는 임시 저장을 지원하지 않습니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!participantId || !participationCode) {
       toast({
         title: '세션 정보가 없습니다',
@@ -191,7 +308,7 @@ function Step3Content() {
   };
 
   const handleSubmit = async () => {
-    if (!imageFile || !participantId || !participationCode) {
+    if ((!imageFile && !imageStorageUrl) || !participantId || !participationCode) {
       toast({
         title: '필수 정보가 누락되었습니다',
         variant: 'destructive',
@@ -216,10 +333,11 @@ function Step3Content() {
       return;
     }
 
+    const isEditing = Boolean(existingSubmissionId);
+
     setUploading(true);
 
     try {
-      // 1. 책 정보 업데이트
       setUploadStep('책 정보 저장 중...');
       await updateParticipantBookInfo(
         participantId,
@@ -228,55 +346,64 @@ function Step3Content() {
         selectedBook?.image || undefined
       );
 
-      // 2. 이미지 업로드
       let bookImageUrl = imageStorageUrl;
-      if (!bookImageUrl) {
+      if (!bookImageUrl && imageFile) {
         setUploadStep('이미지 업로드 중...');
         bookImageUrl = await uploadReadingImage(imageFile, participationCode);
         setImageStorageUrl(bookImageUrl);
       }
 
-      // 3. 제출물 생성
-      setUploadStep('제출물 저장 중...');
-      await createSubmission.mutateAsync({
-        participantId,
-        participationCode,
+      const submissionPayload = {
         bookTitle: finalTitle,
         ...(selectedBook?.author && { bookAuthor: selectedBook.author }),
         ...(selectedBook?.image && { bookCoverUrl: selectedBook.image }),
         ...(selectedBook?.description && { bookDescription: selectedBook.description }),
-        bookImageUrl,
-        review: review.trim(), // Step 2의 감상평
+        ...(bookImageUrl && { bookImageUrl }),
+        review: review.trim(),
         dailyQuestion: dailyQuestion?.question || '',
-        dailyAnswer: dailyAnswer.trim(), // Step 3의 질문 답변
-        submittedAt: Timestamp.now(),
-        status: 'approved',
-      });
+        dailyAnswer: dailyAnswer.trim(),
+        status: 'approved' as const,
+      };
 
-      // 4. 임시저장 데이터 삭제
-      try {
-        const draft = await getDraftSubmission(participantId, cohortId!);
-        if (draft) {
-          await deleteDraft(draft.id);
+      setUploadStep('제출물 저장 중...');
+
+      if (isEditing && existingSubmissionId) {
+        await updateSubmission.mutateAsync({
+          id: existingSubmissionId,
+          data: submissionPayload,
+        });
+      } else {
+        await createSubmission.mutateAsync({
+          participantId,
+          participationCode,
+          ...submissionPayload,
+          submittedAt: Timestamp.now(),
+        });
+      }
+
+      if (!isEditing) {
+        try {
+          const { getDraftSubmission, deleteDraft } = await import('@/lib/firebase/submissions');
+          const draft = await getDraftSubmission(participantId, cohortId!);
+          if (draft) {
+            await deleteDraft(draft.id);
+          }
+        } catch (error) {
+          console.error('Draft deletion failed:', error);
         }
-      } catch (error) {
-        // 드래프트 삭제 실패는 무시 (제출은 완료되었으므로)
-        console.error('Draft deletion failed:', error);
       }
 
       toast({
-        title: '독서 인증 완료 ✅',
-        description: '오늘의 서재에서 다른 멤버들의 프로필을 확인해보세요!',
+        title: isEditing ? '독서 인증 수정 완료 ✅' : '독서 인증 완료 ✅',
+        description: isEditing
+          ? '수정된 내용이 저장되었습니다.'
+          : '오늘의 서재에서 다른 멤버들의 프로필을 확인해보세요!',
       });
 
-      // 채팅 페이지로 이동 (상태 초기화는 이동 후)
       router.push(appRoutes.chat(cohortId!));
-
-      // 상태 초기화 (라우터 이동 후 실행)
       setTimeout(() => {
         reset();
       }, 100);
-
     } catch (error) {
       const errorMessage = error instanceof Error
         ? error.message
@@ -347,20 +474,22 @@ function Step3Content() {
         {/* 하단 버튼 */}
         <div className="border-t bg-white">
           <div className="mx-auto flex w-full max-w-xl gap-2 px-4 pt-4 pb-[60px]">
-            <UnifiedButton
-              variant="outline"
-              onClick={handleSaveDraft}
-              className="flex-1"
-              disabled={uploading || isSaving}
-            >
-              {isSaving ? '저장 중...' : '임시 저장하기'}
-            </UnifiedButton>
+            {!existingSubmissionId && (
+              <UnifiedButton
+                variant="outline"
+                onClick={handleSaveDraft}
+                className="flex-1"
+                disabled={uploading || isSaving}
+              >
+                {isSaving ? '저장 중...' : '임시 저장하기'}
+              </UnifiedButton>
+            )}
             <UnifiedButton
               onClick={handleSubmit}
-              className="flex-1"
+              className={existingSubmissionId ? 'w-full' : 'flex-1'}
               disabled={uploading || isSaving || !dailyAnswer.trim()}
             >
-              {uploading ? uploadStep || '제출 중...' : '제출하기'}
+              {uploading ? uploadStep || '제출 중...' : existingSubmissionId ? '수정하기' : '제출하기'}
             </UnifiedButton>
           </div>
         </div>

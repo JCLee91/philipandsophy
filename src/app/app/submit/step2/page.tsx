@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
 import { getParticipantById, saveDraft, uploadReadingImage } from '@/lib/firebase';
+import { createFileFromUrl } from '@/lib/image-validation';
 import { searchNaverBooks, cleanBookData, type NaverBook } from '@/lib/naver-book-api';
 import { useToast } from '@/hooks/use-toast';
 import BackHeader from '@/components/BackHeader';
@@ -41,6 +42,7 @@ function Step2Content() {
     setSelectedBook,
     setManualTitle,
     setReview,
+    setImageFile,
     setImageStorageUrl,
   } = useSubmissionFlowStore();
   const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
@@ -130,6 +132,79 @@ function Step2Content() {
 
     loadDraft();
   }, [participant, cohortId, existingSubmissionId, selectedBook, manualTitle, review, setSelectedBook, setManualTitle, setReview, toast]);
+
+  useEffect(() => {
+    if (!existingSubmissionId || (selectedBook || manualTitle || review)) return;
+
+    let cancelled = false;
+
+    const loadExistingSubmission = async () => {
+      setIsLoadingDraft(true);
+      try {
+        const { getSubmissionById } = await import('@/lib/firebase/submissions');
+        const submission = await getSubmissionById(existingSubmissionId);
+        if (!submission || cancelled) return;
+
+        if (submission.bookImageUrl && !imageStorageUrl) {
+          try {
+            const file = await createFileFromUrl(submission.bookImageUrl);
+            if (!cancelled) {
+              setImageFile(file, submission.bookImageUrl, submission.bookImageUrl);
+            }
+          } catch (error) {
+            if (!cancelled) {
+              setImageFile(null, submission.bookImageUrl, submission.bookImageUrl);
+            }
+          }
+          if (!cancelled) {
+            setImageStorageUrl(submission.bookImageUrl);
+          }
+        }
+
+        if (submission.bookTitle) {
+          if (submission.bookAuthor || submission.bookCoverUrl || submission.bookDescription) {
+            setSelectedBook({
+              title: submission.bookTitle,
+              author: submission.bookAuthor || '',
+              image: submission.bookCoverUrl || '',
+              description: submission.bookDescription || '',
+              isbn: '',
+              publisher: '',
+              pubdate: '',
+              link: '',
+              discount: '',
+            });
+            setManualTitle('');
+          } else {
+            setSelectedBook(null);
+            setManualTitle(submission.bookTitle);
+          }
+        }
+
+        if (submission.review) {
+          setReview(submission.review);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          toast({
+            title: '제출물 불러오기 실패',
+            description: '이전 제출을 불러오지 못했습니다. 다시 시도해주세요.',
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingDraft(false);
+        }
+      }
+    };
+
+    loadExistingSubmission();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [existingSubmissionId, selectedBook, manualTitle, review, imageStorageUrl, setSelectedBook, setManualTitle, setReview, setImageFile, setImageStorageUrl, toast]);
 
   // 책 검색 디바운스
   useEffect(() => {
@@ -271,7 +346,7 @@ function Step2Content() {
     setIsProcessing(true);
 
     // 자동 임시저장
-    if (participantId && participationCode) {
+    if (!existingSubmissionId && participantId && participationCode) {
       try {
         const draftData: {
           bookImageUrl?: string;
@@ -494,15 +569,17 @@ function Step2Content() {
         {/* 하단 버튼 */}
         <div className="border-t bg-white">
           <div className="mx-auto flex w-full max-w-xl gap-2 px-4 pt-4 pb-[60px]">
-            <UnifiedButton variant="outline" onClick={handleSaveDraft} disabled={isSaving} className="flex-1">
-              {isSaving ? '저장 중...' : '임시 저장하기'}
-            </UnifiedButton>
+            {!existingSubmissionId && (
+              <UnifiedButton variant="outline" onClick={handleSaveDraft} disabled={isSaving} className="flex-1">
+                {isSaving ? '저장 중...' : '임시 저장하기'}
+              </UnifiedButton>
+            )}
             <UnifiedButton
               onClick={handleNext}
               disabled={(!selectedBook && !manualTitle.trim()) || !review.trim() || isSaving || isProcessing}
               loading={isProcessing}
               loadingText="저장 중..."
-              className="flex-1"
+              className={existingSubmissionId ? 'w-full' : 'flex-1'}
             >
               다음
             </UnifiedButton>

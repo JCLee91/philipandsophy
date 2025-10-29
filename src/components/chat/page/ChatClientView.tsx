@@ -118,6 +118,7 @@ export function ChatClientView({
   const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);
   const todaySubmission = submissions.find((sub) => sub.submissionDate === getTodayString());
   const hasSubmittedToday = !!todaySubmission;
+  const todaySubmissionId = todaySubmission?.id;
 
   const currentDay = cohort && cohort.programStartDate
     ? differenceInDays(parseISO(getTodayString()), parseISO(cohort.programStartDate)) + 1
@@ -289,9 +290,16 @@ export function ChatClientView({
     router.push(appRoutes.todayLibrary(cohortId));
   }, [cohortId, router]);
 
-  const handleOpenSubmissionDialog = useCallback(() => {
-    router.push(appRoutes.submitStep1(cohortId!));
-  }, [cohortId, router]);
+  const handleOpenSubmissionFlow = useCallback(() => {
+    if (!cohortId) return;
+
+    const baseUrl = appRoutes.submitStep1(cohortId);
+    if (todaySubmissionId) {
+      router.push(`${baseUrl}&edit=${todaySubmissionId}`);
+    } else {
+      router.push(baseUrl);
+    }
+  }, [cohortId, router, todaySubmissionId]);
 
   const blockingParticipantsLoading = shouldLoadParticipants && participantsLoading;
 
@@ -362,7 +370,7 @@ export function ChatClientView({
           isDay1={isDay1 ?? false}
           isAfterDay14={isAfterDay14}
           hasSubmittedToday={hasSubmittedToday}
-          onRequestSubmission={handleOpenSubmissionDialog}
+          onRequestSubmission={handleOpenSubmissionFlow}
           onNavigateMatching={handleNavigateMatching}
           onNavigateTodayLibrary={handleNavigateTodayLibrary}
         />
