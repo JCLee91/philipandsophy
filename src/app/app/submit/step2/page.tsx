@@ -50,6 +50,7 @@ function Step2Content() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Step 1 검증
   useEffect(() => {
@@ -267,6 +268,8 @@ function Step2Content() {
       return;
     }
 
+    setIsProcessing(true);
+
     // 자동 임시저장
     if (participantId && participationCode) {
       try {
@@ -309,6 +312,7 @@ function Step2Content() {
       } catch (error) {
         // 임시저장 실패해도 다음 단계로 진행 (에러는 콘솔에만 기록)
         console.error('Auto-save failed:', error);
+        setIsProcessing(false);
       }
     }
 
@@ -495,7 +499,9 @@ function Step2Content() {
             </UnifiedButton>
             <UnifiedButton
               onClick={handleNext}
-              disabled={(!selectedBook && !manualTitle.trim()) || !review.trim() || isSaving}
+              disabled={(!selectedBook && !manualTitle.trim()) || !review.trim() || isSaving || isProcessing}
+              loading={isProcessing}
+              loadingText="저장 중..."
               className="flex-1"
             >
               다음

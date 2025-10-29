@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
@@ -32,9 +32,17 @@ function Step1Content() {
     imageFile,
     imagePreview,
     imageStorageUrl,
+    selectedBook,
+    manualTitle,
+    review,
+    dailyAnswer,
     setImageFile,
     setMetaInfo,
     setImageStorageUrl,
+    setSelectedBook,
+    setManualTitle,
+    setReview,
+    setDailyAnswer,
     participantId,
     participationCode,
   } = useSubmissionFlowStore();
@@ -81,6 +89,70 @@ function Step1Content() {
     loadDraft();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, toast]);
+
+  const hasLoadedExistingRef = useRef(false);
+
+  useEffect(() => {
+    if (!participant || !cohortId || !existingSubmissionId || hasLoadedExistingRef.current) return;
+
+    const loadExistingSubmission = async () => {
+      setIsLoadingDraft(true);
+      try {
+        const { getSubmissionById } = await import('@/lib/firebase/submissions');
+        const submission = await getSubmissionById(existingSubmissionId);
+        if (!submission) return;
+
+        hasLoadedExistingRef.current = true;
+
+        if (submission.bookImageUrl) {
+          try {
+            const file = await createFileFromUrl(submission.bookImageUrl);
+            setImageFile(file, submission.bookImageUrl, submission.bookImageUrl);
+          } catch (error) {
+            setImageFile(null, submission.bookImageUrl, submission.bookImageUrl);
+          }
+          setImageStorageUrl(submission.bookImageUrl);
+        }
+
+        if (submission.bookTitle) {
+          if (submission.bookAuthor || submission.bookCoverUrl || submission.bookDescription) {
+            setSelectedBook({
+              title: submission.bookTitle,
+              author: submission.bookAuthor || '',
+              image: submission.bookCoverUrl || '',
+              description: submission.bookDescription || '',
+              isbn: '',
+              publisher: '',
+              pubdate: '',
+              link: '',
+            });
+            setManualTitle('');
+          } else {
+            setSelectedBook(null);
+            setManualTitle(submission.bookTitle);
+          }
+        }
+
+        if (submission.review) {
+          setReview(submission.review);
+        }
+
+        if (submission.dailyAnswer) {
+          setDailyAnswer(submission.dailyAnswer);
+        }
+      } catch (error) {
+        toast({
+          title: '제출물 불러오기 실패',
+          description: '이전 제출을 불러오지 못했습니다. 다시 시도해주세요.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoadingDraft(false);
+      }
+    };
+
+    loadExistingSubmission();
+  }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, toast]);
 
   // 인증 확인
   useEffect(() => {

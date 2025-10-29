@@ -1,12 +1,12 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
 import { useCreateSubmission } from '@/hooks/use-submissions';
-import { uploadReadingImage, updateParticipantBookInfo, saveDraft } from '@/lib/firebase';
+import { uploadReadingImage, updateParticipantBookInfo, saveDraft, getDraftSubmission, deleteDraft } from '@/lib/firebase';
 import { getDailyQuestion } from '@/lib/firebase/daily-questions';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
@@ -71,28 +71,29 @@ function Step3Content() {
     }
   }, [sessionLoading, participant, cohortId, router]);
 
+  const hasLoadedDraftRef = useRef(false);
+
   // 임시저장 자동 불러오기 + 일일 질문 로드
   useEffect(() => {
-    if (!cohortId || existingSubmissionId) return;
+    if (!cohortId || existingSubmissionId || !participantId || hasLoadedDraftRef.current) {
+      return;
+    }
 
-    let hasLoadedDraft = false; // 드래프트 로드 플래그
+    hasLoadedDraftRef.current = true;
 
     const loadDraftAndQuestion = async () => {
+      setIsLoadingDraft(true);
       try {
         // 1. 임시저장 불러오기
-        if (participantId) {
-          const { getDraftSubmission } = await import('@/lib/firebase/submissions');
-          const draft = await getDraftSubmission(participantId, cohortId);
+        const { getDraftSubmission } = await import('@/lib/firebase/submissions');
+        const draft = await getDraftSubmission(participantId, cohortId);
 
-          if (draft?.dailyAnswer) {
-            hasLoadedDraft = true;
-            setIsLoadingDraft(true); // 실제로 불러올 때만 로딩 표시
-            setDailyAnswer(draft.dailyAnswer);
-            toast({
-              title: '임시 저장된 내용을 불러왔습니다',
-              description: '이어서 작성하실 수 있습니다.',
-            });
-          }
+        if (draft?.dailyAnswer) {
+          setDailyAnswer(draft.dailyAnswer);
+          toast({
+            title: '임시 저장된 내용을 불러왔습니다',
+            description: '이어서 작성하실 수 있습니다.',
+          });
         }
 
         // 2. 일일 질문 로드
@@ -104,9 +105,7 @@ function Step3Content() {
       } catch (error) {
         // 에러 무시
       } finally {
-        if (hasLoadedDraft) {
-          setIsLoadingDraft(false); // 드래프트를 불러왔을 때만 로딩 해제
-        }
+        setIsLoadingDraft(false);
       }
     };
 
@@ -254,16 +253,29 @@ function Step3Content() {
         status: 'approved',
       });
 
+      // 4. 임시저장 데이터 삭제
+      try {
+        const draft = await getDraftSubmission(participantId, cohortId!);
+        if (draft) {
+          await deleteDraft(draft.id);
+        }
+      } catch (error) {
+        // 드래프트 삭제 실패는 무시 (제출은 완료되었으므로)
+        console.error('Draft deletion failed:', error);
+      }
+
       toast({
         title: '독서 인증 완료 ✅',
         description: '오늘의 서재에서 다른 멤버들의 프로필을 확인해보세요!',
       });
 
-      // 상태 초기화
-      reset();
-
-      // 채팅 페이지로 이동
+      // 채팅 페이지로 이동 (상태 초기화는 이동 후)
       router.push(appRoutes.chat(cohortId!));
+
+      // 상태 초기화 (라우터 이동 후 실행)
+      setTimeout(() => {
+        reset();
+      }, 100);
 
     } catch (error) {
       const errorMessage = error instanceof Error
