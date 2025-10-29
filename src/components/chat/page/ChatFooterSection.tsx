@@ -2,8 +2,7 @@
 
 import UnifiedButton from '@/components/UnifiedButton';
 import FooterActions from '@/components/FooterActions';
-import { BookOpen, Pencil } from 'lucide-react';
-import { BookLibraryIcon } from '@/components/icons/BookLibraryIcon';
+import { BookOpen } from 'lucide-react';
 
 type ChatFooterSectionProps = {
   isAdmin: boolean;
@@ -46,7 +45,6 @@ export function ChatFooterSection({
             <UnifiedButton
               variant="secondary"
               onClick={onNavigateTodayLibrary}
-              icon={<BookLibraryIcon className="h-5 w-5" />}
               className="col-span-2"
             >
               10월 멤버의 서재
@@ -56,7 +54,6 @@ export function ChatFooterSection({
               {hasSubmittedToday ? (
                 <UnifiedButton
                   onClick={onRequestSubmission}
-                  icon={<Pencil className="h-5 w-5" />}
                   className="bg-[#E8E9ED] text-[#575E68] hover:bg-[#D8D9DD] font-bold"
                 >
                   인증 수정하기
@@ -65,15 +62,13 @@ export function ChatFooterSection({
                 <UnifiedButton
                   variant="primary"
                   onClick={onRequestSubmission}
-                  icon={<BookOpen className="h-5 w-5" />}
                 >
-                  독서 인증
+                  독서 인증하기
                 </UnifiedButton>
               )}
               <UnifiedButton
                 variant="secondary"
                 onClick={onNavigateTodayLibrary}
-                icon={<BookLibraryIcon className="h-5 w-5" />}
               >
                 오늘의 서재
               </UnifiedButton>
