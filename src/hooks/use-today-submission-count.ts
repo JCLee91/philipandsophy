@@ -41,7 +41,8 @@ export function useTodaySubmissionCount(cohortId?: string) {
     const db = getDb();
     const q = query(
       collection(db, 'reading_submissions'),
-      where('submissionDate', '==', submissionDate)
+      where('submissionDate', '==', submissionDate),
+      where('status', '!=', 'draft') // draft 제외 (임시저장은 카운트 안 함)
     );
 
     const unsubscribe = onSnapshot(

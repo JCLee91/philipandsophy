@@ -70,20 +70,28 @@ export async function GET(request: NextRequest) {
       for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
         const chunk = targetParticipantIds.slice(i, i + chunkSize);
 
-        // 전체 제출
+        // 전체 제출 (draft 제외)
         const submissionsChunk = await db
           .collection(COLLECTIONS.READING_SUBMISSIONS)
           .where('participantId', 'in', chunk)
           .get();
-        allSubmissions.push(...submissionsChunk.docs);
+        // draft 상태 제외 필터링 (IN 쿼리와 != 쿼리 동시 사용 불가로 클라이언트 필터)
+        const nonDraftSubmissions = submissionsChunk.docs.filter(doc =>
+          doc.data().status !== 'draft'
+        );
+        allSubmissions.push(...nonDraftSubmissions);
 
-        // 오늘 제출
+        // 오늘 제출 (draft 제외)
         const todayChunk = await db
           .collection(COLLECTIONS.READING_SUBMISSIONS)
           .where('participantId', 'in', chunk)
           .where('submissionDate', '==', todayString)
           .get();
-        todaySubmissions.push(...todayChunk.docs);
+        // draft 상태 제외 필터링
+        const nonDraftTodaySubmissions = todayChunk.docs.filter(doc =>
+          doc.data().status !== 'draft'
+        );
+        todaySubmissions.push(...nonDraftTodaySubmissions);
       }
     }
 
@@ -148,12 +156,20 @@ export async function GET(request: NextRequest) {
             const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
             const participantIds = participants.docs.map(d => d.id);
             return {
-              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
+              // draft 제외 필터링 추가
+              docs: snap.docs.filter(d =>
+                participantIds.includes(d.data().participantId) &&
+                d.data().status !== 'draft'
+              )
             };
           })
       : await db.collection(COLLECTIONS.READING_SUBMISSIONS)
           .where('submittedAt', '>=', weekStart)
-          .get();
+          .get()
+          .then(snap => ({
+            // draft 제외 필터링
+            docs: snap.docs.filter(d => d.data().status !== 'draft')
+          }));
 
     // 이번 주 인증한 참가자 ID (슈퍼관리자만 제외, 중복 제거)
     const weekParticipantIds = new Set<string>();

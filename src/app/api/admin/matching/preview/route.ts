@@ -54,9 +54,11 @@ export async function POST(request: NextRequest) {
 
     // 3. 어제 제출한 참가자들의 답변 가져오기 (매칭 대상)
     // 날짜만 확인 (질문은 체크하지 않음 - 새벽 제출자는 다른 질문일 수 있음)
+    // draft 상태는 제외 (임시저장은 매칭 대상 아님)
     const submissionsSnapshot = await db
       .collection('reading_submissions')
       .where('submissionDate', '==', submissionDate)
+      .where('status', '!=', 'draft')
       .get();
 
     if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
