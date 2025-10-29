@@ -182,14 +182,14 @@ export default function DirectMessageDialog({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
         aria-hidden="true"
       />
 
       {/* Dialog */}
       <div
-        className="fixed inset-x-4 z-50 max-w-lg mx-auto transition-all duration-300"
+        className="fixed inset-x-4 z-[9999] max-w-lg mx-auto transition-all duration-300"
         style={{
           top: keyboardHeight > 0 ? '1rem' : '50%',
           transform: keyboardHeight > 0 ? 'none' : 'translateY(-50%)',
