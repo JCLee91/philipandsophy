@@ -227,104 +227,102 @@ function ParticipantsPageContent() {
   }
 
   return (
-    <>
-      <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden bg-background pt-14">
-          <BackHeader onBack={() => router.back()} title={`참가자 목록 (${sortedParticipants.length})`} />
-          <main className="app-main-content flex-1 overflow-y-auto">
-            <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 py-4">
-              {sortedParticipants.map((participant) => {
-                const isMe = participant.id === currentUserId;
-                const verified = verifiedIds?.has(participant.id) ?? false;
+    <PageTransition>
+      <div className="app-shell flex flex-col overflow-hidden bg-background pt-14">
+        <BackHeader onBack={() => router.back()} title={`참가자 목록 (${sortedParticipants.length})`} />
+        <main className="app-main-content flex-1 overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 py-4">
+            {sortedParticipants.map((participant) => {
+              const isMe = participant.id === currentUserId;
+              const verified = verifiedIds?.has(participant.id) ?? false;
 
-                if (isMe) {
-                  const initials = getInitials(participant.name);
-                  return (
-                    <div key={participant.id} className="rounded-lg border bg-white p-3 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-                            <AvatarImage
-                              src={participant.profileImageCircle || participant.profileImage}
-                              alt={participant.name}
-                            />
-                            <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                              {initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          {verified && (
-                            <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md">
-                              <Check className="h-3 w-3 text-white stroke-[3]" aria-label="오늘 독서 인증 완료" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
-                          <span className="text-xs text-muted-foreground">(나)</span>
-                        </div>
+              if (isMe) {
+                const initials = getInitials(participant.name);
+                return (
+                  <div key={participant.id} className="rounded-lg border bg-white p-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                          <AvatarImage
+                            src={participant.profileImageCircle || participant.profileImage}
+                            alt={participant.name}
+                          />
+                          <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        {verified && (
+                          <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md">
+                            <Check className="h-3 w-3 text-white stroke-[3]" aria-label="오늘 독서 인증 완료" />
+                          </div>
+                        )}
                       </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        <UnifiedButton variant="outline" onClick={() => setSelectedParticipant(participant)}>
-                          간단 프로필 보기
-                        </UnifiedButton>
-                        <UnifiedButton onClick={() => handleProfileBookClick(participant)}>
-                          프로필북 보기
-                        </UnifiedButton>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
+                        <span className="text-xs text-muted-foreground">(나)</span>
                       </div>
                     </div>
-                  );
-                }
-
-                return (
-                  <ParticipantRow
-                    key={participant.id}
-                    participant={participant}
-                    currentUserId={currentUserId}
-                    isAdmin={isAdmin}
-                    verified={verified}
-                    onDMClick={handleDMClick}
-                    onProfileClick={setSelectedParticipant}
-                    onProfileBookClick={handleProfileBookClick}
-                    cohortId={cohortId}
-                    isOpen={openDropdownId === participant.id}
-                    onOpenChange={(open) => setOpenDropdownId(open ? participant.id : null)}
-                  />
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <UnifiedButton variant="outline" onClick={() => setSelectedParticipant(participant)}>
+                        간단 프로필 보기
+                      </UnifiedButton>
+                      <UnifiedButton onClick={() => handleProfileBookClick(participant)}>
+                        프로필북 보기
+                      </UnifiedButton>
+                    </div>
+                  </div>
                 );
-              })}
-            </div>
-          </main>
+              }
 
-          <div className="border-t bg-white">
-            <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 pt-4 pb-[60px]">
-              <UnifiedButton
-                variant="destructive"
-                onClick={async () => {
-                  await logout();
-                  router.push('/app');
-                }}
-                icon={<LogOut className="h-5 w-5" />}
-              >
-                로그아웃
-              </UnifiedButton>
-            </div>
+              return (
+                <ParticipantRow
+                  key={participant.id}
+                  participant={participant}
+                  currentUserId={currentUserId}
+                  isAdmin={isAdmin}
+                  verified={verified}
+                  onDMClick={handleDMClick}
+                  onProfileClick={setSelectedParticipant}
+                  onProfileBookClick={handleProfileBookClick}
+                  cohortId={cohortId}
+                  isOpen={openDropdownId === participant.id}
+                  onOpenChange={(open) => setOpenDropdownId(open ? participant.id : null)}
+                />
+              );
+            })}
+          </div>
+        </main>
+
+        <div className="border-t bg-white">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 pt-4 pb-[60px]">
+            <UnifiedButton
+              variant="destructive"
+              onClick={async () => {
+                await logout();
+                router.push('/app');
+              }}
+              icon={<LogOut className="h-5 w-5" />}
+            >
+              로그아웃
+            </UnifiedButton>
           </div>
         </div>
-      </PageTransition>
 
-      <DirectMessageDialog
-        open={dmDialogOpen}
-        onOpenChange={setDmDialogOpen}
-        currentUserId={currentUserId}
-        currentUser={participant}
-        otherUser={dmTarget}
-      />
+        <DirectMessageDialog
+          open={dmDialogOpen}
+          onOpenChange={setDmDialogOpen}
+          currentUserId={currentUserId}
+          currentUser={participant}
+          otherUser={dmTarget}
+        />
 
-      <ProfileImageDialog
-        participant={selectedParticipant}
-        open={!!selectedParticipant}
-        onClose={() => setSelectedParticipant(null)}
-      />
-    </>
+        <ProfileImageDialog
+          participant={selectedParticipant}
+          open={!!selectedParticipant}
+          onClose={() => setSelectedParticipant(null)}
+        />
+      </div>
+    </PageTransition>
   );
 }
 
