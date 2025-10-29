@@ -5,10 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
-import { useCreateSubmission, useSubmissionsByParticipant } from '@/hooks/use-submissions';
+import { useCreateSubmission } from '@/hooks/use-submissions';
 import { uploadReadingImage, updateParticipantBookInfo, saveDraft } from '@/lib/firebase';
 import { getDailyQuestion } from '@/lib/firebase/daily-questions';
-import { getSubmissionDate, getTodayString } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
 import BackHeader from '@/components/BackHeader';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
@@ -16,35 +16,10 @@ import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { appRoutes } from '@/lib/navigation';
 import type { DailyQuestion as DailyQuestionType } from '@/types/database';
-import { toZonedTime } from 'date-fns-tz';
-import type { ReadingSubmission } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * 보상 대상 여부 확인
- */
-function checkNeedsCompensation(submissions: ReadingSubmission[]): boolean {
-  const today = getTodayString();
-  if (today !== '2025-10-28') {
-    return false;
-  }
-
-  const oct27Submission = submissions.find(sub => sub.submissionDate === '2025-10-27');
-  if (!oct27Submission || !oct27Submission.submittedAt) {
-    return false;
-  }
-
-  const submittedAtDate = oct27Submission.submittedAt.toDate();
-  const submittedAtKST = toZonedTime(submittedAtDate, 'Asia/Seoul');
-  const hour = submittedAtKST.getHours();
-  const day = submittedAtKST.getDate();
-
-  return day === 28 && hour >= 0 && hour < 2;
-}
 
 function Step3Content() {
   const router = useRouter();
@@ -76,7 +51,6 @@ function Step3Content() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
 
   const createSubmission = useCreateSubmission();
-  const { data: allSubmissions = [] } = useSubmissionsByParticipant(participantId || '');
 
   // Step 2 검증
   useEffect(() => {
@@ -120,14 +94,7 @@ function Step3Content() {
 
         // 2. 일일 질문 로드
         const submissionDate = getSubmissionDate();
-        const needsCompensation = checkNeedsCompensation(allSubmissions);
-
-        let questionDate = submissionDate;
-        if (needsCompensation) {
-          questionDate = '2025-10-27';
-        }
-
-        const question = await getDailyQuestion(cohortId, questionDate);
+        const question = await getDailyQuestion(cohortId, submissionDate);
         if (question) {
           setDailyQuestion(question);
         }
@@ -139,7 +106,7 @@ function Step3Content() {
     };
 
     loadDraftAndQuestion();
-  }, [cohortId, allSubmissions, existingSubmissionId, participantId, dailyAnswer, setDailyAnswer, toast]);
+  }, [cohortId, existingSubmissionId, participantId, dailyAnswer, setDailyAnswer, toast]);
 
   const handleSaveDraft = async () => {
     if (!participantId || !participationCode) {
