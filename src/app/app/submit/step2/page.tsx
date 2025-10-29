@@ -44,6 +44,7 @@ function Step2Content() {
     setReview,
     setImageFile,
     setImageStorageUrl,
+    setMetaInfo,
   } = useSubmissionFlowStore();
   const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,6 +73,14 @@ function Step2Content() {
       router.replace('/app');
     }
   }, [sessionLoading, participant, cohortId, router]);
+
+  // 메타 정보 보강 (Step1을 거치지 않고 들어오는 수정 모드 대비)
+  useEffect(() => {
+    if (!participant || !cohortId || participantId) return;
+
+    const participationCodeValue = participant.participationCode || participant.id;
+    setMetaInfo(participant.id, participationCodeValue, cohortId, existingSubmissionId || undefined);
+  }, [participant, participantId, cohortId, existingSubmissionId, setMetaInfo]);
 
   // 임시저장 자동 불러오기
   useEffect(() => {

@@ -46,6 +46,7 @@ function Step3Content() {
     setManualTitle,
     setReview,
     setImageStorageUrl,
+    setMetaInfo,
     reset
   } = useSubmissionFlowStore();
 
@@ -79,6 +80,14 @@ function Step3Content() {
       router.replace('/app');
     }
   }, [sessionLoading, participant, cohortId, router]);
+
+  // 메타 정보 보강 (Step2를 거치지 않았을 경우 대비)
+  useEffect(() => {
+    if (!participant || !cohortId || participantId) return; // 이미 세팅된 경우는 건너뜀
+
+    const participationCodeValue = participant.participationCode || participant.id;
+    setMetaInfo(participant.id, participationCodeValue, cohortId, existingSubmissionId || undefined);
+  }, [participant, participantId, cohortId, existingSubmissionId, setMetaInfo]);
 
   const hasLoadedDraftRef = useRef(false);
   const hasLoadedExistingRef = useRef(false);
