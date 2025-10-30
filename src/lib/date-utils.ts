@@ -195,19 +195,21 @@ export function filterSubmissionsByDate<T extends { id?: string; submittedAt: Ti
 /**
  * 제출 날짜 기준으로 접근 가능한 프로필북 공개 날짜집을 계산합니다.
  *
- * 매칭 결과는 제출 다음날 공개되지만, 오늘 인증한 경우에도 프로필북 접근을 허용합니다.
- * - 어제 인증 → 오늘 프로필북 공개 (제출일 + 1)
- * - 오늘 인증 → 오늘 프로필북 공개 (제출일과 동일)
+ * 새벽 2시 마감 정책:
+ * - 오늘 인증 → 오늘 프로필북만 접근 가능 (제출일과 동일)
+ * - 어제 인증 → 새벽 2시까지는 어제 프로필북, 새벽 2시 이후는 접근 불가
+ * - 중요: 과거 프로필북은 접근 불가 (오늘 날짜만 반환)
  *
  * @param submissionDates - 제출 날짜 컬렉션 (Set 또는 Array)
- * @returns 공개일 집합 (오늘 또는 과거)
+ * @returns 공개일 집합 (오늘만 포함, 과거는 제외)
  *
  * @example
- * // 10월 13일 인증 → 10월 14일 공개
- * // 10월 14일 인증 → 10월 14일 공개 (즉시)
+ * // 10월 29일 인증 → 10월 30일 새벽 1시: today="2025-10-29" → ["2025-10-29"]
+ * // 10월 29일 인증 → 10월 30일 오후 1시: today="2025-10-30" → [] (AI 분석 중)
+ * // 10월 30일 인증 → 10월 30일 오후 4시: today="2025-10-30" → ["2025-10-30"]
  */
 export function getMatchingAccessDates(submissionDates: Iterable<string>): Set<string> {
-  const today = getTodayString();
+  const today = getSubmissionDate(); // 새벽 2시 마감 정책 적용
   const accessDates = new Set<string>();
 
   for (const rawDate of submissionDates) {
@@ -220,18 +222,12 @@ export function getMatchingAccessDates(submissionDates: Iterable<string>): Set<s
 
     const submissionDateString = format(parsed, 'yyyy-MM-dd');
 
-    // 오늘 인증한 경우: 오늘 날짜 추가 (즉시 접근 허용)
+    // ✅ FIX: 오늘 제출한 경우만 접근 허용 (새벽 2시 기준)
+    // - 10월 29일 23:00 인증 → 10월 30일 01:00: today="2025-10-29" → 접근 O
+    // - 10월 29일 23:00 인증 → 10월 30일 02:00 이후: today="2025-10-30" → 접근 X (빈 Set 반환)
     if (submissionDateString === today) {
       accessDates.add(today);
-      continue;
-    }
-
-    // 과거 인증한 경우: 제출일 + 1일
-    const releaseDate = addDays(parsed, 1);
-    const releaseDateString = format(releaseDate, 'yyyy-MM-dd');
-
-    if (releaseDateString <= today) {
-      accessDates.add(releaseDateString);
+      break; // 오늘 날짜만 추가하고 종료
     }
   }
 

@@ -81,13 +81,14 @@ export function findLatestMatchingForParticipant(
     return null;
   }
 
-  const hasAllowedDates = options.allowedDates && options.allowedDates.size > 0;
+  const allowedDates = options.allowedDates;
+  const hasAllowedDates = typeof allowedDates !== 'undefined';
 
   const tryResolve = (date: string | undefined): MatchingLookupResult | null => {
     if (!date) return null;
 
     // allowedDates가 있으면 체크, 없으면 모든 과거 날짜 허용
-    if (hasAllowedDates && !options.allowedDates!.has(date)) return null;
+    if (hasAllowedDates && !allowedDates?.has(date)) return null;
 
     const entry = dailyMap[date];
     if (!entry) return null;

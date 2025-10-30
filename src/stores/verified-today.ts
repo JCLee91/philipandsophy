@@ -82,7 +82,7 @@ export const useVerifiedTodayStore = create<VerifiedTodayState>((set, get) => ({
     }
   },
 
-  // 날짜 변화 체크 (자정 및 새벽 2시 감지)
+  // 날짜 변화 체크 (새벽 2시 감지)
   checkDateChange: () => {
     const state = get();
     const submissionDate = getSubmissionDate(); // 새벽 2시 마감 정책 적용
