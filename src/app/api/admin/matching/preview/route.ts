@@ -173,7 +173,10 @@ export async function POST(request: NextRequest) {
       submissionDate, // 제출 날짜 (어제, 스포일러 방지용)
       question: submissionQuestion,
       totalParticipants: participantAnswers.length,
-      matching,
+      matching: {
+        assignments: matching.assignments,
+      },
+      validation: matching.validation, // 검증 결과 포함
       submissionStats: {
         submitted: participantAnswers.length,
         notSubmitted: notSubmittedParticipants.length,

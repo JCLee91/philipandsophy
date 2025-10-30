@@ -512,10 +512,23 @@ function MatchingPageContent() {
           ? Object.keys(data.matching.assignments).length
           : 0);
 
-      toast({
-        title: 'AI 매칭 완료',
-        description: `${matchedCount}명의 참가자 매칭 결과를 확인하세요.`,
-      });
+      // 검증 결과 확인
+      if (data.validation && !data.validation.valid) {
+        toast({
+          title: '⚠️ 매칭 검증 실패',
+          description: `AI 매칭에 ${data.validation.errors.length}개의 문제가 발견되었습니다. 확인 후 재실행을 권장합니다.`,
+          variant: 'destructive',
+        });
+        logger.warn('AI 매칭 검증 실패', {
+          errors: data.validation.errors,
+          matchedCount,
+        });
+      } else {
+        toast({
+          title: 'AI 매칭 완료',
+          description: `${matchedCount}명의 참가자 매칭 결과를 확인하세요.`,
+        });
+      }
 
       // 성공 시 중단 플래그 제거
       try {
@@ -828,6 +841,30 @@ function MatchingPageContent() {
             {error && (
               <div className="rounded-xl p-4 border bg-admin-bg-warning border-admin-border-warning">
                 <p className="text-sm text-admin-text-tertiary">{error}</p>
+              </div>
+            )}
+
+            {/* 검증 실패 경고 (프리뷰/확정 결과에서) */}
+            {((previewResult?.validation && !previewResult.validation.valid) ||
+              (confirmedResult?.validation && !confirmedResult.validation.valid)) && (
+              <div className="rounded-xl p-4 border bg-red-50 border-red-200">
+                <div className="space-y-2">
+                  <h4 className="font-bold text-red-900 flex items-center gap-2">
+                    <X className="h-5 w-5" />
+                    매칭 검증 실패
+                  </h4>
+                  <p className="text-sm text-red-800">
+                    AI가 생성한 매칭 결과에 다음 문제가 발견되었습니다:
+                  </p>
+                  <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
+                    {(previewResult?.validation?.errors || confirmedResult?.validation?.errors || []).map((error, idx) => (
+                      <li key={idx}>{error}</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-red-700 mt-2">
+                    ⚠️ 권장: 매칭을 재실행하거나 수동으로 수정해주세요.
+                  </p>
+                </div>
               </div>
             )}
 

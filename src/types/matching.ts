@@ -31,6 +31,16 @@ export interface ParticipantAssignment {
 }
 
 /**
+ * 매칭 검증 결과
+ */
+export interface MatchingValidation {
+  /** 검증 통과 여부 */
+  valid: boolean;
+  /** 검증 실패 오류 목록 */
+  errors: string[];
+}
+
+/**
  * 매칭 API 응답 데이터
  */
 export interface MatchingResponse {
@@ -47,6 +57,8 @@ export interface MatchingResponse {
     /** 전체 참가자 배정 */
     assignments: Record<string, ParticipantAssignment>;
   };
+  /** 매칭 검증 결과 (AI 매칭 품질 체크) */
+  validation?: MatchingValidation;
   /** 제출 통계 */
   submissionStats?: {
     submitted: number;

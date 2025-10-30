@@ -32,6 +32,10 @@ export interface ParticipantAnswer {
 
 export interface MatchingResult {
   assignments: Record<string, DailyParticipantAssignment>;
+  validation?: {
+    valid: boolean;
+    errors: string[];
+  };
 }
 
 // Zod 스키마 정의 (Vercel AI SDK용)
@@ -162,7 +166,23 @@ function validateMatching(
       errors.push(`${name}의 opposite 추천이 ${assignment.opposite.length}명입니다. (2명이어야 함)`);
     }
 
-    // 3-2. 성별 균형 확인 (1남 + 1여)
+    // 3-2. 중복 추천 확인 (같은 사람이 similar와 opposite에 동시 포함)
+    const duplicates = assignment.similar.filter(id => assignment.opposite.includes(id));
+    if (duplicates.length > 0) {
+      errors.push(`${name}의 추천에 중복이 있습니다: ${duplicates.join(', ')}가 similar와 opposite 모두에 포함됨`);
+    }
+
+    // 3-3. 배열 내 중복 확인
+    const similarUnique = new Set(assignment.similar);
+    const oppositeUnique = new Set(assignment.opposite);
+    if (similarUnique.size !== assignment.similar.length) {
+      errors.push(`${name}의 similar 추천에 중복된 ID가 있습니다.`);
+    }
+    if (oppositeUnique.size !== assignment.opposite.length) {
+      errors.push(`${name}의 opposite 추천에 중복된 ID가 있습니다.`);
+    }
+
+    // 3-4. 성별 균형 확인 (1남 + 1여)
     if (!hasGenderBalance(assignment.similar, genderMap)) {
       errors.push(`${name}의 similar 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.`);
     }
@@ -170,12 +190,19 @@ function validateMatching(
       errors.push(`${name}의 opposite 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.`);
     }
 
-    // 3-3. 자기 자신 제외 확인
+    // 3-5. 자기 자신 제외 확인
     if (assignment.similar.includes(participantId)) {
       errors.push(`${name}의 similar 추천에 자기 자신이 포함되어 있습니다.`);
     }
     if (assignment.opposite.includes(participantId)) {
       errors.push(`${name}의 opposite 추천에 자기 자신이 포함되어 있습니다.`);
+    }
+
+    // 3-6. 존재하지 않는 참가자 ID 확인
+    const allIds = [...assignment.similar, ...assignment.opposite];
+    const invalidIds = allIds.filter(id => !participants.some(p => p.id === id));
+    if (invalidIds.length > 0) {
+      errors.push(`${name}의 추천에 존재하지 않는 참가자 ID가 있습니다: ${invalidIds.join(', ')}`);
     }
   }
 
@@ -456,11 +483,20 @@ JSON만 반환하세요.
     const validation = validateMatching(matching, participants);
 
     if (!validation.valid) {
-
+      logger.warn('AI 매칭 검증 실패', {
+        errors: validation.errors,
+        participantCount: participants.length,
+      });
       // 검증 실패해도 일단 결과는 반환 (관리자가 수동 조정 가능)
     }
 
-    return matching;
+    return {
+      assignments,
+      validation: {
+        valid: validation.valid,
+        errors: validation.errors,
+      },
+    };
   } catch (error) {
 
     throw error;

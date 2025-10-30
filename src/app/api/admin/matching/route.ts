@@ -40,9 +40,11 @@ export async function POST(request: NextRequest) {
 
     // 3. 어제 제출한 참가자들의 답변 가져오기 (매칭 대상)
     // 날짜만 확인 (질문은 체크하지 않음 - 새벽 제출자는 다른 질문일 수 있음)
+    // draft 상태는 제외 (임시저장은 매칭 대상 아님)
     const submissionsSnapshot = await db
       .collection('reading_submissions')
       .where('submissionDate', '==', targetDate)
+      .where('status', '!=', 'draft')
       .get();
 
     if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
@@ -147,13 +149,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 검증 실패 시 로깅
+    if (matching.validation && !matching.validation.valid) {
+      logger.error('매칭 확정 시 검증 실패', {
+        cohortId,
+        date: today,
+        errors: matching.validation.errors,
+      });
+    }
+
     // Transaction으로 race condition 방지
     await db.runTransaction(async (transaction) => {
       const cohortData = cohortDoc.data();
       const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
 
       // 오늘 날짜 키로 매칭 결과 저장 (참가자들이 "오늘의 서재"에서 확인)
-      dailyFeaturedParticipants[today] = matching;
+      // assignments만 저장 (validation은 내부 로깅용)
+      dailyFeaturedParticipants[today] = {
+        assignments: matching.assignments,
+      };
 
       transaction.update(cohortRef, {
         dailyFeaturedParticipants,
@@ -184,7 +198,10 @@ export async function POST(request: NextRequest) {
       date: today, // 매칭 결과는 오늘 날짜로 반환
       question: targetQuestion, // 질문은 대상 날짜의 질문
       totalParticipants: participantAnswers.length,
-      matching,
+      matching: {
+        assignments: matching.assignments,
+      },
+      validation: matching.validation, // 검증 결과 포함
       submissionStats: {
         submitted: participantAnswers.length,
         notSubmitted: notSubmittedParticipants.length,
