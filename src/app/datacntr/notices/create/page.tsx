@@ -20,6 +20,7 @@ export default function NoticeCreatePage() {
   const [content, setContent] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [templateImageUrl, setTemplateImageUrl] = useState<string>(''); // ✅ 템플릿에서 가져온 이미지 URL
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -30,6 +31,39 @@ export default function NoticeCreatePage() {
       setSelectedCohortId(cohortIdFromUrl);
     }
   }, [searchParams]);
+
+  // ✅ templateId가 있으면 템플릿 데이터 로드
+  useEffect(() => {
+    const templateId = searchParams.get('templateId');
+    if (!templateId || !user) return;
+
+    const fetchTemplate = async () => {
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch(`/api/datacntr/notice-templates/${templateId}`, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('템플릿 조회 실패');
+        }
+
+        const template = await response.json();
+        setContent(template.content);
+        if (template.imageUrl) {
+          setImagePreview(template.imageUrl);
+          setTemplateImageUrl(template.imageUrl); // ✅ 템플릿 이미지 URL 저장
+        }
+      } catch (error) {
+        logger.error('템플릿 로드 실패:', error);
+        alert('템플릿을 불러오는데 실패했습니다.');
+      }
+    };
+
+    fetchTemplate();
+  }, [searchParams, user]);
 
   // 코호트 목록 조회
   useEffect(() => {
@@ -79,6 +113,7 @@ export default function NoticeCreatePage() {
     }
 
     setImageFile(file);
+    setTemplateImageUrl(''); // ✅ 새 이미지 선택 시 템플릿 이미지 URL 초기화
 
     // 미리보기 생성
     const reader = new FileReader();
@@ -92,6 +127,7 @@ export default function NoticeCreatePage() {
   const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview('');
+    setTemplateImageUrl(''); // ✅ 템플릿 이미지 URL도 제거
   };
 
   // 공지 작성/임시저장 제출
@@ -118,8 +154,14 @@ export default function NoticeCreatePage() {
       formData.append('cohortId', selectedCohortId);
       formData.append('content', content.trim());
       formData.append('status', isDraft ? 'draft' : 'published');
+
+      // ✅ 새 이미지 파일이 있으면 업로드
       if (imageFile) {
         formData.append('image', imageFile);
+      }
+      // ✅ 템플릿 이미지 URL이 있으면 전달 (새 이미지가 없을 때만)
+      else if (templateImageUrl) {
+        formData.append('templateImageUrl', templateImageUrl);
       }
 
       const response = await fetch('/api/datacntr/notices/create', {

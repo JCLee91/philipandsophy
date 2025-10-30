@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Plus, BookTemplate, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Loader2, BookTemplate, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import type { NoticeTemplate } from '@/types/database';
 import { CATEGORY_LABELS } from '@/lib/firebase/notice-templates';
 import EditTemplateModal from '@/components/datacntr/EditTemplateModal';
@@ -144,26 +144,17 @@ export default function NoticeTemplatesPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push('/datacntr/notices')}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">공지 템플릿 관리</h1>
-            <p className="text-gray-600 mt-2">재활용 가능한 공지 템플릿</p>
-          </div>
-        </div>
+      <div className="flex items-center gap-4 mb-8">
         <button
-          type="button"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          onClick={() => router.push('/datacntr/notices')}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
-          <Plus className="h-5 w-5" />
-          새 템플릿 추가
+          <ArrowLeft className="h-5 w-5" />
         </button>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">공지 템플릿 관리</h1>
+          <p className="text-gray-600 mt-2">공지 작성 시 "템플릿으로 저장"으로 추가</p>
+        </div>
       </div>
 
       {/* 통계 */}

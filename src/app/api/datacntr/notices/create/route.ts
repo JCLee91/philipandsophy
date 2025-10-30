@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     const content = formData.get('content') as string;
     const status = formData.get('status') as string;
     const imageFile = formData.get('image') as File | null;
+    const templateImageUrl = formData.get('templateImageUrl') as string | null; // ✅ 템플릿에서 가져온 이미지 URL
 
     // 4. 필수 필드 검증
     if (!cohortId || !content) {
@@ -50,9 +51,10 @@ export async function POST(request: NextRequest) {
     // 5. Firebase Admin 초기화
     const { db, bucket } = getFirebaseAdmin();
 
-    // 6. 이미지 업로드 (있는 경우)
+    // 6. 이미지 처리
     let imageUrl: string | undefined;
 
+    // ✅ 새로 업로드한 이미지가 있으면 업로드 처리
     if (imageFile) {
       try {
         const timestamp = Date.now();
@@ -80,6 +82,9 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+    } else if (templateImageUrl) {
+      // ✅ 템플릿에서 가져온 이미지 URL 사용
+      imageUrl = templateImageUrl;
     }
 
     // 7. 공지 생성

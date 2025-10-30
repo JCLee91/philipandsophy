@@ -9,19 +9,18 @@ import { useAuth } from '@/contexts/AuthContext';
 interface NoticeTemplateSelectorProps {
   cohortId: string;
   onClose: () => void;
-  onSuccess: () => void;
+  onSelectTemplate: (templateId: string) => void; // ✅ 템플릿 선택 시 콜백
 }
 
 export default function NoticeTemplateSelector({
   cohortId,
   onClose,
-  onSuccess,
+  onSelectTemplate,
 }: NoticeTemplateSelectorProps) {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<NoticeTemplate[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState<string>(''); // ✅ 단일 선택
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   // 템플릿 로드
@@ -64,56 +63,20 @@ export default function NoticeTemplateSelector({
     {} as Record<string, NoticeTemplate[]>
   );
 
-  // 체크박스 토글
-  const toggleTemplate = (templateId: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(templateId)
-        ? prev.filter((id) => id !== templateId)
-        : [...prev, templateId]
-    );
+  // ✅ 라디오 버튼 선택
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedId(templateId);
   };
 
-  // 템플릿에서 공지 생성
-  const handleSubmit = async () => {
-    if (selectedIds.length === 0) {
+  // ✅ 템플릿 선택 후 공지 작성 페이지로 이동
+  const handleSubmit = () => {
+    if (!selectedId) {
       alert('템플릿을 선택해주세요');
       return;
     }
 
-    if (!user) {
-      alert('로그인이 필요합니다');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      const idToken = await user.getIdToken();
-      const response = await fetch('/api/datacntr/notices/from-templates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          cohortId,
-          templateIds: selectedIds,
-          author: '운영자',
-        }),
-      });
-
-      if (!response.ok) throw new Error('공지 생성 실패');
-
-      const result = await response.json();
-      alert(`${result.createdCount}개의 공지가 생성되었습니다`);
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSelectTemplate(selectedId);
+    onClose();
   };
 
   return (
@@ -136,11 +99,11 @@ export default function NoticeTemplateSelector({
           </button>
         </div>
 
-        {/* 선택된 개수 */}
-        {selectedIds.length > 0 && (
+        {/* 선택된 템플릿 표시 */}
+        {selectedId && (
           <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
             <p className="text-sm text-blue-900 font-medium">
-              {selectedIds.length}개 선택됨
+              템플릿 1개 선택됨
             </p>
           </div>
         )}
@@ -166,14 +129,19 @@ export default function NoticeTemplateSelector({
                     {categoryTemplates.map((template) => (
                       <label
                         key={template.id}
-                        className="flex items-start gap-3 p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-colors"
+                        className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
+                          selectedId === template.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                        }`}
                       >
                         <div className="flex items-center h-6">
                           <input
-                            type="checkbox"
-                            checked={selectedIds.includes(template.id)}
-                            onChange={() => toggleTemplate(template.id)}
-                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                            type="radio"
+                            name="template"
+                            checked={selectedId === template.id}
+                            onChange={() => handleSelectTemplate(template.id)}
+                            className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                           />
                         </div>
                         <div className="flex-1">
@@ -181,7 +149,7 @@ export default function NoticeTemplateSelector({
                             <h4 className="font-semibold text-gray-900">
                               {template.title}
                             </h4>
-                            {selectedIds.includes(template.id) && (
+                            {selectedId === template.id && (
                               <Check className="h-5 w-5 text-blue-600" />
                             )}
                           </div>
@@ -210,17 +178,10 @@ export default function NoticeTemplateSelector({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={selectedIds.length === 0 || isSubmitting}
+            disabled={!selectedId}
             className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                생성 중...
-              </>
-            ) : (
-              `선택한 템플릿 ${selectedIds.length}개 적용하기`
-            )}
+            템플릿 적용하기
           </button>
         </div>
       </div>

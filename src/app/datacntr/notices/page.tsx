@@ -1,146 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Bell, Calendar, User, BookTemplate, Save, Settings, Trash2, GripVertical, PenSquare, Edit } from 'lucide-react';
+import { Loader2, Bell, Calendar } from 'lucide-react';
 import { useDatacntrStore } from '@/stores/datacntr-store';
-import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import type { Notice, Cohort } from '@/types/database';
 import NoticeTemplateSelector from '@/components/datacntr/NoticeTemplateSelector';
 import SaveAsTemplateModal from '@/components/datacntr/SaveAsTemplateModal';
-import { logger } from '@/lib/logger';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import CohortHeader from '@/components/datacntr/CohortHeader';
+import NoticeCard from '@/components/datacntr/NoticeCard';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 
 interface NoticeWithCohort extends Notice {
   cohortName: string;
-}
-
-// Sortable Notice Item Component
-function SortableNoticeItem({
-  notice,
-  onSaveAsTemplate,
-  onDelete,
-  onEdit,
-}: {
-  notice: NoticeWithCohort;
-  onSaveAsTemplate: (noticeId: string) => void;
-  onDelete: (noticeId: string, author: string) => void;
-  onEdit: (noticeId: string) => void;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: notice.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-300 transition-colors"
-    >
-      {/* 헤더 */}
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-xs">
-          <User className="h-3 w-3 text-gray-500" />
-          <span className="font-medium text-gray-900">{notice.author}</span>
-          {notice.status === 'draft' && (
-            <>
-              <span className="text-gray-300">·</span>
-              <span className="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-[10px] font-semibold">
-                임시저장
-              </span>
-            </>
-          )}
-          {notice.templateId && (
-            <>
-              <span className="text-gray-300">·</span>
-              <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">
-                템플릿
-              </span>
-            </>
-          )}
-          <span className="text-gray-400">·</span>
-          <span className="text-gray-500">
-            {formatTimestampKST(notice.createdAt, 'M/d HH:mm')}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onEdit(notice.id)}
-            className="p-1.5 text-gray-600 rounded hover:text-green-600 hover:bg-green-50 transition-colors"
-            title="편집"
-          >
-            <Edit className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onSaveAsTemplate(notice.id)}
-            className="p-1.5 text-gray-600 rounded hover:text-blue-600 hover:bg-blue-50 transition-colors"
-            title="템플릿으로 저장"
-          >
-            <Save className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(notice.id, notice.author)}
-            className="p-1.5 text-gray-600 rounded hover:text-red-600 hover:bg-red-50 transition-colors"
-            title="삭제"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* 내용 */}
-      <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">{notice.content}</p>
-
-      {/* 이미지 */}
-      {notice.imageUrl && (
-        <div className="mt-2">
-          <Image
-            src={notice.imageUrl}
-            alt="공지 이미지"
-            width={200}
-            height={150}
-            className="max-w-[200px] rounded border border-gray-200 h-auto"
-            unoptimized
-          />
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function NoticesPage() {
@@ -245,23 +120,10 @@ export default function NoticesPage() {
     setShowTemplateSelector(true);
   };
 
-  // 템플릿 적용 후 새로고침
-  const handleTemplateSuccess = async () => {
+  // ✅ 템플릿 선택 후 공지 작성 페이지로 이동
+  const handleSelectTemplate = (templateId: string) => {
     setShowTemplateSelector(false);
-    // 공지 목록 새로고침
-    if (!user) return;
-
-    const idToken = await user.getIdToken();
-    const response = await fetch('/api/datacntr/notices', {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      setNotices(data);
-    }
+    router.push(`/datacntr/notices/create?cohortId=${selectedCohortId}&templateId=${templateId}`);
   };
 
   // 공지를 템플릿으로 저장 (모달 열기)
@@ -274,66 +136,6 @@ export default function NoticesPage() {
   const handleSaveAsTemplateSuccess = () => {
     setShowSaveAsTemplateModal(false);
     setSelectedNoticeId('');
-  };
-
-  // 드래그 앤 드롭 센서 설정
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  // 드래그 종료 핸들러
-  const handleDragEnd = async (event: DragEndEvent, cohortId: string, cohortNotices: NoticeWithCohort[]) => {
-    const { active, over } = event;
-
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = cohortNotices.findIndex((n) => n.id === active.id);
-    const newIndex = cohortNotices.findIndex((n) => n.id === over.id);
-
-    const reorderedNotices = arrayMove(cohortNotices, oldIndex, newIndex);
-
-    // 낙관적 업데이트 (UI 즉시 반영)
-    const updatedNotices = notices.map((notice) => {
-      if (notice.cohortId !== cohortId) return notice;
-      const newPosition = reorderedNotices.findIndex((n) => n.id === notice.id);
-      return {
-        ...notice,
-        order: newPosition + 1, // 1부터 시작
-      };
-    });
-    setNotices(updatedNotices);
-
-    // 서버에 순서 업데이트 요청
-    if (!user) return;
-
-    try {
-      const idToken = await user.getIdToken();
-      const noticeOrders = reorderedNotices.map((notice, index) => ({
-        noticeId: notice.id,
-        order: index + 1,
-      }));
-
-      const response = await fetch('/api/datacntr/notices/reorder', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ noticeOrders }),
-      });
-
-      if (!response.ok) {
-        throw new Error('순서 변경 실패');
-      }
-    } catch (error) {
-
-      alert('순서 변경 중 오류가 발생했습니다');
-      // 실패 시 원래 데이터로 복구
-      await handleTemplateSuccess();
-    }
   };
 
   // 공지 삭제
@@ -392,7 +194,7 @@ export default function NoticesPage() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* 헤더 */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">공지사항 분석</h1>
+        <h1 className="text-3xl font-bold text-gray-900">공지사항</h1>
         <p className="text-gray-600 mt-2">
           {selectedCohortFilter === 'all'
             ? '전체 공지사항 내역'
@@ -444,59 +246,26 @@ export default function NoticesPage() {
           return (
           <div key={cohort.cohortId}>
             {/* 기수 헤더 */}
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">{cohort.cohortName}</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => router.push(`/datacntr/notices/create?cohortId=${cohort.cohortId}`)}
-                  className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                >
-                  <PenSquare className="h-4 w-4" />
-                  공지 작성
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAddTemplate(cohort.cohortId)}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                >
-                  <BookTemplate className="h-4 w-4" />
-                  템플릿 사용
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push('/datacntr/notice-templates')}
-                  className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-                >
-                  <Settings className="h-4 w-4" />
-                  템플릿 관리
-                </button>
-              </div>
-            </div>
+            <CohortHeader
+              cohortName={cohort.cohortName}
+              cohortId={cohort.cohortId}
+              onCreateNotice={() => router.push(`/datacntr/notices/create?cohortId=${cohort.cohortId}`)}
+              onUseTemplate={() => handleAddTemplate(cohort.cohortId)}
+              onManageTemplates={() => router.push('/datacntr/notice-templates')}
+            />
 
             {/* 공지 목록 */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => handleDragEnd(event, cohort.cohortId, sortedNotices)}
-            >
-              <SortableContext
-                items={sortedNotices.map((n) => n.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {sortedNotices.map((notice) => (
-                    <SortableNoticeItem
-                      key={notice.id}
-                      notice={notice}
-                      onSaveAsTemplate={handleSaveAsTemplate}
-                      onDelete={handleDeleteNotice}
-                      onEdit={(noticeId) => router.push(`/datacntr/notices/edit/${noticeId}`)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+            <div className="space-y-2">
+              {sortedNotices.map((notice) => (
+                <NoticeCard
+                  key={notice.id}
+                  notice={notice}
+                  onEdit={() => router.push(`/datacntr/notices/edit/${notice.id}`)}
+                  onSaveAsTemplate={() => handleSaveAsTemplate(notice.id)}
+                  onDelete={() => handleDeleteNotice(notice.id, notice.author)}
+                />
+              ))}
+            </div>
 
             {cohort.notices.length === 0 && (
               <div className="bg-gray-50 rounded-lg p-8 text-center">
@@ -523,7 +292,7 @@ export default function NoticesPage() {
         <NoticeTemplateSelector
           cohortId={selectedCohortId}
           onClose={() => setShowTemplateSelector(false)}
-          onSuccess={handleTemplateSuccess}
+          onSelectTemplate={handleSelectTemplate}
         />
       )}
 
