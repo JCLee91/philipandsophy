@@ -1075,24 +1075,20 @@ export const sendMatchingNotifications = onRequest(
 );
 
 /**
- * 4. 매일 정오 자동 매칭 실행 (Scheduled 함수)
+ * 4. 매일 오후 2시 자동 매칭 실행 (Scheduled 함수)
  *
- * 매일 정오 12시 (KST)에 자동으로 실행
+ * 매일 오후 2시 (KST)에 자동으로 실행
  * 1. Preview API 호출하여 매칭 결과 생성
  * 2. Confirm API 호출하여 즉시 확정 및 알림 전송
  */
 export const scheduledMatchingPreview = onSchedule(
   {
-    schedule: "0 12 * * *", // 매일 정오 12시 (KST)
+    schedule: "0 14 * * *", // 매일 오후 2시 (KST)
     timeZone: "Asia/Seoul",
     timeoutSeconds: 540, // 9분 (API 응답 대기)
     memory: "1GiB",
   },
   async (event) => {
-    // ⛔ 자동 매칭 임시 비활성화
-    logger.info("🤖 Scheduled matching is currently disabled");
-    return;
-
     logger.info("🤖 Scheduled matching preview started");
 
     try {
