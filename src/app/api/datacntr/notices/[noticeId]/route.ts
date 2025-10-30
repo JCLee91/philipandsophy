@@ -124,7 +124,8 @@ export async function PUT(
 
     const oldNoticeData = noticeDoc.data();
     const oldStatus = oldNoticeData?.status || 'published';
-    const newStatus = status || 'published';
+    // ✅ status 기본값 처리 개선 (빈 문자열 ''도 'published'로 처리되는 문제 방지)
+    const newStatus = status === 'draft' ? 'draft' : 'published';
 
     // 7. 이미지 처리
     let imageUrl: string | undefined = existingImageUrl || undefined;

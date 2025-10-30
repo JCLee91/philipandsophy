@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. 공지 생성
-    const finalStatus = status || 'published';
+    // ✅ status 기본값 처리 개선 (빈 문자열 ''도 'published'로 처리되는 문제 방지)
+    const finalStatus = status === 'draft' ? 'draft' : 'published';
     const noticeData = {
       cohortId,
       author: APP_CONSTANTS.ADMIN_NAME, // 항상 "필립앤소피"로 고정
