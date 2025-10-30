@@ -140,17 +140,17 @@ function validateMatching(
   const recommendationCounts = new Map<string, number>();
   const genderMap = new Map(participants.map(p => [p.id, p.gender]));
 
-  // 1. 모든 추천 카운트
+  // 1. 모든 추천 카운트 (누가 몇 번 추천받았는지)
   for (const assignment of Object.values(matching.assignments)) {
     [...assignment.similar, ...assignment.opposite].forEach(id =>
       recommendationCounts.set(id, (recommendationCounts.get(id) || 0) + 1)
     );
   }
 
-  // 2. 추천을 받지 못한 참가자 찾기 (치명적 오류)
-  const unrecommended = participants.filter(p => !recommendationCounts.has(p.id));
-  if (unrecommended.length > 0) {
-    errors.push(`추천받지 못한 참가자 ${unrecommended.length}명: ${unrecommended.map(p => p.name).join(', ')}`);
+  // 2. 매칭 배정이 없는 참가자 찾기 (assignments 키에 없음)
+  const unassigned = participants.filter(p => !matching.assignments[p.id]);
+  if (unassigned.length > 0) {
+    errors.push(`매칭 배정이 없는 참가자 ${unassigned.length}명: ${unassigned.map(p => p.name).join(', ')}`);
   }
 
   // 3. 각 참가자의 추천 검증
@@ -183,10 +183,22 @@ function validateMatching(
     }
 
     // 3-4. 성별 균형 확인 (1남 + 1여)
-    if (!hasGenderBalance(assignment.similar, genderMap)) {
+    const similarGenders = assignment.similar.map(id => genderMap.get(id));
+    const oppositeGenders = assignment.opposite.map(id => genderMap.get(id));
+
+    // 성별 정보 누락 체크
+    const similarMissingGender = similarGenders.filter(g => !g || (g !== 'male' && g !== 'female'));
+    const oppositeMissingGender = oppositeGenders.filter(g => !g || (g !== 'male' && g !== 'female'));
+
+    if (similarMissingGender.length > 0) {
+      errors.push(`${name}의 similar 추천에 성별 정보가 없는 참가자가 포함되어 있습니다.`);
+    } else if (!hasGenderBalance(assignment.similar, genderMap)) {
       errors.push(`${name}의 similar 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.`);
     }
-    if (!hasGenderBalance(assignment.opposite, genderMap)) {
+
+    if (oppositeMissingGender.length > 0) {
+      errors.push(`${name}의 opposite 추천에 성별 정보가 없는 참가자가 포함되어 있습니다.`);
+    } else if (!hasGenderBalance(assignment.opposite, genderMap)) {
       errors.push(`${name}의 opposite 그룹이 성별 균형(1남+1여)을 만족하지 않습니다.`);
     }
 
@@ -213,8 +225,17 @@ function validateMatching(
       recommendationCounts.size
     ).toFixed(1);
 
+    logger.info('매칭 검증 통과', {
+      participantCount: participants.length,
+      avgRecommendations,
+      totalRecommendations: Array.from(recommendationCounts.values()).reduce((a, b) => a + b, 0),
+    });
   } else {
-
+    logger.error('매칭 검증 실패', {
+      participantCount: participants.length,
+      errorCount: errors.length,
+      errors: errors.slice(0, 5), // 처음 5개만 로깅 (과도한 로그 방지)
+    });
   }
 
   return {
