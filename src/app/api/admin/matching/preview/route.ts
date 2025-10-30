@@ -182,6 +182,12 @@ export async function POST(request: NextRequest) {
         notSubmitted: notSubmittedParticipants.length,
         notSubmittedList: notSubmittedParticipants,
       },
+      debug: {
+        provider: process.env.AI_PROVIDER || 'openai',
+        model: process.env.AI_MODEL || 'gpt-4o-mini',
+        participantCount: participantAnswers.length,
+        timestamp: new Date().toISOString(),
+      },
     });
 
   } catch (error) {

@@ -3,6 +3,14 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
+  "functions": {
+    "src/app/api/admin/matching/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/admin/matching/preview/route.ts": {
+      "maxDuration": 60
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
