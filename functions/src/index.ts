@@ -46,13 +46,8 @@ const cohortIdParam = defineString("DEFAULT_COHORT_ID", {
   default: "2",
 });
 
-const apiBaseUrlParam = defineString("API_BASE_URL", {
-  description: "Base URL for API calls",
-  default: "https://philipandsophy.vercel.app",
-});
-
 const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
-  description: "Internal secret for Cron ↔ Next.js API authentication",
+  description: "Internal secret for scheduled function authentication",
   default: "",
 });
 
@@ -1093,7 +1088,6 @@ export const scheduledMatchingPreview = onSchedule(
 
     try {
       // 1. 환경 설정
-      const apiBaseUrl = apiBaseUrlParam.value();
       const internalSecret = internalSecretParam.value();
 
       // 2. INTERNAL_SERVICE_SECRET 검증 (필수)
@@ -1191,6 +1185,37 @@ export const scheduledMatchingPreview = onSchedule(
       // 4. ✅ Firestore에 직접 매칭 결과 저장 (Vercel API 호출 불필요)
       logger.info(`Saving confirmed matching to Firestore for cohort: ${cohortId}`);
 
+      // ✅ Cohort 문서에 dailyFeaturedParticipants 업데이트 (Transaction)
+      const cohortRef = admin.firestore().collection("cohorts").doc(cohortId);
+
+      await admin.firestore().runTransaction(async (transaction) => {
+        const cohortDoc = await transaction.get(cohortRef);
+
+        if (!cohortDoc.exists) {
+          throw new Error(`Cohort ${cohortId} not found`);
+        }
+
+        const cohortData = cohortDoc.data();
+        const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
+
+        // ✅ Race condition 방지: 이미 해당 날짜의 매칭이 있으면 스킵
+        if (dailyFeaturedParticipants[previewResult.date]?.assignments) {
+          logger.warn(`Matching for date ${previewResult.date} already exists, skipping confirm`);
+          return;
+        }
+
+        // ✅ 매칭 결과 저장 (날짜를 키로 사용)
+        dailyFeaturedParticipants[previewResult.date] = previewResult.matching;
+
+        transaction.update(cohortRef, {
+          dailyFeaturedParticipants,
+          updatedAt: admin.firestore.Timestamp.now(),
+        });
+
+        logger.info(`✅ Updated Cohort dailyFeaturedParticipants for date: ${previewResult.date}`);
+      });
+
+      // ✅ matching_results 컬렉션에도 백업 저장
       const confirmData = {
         cohortId,
         date: previewResult.date,
@@ -1200,7 +1225,7 @@ export const scheduledMatchingPreview = onSchedule(
         featuredParticipants: previewResult.featuredParticipants,
         submissionStats: previewResult.submissionStats,
         confirmedAt: admin.firestore.Timestamp.now(),
-        confirmedBy: "scheduled_function", // 스케줄러에 의한 자동 확정
+        confirmedBy: "scheduled_function",
       };
 
       const confirmRef = admin
