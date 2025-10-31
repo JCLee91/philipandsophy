@@ -193,6 +193,8 @@ export default function PhoneAuthCard() {
     setError('');
 
     try {
+      // ✅ Firebase 공식 패턴: confirmationResult.confirm() 호출
+      // 성공 시 Firebase가 자동으로 onAuthStateChanged 트리거
       const userCredential = await confirmSmsCode(
         confirmationResultRef.current,
         verificationCode
@@ -203,52 +205,22 @@ export default function PhoneAuthCard() {
         const cleanNumber = phoneNumber.replace(/-/g, '');
         localStorage.setItem(LAST_PHONE_KEY, cleanNumber);
       } catch (error) {
-
+        // localStorage 에러는 무시
       }
 
-      // Firestore에서 participant 조회
-      // 1순위: firebaseUid로 조회 (이미 연결된 계정)
-      // 2순위: 전화번호로 조회 후 firebaseUid 연결 (첫 로그인)
+      // ✅ Firebase UID 연결 (필요시)
       const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid } = await import('@/lib/firebase');
 
       let participant = await getParticipantByFirebaseUid(userCredential.user.uid);
 
       if (!participant) {
-        // firebaseUid가 없는 경우 → 전화번호로 조회
+        // firebaseUid가 없는 경우 → 전화번호로 조회 후 연결
         const cleanNumber = phoneNumber.replace(/-/g, '');
         participant = await getParticipantByPhoneNumber(cleanNumber);
 
-        if (participant) {
-          // Firebase UID 연결 또는 업데이트
-          // Firebase Auth는 동일 전화번호로 새 계정 생성 시 자동으로 기존 계정 재사용
-          // 따라서 항상 현재 Firebase UID로 업데이트 (안전함)
-          if (participant.firebaseUid !== userCredential.user.uid) {
-            await linkFirebaseUid(participant.id, userCredential.user.uid);
-
-            // ✅ UID 연결 직후 AuthContext가 최신 participant 데이터를 가져오도록 재시도
-
-            await retryParticipantFetch();
-
-            // ✅ AuthContext가 ready 상태가 될 때까지 대기 (최대 3초)
-            const waitForReady = async () => {
-              const maxWaitTime = 3000; // 3초
-              const checkInterval = 100; // 100ms마다 체크
-              const startTime = Date.now();
-
-              while (Date.now() - startTime < maxWaitTime) {
-                // ✅ ref를 사용하여 최신 participantStatus 값 읽기
-                if (participantStatusRef.current === 'ready') {
-
-                  return true;
-                }
-                await new Promise(resolve => setTimeout(resolve, checkInterval));
-              }
-
-              return false;
-            };
-
-            await waitForReady();
-          }
+        if (participant && participant.firebaseUid !== userCredential.user.uid) {
+          await linkFirebaseUid(participant.id, userCredential.user.uid);
+          // ✅ UID 연결 완료 → AuthContext의 onAuthStateChanged가 자동으로 감지함
         }
       }
 
@@ -258,16 +230,16 @@ export default function PhoneAuthCard() {
         return;
       }
 
-      // 채팅 페이지로 이동 (Firebase Auth가 자동으로 세션 관리)
-      router.replace(appRoutes.chat(participant.cohortId));
+      // ✅ 인증 성공!
+      // Firebase의 onAuthStateChanged가 자동으로 트리거되고,
+      // AuthContext가 participant를 로드하며,
+      // 상위 컴포넌트(/app/page.tsx)가 자동으로 리다이렉트함
+      // 로딩 상태 유지 (리다이렉트 전까지)
+
     } catch (error: any) {
-
       setError(error.message || AUTH_ERROR_MESSAGES.AUTH_FAILED);
-
-      // 보안: 인증 실패 시 confirmationResult 초기화 (brute force 방지)
       confirmationResultRef.current = null;
-      setVerificationCode(''); // 입력 필드도 초기화
-    } finally {
+      setVerificationCode('');
       setIsSubmitting(false);
     }
   };
