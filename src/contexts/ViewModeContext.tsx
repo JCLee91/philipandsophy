@@ -12,6 +12,7 @@ interface ViewModeContextType {
   setViewMode: (mode: ViewMode) => void;
   canSwitchMode: boolean; // 관리자 권한이 있어서 모드 전환 가능한지
   toggleViewMode: () => void;
+  isReady: boolean; // 뷰 모드 초기화 완료 여부
 }
 
 const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
@@ -19,6 +20,7 @@ const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined
 export function ViewModeProvider({ children }: { children: ReactNode }) {
   const { participant, isLoading } = useAuth();
   const [viewMode, setViewModeState] = useState<ViewMode>('participant');
+  const [isReady, setIsReady] = useState(false);
 
   // 관리자 권한이 있는지 확인 (일반 관리자 또는 슈퍼 관리자)
   const canSwitchMode = !isLoading && (participant?.isAdministrator === true || participant?.isSuperAdmin === true);
@@ -38,6 +40,9 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
       setViewModeState('participant');
       localStorage.removeItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE);
     }
+
+    // ✅ 초기화 완료
+    setIsReady(true);
   }, [canSwitchMode, isLoading]);
 
   // 모드 설정 함수
@@ -64,7 +69,8 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
         viewMode,
         setViewMode,
         canSwitchMode,
-        toggleViewMode
+        toggleViewMode,
+        isReady
       }}
     >
       {children}

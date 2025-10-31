@@ -10,7 +10,7 @@ import { CARD_STYLES } from '@/constants/ui';
 import { logger } from '@/lib/logger';
 import { getAdminHeaders } from '@/lib/auth-utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsAdminMode } from '@/contexts/ViewModeContext';
+import { useViewMode } from '@/contexts/ViewModeContext';
 import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-count';
 import { useTodaySubmissionCount } from '@/hooks/use-today-submission-count';
 import PageTransition from '@/components/PageTransition';
@@ -39,7 +39,7 @@ function MatchingPageContent() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
   const { participant, isLoading: sessionLoading } = useAuth();
-  const isAdminMode = useIsAdminMode();
+  const { viewMode, canSwitchMode, setViewMode, isReady: viewModeReady } = useViewMode();
   const { toast } = useToast();
   const { data: cohortParticipants = [], isLoading: participantsLoading, isFromCache } = useParticipantsByCohortRealtime(cohortId || undefined);
 
@@ -387,29 +387,32 @@ function MatchingPageContent() {
       });
   }, [previewResult, confirmedResult, cohortParticipants, participantsById]);
 
-  // 권한 체크
+  // 권한 체크 (뷰 모드 초기화 완료 후 실행)
   useEffect(() => {
-    if (!sessionLoading) {
-      if (!participant) {
-        router.replace('/app');
-        return;
-      }
-      // 🔒 관리자 모드 체크
-      if (!isAdminMode) {
-        toast({
-          title: '접근 권한 없음',
-          description: '관리자 모드에서만 접근할 수 있는 페이지입니다.',
-          variant: 'destructive',
-        });
-        router.replace(`/app/chat?cohort=${cohortId}`);
-        return;
-      }
-      if (!cohortId) {
-        router.replace('/app');
-        return;
-      }
+    // ✅ 세션 로딩 중이거나 뷰 모드 초기화 중이면 대기
+    if (sessionLoading || !viewModeReady) return;
+
+    if (!participant) {
+      router.replace('/app');
+      return;
     }
-  }, [sessionLoading, participant, cohortId, router, toast, isAdminMode]);
+
+    // ✅ 참가자에게 관리자 권한이 있는데 participant 모드라면 자동 승격
+    if (canSwitchMode && viewMode !== 'admin') {
+      setViewMode('admin');
+      return;
+    }
+
+    // ✅ 실제로 권한이 없으면 그때만 차단
+    if (!canSwitchMode) {
+      toast({
+        title: '접근 권한 없음',
+        description: '관리자만 볼 수 있는 페이지입니다.',
+        variant: 'destructive',
+      });
+      router.replace(`/app/chat?cohort=${cohortId}`);
+    }
+  }, [sessionLoading, viewModeReady, participant, canSwitchMode, viewMode, setViewMode, cohortId, router, toast]);
 
   // 기존 매칭 결과 로드 (오늘 날짜 기준 - Firestore에 저장된 키)
   const fetchMatchingResult = useCallback(async () => {
@@ -710,8 +713,8 @@ function MatchingPageContent() {
     );
   }
 
-  // 관리자 모드가 아니거나 cohortId가 없으면 접근 불가
-  if (!isAdminMode || !cohortId) {
+  // 뷰 모드 초기화 중이거나 권한이 없거나 cohortId가 없으면 접근 불가
+  if (!viewModeReady || !canSwitchMode || viewMode !== 'admin' || !cohortId) {
     return null;
   }
 

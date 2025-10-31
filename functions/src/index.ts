@@ -1123,10 +1123,12 @@ export const scheduledMatchingPreview = onSchedule(
 
       logger.info(`Active cohort detected: ${cohortId}`);
 
-      // 4. Preview API 호출
-      logger.info(`Calling preview API for cohort: ${cohortId}`);
+      // 4. ✅ Cloud Functions manualMatchingPreview 직접 호출 (Vercel 60초 제한 회피)
+      logger.info(`Calling Cloud Functions manualMatchingPreview for cohort: ${cohortId}`);
 
-      const response = await fetch(`${apiBaseUrl}/api/admin/matching/preview`, {
+      const cloudFunctionsUrl = `https://us-central1-philipandsophy.cloudfunctions.net/manualMatchingPreview`;
+
+      const response = await fetch(cloudFunctionsUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1136,16 +1138,16 @@ export const scheduledMatchingPreview = onSchedule(
       });
 
       if (!response.ok) {
-        throw new Error(`Preview API failed: ${response.status}`);
+        throw new Error(`Cloud Functions preview failed: ${response.status}`);
       }
 
       const previewResult = await response.json();
 
       if (!previewResult.success) {
-        throw new Error(`Preview API returned error: ${previewResult.error}`);
+        throw new Error(`Cloud Functions preview returned error: ${previewResult.error}`);
       }
 
-      logger.info(`Preview generated successfully: ${previewResult.totalParticipants} participants`);
+      logger.info(`✅ Preview generated successfully via Cloud Functions: ${previewResult.totalParticipants} participants`);
 
       // 3. Firestore에 임시 저장 (관리자가 검토할 수 있도록)
       const previewData = {
@@ -1186,34 +1188,32 @@ export const scheduledMatchingPreview = onSchedule(
 
       logger.info(`Preview saved to Firestore: ${previewRef.id}`);
 
-      // 4. 즉시 확정 API 호출 (내부 인증으로 자동 확정)
-      logger.info(`Calling confirm API for cohort: ${cohortId}`);
+      // 4. ✅ Firestore에 직접 매칭 결과 저장 (Vercel API 호출 불필요)
+      logger.info(`Saving confirmed matching to Firestore for cohort: ${cohortId}`);
 
-      const confirmResponse = await fetch(`${apiBaseUrl}/api/admin/matching/confirm`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Internal-Secret": internalSecret,
-        },
-        body: JSON.stringify({
-          cohortId,
-          matching: previewResult.matching,
-          date: previewResult.date,
-        }),
-      });
+      const confirmData = {
+        cohortId,
+        date: previewResult.date,
+        matching: previewResult.matching,
+        question: previewResult.question,
+        totalParticipants: previewResult.totalParticipants,
+        featuredParticipants: previewResult.featuredParticipants,
+        submissionStats: previewResult.submissionStats,
+        confirmedAt: admin.firestore.Timestamp.now(),
+        confirmedBy: "scheduled_function", // 스케줄러에 의한 자동 확정
+      };
 
-      if (!confirmResponse.ok) {
-        const confirmError = await confirmResponse.json();
-        throw new Error(`Confirm API failed: ${confirmResponse.status} - ${JSON.stringify(confirmError)}`);
-      }
+      const confirmRef = admin
+        .firestore()
+        .collection("matching_results")
+        .doc(`${cohortId}-${previewResult.date}`);
 
-      const confirmResult = await confirmResponse.json();
+      await confirmRef.set(confirmData);
 
-      if (!confirmResult.success) {
-        throw new Error(`Confirm API returned error: ${confirmResult.error}`);
-      }
+      // Preview 상태를 confirmed로 업데이트
+      await previewRef.update({ status: "confirmed" });
 
-      logger.info(`✅ Matching confirmed successfully, now sending notifications`, {
+      logger.info(`✅ Matching confirmed and saved to Firestore, now sending notifications`, {
         cohortId,
         date: previewResult.date,
         totalParticipants: previewResult.totalParticipants,
