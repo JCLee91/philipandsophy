@@ -13,6 +13,7 @@ import TableSearch from '@/components/datacntr/table/TableSearch';
 import TimeDistributionChart from '@/components/datacntr/dashboard/TimeDistributionChart';
 import ParticipationPanel from '@/components/datacntr/dashboard/ParticipationPanel';
 import ReviewQualityPanel from '@/components/datacntr/dashboard/ReviewQualityPanel';
+import AllBooksPanel from '@/components/datacntr/dashboard/AllBooksPanel';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
@@ -180,6 +181,14 @@ export default function SubmissionsPage() {
               data={analytics.reviewQuality}
               isLoading={analyticsLoading}
             />
+
+            {/* 전체 책 목록 */}
+            <div className="lg:col-span-2">
+              <AllBooksPanel
+                data={analytics.allBooks}
+                isLoading={analyticsLoading}
+              />
+            </div>
           </div>
         </div>
       )}

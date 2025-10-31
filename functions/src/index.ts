@@ -1376,3 +1376,252 @@ export const beforeUserCreatedHandler = beforeUserCreated(async (event) => {
 
 // Export custom notifications
 export { sendCustomNotification } from "./custom-notifications";
+
+/**
+ * HTTP Function: Manual Matching Preview
+ * POST /manualMatchingPreview
+ * Body: { cohortId: string }
+ *
+ * Firebase Functions에서 직접 AI 매칭 실행 (Vercel 10초 타임아웃 회피)
+ */
+export const manualMatchingPreview = onRequest(
+  {
+    timeoutSeconds: 900, // 15분 타임아웃
+    memory: "1GiB",
+    cors: true,
+  },
+  async (req, res) => {
+    // CORS preflight
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+
+    // POST만 허용
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    let requestCohortId: string | undefined;
+
+    try {
+      const { cohortId } = req.body;
+      requestCohortId = cohortId;
+
+      if (!cohortId) {
+        res.status(400).json({ error: "cohortId is required" });
+        return;
+      }
+
+      // 인증 확인 (INTERNAL_SERVICE_SECRET 또는 Firebase Auth + Admin 권한 체크)
+      const internalSecret = req.headers["x-internal-secret"];
+      const expectedSecret = process.env.INTERNAL_SERVICE_SECRET;
+
+      if (!internalSecret || internalSecret !== expectedSecret) {
+        // Firebase Auth 토큰 확인
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          res.status(401).json({ error: "Unauthorized: Missing authentication token" });
+          return;
+        }
+
+        const token = authHeader.split("Bearer ")[1];
+        let decodedToken;
+        try {
+          decodedToken = await admin.auth().verifyIdToken(token);
+        } catch (error) {
+          logger.error("Token verification failed", { error });
+          res.status(401).json({ error: "Unauthorized: Invalid token" });
+          return;
+        }
+
+        // 🔒 SECURITY: 관리자 권한 확인 (Firestore에서 실제 권한 체크)
+        const userUid = decodedToken.uid;
+        const db = admin.firestore();
+
+        try {
+          const participantsSnapshot = await db
+            .collection("participants")
+            .where("firebaseUid", "==", userUid)
+            .limit(1)
+            .get();
+
+          if (participantsSnapshot.empty) {
+            res.status(403).json({ error: "Forbidden: User not found in participants" });
+            return;
+          }
+
+          const participantData = participantsSnapshot.docs[0].data();
+          const isAdmin = participantData.isAdministrator === true || participantData.isSuperAdmin === true;
+
+          if (!isAdmin) {
+            logger.warn("Non-admin user attempted to access matching endpoint", {
+              uid: userUid,
+              participantId: participantsSnapshot.docs[0].id
+            });
+            res.status(403).json({ error: "Forbidden: Admin privileges required" });
+            return;
+          }
+
+          logger.info("Admin access granted", {
+            uid: userUid,
+            participantId: participantsSnapshot.docs[0].id
+          });
+        } catch (error) {
+          logger.error("Admin check failed", { error });
+          res.status(500).json({ error: "Internal server error during authorization" });
+          return;
+        }
+      }
+
+      // ✅ Firebase Functions에서 직접 AI 매칭 실행
+      const { matchParticipantsByAI } = await import("./lib/ai-matching");
+      const { getDailyQuestionText } = await import("./constants/daily-questions");
+      const { getMatchingTargetDate, getTodayString } = await import("./lib/date-utils");
+      const { MATCHING_CONFIG } = await import("./constants/matching");
+
+      // 날짜 정의
+      const submissionDate = getMatchingTargetDate();
+      const matchingDate = getTodayString();
+      const submissionQuestion = getDailyQuestionText(submissionDate);
+
+      logger.info("Starting AI matching", { cohortId, submissionDate, matchingDate });
+
+      // Firestore에서 제출물 가져오기
+      const db = admin.firestore();
+      const submissionsSnapshot = await db
+        .collection("reading_submissions")
+        .where("submissionDate", "==", submissionDate)
+        .where("status", "!=", "draft")
+        .get();
+
+      if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
+        res.status(400).json({
+          error: "매칭하기에 충분한 참가자가 없습니다.",
+          message: `최소 ${MATCHING_CONFIG.MIN_PARTICIPANTS}명이 필요하지만 현재 ${submissionsSnapshot.size}명만 제출했습니다.`,
+          participantCount: submissionsSnapshot.size,
+        });
+        return;
+      }
+
+      // 참가자 정보 수집
+      const submissionsMap = new Map();
+      submissionsSnapshot.docs.forEach((doc) => {
+        const submission = doc.data();
+        submissionsMap.set(submission.participantId, submission);
+      });
+
+      const uniqueParticipantIds = Array.from(submissionsMap.keys());
+      const participantDataMap = new Map();
+
+      // Batch read (10개씩)
+      for (let i = 0; i < uniqueParticipantIds.length; i += MATCHING_CONFIG.BATCH_SIZE) {
+        const batchIds = uniqueParticipantIds.slice(i, i + MATCHING_CONFIG.BATCH_SIZE);
+        const participantDocs = await db
+          .collection("participants")
+          .where(admin.firestore.FieldPath.documentId(), "in", batchIds)
+          .get();
+
+        participantDocs.docs.forEach((doc) => {
+          participantDataMap.set(doc.id, doc.data());
+        });
+      }
+
+      // 참가자 답변 결합
+      const participantAnswers: any[] = [];
+      for (const [participantId, submission] of submissionsMap.entries()) {
+        const participant = participantDataMap.get(participantId);
+        if (!participant) continue;
+        if (!participant.cohortId || participant.cohortId !== cohortId) continue;
+        if (participant.isSuperAdmin) continue;
+
+        participantAnswers.push({
+          id: participantId,
+          name: participant.name,
+          answer: (submission as any).dailyAnswer,
+          gender: participant.gender,
+        });
+      }
+
+      if (participantAnswers.length < MATCHING_CONFIG.MIN_PARTICIPANTS) {
+        res.status(400).json({
+          error: "매칭하기에 충분한 참가자가 없습니다.",
+          message: `필터링 후 ${participantAnswers.length}명만 남았습니다.`,
+          participantCount: participantAnswers.length,
+        });
+        return;
+      }
+
+      // AI 매칭 실행
+      logger.info("Executing AI matching", { participantCount: participantAnswers.length });
+      const matching = await matchParticipantsByAI(submissionQuestion, participantAnswers);
+
+      // 제출 여부 통계
+      const allCohortParticipantsSnapshot = await db
+        .collection("participants")
+        .where("cohortId", "==", cohortId)
+        .get();
+
+      const submittedIds = new Set(participantAnswers.map((p) => p.id));
+      const notSubmittedParticipants = allCohortParticipantsSnapshot.docs
+        .filter((doc) => {
+          const participant = doc.data();
+          return !submittedIds.has(doc.id) && !participant.isSuperAdmin;
+        })
+        .map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+        }));
+
+      logger.info("AI matching completed", {
+        cohortId,
+        participantCount: participantAnswers.length,
+        validationValid: matching.validation?.valid,
+      });
+
+      res.status(200).json({
+        success: true,
+        preview: true,
+        date: matchingDate,
+        submissionDate,
+        question: submissionQuestion,
+        totalParticipants: participantAnswers.length,
+        matching: {
+          assignments: matching.assignments,
+        },
+        validation: matching.validation,
+        submissionStats: {
+          submitted: participantAnswers.length,
+          notSubmitted: notSubmittedParticipants.length,
+          notSubmittedList: notSubmittedParticipants,
+        },
+        debug: {
+          provider: process.env.AI_PROVIDER || "openai",
+          model: process.env.AI_MODEL || "gpt-4o-mini",
+          participantCount: participantAnswers.length,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const normalized = message.toLowerCase();
+      const isValidationError =
+        normalized.includes("성별 균형 매칭 불가") ||
+        normalized.includes("최소 4명의 참가자가 필요");
+
+      logger.error("Manual matching preview failed", {
+        cohortId: requestCohortId,
+        error: message,
+      });
+
+      const status = isValidationError ? 400 : 500;
+      res.status(status).json({
+        error: status === 400
+          ? "매칭 실행 조건을 충족하지 못했습니다."
+          : "매칭 실행 중 오류가 발생했습니다.",
+        message,
+      });
+    }
+  }
+);

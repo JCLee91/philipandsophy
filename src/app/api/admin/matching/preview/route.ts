@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
   const internalSecret = request.headers.get('x-internal-secret');
   const expectedSecret = process.env.INTERNAL_SERVICE_SECRET;
 
+  let requestCohortId: string | undefined;
+
   // 시크릿이 일치하면 관리자 인증 우회 (내부 서비스 인증됨)
   let isInternalCall = false;
   if (internalSecret && expectedSecret && internalSecret === expectedSecret) {
@@ -35,7 +37,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { cohortId } = await request.json();
+    const body = await request.json();
+    const { cohortId } = body ?? {};
+    requestCohortId = cohortId;
 
     if (!cohortId) {
       return NextResponse.json(
@@ -191,12 +195,26 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const normalized = message.toLowerCase();
+    const isValidationError =
+      normalized.includes('성별 균형 매칭 불가') ||
+      normalized.includes('최소 4명의 참가자가 필요');
 
+    logger.error('AI 매칭 프리뷰 실패', {
+      cohortId: requestCohortId,
+      error: message,
+    });
+
+    const status = isValidationError ? 400 : 500;
     return NextResponse.json(
       {
-        error: '매칭 실행 중 오류가 발생했습니다.',
+        error: status === 400
+          ? '매칭 실행 조건을 충족하지 못했습니다.'
+          : '매칭 실행 중 오류가 발생했습니다.',
+        message,
       },
-      { status: 500 }
+      { status }
     );
   }
 }

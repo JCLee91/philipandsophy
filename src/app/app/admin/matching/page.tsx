@@ -483,7 +483,8 @@ function MatchingPageContent() {
         throw new Error('인증 실패: 로그인 상태를 확인해주세요.');
       }
 
-      const response = await fetch('/api/admin/matching/preview', {
+      // Firebase Functions URL로 변경 (Vercel 10초 타임아웃 해결)
+      const response = await fetch('https://manualmatchingpreview-vliq2xsjqa-uc.a.run.app', {
         method: 'POST',
         headers,
         body: JSON.stringify({ cohortId }),

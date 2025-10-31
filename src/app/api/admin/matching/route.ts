@@ -20,8 +20,12 @@ export async function POST(request: NextRequest) {
     return error;
   }
 
+  let requestCohortId: string | undefined;
+
   try {
-    const { cohortId } = await request.json();
+    const body = await request.json();
+    const { cohortId } = body ?? {};
+    requestCohortId = cohortId;
 
     if (!cohortId) {
       return NextResponse.json(
@@ -210,13 +214,26 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const normalized = message.toLowerCase();
+    const isValidationError =
+      normalized.includes('성별 균형 매칭 불가') ||
+      normalized.includes('최소 4명의 참가자가 필요');
 
+    logger.error('AI 매칭 실행 실패', {
+      cohortId: requestCohortId,
+      error: message,
+    });
+
+    const status = isValidationError ? 400 : 500;
     return NextResponse.json(
       {
-        error: '매칭 실행 중 오류가 발생했습니다.',
-        details: error instanceof Error ? error.message : String(error),
+        error: status === 400
+          ? '매칭 실행 조건을 충족하지 못했습니다.'
+          : '매칭 실행 중 오류가 발생했습니다.',
+        message,
       },
-      { status: 500 }
+      { status }
     );
   }
 }

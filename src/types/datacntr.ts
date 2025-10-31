@@ -171,4 +171,10 @@ export interface SubmissionAnalytics {
     averageReviewLength: number;
     averageDailyAnswerLength: number;
   };
+  allBooks: Array<{
+    title: string;
+    author?: string;
+    count: number;
+    participants: string[];
+  }>;
 }

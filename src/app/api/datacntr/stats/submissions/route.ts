@@ -77,6 +77,16 @@ export async function GET(request: NextRequest) {
     let dailyAnswerCount = 0;
     const uniqueDates = new Set<string>();
 
+    // 6. 책 목록 데이터 (책 제목별 집계)
+    const bookMap = new Map<string, { title: string; author?: string; count: number; participantIds: Set<string> }>();
+
+    // 참가자 이름 매핑 (participantId -> name)
+    const participantNames = new Map<string, string>();
+    participantsSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      participantNames.set(doc.id, data.name || '알 수 없음');
+    });
+
     nonAdminSubmissions.forEach((doc) => {
       const data = doc.data();
 
@@ -123,6 +133,23 @@ export async function GET(request: NextRequest) {
         totalDailyAnswerLength += dailyAnswer.length;
         dailyAnswerCount++;
       }
+
+      // 책 목록 집계
+      const bookTitle = data.bookTitle || '';
+      const bookAuthor = data.bookAuthor;
+      if (bookTitle.trim().length > 0 && participantId) {
+        if (!bookMap.has(bookTitle)) {
+          bookMap.set(bookTitle, {
+            title: bookTitle,
+            author: bookAuthor,
+            count: 0,
+            participantIds: new Set(),
+          });
+        }
+        const bookData = bookMap.get(bookTitle)!;
+        bookData.count++;
+        bookData.participantIds.add(participantId);
+      }
     });
 
     const totalSubmissions = nonAdminSubmissions.length;
@@ -144,6 +171,18 @@ export async function GET(request: NextRequest) {
     const averageReviewLength = reviewCount > 0 ? Math.round(totalReviewLength / reviewCount) : 0;
     const averageDailyAnswerLength = dailyAnswerCount > 0 ? Math.round(totalDailyAnswerLength / dailyAnswerCount) : 0;
 
+    // 전체 책 목록 생성 (인증 횟수 내림차순 정렬)
+    const allBooks = Array.from(bookMap.values())
+      .map((book) => ({
+        title: book.title,
+        author: book.author,
+        count: book.count,
+        participants: Array.from(book.participantIds)
+          .map((id) => participantNames.get(id) || '알 수 없음')
+          .sort(),
+      }))
+      .sort((a, b) => b.count - a.count);
+
     return NextResponse.json({
       timeDistribution: timeDistributionPercent,
       participation: {
@@ -156,6 +195,7 @@ export async function GET(request: NextRequest) {
         averageReviewLength,
         averageDailyAnswerLength,
       },
+      allBooks,
     });
   } catch (error) {
 
