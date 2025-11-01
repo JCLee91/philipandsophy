@@ -1150,7 +1150,6 @@ export const scheduledMatchingPreview = onSchedule(
         matching: previewResult.matching,
         question: previewResult.question,
         totalParticipants: previewResult.totalParticipants,
-        featuredParticipants: previewResult.featuredParticipants,
         submissionStats: previewResult.submissionStats,
         createdAt: admin.firestore.Timestamp.now(),
         status: "pending", // pending | confirmed | expired
@@ -1222,7 +1221,6 @@ export const scheduledMatchingPreview = onSchedule(
         matching: previewResult.matching,
         question: previewResult.question,
         totalParticipants: previewResult.totalParticipants,
-        featuredParticipants: previewResult.featuredParticipants,
         submissionStats: previewResult.submissionStats,
         confirmedAt: admin.firestore.Timestamp.now(),
         confirmedBy: "scheduled_function",
