@@ -186,6 +186,7 @@ export default function DirectMessageDialog({
       {/* Dialog */}
       <div
         className="fixed inset-x-4 z-[9999] max-w-lg mx-auto transition-all duration-300"
+        onClick={(e) => e.stopPropagation()}
         style={{
           top: keyboardHeight > 0 ? '1rem' : '50%',
           transform: keyboardHeight > 0 ? 'none' : 'translateY(-50%)',
