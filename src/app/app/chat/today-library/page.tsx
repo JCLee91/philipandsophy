@@ -45,6 +45,7 @@ function TodayLibraryContent() {
     [viewerSubmissions]
   );
   const viewerHasSubmittedToday = viewerSubmissionDates.has(todayDate);
+  const preferredMatchingDate = viewerHasSubmittedToday ? todayDate : undefined;
 
   // 제출일 기준 공개되는 프로필북 날짜 (제출 다음날 OR 오늘 인증 시 즉시)
   const allowedMatchingDates = useMemo(
@@ -53,7 +54,7 @@ function TodayLibraryContent() {
   );
 
 
-  const matchingLookup = useMemo(() => {
+  const matchingLookupWithinAccess = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
       return null;
     }
@@ -62,13 +63,28 @@ function TodayLibraryContent() {
       cohort.dailyFeaturedParticipants,
       currentUserId,
       isSuperAdmin
-        ? { preferredDate: viewerHasSubmittedToday ? todayDate : undefined }
+        ? { preferredDate: preferredMatchingDate }
         : {
-            preferredDate: viewerHasSubmittedToday ? todayDate : undefined,
+            preferredDate: preferredMatchingDate,
             allowedDates: allowedMatchingDates,
           }
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, isSuperAdmin, viewerHasSubmittedToday, todayDate, allowedMatchingDates]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, isSuperAdmin, preferredMatchingDate, allowedMatchingDates]);
+
+  const matchingLookup = useMemo(() => {
+    if (matchingLookupWithinAccess) {
+      return matchingLookupWithinAccess;
+    }
+
+    if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
+      return null;
+    }
+
+    // 접근 허용 날짜 조건 없이 가장 최근 매칭을 fallback으로 노출
+    return findLatestMatchingForParticipant(cohort.dailyFeaturedParticipants, currentUserId, {
+      preferredDate: preferredMatchingDate,
+    });
+  }, [matchingLookupWithinAccess, cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate]);
 
   const activeMatchingDate = matchingLookup?.date ?? null;
   const assignments = matchingLookup?.matching.assignments ?? {};
