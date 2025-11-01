@@ -214,7 +214,8 @@ export async function GET(request: NextRequest) {
 
       // 각 참가자별로 소속 코호트의 경과 일수 계산
       nonSuperAdminParticipants.forEach(participant => {
-        const cohortInfo = cohortMap.get(participant.cohortId);
+        const participantData = participant.data();
+        const cohortInfo = cohortMap.get(participantData.cohortId);
         if (cohortInfo) {
           const startDate = new Date(cohortInfo.startDate);
           const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
