@@ -183,10 +183,12 @@ function Step3Content() {
           }
         }
 
-        if (submission.review) {
+        // review는 Step2에서 이미 수정했을 수 있으므로, store에 값이 없을 때만 로드
+        if (submission.review && !review) {
           setReview(submission.review);
         }
 
+        // dailyAnswer는 Step3에서 입력하므로 항상 DB 값 로드
         if (submission.dailyAnswer) {
           setDailyAnswer(submission.dailyAnswer);
         }

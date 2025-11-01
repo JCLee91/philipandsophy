@@ -143,7 +143,7 @@ function Step2Content() {
   }, [participant, cohortId, existingSubmissionId, selectedBook, manualTitle, review, setSelectedBook, setManualTitle, setReview, toast]);
 
   useEffect(() => {
-    if (!existingSubmissionId || (selectedBook || manualTitle || review)) return;
+    if (!existingSubmissionId || (selectedBook || manualTitle)) return;
 
     let cancelled = false;
 
@@ -213,7 +213,7 @@ function Step2Content() {
     return () => {
       cancelled = true;
     };
-  }, [existingSubmissionId, selectedBook, manualTitle, review, imageStorageUrl, setSelectedBook, setManualTitle, setReview, setImageFile, setImageStorageUrl, toast]);
+  }, [existingSubmissionId, selectedBook, manualTitle, imageStorageUrl, setSelectedBook, setManualTitle, setReview, setImageFile, setImageStorageUrl, toast]);
 
   // 책 검색 디바운스
   useEffect(() => {

@@ -150,10 +150,19 @@ export async function updateSubmission(
   const db = getDb();
   const docRef = doc(db, COLLECTIONS.READING_SUBMISSIONS, id);
 
-  await updateDoc(docRef, {
-    ...data,
-    updatedAt: Timestamp.now(),
-  });
+  try {
+    const updatePayload = {
+      ...data,
+      updatedAt: Timestamp.now(),
+    };
+
+    await updateDoc(docRef, updatePayload);
+
+    logger.info('✅ Submission updated successfully', { id });
+  } catch (error) {
+    logger.error('❌ Failed to update submission', { id, error });
+    throw error;
+  }
 }
 
 /**
