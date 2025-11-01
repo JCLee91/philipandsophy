@@ -2,7 +2,7 @@
 import { logger } from '@/lib/logger';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import UnifiedButton from '@/components/UnifiedButton';
 import { useMessages } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
@@ -159,12 +159,8 @@ export default function DirectMessageDialog({
     }
   }, [imageFile, messageContent, resetImage, sendMessage]);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  // 엔터키 전송 제거 - 클릭으로만 전송 (카카오톡 스타일)
+  // 여러 줄 입력을 위해 엔터는 줄바꿈으로만 동작
 
   const canSendMessage = messageContent.trim().length > 0 || !!imageFile;
 
@@ -307,19 +303,23 @@ export default function DirectMessageDialog({
                 className="h-10 w-10 p-0 shrink-0"
                 icon={<Paperclip className="h-4 w-4" />}
               />
-              <Input
+              <Textarea
                 value={messageContent}
                 onChange={(e) => setMessageContent(e.target.value)}
-                onKeyDown={handleKeyDown}
                 placeholder="메시지를 입력하세요..."
-                className="flex-1"
+                className="flex-1 min-h-[40px] max-h-[120px] resize-none py-2.5 text-[15px] leading-snug"
                 disabled={isUploading}
+                rows={1}
               />
               <UnifiedButton
                 onClick={handleSend}
                 disabled={!canSendMessage}
                 loading={isUploading}
-                className="h-10 w-10 p-0 shrink-0"
+                className={`h-10 w-10 p-0 shrink-0 transition-all duration-200 ${
+                  canSendMessage
+                    ? 'bg-black hover:bg-gray-800 text-white'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed hover:bg-gray-200'
+                }`}
                 icon={<Send className="h-4 w-4" />}
               />
             </div>
