@@ -544,7 +544,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                       alt="책 사진"
                       fill
                       sizes="(max-width: 768px) 90vw, 420px"
-                      className="object-cover"
+                      className="object-contain"
                       priority={false}
                       onLoadingComplete={({ naturalWidth, naturalHeight }) => {
                         if (naturalWidth > 0 && naturalHeight > 0) {

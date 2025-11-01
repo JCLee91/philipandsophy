@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
       endDate.setHours(23, 59, 59, 999);
 
       // 총 일수 계산 (첫 날 OT 제외)
+      // differenceInDays는 마지막 날을 포함하지 않으므로, +1을 하되 OT 제외를 위해 그대로 유지
+      // 예: 1월 1일(OT) ~ 1월 5일 → differenceInDays = 4 (실제 인증 가능 일수: 1/2, 1/3, 1/4, 1/5 = 4일)
       totalDays = differenceInDays(endDate, startDate); // OT 제외: 시작일 미포함
     } else {
       // cohortId가 없으면 기존 방식 (최근 N일)
@@ -84,10 +86,20 @@ export async function GET(request: NextRequest) {
             const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
             const participantIds = participants.docs.map(d => d.id);
             return {
-              docs: snap.docs.filter(d => participantIds.includes(d.data().participantId))
+              // ✅ draft 제외: 활동 그래프에 임시저장 데이터 제외
+              docs: snap.docs.filter(d =>
+                participantIds.includes(d.data().participantId) &&
+                d.data().status !== 'draft'
+              )
             };
           })
-        : db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get(),
+        : db.collection(COLLECTIONS.READING_SUBMISSIONS)
+            .where('submittedAt', '>=', startDate)
+            .get()
+            .then(snap => ({
+              // ✅ draft 제외: 전체 보기 시에도 임시저장 데이터 제외
+              docs: snap.docs.filter(d => d.data().status !== 'draft')
+            })),
       cohortId
         ? db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
         : db.collection(COLLECTIONS.PARTICIPANTS).get(),
@@ -114,7 +126,9 @@ export async function GET(request: NextRequest) {
     }>();
 
     // 날짜 초기화 (startDate ~ endDate 기간)
-    for (let i = 0; i < totalDays; i++) {
+    // i = 1부터 시작: OT 첫날 제외
+    // i <= totalDays: 마지막 날 포함
+    for (let i = 1; i <= totalDays; i++) {
       const date = addDays(startDate, i);
       const dateStr = format(date, 'yyyy-MM-dd');
       // 그날의 마지막 시각 (23:59:59)까지 포함

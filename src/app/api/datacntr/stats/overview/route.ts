@@ -35,7 +35,9 @@ export async function GET(request: NextRequest) {
         const startDate = new Date(cohortData.startDate);
         const today = new Date(todayString);
         const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        elapsedDays = Math.max(0, daysDiff); // OT 제외하지 않고 실제 경과 일수
+        // OT 첫날 제외: daysDiff - 1 (최소 0일)
+        // 예: 1월 1일(OT) 시작, 오늘 1월 5일 → daysDiff = 4, elapsedDays = 3 (인증 가능 일수: 1/2, 1/3, 1/4)
+        elapsedDays = Math.max(0, daysDiff - 1);
       }
     }
 
@@ -193,9 +195,37 @@ export async function GET(request: NextRequest) {
     // 총 참가자 × 경과 일수 = 최대 가능 인증 수
     // 실제 인증 수 / 최대 가능 인증 수 × 100 = 총 인증률
     let totalSubmissionRate = 0;
+
     if (cohortId && elapsedDays > 0 && nonSuperAdminParticipants.length > 0) {
+      // 단일 코호트 선택 시: 기존 로직 유지
       const maxPossibleSubmissions = nonSuperAdminParticipants.length * elapsedDays;
       totalSubmissionRate = Math.round((allSubmissions.length / maxPossibleSubmissions) * 100);
+    } else if (!cohortId && nonSuperAdminParticipants.length > 0) {
+      // 전체 보기 시: 각 참가자의 코호트별 경과 일수를 합산하여 계산
+      const allCohortsSnapshot = await db.collection(COLLECTIONS.COHORTS).get();
+      const cohortMap = new Map<string, { startDate: string }>();
+      allCohortsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        cohortMap.set(doc.id, { startDate: data.startDate });
+      });
+
+      const today = new Date(todayString);
+      let totalMaxSubmissions = 0;
+
+      // 각 참가자별로 소속 코호트의 경과 일수 계산
+      nonSuperAdminParticipants.forEach(participant => {
+        const cohortInfo = cohortMap.get(participant.cohortId);
+        if (cohortInfo) {
+          const startDate = new Date(cohortInfo.startDate);
+          const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          const participantElapsedDays = Math.max(0, daysDiff - 1); // OT 첫날 제외
+          totalMaxSubmissions += participantElapsedDays;
+        }
+      });
+
+      if (totalMaxSubmissions > 0) {
+        totalSubmissionRate = Math.round((allSubmissions.length / totalMaxSubmissions) * 100);
+      }
     }
 
     const stats: OverviewStats = {
