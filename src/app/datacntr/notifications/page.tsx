@@ -206,6 +206,16 @@ export default function CustomNotificationsPage() {
       return;
     }
 
+    // 코호트 전체 발송 시 cohortId 필수
+    if (formData.targetType === 'cohort' && !formData.cohortId) {
+      toast({
+        title: '입력 오류',
+        description: '코호트를 선택해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSending(true);
 
     try {
@@ -532,9 +542,10 @@ export default function CustomNotificationsPage() {
                       }
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedParticipantIds(participants.map((p) => p.id));
+                          // 함수형 업데이트: 빠른 클릭 시 상태 꼬임 방지
+                          setSelectedParticipantIds(() => participants.map((p) => p.id));
                         } else {
-                          setSelectedParticipantIds([]);
+                          setSelectedParticipantIds(() => []);
                         }
                       }}
                       className="h-4 w-4 rounded border-gray-300"
@@ -553,13 +564,12 @@ export default function CustomNotificationsPage() {
                         checked={selectedParticipantIds.includes(participant.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedParticipantIds([
-                              ...selectedParticipantIds,
-                              participant.id,
-                            ]);
+                            // 함수형 업데이트: 이전 상태 기반으로 안전하게 추가
+                            setSelectedParticipantIds((prev) => [...prev, participant.id]);
                           } else {
-                            setSelectedParticipantIds(
-                              selectedParticipantIds.filter((id) => id !== participant.id)
+                            // 함수형 업데이트: 이전 상태 기반으로 안전하게 제거
+                            setSelectedParticipantIds((prev) =>
+                              prev.filter((id) => id !== participant.id)
                             );
                           }
                         }}

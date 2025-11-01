@@ -86,6 +86,9 @@ export async function GET(request: NextRequest) {
 
         submissionsSnapshot.docs.forEach((doc) => {
           const data = doc.data();
+          // draft 제외: 임시저장은 인증 횟수에 포함하지 않음
+          if (data.status === 'draft') return;
+
           const participantId = data.participantId;
           submissionCountMap.set(participantId, (submissionCountMap.get(participantId) || 0) + 1);
         });

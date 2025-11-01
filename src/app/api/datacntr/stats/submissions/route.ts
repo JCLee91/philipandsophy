@@ -90,6 +90,9 @@ export async function GET(request: NextRequest) {
     nonAdminSubmissions.forEach((doc) => {
       const data = doc.data();
 
+      // draft 제외: 임시저장은 통계에서 제외
+      if (data.status === 'draft') return;
+
       // 시간대별 분포
       const submittedAt = timestampToKST(data.submittedAt);
       if (submittedAt) {

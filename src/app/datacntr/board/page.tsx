@@ -117,7 +117,9 @@ export default function DataCenterBoardPage() {
               return data;
             })
             // Filter end date in memory to avoid complex index requirement
-            .filter((sub) => sub.submissionDate <= targetCohort.endDate);
+            .filter((sub) => sub.submissionDate <= targetCohort.endDate)
+            // draft 제외: 임시저장은 현황판에서 제외
+            .filter((sub) => sub.status !== 'draft');
           submissions.push(...chunkSubmissions);
         }
 

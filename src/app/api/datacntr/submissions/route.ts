@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           .collection(COLLECTIONS.READING_SUBMISSIONS)
           .where('participantId', 'in', chunk)
           .orderBy('submittedAt', 'desc')
-          .limit(200)
+          // limit 제거: 프로그램 확장 시 오래된 기록이 잘릴 수 있음
           .get();
         submissions.push(...chunkSnapshot.docs);
       }
@@ -75,18 +75,20 @@ export async function GET(request: NextRequest) {
       cohortsMap.set(doc.id, doc.data().name);
     });
 
-    // 4. 인증 데이터에 참가자명 및 코호트명 추가
-    const submissionsWithParticipant = submissions.map((doc) => {
-      const submissionData = doc.data();
-      const participant = participantsMap.get(submissionData.participantId);
+    // 4. 인증 데이터에 참가자명 및 코호트명 추가 (draft 제외)
+    const submissionsWithParticipant = submissions
+      .filter((doc) => doc.data().status !== 'draft') // draft 제외
+      .map((doc) => {
+        const submissionData = doc.data();
+        const participant = participantsMap.get(submissionData.participantId);
 
-      return {
-        id: doc.id,
-        ...submissionData,
-        participantName: participant?.name || '알 수 없음',
-        cohortName: cohortsMap.get(participant?.cohortId) || '알 수 없음',
-      };
-    });
+        return {
+          id: doc.id,
+          ...submissionData,
+          participantName: participant?.name || '알 수 없음',
+          cohortName: cohortsMap.get(participant?.cohortId) || '알 수 없음',
+        };
+      });
 
     return NextResponse.json(submissionsWithParticipant);
   } catch (error) {

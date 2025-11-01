@@ -36,7 +36,7 @@ import {
 
 // Global options for all functions
 setGlobalOptions({
-  region: "us-central1", // Closest to Firestore nam5 (US multi-region)
+  region: "asia-northeast3", // Seoul, South Korea - Optimized for Korean users
   maxInstances: 10,
 });
 
