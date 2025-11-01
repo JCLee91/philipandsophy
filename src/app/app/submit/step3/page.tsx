@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +19,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { Textarea } from '@/components/ui/textarea';
 import { appRoutes } from '@/lib/navigation';
 import type { DailyQuestion as DailyQuestionType } from '@/types/database';
+import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,14 @@ function Step3Content() {
 
   const { participant, isLoading: sessionLoading } = useAuth();
   const { toast } = useToast();
+  const keyboardHeight = useKeyboardHeight();
+  const footerPaddingBottom = useMemo(
+    () =>
+      keyboardHeight > 0
+        ? `calc(16px + env(safe-area-inset-bottom, 0px))`
+        : `calc(60px + env(safe-area-inset-bottom, 0px))`,
+    [keyboardHeight]
+  );
 
   const {
     imageFile,
@@ -232,7 +241,7 @@ function Step3Content() {
     return () => {
       cancelled = true;
     };
-  }, [cohortId, existingSubmissionId, imageStorageUrl, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, toast]);
+  }, [cohortId, existingSubmissionId, imageStorageUrl, review, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, toast]);
 
   const handleSaveDraft = async () => {
     if (existingSubmissionId) {
@@ -445,7 +454,10 @@ function Step3Content() {
           <ProgressIndicator currentStep={3} />
         </div>
 
-        <main className="app-main-content flex-1 overflow-y-auto pt-[57px]">
+        <main
+          className="app-main-content flex-1 overflow-y-auto pt-[57px]"
+          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 32 : 32 }}
+        >
           <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">
             <div className="space-y-1">
               <h2 className="text-lg font-bold">오늘의 질문</h2>
@@ -486,7 +498,10 @@ function Step3Content() {
 
         {/* 하단 버튼 */}
         <div className="border-t bg-white">
-          <div className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4 pb-[60px]">
+          <div
+            className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4"
+            style={{ paddingBottom: footerPaddingBottom }}
+          >
             {!existingSubmissionId && (
               <UnifiedButton
                 variant="outline"

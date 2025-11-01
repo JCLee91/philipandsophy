@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
@@ -19,6 +19,7 @@ import { Search } from 'lucide-react';
 import { appRoutes } from '@/lib/navigation';
 import Image from 'next/image';
 import { SEARCH_CONFIG } from '@/constants/search';
+import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,14 @@ function Step2Content() {
 
   const { participant, isLoading: sessionLoading } = useAuth();
   const { toast } = useToast();
+  const keyboardHeight = useKeyboardHeight();
+  const footerPaddingBottom = useMemo(
+    () =>
+      keyboardHeight > 0
+        ? `calc(16px + env(safe-area-inset-bottom, 0px))`
+        : `calc(60px + env(safe-area-inset-bottom, 0px))`,
+    [keyboardHeight]
+  );
 
   const {
     imageFile,
@@ -415,7 +424,10 @@ function Step2Content() {
           <ProgressIndicator currentStep={2} />
         </div>
 
-        <main className="app-main-content flex-1 overflow-y-auto pt-[57px]">
+        <main
+          className="app-main-content flex-1 overflow-y-auto pt-[57px]"
+          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 32 : 32 }}
+        >
           <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">
             <div className="space-y-1">
               <h2 className="text-lg font-bold">책 제목</h2>
@@ -474,7 +486,9 @@ function Step2Content() {
                 {/* 수동 입력 안내 */}
                 {searchQuery.trim() && !isSearching && searchResults.length === 0 && (
                   <p className="mt-2 text-xs text-gray-500">
-                    검색 결과가 없습니다. 엔터를 누르면 "{searchQuery}"로 직접 입력됩니다.
+                    검색 결과가 없습니다. 엔터를 누르면{' '}
+                    <span className="font-medium">{searchQuery}</span>
+                    를 직접 입력할 수 있어요.
                   </p>
                 )}
               </div>
@@ -577,7 +591,10 @@ function Step2Content() {
 
         {/* 하단 버튼 */}
         <div className="border-t bg-white">
-          <div className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4 pb-[60px]">
+          <div
+            className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4"
+            style={{ paddingBottom: footerPaddingBottom }}
+          >
             {!existingSubmissionId && (
               <UnifiedButton variant="outline" onClick={handleSaveDraft} disabled={isSaving} className="flex-1">
                 {isSaving ? '저장 중...' : '임시 저장하기'}

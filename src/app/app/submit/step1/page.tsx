@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
@@ -16,6 +16,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
 import { appRoutes } from '@/lib/navigation';
+import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,14 @@ function Step1Content() {
 
   const { participant, isLoading: sessionLoading } = useAuth();
   const { toast } = useToast();
+  const keyboardHeight = useKeyboardHeight();
+  const footerPaddingBottom = useMemo(
+    () =>
+      keyboardHeight > 0
+        ? `calc(16px + env(safe-area-inset-bottom, 0px))`
+        : `calc(60px + env(safe-area-inset-bottom, 0px))`,
+    [keyboardHeight]
+  );
 
   const {
     imageFile,
@@ -85,7 +94,6 @@ function Step1Content() {
     };
 
     loadDraft();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, toast]);
 
   const hasLoadedExistingRef = useRef(false);
@@ -263,7 +271,10 @@ function Step1Content() {
           <ProgressIndicator currentStep={1} />
         </div>
 
-        <main className="app-main-content flex-1 overflow-y-auto pt-[57px]">
+        <main
+          className="app-main-content flex-1 overflow-y-auto pt-[57px]"
+          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 32 : 32 }}
+        >
           <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">
             <div className="space-y-3">
               <h2 className="text-lg font-bold">읽은 책의 마지막 페이지를<br />업로드해 주세요</h2>
@@ -314,7 +325,10 @@ function Step1Content() {
 
         {/* 하단 버튼 */}
         <div className="border-t bg-white">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 pt-4 pb-[60px]">
+          <div
+            className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 pt-4"
+            style={{ paddingBottom: footerPaddingBottom }}
+          >
             <UnifiedButton
               onClick={handleNext}
               disabled={!imageFile || isProcessing}
