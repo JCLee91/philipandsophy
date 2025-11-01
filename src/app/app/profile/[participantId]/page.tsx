@@ -521,31 +521,31 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         {/* 인증 상세 모달 */}
         {selectedSubmission && (
           <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-            <DialogContent className="profile-reading-dialog-ios-safe sm:max-w-md">
-              <DialogHeader>
+            <DialogContent className="profile-reading-dialog profile-reading-dialog-ios-safe sm:max-w-md sm:rounded-2xl">
+              <DialogHeader className="text-left gap-1">
                 <DialogTitle className="text-base">
                   {selectedSubmission.submissionDate
                     ? format(new Date(selectedSubmission.submissionDate), 'M/d', { locale: ko })
                     : formatShortDate(selectedSubmission.submittedAt)} 독서 기록
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="profile-reading-scroll space-y-4 overflow-y-auto">
                 {/* 책 이미지 */}
                 {selectedSubmission.bookImageUrl && (
                   <div
-                    className="relative w-full overflow-hidden rounded-xl border bg-muted"
+                    className="relative mx-auto w-full max-w-[360px] overflow-hidden rounded-2xl border bg-muted shadow-sm md:max-w-[420px]"
                     style={{
-                      aspectRatio: detailImageAspectRatio ?? 1.5,
+                      aspectRatio: detailImageAspectRatio ?? 3 / 4,
+                      maxHeight: 'min(320px, 45vh)',
                     }}
                   >
                     <Image
                       src={selectedSubmission.bookImageUrl}
                       alt="책 사진"
                       fill
-                      sizes="(max-width: 768px) 100vw, 448px"
-                      className="object-contain"
+                      sizes="(max-width: 768px) 90vw, 420px"
+                      className="object-cover"
                       priority={false}
-                      unoptimized={false}
                       onLoadingComplete={({ naturalWidth, naturalHeight }) => {
                         if (naturalWidth > 0 && naturalHeight > 0) {
                           setDetailImageAspectRatio(naturalWidth / naturalHeight);
@@ -604,33 +604,45 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
             }
           }
 
+          .profile-reading-dialog {
+            margin: 0 !important;
+            inset: auto 0 0 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+            border-radius: 28px 28px 0 0 !important;
+            padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+            box-shadow: 0 -20px 40px rgba(15, 23, 42, 0.18);
+          }
+
+          .profile-reading-scroll {
+            max-height: min(65vh, 540px);
+          }
+
+          @media (min-width: 640px) {
+            .profile-reading-dialog {
+              inset: 50% auto auto 50% !important;
+              transform: translate(-50%, -50%) !important;
+              width: clamp(360px, 90vw, 520px) !important;
+              border-radius: 20px !important;
+              padding: 28px !important;
+              box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+            }
+
+            .profile-reading-scroll {
+              max-height: 60vh;
+            }
+          }
+
           /* iOS PWA 독서 기록 모달 Safe Area 대응 */
           @media (max-width: 640px) and (display-mode: standalone) {
             .profile-reading-dialog-ios-safe {
-              /* CSS Custom Properties로 중복 계산 방지 */
-              --safe-top: env(safe-area-inset-top, 0px);
-              --safe-bottom: env(safe-area-inset-bottom, 0px);
-              --dialog-height: calc(100vh - var(--safe-top) - var(--safe-bottom));
-
-              /* iOS Safe Area 대응 - top/bottom으로 위치 조정 */
-              top: var(--safe-top) !important;
-              bottom: var(--safe-bottom) !important;
-              height: var(--dialog-height) !important;
-              max-height: var(--dialog-height) !important;
-
-              /* 모달 내부 스크롤 활성화 */
-              overflow-y: auto;
-
-              /* 노치 영역 침범 방지 */
-              border-radius: 0;
-              margin: 0;
+              padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
             }
 
             /* iOS 11.2 이전 버전 호환성 */
             @supports (padding-top: constant(safe-area-inset-top)) {
               .profile-reading-dialog-ios-safe {
-                --safe-top: constant(safe-area-inset-top);
-                --safe-bottom: constant(safe-area-inset-bottom);
+                padding-bottom: calc(24px + constant(safe-area-inset-bottom)) !important;
               }
             }
           }
