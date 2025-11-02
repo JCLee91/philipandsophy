@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { getTodayString } from '@/lib/date-utils';
 import { requireWebAppAdmin } from '@/lib/api-auth';
@@ -35,29 +34,21 @@ export async function POST(request: NextRequest) {
     const matchingUrl = process.env.MANUAL_MATCHING_URL ||
       'https://manualmatchingpreview-vliq2xsjqa-du.a.run.app';
 
-    // Firebase Auth 토큰 가져오기 (Admin SDK에서 커스텀 토큰 생성)
-    const { getAdminAuth } = await import('@/lib/firebase/admin');
-    const auth = getAdminAuth();
-
-    // 관리자용 커스텀 토큰 생성
-    // Participant의 firebaseUid 사용
-    if (!user.firebaseUid) {
+    // 원본 Authorization 헤더에서 ID 토큰 추출
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Firebase UID가 없습니다.' },
-        { status: 400 }
+        { error: '인증 토큰이 없습니다.' },
+        { status: 401 }
       );
     }
 
-    const customToken = await auth.createCustomToken(user.firebaseUid, {
-      isAdministrator: true
-    });
-
-    // Cloud Run 함수 호출
+    // Cloud Run 함수 호출 - 원본 ID 토큰 그대로 전달
     const response = await fetch(matchingUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${customToken}`,
+        'Authorization': authHeader, // 원본 ID 토큰 그대로 전달
         'X-Internal-Secret': process.env.INTERNAL_SERVICE_SECRET || ''
       },
       body: JSON.stringify({ cohortId })
