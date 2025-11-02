@@ -12,7 +12,7 @@
  * 6. Daily matching data
  */
 
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp, cert, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { parseISO, differenceInDays, format } from 'date-fns';
 import * as path from 'path';
@@ -20,11 +20,11 @@ import * as path from 'path';
 // Initialize Firebase Admin SDK
 const serviceAccount = require(path.resolve(process.cwd(), 'firebase-service-account.json'));
 
-initializeApp({
+const app = initializeApp({
   credential: cert(serviceAccount),
 });
 
-const db = getFirestore().database('seoul');
+const db = getFirestore(app, 'seoul');
 
 interface Cohort {
   id: string;

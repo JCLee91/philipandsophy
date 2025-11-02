@@ -16,17 +16,21 @@ import { join } from 'path';
 
 // Firebase Admin 초기화
 function initializeFirebaseAdmin() {
+  let app;
+
   if (getApps().length === 0) {
     const serviceAccount = JSON.parse(
       readFileSync(join(process.cwd(), 'firebase-service-account.json'), 'utf-8')
     );
 
-    initializeApp({
+    app = initializeApp({
       credential: cert(serviceAccount),
     });
+  } else {
+    app = getApps()[0];
   }
 
-  return getFirestore().database('seoul');
+  return getFirestore(app, 'seoul');
 }
 
 // 날짜 포맷 함수

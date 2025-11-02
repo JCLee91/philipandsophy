@@ -34,7 +34,7 @@ if (admin.apps.length === 0) {
   }
 }
 
-const db = getFirestore().database('seoul');
+const db = getFirestore(admin.app(), 'seoul');
 
 /**
  * Sleep function
