@@ -147,13 +147,7 @@ function Step2Content() {
           setReview(draft.review);
         }
 
-        // Draft에서 실제 데이터를 로드했을 때만 토스트 표시
-        if (draft?.bookTitle || draft?.review) {
-          toast({
-            title: '임시 저장된 내용을 불러왔습니다',
-            description: '이어서 작성하실 수 있습니다.',
-          });
-        }
+        // Draft에서 실제 데이터를 로드했을 때 (토스트 제거)
 
         // Draft에 책 정보가 없으면 최근 제출물에서 자동 로드
         if (!bookDataLoaded) {
