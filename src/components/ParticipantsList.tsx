@@ -284,7 +284,8 @@ export default function ParticipantsList({
               type="button"
               onClick={async () => {
                 await logout();
-                router.push('/app');
+                // Next.js 캐시를 무시하고 완전히 새로 로드
+                window.location.href = '/app';
               }}
               className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-medium text-destructive hover:bg-destructive/10 transition-colors duration-normal"
             >

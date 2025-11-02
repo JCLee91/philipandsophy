@@ -299,7 +299,8 @@ function ParticipantsPageContent() {
               variant="destructive"
               onClick={async () => {
                 await logout();
-                router.push('/app');
+                // Next.js 캐시를 무시하고 완전히 새로 로드
+                window.location.href = '/app';
               }}
               icon={<LogOut className="h-5 w-5" />}
             >
