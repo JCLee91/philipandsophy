@@ -161,42 +161,50 @@ function Step2Content() {
           draftReview: draft?.review
         });
 
-        if (draft) {
-          // 책 정보 불러오기
-          if (draft.bookTitle) {
-            if (draft.bookAuthor && draft.bookCoverUrl) {
-              // 네이버 책 정보가 있으면 selectedBook으로 설정
-              setSelectedBook({
-                title: draft.bookTitle,
-                author: draft.bookAuthor,
-                image: draft.bookCoverUrl,
-                description: draft.bookDescription || '',
-                isbn: '',
-                publisher: '',
-                pubdate: '',
-                link: '',
-                discount: '',
-              });
-            } else {
-              // 수동 입력 제목만 있으면 manualTitle로 설정
-              setManualTitle(draft.bookTitle);
-            }
-          }
+        // Draft 처리 - 책 정보가 있을 때만 사용
+        let bookDataLoaded = false;
 
-          // 감상평 불러오기
-          if (draft.review) {
-            setReview(draft.review);
-          }
-
-          if (draft.bookTitle || draft.review) {
-            toast({
-              title: '임시 저장된 내용을 불러왔습니다',
-              description: '이어서 작성하실 수 있습니다.',
+        if (draft?.bookTitle) {
+          // Draft에 책 정보가 있으면 로드
+          if (draft.bookAuthor && draft.bookCoverUrl) {
+            // 네이버 책 정보가 있으면 selectedBook으로 설정
+            logger.info('[Step2] Loading book from draft');
+            setSelectedBook({
+              title: draft.bookTitle,
+              author: draft.bookAuthor,
+              image: draft.bookCoverUrl,
+              description: draft.bookDescription || '',
+              isbn: '',
+              publisher: '',
+              pubdate: '',
+              link: '',
+              discount: '',
             });
+          } else {
+            // 수동 입력 제목만 있으면 manualTitle로 설정
+            logger.info('[Step2] Loading manual title from draft');
+            setManualTitle(draft.bookTitle);
           }
-        } else {
-          // draft 없으면 최근 제출물에서 책 정보 자동 로드
-          logger.info('[Step2] No draft found, checking recent submissions...');
+          bookDataLoaded = true;
+        }
+
+        // 감상평은 별도로 처리 (책 정보와 독립적)
+        if (draft?.review) {
+          logger.info('[Step2] Loading review from draft');
+          setReview(draft.review);
+        }
+
+        // Draft에서 실제 데이터를 로드했을 때만 토스트 표시
+        if (draft?.bookTitle || draft?.review) {
+          toast({
+            title: '임시 저장된 내용을 불러왔습니다',
+            description: '이어서 작성하실 수 있습니다.',
+          });
+        }
+
+        // Draft에 책 정보가 없으면 최근 제출물에서 자동 로드
+        if (!bookDataLoaded) {
+          logger.info('[Step2] No book in draft, checking recent submissions...');
           const recentSubmissions = await getSubmissionsByParticipant(participant.id);
           logger.info('[Step2] Recent submissions loaded', {
             count: recentSubmissions.length,
@@ -212,7 +220,7 @@ function Step2Content() {
           });
 
           if (latestApproved?.bookTitle) {
-            logger.info('[Step2] Auto-loading recent book', {
+            logger.info('[Step2] Auto-loading recent book from submissions', {
               bookTitle: latestApproved.bookTitle,
               hasAuthor: !!latestApproved.bookAuthor,
               hasCoverUrl: !!latestApproved.bookCoverUrl
@@ -232,7 +240,7 @@ function Step2Content() {
                 discount: '',
               };
               setSelectedBook(bookData);
-              logger.info('[Step2] selectedBook set', bookData);
+              logger.info('[Step2] Recent book loaded successfully', bookData);
             } else {
               logger.info('[Step2] Setting manualTitle with recent book title');
               setManualTitle(latestApproved.bookTitle);
@@ -249,7 +257,7 @@ function Step2Content() {
               logger.info('[Step2] Setting manualTitle with currentBookTitle');
               setManualTitle(participantData.currentBookTitle);
             } else {
-              logger.info('[Step2] No book data to auto-load');
+              logger.info('[Step2] No book data available for auto-load');
             }
           }
         }
