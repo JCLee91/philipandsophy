@@ -57,6 +57,10 @@ export const useActiveCohorts = (options?: UseActiveCohortsOptions) => {
     queryFn: getActiveCohorts,
     enabled: options?.enabled ?? true,
     refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
+    retry: 2, // 실패 시 2번 자동 재시도
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // 1초, 2초, 3초
+    staleTime: 30000, // 30초 동안 캐시 사용
+    gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
   });
 };
 
