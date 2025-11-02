@@ -65,22 +65,6 @@ function Step2Content() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 디버깅: 컴포넌트 마운트 시 초기 상태 확인
-  useEffect(() => {
-    logger.info('[Step2] Component mounted with initial state', {
-      hasSelectedBook: !!selectedBook,
-      selectedBookTitle: selectedBook?.title,
-      hasManualTitle: !!manualTitle,
-      manualTitle,
-      hasReview: !!review,
-      reviewLength: review?.length,
-      hasImageFile: !!imageFile,
-      hasImageStorageUrl: !!imageStorageUrl,
-      participantId,
-      cohortId,
-      existingSubmissionId
-    });
-  }, []); // 마운트 시 한 번만 실행
 
   // Step 1 검증
   useEffect(() => {
@@ -111,19 +95,9 @@ function Step2Content() {
 
   // 새로운 제출 시작 시 책 관련 상태 초기화 (수정 모드가 아니고 이미지가 없을 때만)
   useEffect(() => {
-    logger.debug('[Step2] State clear check', {
-      existingSubmissionId,
-      hasImageFile: !!imageFile,
-      hasSelectedBook: !!selectedBook,
-      hasManualTitle: !!manualTitle,
-      hasReview: !!review,
-      shouldClear: !existingSubmissionId && !imageFile && (selectedBook || manualTitle || review)
-    });
-
     // Step1에서 이미지를 선택하고 넘어온 경우는 초기화하지 않음
     // 수정 모드도 초기화하지 않음
     if (!existingSubmissionId && !imageFile && (selectedBook || manualTitle || review)) {
-      logger.info('[Step2] Clearing book state for new submission');
       setSelectedBook(null);
       setManualTitle('');
       setReview('');
@@ -133,33 +107,15 @@ function Step2Content() {
 
   // 임시저장 자동 불러오기 + 최근 책 정보 자동 로드
   useEffect(() => {
-    logger.info('[Step2] Auto-load effect triggered', {
-      hasParticipant: !!participant,
-      participantId: participant?.id,
-      hasCohortId: !!cohortId,
-      cohortId,
-      hasExistingSubmission: !!existingSubmissionId,
-      existingSubmissionId
-    });
-
     if (!participant || !cohortId || existingSubmissionId) {
-      logger.debug('[Step2] Skipping auto-load', {
-        reason: !participant ? 'no participant' : !cohortId ? 'no cohortId' : 'editing existing submission'
-      });
       return;
     }
 
     const loadDraft = async () => {
       setIsLoadingDraft(true);
-      logger.info('[Step2] Starting draft and recent book load...');
       try {
         const { getDraftSubmission, getSubmissionsByParticipant } = await import('@/lib/firebase/submissions');
         const draft = await getDraftSubmission(participant.id, cohortId);
-        logger.info('[Step2] Draft check result', {
-          hasDraft: !!draft,
-          draftBookTitle: draft?.bookTitle,
-          draftReview: draft?.review
-        });
 
         // Draft 처리 - 책 정보가 있을 때만 사용
         let bookDataLoaded = false;
@@ -168,7 +124,6 @@ function Step2Content() {
           // Draft에 책 정보가 있으면 로드
           if (draft.bookAuthor && draft.bookCoverUrl) {
             // 네이버 책 정보가 있으면 selectedBook으로 설정
-            logger.info('[Step2] Loading book from draft');
             setSelectedBook({
               title: draft.bookTitle,
               author: draft.bookAuthor,
@@ -182,7 +137,6 @@ function Step2Content() {
             });
           } else {
             // 수동 입력 제목만 있으면 manualTitle로 설정
-            logger.info('[Step2] Loading manual title from draft');
             setManualTitle(draft.bookTitle);
           }
           bookDataLoaded = true;
@@ -190,7 +144,6 @@ function Step2Content() {
 
         // 감상평은 별도로 처리 (책 정보와 독립적)
         if (draft?.review) {
-          logger.info('[Step2] Loading review from draft');
           setReview(draft.review);
         }
 
@@ -204,30 +157,12 @@ function Step2Content() {
 
         // Draft에 책 정보가 없으면 최근 제출물에서 자동 로드
         if (!bookDataLoaded) {
-          logger.info('[Step2] No book in draft, checking recent submissions...');
           const recentSubmissions = await getSubmissionsByParticipant(participant.id);
-          logger.info('[Step2] Recent submissions loaded', {
-            count: recentSubmissions.length,
-            statuses: recentSubmissions.map(s => s.status)
-          });
-
           const latestApproved = recentSubmissions.find(s => s.status === 'approved');
-          logger.info('[Step2] Latest approved submission', {
-            found: !!latestApproved,
-            bookTitle: latestApproved?.bookTitle,
-            bookAuthor: latestApproved?.bookAuthor,
-            hasCoverUrl: !!latestApproved?.bookCoverUrl
-          });
 
           if (latestApproved?.bookTitle) {
-            logger.info('[Step2] Auto-loading recent book from submissions', {
-              bookTitle: latestApproved.bookTitle,
-              hasAuthor: !!latestApproved.bookAuthor,
-              hasCoverUrl: !!latestApproved.bookCoverUrl
-            });
             // 최근 인증한 책 정보가 있으면 자동 입력
             if (latestApproved.bookAuthor && latestApproved.bookCoverUrl) {
-              logger.info('[Step2] Setting selectedBook with recent book data');
               const bookData = {
                 title: latestApproved.bookTitle,
                 author: latestApproved.bookAuthor,
@@ -240,24 +175,14 @@ function Step2Content() {
                 discount: '',
               };
               setSelectedBook(bookData);
-              logger.info('[Step2] Recent book loaded successfully', bookData);
             } else {
-              logger.info('[Step2] Setting manualTitle with recent book title');
               setManualTitle(latestApproved.bookTitle);
             }
           } else {
             // 최근 제출물도 없으면 participant의 currentBookTitle 로드
-            logger.info('[Step2] No approved submission, checking participant currentBookTitle...');
             const participantData = await getParticipantById(participant.id);
-            logger.info('[Step2] Participant data', {
-              hasCurrentBookTitle: !!participantData?.currentBookTitle,
-              currentBookTitle: participantData?.currentBookTitle
-            });
             if (participantData?.currentBookTitle) {
-              logger.info('[Step2] Setting manualTitle with currentBookTitle');
               setManualTitle(participantData.currentBookTitle);
-            } else {
-              logger.info('[Step2] No book data available for auto-load');
             }
           }
         }
@@ -265,7 +190,6 @@ function Step2Content() {
         logger.error('[Step2] Error during auto-load', error);
       } finally {
         setIsLoadingDraft(false);
-        logger.info('[Step2] Auto-load process completed');
       }
     };
 
