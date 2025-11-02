@@ -8,7 +8,8 @@ if (getApps().length === 0) {
   });
 }
 
-const db = getFirestore();
+const app = getApps()[0];
+const db = getFirestore(app, 'seoul');
 
 async function fixWonwooSubmissionTime() {
   try {

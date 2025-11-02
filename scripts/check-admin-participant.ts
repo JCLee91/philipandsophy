@@ -13,7 +13,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function checkAdmin() {
   console.log('\n👤 admin participant 문서:\n');

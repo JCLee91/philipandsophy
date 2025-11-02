@@ -38,7 +38,7 @@ if (admin.apps.length === 0) {
   }
 }
 
-const db = getFirestore();
+const db = getFirestore().database('seoul');
 
 /**
  * Reset push notifications for all users

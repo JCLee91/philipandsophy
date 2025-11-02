@@ -36,7 +36,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 /**
  * 사용자 확인 프롬프트

@@ -19,7 +19,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function removeLegacyPushFields() {
   console.log('🧹 Legacy push token 필드 제거 시작...\n');

@@ -24,7 +24,7 @@ initializeApp({
   credential: cert(serviceAccount),
 });
 
-const db = getFirestore();
+const db = getFirestore().database('seoul');
 
 interface Cohort {
   id: string;

@@ -13,7 +13,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function checkMinjunMessages() {
   console.log('\n💬 김민준-5678 관련 메시지 상세 확인:\n');

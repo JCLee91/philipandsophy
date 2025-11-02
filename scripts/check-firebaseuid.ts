@@ -13,7 +13,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function checkFirebaseUid() {
   console.log('\n🔍 Participant FirebaseUid 확인:\n');

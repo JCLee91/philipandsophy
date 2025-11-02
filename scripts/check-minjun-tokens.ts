@@ -13,7 +13,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function checkTokens() {
   const doc = await db.collection('participants').doc('김민준-5678').get();

@@ -7,7 +7,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function check() {
   // 이름으로만 검색

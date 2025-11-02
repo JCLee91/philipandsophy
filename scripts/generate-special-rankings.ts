@@ -26,7 +26,7 @@ function initializeFirebaseAdmin() {
     });
   }
 
-  return getFirestore();
+  return getFirestore().database('seoul');
 }
 
 // 날짜 포맷 함수

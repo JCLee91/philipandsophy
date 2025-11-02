@@ -16,10 +16,18 @@ import * as webpush from "web-push";
 import { NOTIFICATION_CONFIG } from "./constants/notifications";
 
 /**
+ * Helper: Get Seoul DB instance
+ */
+function getSeoulDB() {
+  const { getFirestore } = require('firebase-admin/firestore');
+  return getFirestore(admin.app(), 'seoul');
+}
+
+/**
  * Get all administrators (super admins + general admins)
  */
 async function getAllAdministrators(): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
-  const db = admin.firestore();
+  const db = getSeoulDB();
 
   // Query 1: Get super admins
   const superAdminsQuery = db

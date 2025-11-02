@@ -12,7 +12,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function main() {
   console.log('🔍 2기 참가자 확인...\n');

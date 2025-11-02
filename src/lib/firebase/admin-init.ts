@@ -1,7 +1,8 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { Firestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { getAuth, Auth } from 'firebase-admin/auth';
+import * as admin from 'firebase-admin';
 import type { Bucket } from '@google-cloud/storage';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -82,9 +83,11 @@ export function getFirebaseAdmin() {
   }
 
   // Firestore 및 Storage 인스턴스 생성
-  cachedDb = getFirestore();
-  cachedBucket = getStorage().bucket(storageBucket);
-  cachedAuth = getAuth();
+  // Seoul DB 사용: getFirestore(app, 'databaseId')
+  const { getFirestore } = require('firebase-admin/firestore');
+  cachedDb = getFirestore(cachedApp, 'seoul');
+  cachedBucket = getStorage(cachedApp).bucket(storageBucket);
+  cachedAuth = getAuth(cachedApp);
 
   return { app: cachedApp, db: cachedDb, bucket: cachedBucket, auth: cachedAuth };
 }

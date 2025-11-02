@@ -29,7 +29,7 @@ const firebaseConfig = {
 
 // Firebase 초기화
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getFirestore(app, 'seoul');
 
 interface CohortDoc {
   id: string;

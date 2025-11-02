@@ -10,7 +10,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
 });
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function checkAdminPushTokens() {
   console.log('🔍 관리자 푸시 토큰 상태 확인\n');

@@ -13,27 +13,15 @@
  * npx tsx src/scripts/fix-dawn-submission-dates.ts
  */
 
-import * as admin from 'firebase-admin';
-import * as path from 'path';
+import { Timestamp } from 'firebase-admin/firestore';
+import { getFirebaseAdmin } from '@/lib/firebase/admin-init';
 import { getDailyQuestionText } from '@/constants/daily-questions';
-
-// Service account 파일 직접 로드
-const serviceAccountPath = path.join(process.cwd(), 'firebase-service-account.json');
-const serviceAccount = require(serviceAccountPath);
-
-// Firebase Admin 초기화
-if (admin.apps.length === 0) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
-  });
-}
 
 async function fixDawnSubmissionDates() {
   console.log('🔧 새벽 인증자 submissionDate 수정 시작...\n');
 
-  // Firebase Admin Firestore 인스턴스
-  const db = admin.firestore();
+  // Firebase Admin Firestore 인스턴스 (Seoul DB)
+  const { db } = getFirebaseAdmin();
 
   // 영향받은 제출물 찾기 (2025-10-28 00:00~02:00 사이 제출)
   const startTime = new Date('2025-10-28T00:00:00+09:00'); // KST
@@ -86,7 +74,7 @@ async function fixDawnSubmissionDates() {
         submissionDate: correctDate,
         dailyQuestion: correctQuestion,
         // 메타 정보 추가 (수정 이력)
-        lastModified: admin.firestore.Timestamp.now(),
+        lastModified: Timestamp.now(),
         modificationNote: 'Fixed dawn submission date (2025-10-28 새벽 제출분 날짜 수정)'
       });
 

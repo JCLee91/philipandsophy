@@ -15,7 +15,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 const bucket = admin.storage().bucket();
 
 async function main() {

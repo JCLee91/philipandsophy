@@ -32,7 +32,7 @@ if (admin.apps.length === 0) {
   }
 }
 
-const db = getFirestore();
+const db = getFirestore().database('seoul');
 
 async function inspectParticipant(participantId) {
   try {

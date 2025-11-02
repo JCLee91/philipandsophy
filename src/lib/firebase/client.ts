@@ -3,6 +3,7 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import {
   initializeFirestore,
+  getFirestore,
   Firestore,
   persistentLocalCache,
   persistentMultipleTabManager,
@@ -40,21 +41,16 @@ export function initializeFirebase() {
       app = getApps()[0];
     }
 
-    // Initialize Firestore with persistent cache (IndexedDB)
-    // This replaces deprecated enableIndexedDbPersistence()
-    // Safari Private Mode 대응: persistent cache 실패 시 메모리 캐시로 fallback
-    try {
-      db = initializeFirestore(app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager(),
-        }),
-      });
+    // Initialize Firestore with Seoul DB and persistent cache
+    // 1. initializeFirestore로 캐시 설정 + databaseId 지정 (한 번만 호출)
+    initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    }, 'seoul');
 
-    } catch (cacheError) {
-      // Safari Private Mode or IndexedDB disabled
-
-      db = initializeFirestore(app, {});
-    }
+    // 2. getFirestore로 인스턴스 획득
+    db = getFirestore(app, 'seoul');
 
     storage = getStorage(app);
     auth = getAuth(app);
@@ -80,7 +76,8 @@ export function initializeFirebase() {
       const apps = getApps();
       if (apps.length > 0) {
         app = apps[0];
-        db = initializeFirestore(app, {});
+        // Fallback에서도 getFirestore 사용 (이미 초기화된 경우)
+        db = getFirestore(app, 'seoul');
         storage = getStorage(app);
         auth = getAuth(app);
 

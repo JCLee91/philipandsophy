@@ -5,25 +5,8 @@
  * Shows comprehensive statistics for all collections in the projectpns database.
  */
 
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-// Firebase Admin 초기화
-function initializeFirebaseAdmin() {
-  if (getApps().length === 0) {
-    const serviceAccount = JSON.parse(
-      readFileSync(join(process.cwd(), 'firebase-service-account.json'), 'utf-8')
-    );
-
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-  }
-
-  return getFirestore();
-}
+import { Timestamp } from 'firebase-admin/firestore';
+import { getFirebaseAdmin } from '../src/lib/firebase/admin-init';
 
 // 날짜 포맷 함수
 function formatDate(timestamp: any): string {
@@ -52,7 +35,7 @@ function formatDate(timestamp: any): string {
 
 // 통계 수집 함수
 async function collectStatistics() {
-  const db = initializeFirebaseAdmin();
+  const { db } = getFirebaseAdmin();
 
   console.log('\n📊 ProjectPNS Database Statistics\n');
   console.log('='.repeat(80));

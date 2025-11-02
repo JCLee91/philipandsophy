@@ -37,7 +37,7 @@ if (admin.apps.length === 0) {
   }
 }
 
-const db = getFirestore();
+const db = getFirestore().database('seoul');
 
 /**
  * Cleanup all push tokens

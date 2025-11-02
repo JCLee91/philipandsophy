@@ -13,7 +13,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function checkYoonji() {
   console.log('\n👤 이윤지-4321 participant 확인:\n');

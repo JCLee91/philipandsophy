@@ -13,7 +13,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = admin.firestore().database('seoul');
 
 async function checkConversationIds() {
   console.log('\n💬 messages 컬렉션의 conversationId 패턴 분석:\n');

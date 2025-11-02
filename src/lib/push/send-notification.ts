@@ -5,7 +5,6 @@
  */
 
 import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
 import { logger } from '@/lib/logger';
 import type { PushTokenEntry } from '@/types/database';
 
@@ -35,6 +34,15 @@ function initializeAdmin() {
   }
 
   return admin;
+}
+
+/**
+ * Helper: Get Seoul DB instance
+ */
+function getSeoulDB() {
+  const { getFirestore } = require('firebase-admin/firestore');
+  const app = initializeAdmin().app();
+  return getFirestore(app, 'seoul');
 }
 
 /**
@@ -74,7 +82,7 @@ export async function sendPushToUser(
 ): Promise<boolean> {
   try {
     initializeAdmin();
-    const db = getFirestore();
+    const db = getSeoulDB();
 
     // Get user's push tokens from Firestore
     const participantRef = db.collection('participants').doc(participantId);
@@ -213,7 +221,7 @@ export async function sendPushToMultipleUsers(
 ): Promise<number> {
   try {
     initializeAdmin();
-    const db = getFirestore();
+    const db = getSeoulDB();
 
     // ✅ Get all push tokens from pushTokens array
     const tokens: string[] = [];
@@ -381,7 +389,7 @@ export async function sendPushToCohort(
 ): Promise<number> {
   try {
     initializeAdmin();
-    const db = getFirestore();
+    const db = getSeoulDB();
 
     // Get all cohort participants
     let query = db.collection('participants').where('cohortId', '==', cohortId);

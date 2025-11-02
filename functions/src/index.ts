@@ -54,6 +54,15 @@ const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
 // Initialize Firebase Admin
 admin.initializeApp();
 
+/**
+ * Helper: Get Seoul DB instance
+ * Seoul region DB 사용: getFirestore(app, 'databaseId')
+ */
+function getSeoulDB() {
+  const { getFirestore } = require('firebase-admin/firestore');
+  return getFirestore(admin.app(), 'seoul');
+}
+
 // ✅ Configure Web Push VAPID details
 // These must match the keys in .env.local (NEXT_PUBLIC_WEBPUSH_VAPID_KEY and WEBPUSH_VAPID_PRIVATE_KEY)
 // Read from environment variables (.env file in functions directory)
@@ -98,8 +107,7 @@ function truncateToken(token: string): string {
 async function getCohortParticipants(
   cohortId: string
 ): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
-  return admin
-    .firestore()
+  return getSeoulDB()
     .collection("participants")
     .where("cohortId", "==", cohortId)
     .get();
@@ -113,7 +121,7 @@ async function getCohortParticipants(
  * - isAdministrator === true
  */
 async function getAllAdministrators(): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
-  const db = admin.firestore();
+  const db = getSeoulDB();
 
   // Query 1: Get super admins
   const superAdminsQuery = db
@@ -188,8 +196,8 @@ async function getPushTokens(participantId: string): Promise<{
   webPushSubscriptions: WebPushSubscriptionData[];
 }> {
   try {
-    const participantDoc = await admin
-      .firestore()
+    const db = getSeoulDB();
+    const participantDoc = await db
       .collection("participants")
       .doc(participantId)
       .get();
@@ -233,8 +241,8 @@ async function getPushTokens(participantId: string): Promise<{
  */
 async function getParticipantName(participantId: string): Promise<string> {
   try {
-    const participantDoc = await admin
-      .firestore()
+    const db = getSeoulDB();
+    const participantDoc = await db
       .collection("participants")
       .doc(participantId)
       .get();
@@ -354,8 +362,8 @@ async function removeExpiredWebPushSubscriptions(
   failedSubscriptions: WebPushSubscriptionData[]
 ): Promise<void> {
   try {
-    const participantRef = admin
-      .firestore()
+    const db = getSeoulDB();
+    const participantRef = db
       .collection("participants")
       .doc(participantId);
 
@@ -532,8 +540,8 @@ async function removeExpiredTokens(
   failedTokens: string[]
 ): Promise<void> {
   try {
-    const participantRef = admin
-      .firestore()
+    const db = getSeoulDB();
+    const participantRef = db
       .collection("participants")
       .doc(participantId);
 
@@ -1097,7 +1105,7 @@ export const scheduledMatchingPreview = onSchedule(
       }
 
       // 3. 활성화된 cohort 조회 (isActive: true)
-      const db = admin.firestore();
+      const db = getSeoulDB();
       const activeCohortsSnapshot = await db
         .collection("cohorts")
         .where("isActive", "==", true)
@@ -1156,22 +1164,20 @@ export const scheduledMatchingPreview = onSchedule(
       };
 
       // 기존 pending preview가 있으면 expired로 변경
-      const existingPreviewsSnapshot = await admin
-        .firestore()
+      const existingPreviewsSnapshot = await db
         .collection("matching_previews")
         .where("cohortId", "==", cohortId)
         .where("status", "==", "pending")
         .get();
 
-      const batch = admin.firestore().batch();
+      const batch = db.batch();
 
       existingPreviewsSnapshot.docs.forEach((doc) => {
         batch.update(doc.ref, {status: "expired"});
       });
 
       // 새 preview 저장
-      const previewRef = admin
-        .firestore()
+      const previewRef = db
         .collection("matching_previews")
         .doc(`${cohortId}-${previewResult.date}`);
 
@@ -1185,9 +1191,9 @@ export const scheduledMatchingPreview = onSchedule(
       logger.info(`Saving confirmed matching to Firestore for cohort: ${cohortId}`);
 
       // ✅ Cohort 문서에 dailyFeaturedParticipants 업데이트 (Transaction)
-      const cohortRef = admin.firestore().collection("cohorts").doc(cohortId);
+      const cohortRef = db.collection("cohorts").doc(cohortId);
 
-      await admin.firestore().runTransaction(async (transaction) => {
+      await db.runTransaction(async (transaction) => {
         const cohortDoc = await transaction.get(cohortRef);
 
         if (!cohortDoc.exists) {
@@ -1226,8 +1232,7 @@ export const scheduledMatchingPreview = onSchedule(
         confirmedBy: "scheduled_function",
       };
 
-      const confirmRef = admin
-        .firestore()
+      const confirmRef = db
         .collection("matching_results")
         .doc(`${cohortId}-${previewResult.date}`);
 
@@ -1461,7 +1466,7 @@ export const manualMatchingPreview = onRequest(
 
         // 🔒 SECURITY: 관리자 권한 확인 (Firestore에서 실제 권한 체크)
         const userUid = decodedToken.uid;
-        const db = admin.firestore();
+        const db = getSeoulDB();
 
         try {
           const participantsSnapshot = await db
@@ -1512,7 +1517,7 @@ export const manualMatchingPreview = onRequest(
       logger.info("Starting AI matching", { cohortId, submissionDate, matchingDate });
 
       // Firestore에서 제출물 가져오기
-      const db = admin.firestore();
+      const db = getSeoulDB();
       const submissionsSnapshot = await db
         .collection("reading_submissions")
         .where("submissionDate", "==", submissionDate)
