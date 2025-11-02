@@ -12,7 +12,7 @@
  * 6. Daily matching data
  */
 
-import { initializeApp, cert, getApp } from 'firebase-admin/app';
+import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { parseISO, differenceInDays, format } from 'date-fns';
 import * as path from 'path';
