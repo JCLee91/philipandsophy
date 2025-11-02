@@ -91,14 +91,14 @@ function Step2Content() {
     setMetaInfo(participant.id, participationCodeValue, cohortId, existingSubmissionId || undefined);
   }, [participant, participantId, cohortId, existingSubmissionId, setMetaInfo]);
 
-  // 임시저장 자동 불러오기
+  // 임시저장 자동 불러오기 + 최근 책 정보 자동 로드
   useEffect(() => {
     if (!participant || !cohortId || existingSubmissionId || selectedBook || manualTitle || review) return;
 
     const loadDraft = async () => {
       setIsLoadingDraft(true);
       try {
-        const { getDraftSubmission } = await import('@/lib/firebase/submissions');
+        const { getDraftSubmission, getSubmissionsByParticipant } = await import('@/lib/firebase/submissions');
         const draft = await getDraftSubmission(participant.id, cohortId);
 
         if (draft) {
@@ -135,10 +135,33 @@ function Step2Content() {
             });
           }
         } else {
-          // draft 없으면 참가자의 현재 책 정보 로드
-          const participantData = await getParticipantById(participant.id);
-          if (participantData?.currentBookTitle) {
-            setManualTitle(participantData.currentBookTitle);
+          // draft 없으면 최근 제출물에서 책 정보 자동 로드
+          const recentSubmissions = await getSubmissionsByParticipant(participant.id);
+          const latestApproved = recentSubmissions.find(s => s.status === 'approved');
+
+          if (latestApproved?.bookTitle) {
+            // 최근 인증한 책 정보가 있으면 자동 입력
+            if (latestApproved.bookAuthor && latestApproved.bookCoverUrl) {
+              setSelectedBook({
+                title: latestApproved.bookTitle,
+                author: latestApproved.bookAuthor,
+                image: latestApproved.bookCoverUrl,
+                description: latestApproved.bookDescription || '',
+                isbn: '',
+                publisher: '',
+                pubdate: '',
+                link: '',
+                discount: '',
+              });
+            } else {
+              setManualTitle(latestApproved.bookTitle);
+            }
+          } else {
+            // 최근 제출물도 없으면 participant의 currentBookTitle 로드
+            const participantData = await getParticipantById(participant.id);
+            if (participantData?.currentBookTitle) {
+              setManualTitle(participantData.currentBookTitle);
+            }
           }
         }
       } catch (error) {

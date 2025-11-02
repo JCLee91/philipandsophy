@@ -1,0 +1,404 @@
+{
+  "status": "success",
+  "result": {
+    "indexes": [
+      {
+        "collectionGroup": "messages",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "conversationId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "messages",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "conversationId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "receiverId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "isRead",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "messages",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "receiverId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "messages",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "receiverId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "isRead",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "messages",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "senderId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "notice_templates",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "category",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "order",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "notices",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "cohortId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "notices",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "cohortId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "notices",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "cohortId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "order",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "participants",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "cohortId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "participants",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "cohortId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "participants",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "cohortId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "name",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "reading_submissions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "cohortId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "submissionDate",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "reading_submissions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "cohortId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "submittedAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "reading_submissions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "participantId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "submissionDate",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "reading_submissions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "participantId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "submissionDate",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "reading_submissions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "participantId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "submittedAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "reading_submissions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "participationCode",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "submittedAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "reading_submissions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "submittedAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
+        "collectionGroup": "reading_submissions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "submissionDate",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      }
+    ],
+    "fieldOverrides": []
+  }
+}
