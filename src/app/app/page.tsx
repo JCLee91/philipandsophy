@@ -153,9 +153,10 @@ export default function Home() {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  // ✅ 로그인 필요
+  // ✅ 로그인 필요 (로그아웃 상태 포함)
+  // participantStatus가 'idle', 'missing', 'error' 등 모든 비로그인 상태에서 로그인 화면 표시
   return (
-    <div className="app-shell flex items-center justify-center p-4">
+    <div className="app-shell flex min-h-screen items-center justify-center p-4">
       <PhoneAuthCard />
     </div>
   );
