@@ -148,9 +148,9 @@ export default function Home() {
   }
 
   // ✅ 로그인 한 상태면 리다이렉트 대기
+  // 리다이렉트 중에는 아무것도 렌더링하지 않음 (빈 화면 방지를 위해 null 반환)
   if (participantStatus === 'ready' && participant) {
-    // 리다이렉트 진행 중이므로 로고 계속 표시
-    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+    return null;
   }
 
   // ✅ 로그인 필요 (로그아웃 상태 포함)
