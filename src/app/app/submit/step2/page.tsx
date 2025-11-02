@@ -102,6 +102,7 @@ function Step2Content() {
       setManualTitle('');
       setReview('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingSubmissionId, imageFile]); // 의도적으로 dependency 제한
 
   // 임시저장 자동 불러오기 + 최근 책 정보 자동 로드
@@ -199,6 +200,7 @@ function Step2Content() {
     };
 
     loadDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participant, cohortId, existingSubmissionId]); // 의도적으로 dependency 제한 - 초기 로드만 수행
 
   useEffect(() => {
