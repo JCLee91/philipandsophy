@@ -37,6 +37,7 @@ export default function SplashScreen({ onFinish, duration = 1500 }: SplashScreen
             src="/image/logo_app.webp"
             alt="필립앤소피"
             fill
+            sizes="128px"
             className="object-cover"
             priority
           />
