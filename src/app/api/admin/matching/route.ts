@@ -36,9 +36,8 @@ export async function POST(request: NextRequest) {
       'https://manualmatchingpreview-vliq2xsjqa-du.a.run.app';
 
     // Firebase Auth 토큰 가져오기 (Admin SDK에서 커스텀 토큰 생성)
-    const { initializeAdminApp } = await import('@/lib/firebase/admin');
-    const adminApp = await initializeAdminApp();
-    const auth = adminApp.auth();
+    const { getAdminAuth } = await import('@/lib/firebase/admin');
+    const auth = getAdminAuth();
 
     // 관리자용 커스텀 토큰 생성
     const customToken = await auth.createCustomToken(user.uid, {
