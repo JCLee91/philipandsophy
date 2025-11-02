@@ -75,7 +75,7 @@ export default function ModernPhoneAuth() {
 
   // Phone number formatting
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = phoneFormatUtils.format(e.target.value);
+    const formatted = phoneFormatUtils.formatAsTyping(e.target.value);
     setPhoneNumber(formatted);
     setError('');
   };
