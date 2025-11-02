@@ -486,18 +486,55 @@ function MatchingPageContent() {
         throw new Error('인증 실패: 로그인 상태를 확인해주세요.');
       }
 
-      // Firebase Functions URL로 변경 (Vercel 10초 타임아웃 해결)
-      const response = await fetch('https://manualmatchingpreview-vliq2xsjqa-uc.a.run.app', {
+      // Firebase Functions v2 (Cloud Run) URL 사용
+      // 환경변수에서 URL 가져오기 (재배포 시 .env.local만 수정)
+      const matchingUrl = process.env.NEXT_PUBLIC_MANUAL_MATCHING_URL;
+
+      if (!matchingUrl) {
+        throw new Error('매칭 서비스 URL이 설정되지 않았습니다. 관리자에게 문의하세요.');
+      }
+
+      const response = await fetch(matchingUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({ cohortId }),
       });
 
-      const data = await response.json();
+      // Content-Type 체크하여 JSON 파싱 가능 여부 확인
+      const contentType = response.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || '매칭 실행 실패');
+        let errorMessage = '매칭 실행 실패';
+
+        if (isJson) {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch {
+            // JSON 파싱 실패 시 기본 메시지 사용
+          }
+        } else {
+          // JSON이 아닌 경우 텍스트로 읽기 시도
+          try {
+            const textError = await response.text();
+            if (textError) {
+              errorMessage = textError;
+            }
+          } catch {
+            // 텍스트 읽기도 실패하면 기본 메시지 사용
+          }
+        }
+
+        throw new Error(errorMessage);
       }
+
+      // 정상 응답인 경우에만 JSON 파싱
+      if (!isJson) {
+        throw new Error('서버에서 잘못된 응답 형식을 반환했습니다.');
+      }
+
+      const data = await response.json();
 
       setPreviewResult(data);
       setMatchingState('previewing');

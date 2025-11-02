@@ -1125,10 +1125,12 @@ export const scheduledMatchingPreview = onSchedule(
 
       logger.info(`Active cohort detected: ${cohortId}`);
 
-      // 4. ✅ Cloud Functions manualMatchingPreview 직접 호출 (Vercel 60초 제한 회피)
+      // 4. ✅ Cloud Functions v2 (Cloud Run) manualMatchingPreview 직접 호출 (Vercel 60초 제한 회피)
       logger.info(`Calling Cloud Functions manualMatchingPreview for cohort: ${cohortId}`);
 
-      const cloudFunctionsUrl = `https://us-central1-philipandsophy.cloudfunctions.net/manualMatchingPreview`;
+      // 환경변수에서 URL 가져오기 (재배포 시 .env만 수정)
+      const cloudFunctionsUrl = process.env.MANUAL_MATCHING_URL ||
+        'https://manualmatchingpreview-vliq2xsjqa-du.a.run.app';
 
       const response = await fetch(cloudFunctionsUrl, {
         method: "POST",
