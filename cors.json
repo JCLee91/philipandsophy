@@ -1,0 +1,17 @@
+[
+  {
+    "origin": [
+      "http://localhost:3000",
+      "https://philipandsophy.com",
+      "https://www.philipandsophy.com",
+      "https://philipandsophy.kr",
+      "https://www.philipandsophy.kr",
+      "https://philipandsophy.vercel.app",
+      "https://projectpns.vercel.app",
+      "https://*.vercel.app"
+    ],
+    "method": ["GET", "HEAD"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type"]
+  }
+]
