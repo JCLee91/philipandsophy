@@ -40,7 +40,15 @@ export async function POST(request: NextRequest) {
     const auth = getAdminAuth();
 
     // 관리자용 커스텀 토큰 생성
-    const customToken = await auth.createCustomToken(user.uid, {
+    // Participant의 firebaseUid 사용
+    if (!user.firebaseUid) {
+      return NextResponse.json(
+        { error: 'Firebase UID가 없습니다.' },
+        { status: 400 }
+      );
+    }
+
+    const customToken = await auth.createCustomToken(user.firebaseUid, {
       isAdministrator: true
     });
 
