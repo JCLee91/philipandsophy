@@ -20,6 +20,7 @@ import { appRoutes } from '@/lib/navigation';
 import Image from 'next/image';
 import { SEARCH_CONFIG } from '@/constants/search';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,15 +92,36 @@ function Step2Content() {
     setMetaInfo(participant.id, participationCodeValue, cohortId, existingSubmissionId || undefined);
   }, [participant, participantId, cohortId, existingSubmissionId, setMetaInfo]);
 
+  // 새로운 제출 시작 시 책 관련 상태 초기화 (수정 모드가 아니고 이미지가 없을 때만)
+  useEffect(() => {
+    // Step1에서 이미지를 선택하고 넘어온 경우는 초기화하지 않음
+    // 수정 모드도 초기화하지 않음
+    if (!existingSubmissionId && !imageFile && (selectedBook || manualTitle || review)) {
+      logger.info('Clearing book state for new submission');
+      setSelectedBook(null);
+      setManualTitle('');
+      setReview('');
+    }
+  }, [existingSubmissionId, imageFile]); // 의도적으로 dependency 제한
+
   // 임시저장 자동 불러오기 + 최근 책 정보 자동 로드
   useEffect(() => {
-    if (!participant || !cohortId || existingSubmissionId || selectedBook || manualTitle || review) return;
+    if (!participant || !cohortId || existingSubmissionId) {
+      logger.debug('Skipping auto-load', {
+        hasParticipant: !!participant,
+        hasCohortId: !!cohortId,
+        hasExistingSubmission: !!existingSubmissionId,
+      });
+      return;
+    }
 
     const loadDraft = async () => {
       setIsLoadingDraft(true);
+      logger.info('Loading draft and recent book...');
       try {
         const { getDraftSubmission, getSubmissionsByParticipant } = await import('@/lib/firebase/submissions');
         const draft = await getDraftSubmission(participant.id, cohortId);
+        logger.debug('Draft loaded', { hasDraft: !!draft });
 
         if (draft) {
           // 책 정보 불러오기
@@ -140,6 +162,11 @@ function Step2Content() {
           const latestApproved = recentSubmissions.find(s => s.status === 'approved');
 
           if (latestApproved?.bookTitle) {
+            logger.info('Auto-loading recent book', {
+              bookTitle: latestApproved.bookTitle,
+              hasAuthor: !!latestApproved.bookAuthor,
+              hasCoverUrl: !!latestApproved.bookCoverUrl
+            });
             // 최근 인증한 책 정보가 있으면 자동 입력
             if (latestApproved.bookAuthor && latestApproved.bookCoverUrl) {
               setSelectedBook({
@@ -172,7 +199,7 @@ function Step2Content() {
     };
 
     loadDraft();
-  }, [participant, cohortId, existingSubmissionId, selectedBook, manualTitle, review, setSelectedBook, setManualTitle, setReview, toast]);
+  }, [participant, cohortId, existingSubmissionId]); // 의도적으로 dependency 제한 - 초기 로드만 수행
 
   useEffect(() => {
     if (!existingSubmissionId || (selectedBook || manualTitle)) return;
