@@ -600,7 +600,7 @@ async function removeExpiredTokens(
 export const onMessageCreated = onDocumentCreated(
   {
     document: "messages/{messageId}",
-    database: "(default)", // Explicitly specify database to auto-detect nam5 region
+    database: "seoul", // ✅ Seoul DB 사용
   },
   async (event) => {
     const messageData = event.data?.data();
@@ -665,7 +665,7 @@ export const onMessageCreated = onDocumentCreated(
 export const onNoticeCreated = onDocumentCreated(
   {
     document: "notices/{noticeId}",
-    database: "(default)", // Explicitly specify database to auto-detect nam5 region
+    database: "seoul", // ✅ Seoul DB 사용
   },
   async (event) => {
     const noticeData = event.data?.data();
@@ -782,7 +782,7 @@ export const onNoticeCreated = onDocumentCreated(
 export const onNoticeUpdated = onDocumentUpdated(
   {
     document: "notices/{noticeId}",
-    database: "(default)",
+    database: "seoul", // ✅ Seoul DB 사용
   },
   async (event) => {
     const beforeData = event.data?.before.data();
