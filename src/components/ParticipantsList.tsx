@@ -194,7 +194,7 @@ export default function ParticipantsList({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-80 p-0 flex flex-col">
-          <SheetHeader className="border-b px-6 py-4">
+          <SheetHeader className="border-b px-6 py-2">
             <SheetTitle>참가자 목록 ({sortedParticipants.length})</SheetTitle>
             <SheetDescription className="sr-only">
               프로그램에 참여 중인 멤버 목록을 확인하고 소통할 수 있습니다
@@ -203,7 +203,7 @@ export default function ParticipantsList({
 
           {/* 네이티브 스크롤 사용 - PWA/모바일 호환성 최적화 */}
           <div className="flex-1 min-h-0 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className="px-4 py-2">
+            <div className="px-4 py-1">
               {sortedParticipants.map((participant) => {
                 const isMe = participant.id === currentUserId;
 
