@@ -37,7 +37,7 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v7'; // Increment version to force update
+const CACHE_NAME = 'philipandsophy-v8'; // Increment version to force update
 
 // ✅ 앱 셸 프리캐시 (초기 로딩 필수 리소스)
 const urlsToCache = [
@@ -64,14 +64,9 @@ function isNavigationRequest(request) {
  * Triggered when SW is first installed or updated
  */
 self.addEventListener('install', (event) => {
-  console.log('[Unified SW] Installing...');
-
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[Unified SW] Caching essential resources');
-        return cache.addAll(urlsToCache);
-      })
+      .then((cache) => cache.addAll(urlsToCache))
       .catch((error) => {
         console.error('[Unified SW] Failed to cache resources:', error);
       })
@@ -86,8 +81,6 @@ self.addEventListener('install', (event) => {
  * Triggered when SW becomes active
  */
 self.addEventListener('activate', (event) => {
-  console.log('[Unified SW] Activating...');
-
   event.waitUntil(
     Promise.all([
       // Clean up old caches
@@ -95,7 +88,6 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== CACHE_NAME) {
-              console.log('[Unified SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
@@ -105,8 +97,6 @@ self.addEventListener('activate', (event) => {
       self.clients.claim(),
     ])
   );
-
-  console.log('[Unified SW] Activated successfully');
 });
 
 /**
@@ -153,8 +143,6 @@ self.addEventListener('fetch', (event) => {
       caches.match(event.request).then((cachedResponse) => {
         // 캐시가 있으면 즉시 반환하고 백그라운드에서 업데이트
         if (cachedResponse) {
-          console.log('[Unified SW] Cache-first: serving from cache:', event.request.url);
-
           // 백그라운드 업데이트 (await 없이)
           fetch(event.request)
             .then((networkResponse) => {
@@ -172,7 +160,6 @@ self.addEventListener('fetch', (event) => {
         }
 
         // 캐시가 없으면 네트워크에서 가져오기
-        console.log('[Unified SW] Cache miss: fetching from network:', event.request.url);
         return fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.ok) {
@@ -184,7 +171,7 @@ self.addEventListener('fetch', (event) => {
             return networkResponse;
           })
           .catch(() => {
-            // 네트워크도 실패하면 기본 오프라인 페이지 (선택사항)
+            // 네트워크도 실패하면 기본 오프라인 페이지
             return new Response(
               '<!DOCTYPE html><html><body><h1>오프라인 상태입니다</h1></body></html>',
               {
@@ -209,22 +196,19 @@ self.addEventListener('fetch', (event) => {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME)
             .then((cache) => cache.put(event.request, responseToCache))
-            .catch((error) => {
-              console.warn('[Unified SW] Failed to cache response:', error);
+            .catch(() => {
+              // 캐시 실패 무시
             });
         }
         return response;
       })
-      .catch((error) => {
-        console.error('[Unified SW] Fetch failed:', error);
+      .catch(() => {
         // Network failed, try cache
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
-            console.log('[Unified SW] Serving from cache (fallback):', event.request.url);
             return cachedResponse;
           }
           // No cache available
-          console.error('[Unified SW] No cache available for:', event.request.url);
           return new Response(
             'Network error and no cached version available',
             {
@@ -248,10 +232,7 @@ self.addEventListener('fetch', (event) => {
  * No manual handling needed - this prevents "from 앱이름" text
  */
 messaging.onBackgroundMessage((payload) => {
-  console.log('[Unified SW] Background message received:', payload);
-
   // Firebase automatically handles notification display
-  // We just log it for debugging
 });
 
 /**
@@ -259,8 +240,6 @@ messaging.onBackgroundMessage((payload) => {
  * Opens the app or focuses existing window when user clicks notification
  */
 self.addEventListener('notificationclick', (event) => {
-  console.log('[Unified SW] Notification click received');
-
   event.notification.close();
 
   // Get the URL from notification data
@@ -294,10 +273,7 @@ self.addEventListener('notificationclick', (event) => {
  * This is automatically handled by Firebase Messaging
  */
 self.addEventListener('push', (event) => {
-  console.log('[Unified SW] Push event received');
-
   if (!event.data) {
-    console.warn('[Unified SW] Push event received without data payload');
     return;
   }
 
@@ -306,7 +282,6 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json();
   } catch (error) {
-    console.warn('[Unified SW] Failed to parse push payload as JSON', error);
     payload = {
       title: '필립앤소피',
       body: event.data.text(),
@@ -325,13 +300,6 @@ self.addEventListener('push', (event) => {
   const url = messageData?.url || payload?.url || '/app';
   const type = messageData?.type || payload?.type || 'general';
   const tag = messageData?.tag || payload?.tag;
-
-  console.log('[Unified SW] Showing notification (data-only message)', {
-    title,
-    type,
-    tag,
-    hasData: !!messageData,
-  });
 
   const options = {
     body,
@@ -355,19 +323,7 @@ self.addEventListener('push', (event) => {
  * Allows communication between app and service worker
  */
 self.addEventListener('message', (event) => {
-  // Only log important messages, not Firebase Auth storage events
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('[Unified SW] SKIP_WAITING command received');
     self.skipWaiting();
   }
-  // Skip logging Firebase Auth localStorage events (too noisy)
-  // They have eventType: 'keyChanged' and key starting with 'firebase:'
 });
-
-// ============================================
-// PART 5: Service Worker Info
-// ============================================
-
-console.log('[Unified SW] Service Worker loaded successfully');
-console.log('[Unified SW] Cache version:', CACHE_NAME);
-console.log('[Unified SW] Firebase initialized for project:', firebase.app().options.projectId);
