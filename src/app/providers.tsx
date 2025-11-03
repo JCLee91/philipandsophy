@@ -8,12 +8,17 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
-import { useEffect, lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { initializeFirebase } from '@/lib/firebase';
 import { CACHE_TIMES } from '@/constants/cache';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PushNotificationRefresher } from '@/components/PushNotificationRefresher';
+
+// ✅ Firebase 즉시 초기화 (모듈 로드 시점, React 마운트 대기 불필요)
+if (typeof window !== 'undefined') {
+  initializeFirebase();
+}
 
 // Lazy load React Query Devtools (프로덕션 번들에서 완전 제외)
 const ReactQueryDevtools =
@@ -65,11 +70,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   //       suspend because React will throw away the client on the initial
   //       render if it suspends and there is no boundary
   const queryClient = getQueryClient();
-
-  // Initialize Firebase on client side
-  useEffect(() => {
-    initializeFirebase();
-  }, []);
 
   return (
     <ThemeProvider

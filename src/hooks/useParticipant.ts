@@ -54,9 +54,9 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
       }
     },
     enabled: enabled && !!firebaseUid,
-    // React Query 재시도 정책 (5회, 500ms 간격으로 증가)
-    retry: 5,
-    retryDelay: (attemptIndex) => Math.min(500 * (attemptIndex + 1), 3000),
+    // React Query 재시도 정책 (2회로 축소, 빠른 실패)
+    retry: 2,
+    retryDelay: 1000, // 고정 1초 (총 최대 2초 대기)
     // 캐싱 전략
     staleTime: 5 * 60 * 1000, // 5분 (참가자 정보는 자주 변경되지 않음)
     gcTime: 10 * 60 * 1000, // 10분 (메모리에 오래 유지)
