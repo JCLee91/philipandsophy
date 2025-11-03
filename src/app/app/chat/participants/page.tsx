@@ -168,10 +168,10 @@ function ParticipantsPageContent() {
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  // 참가자 정렬: admin 계정 제외, 현재 사용자 최상단, 나머지는 원래 순서
+  // 참가자 정렬: admin 계정 + 고스트 제외, 현재 사용자 최상단, 나머지는 원래 순서
   const sortedParticipants = useMemo(() => {
     return [...participants]
-      .filter((p) => p.id !== SYSTEM_IDS.ADMIN) // admin 계정만 제외
+      .filter((p) => p.id !== SYSTEM_IDS.ADMIN && !p.isGhost) // admin 계정 + 고스트 제외
       .sort((a, b) => {
         // 현재 사용자를 맨 위로
         if (a.id === currentUserId) return -1;

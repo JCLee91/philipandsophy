@@ -23,6 +23,7 @@ export interface ParticipantData {
   gender?: 'male' | 'female' | 'other';
   isSuperAdmin?: boolean; // 슈퍼 관리자 (모든 프로필 열람, 리스트 미표시)
   isAdministrator?: boolean; // 일반 관리자 (공지사항 관리, 프로필 열람 제약 동일)
+  isGhost?: boolean; // 고스트 참가자 (테스트용, 리스트 미표시, 오늘의 서재 접근 가능)
   cohortId: string;
 }
 
@@ -133,6 +134,7 @@ export interface Participant {
   profileBookUrl?: string; // 프로필북 URL
   isSuperAdmin?: boolean; // 슈퍼 관리자 (모든 프로필 열람, 리스트 미표시)
   isAdministrator?: boolean; // 일반 관리자 (공지사항 관리, 프로필 열람 제약 동일)
+  isGhost?: boolean; // 고스트 참가자 (테스트용, 리스트 미표시, 오늘의 서재 접근 가능)
   occupation?: string; // 직업/하는 일
   bio?: string; // 한 줄 소개 (2줄 이내)
   currentBookTitle?: string; // 현재 읽고 있는 책 제목 (프로필북에 표시)

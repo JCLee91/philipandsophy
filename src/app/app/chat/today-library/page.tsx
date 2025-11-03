@@ -146,7 +146,7 @@ function TodayLibraryContent() {
 
           // 본인과 슈퍼관리자 제외
           participants = participants.filter(
-            (p) => p.id !== currentUserId && !p.isSuperAdmin
+            (p) => p.id !== currentUserId && !p.isSuperAdmin && !p.isGhost
           );
         } else {
           // 평소: 어제 인증한 사람들만 (본인 제외)
@@ -165,7 +165,8 @@ function TodayLibraryContent() {
               ...doc.data(),
             })) as Participant[]);
           }
-          participants = chunks;
+          // 고스트 참가자 제외
+          participants = chunks.filter(p => !p.isGhost);
         }
       } else {
         // 평소 - 매칭된 4명만

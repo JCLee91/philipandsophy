@@ -46,16 +46,19 @@ export async function GET(request: NextRequest) {
       ? await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
       : await db.collection(COLLECTIONS.PARTICIPANTS).get();
 
-    // 슈퍼관리자만 제외 (일반 관리자는 통계에 포함)
+    // 슈퍼관리자 + 고스트 제외 (일반 관리자는 통계에 포함)
     const nonSuperAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !data.isSuperAdmin;
+      return !data.isSuperAdmin && !data.isGhost;
     });
 
-    // 슈퍼관리자 ID 목록 생성
-    const superAdminIds = new Set(
+    // 슈퍼관리자 + 고스트 ID 목록 생성
+    const excludedIds = new Set(
       participantsSnapshot.docs
-        .filter((doc) => doc.data().isSuperAdmin === true)
+        .filter((doc) => {
+          const data = doc.data();
+          return data.isSuperAdmin === true || data.isGhost === true;
+        })
         .map((doc) => doc.id)
     );
 
@@ -108,7 +111,7 @@ export async function GET(request: NextRequest) {
     const nonSuperAdminTodaySubmissionIds = new Set<string>();
     todaySubmissions.forEach((doc) => {
       const data = doc.data();
-      if (!superAdminIds.has(data.participantId)) {
+      if (!excludedIds.has(data.participantId)) {
         nonSuperAdminTodaySubmissionIds.add(data.participantId);
       }
     });
@@ -173,11 +176,11 @@ export async function GET(request: NextRequest) {
             docs: snap.docs.filter(d => d.data().status !== 'draft')
           }));
 
-    // 이번 주 인증한 참가자 ID (슈퍼관리자만 제외, 중복 제거)
+    // 이번 주 인증한 참가자 ID (슈퍼관리자 + 고스트 제외, 중복 제거)
     const weekParticipantIds = new Set<string>();
     weekSubmissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      if (!superAdminIds.has(data.participantId)) {
+      if (!excludedIds.has(data.participantId)) {
         weekParticipantIds.add(data.participantId);
       }
     });
