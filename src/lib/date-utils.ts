@@ -297,3 +297,28 @@ export function canViewAllProfilesWithoutAuth(cohort: Cohort): boolean {
 
   return today >= startDate;
 }
+
+/**
+ * 어제 인증자 전체 공개 모드인지 체크
+ *
+ * @param cohort - 기수 정보
+ * @returns true if profileUnlockDate 설정되어 있고 오늘이 해당 날짜 이상
+ *
+ * @example
+ * // profileUnlockDate: "2025-10-08", today: "2025-10-10"
+ * shouldShowAllYesterdayVerified(cohort); // true
+ *
+ * // profileUnlockDate: "2025-10-08", today: "2025-10-07"
+ * shouldShowAllYesterdayVerified(cohort); // false
+ */
+export function shouldShowAllYesterdayVerified(cohort: Cohort): boolean {
+  if (!cohort?.profileUnlockDate) return false;
+
+  const today = parseISO(getTodayString());
+  const unlockDate = parseISO(cohort.profileUnlockDate);
+
+  if (!isValid(today) || !isValid(unlockDate)) return false;
+
+  // 오늘이 설정된 날짜 이상이면 true
+  return today >= unlockDate;
+}

@@ -62,6 +62,7 @@ export interface Cohort {
   dailyFeaturedParticipants?: Record<string, DailyMatchingEntry>; // 날짜별 추천 참가자 및 매칭 결과
   participantCount?: number; // 🆕 참가자 수 (계산 필드, optional)
   totalDays?: number; // 🆕 프로그램 총 일수 (계산 필드, optional)
+  profileUnlockDate?: string | null; // 🆕 어제 인증자 전체 공개 시작 날짜 (null: 기본 2x2만, "2025-10-08": 해당 날짜부터 전체 공개, ISO 8601)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }

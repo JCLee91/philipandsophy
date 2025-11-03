@@ -44,12 +44,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Cloud Run 함수 호출 - 원본 ID 토큰 그대로 전달
+    const internalSecret = process.env.INTERNAL_SERVICE_SECRET;
+
     const response = await fetch(matchingUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': authHeader, // 원본 ID 토큰 그대로 전달
-        'X-Internal-Secret': process.env.INTERNAL_SERVICE_SECRET || ''
+        ...(internalSecret ? { 'X-Internal-Secret': internalSecret } : {})
       },
       body: JSON.stringify({ cohortId })
     });

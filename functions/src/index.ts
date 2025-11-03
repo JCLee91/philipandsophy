@@ -1125,6 +1125,24 @@ export const scheduledMatchingPreview = onSchedule(
 
       logger.info(`Active cohort detected: ${cohortId}`);
 
+      // 3-1. profileUnlockDate 체크: 설정된 날짜 이상이면 AI 매칭 스킵
+      const cohortDoc = activeCohortsSnapshot.empty
+        ? await db.collection("cohorts").doc(cohortId).get()
+        : activeCohortsSnapshot.docs[0];
+
+      const cohortData = cohortDoc.data();
+      const profileUnlockDate = cohortData?.profileUnlockDate;
+
+      if (profileUnlockDate) {
+        // 오늘 날짜와 비교 (KST 기준)
+        const today = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).split(',')[0]; // YYYY-MM-DD
+
+        if (today >= profileUnlockDate) {
+          logger.info(`📅 Profile unlock date reached (${profileUnlockDate}), skipping AI matching and notifications`);
+          return;
+        }
+      }
+
       // 4. ✅ Cloud Functions v2 (Cloud Run) manualMatchingPreview 직접 호출 (Vercel 60초 제한 회피)
       logger.info(`Calling Cloud Functions manualMatchingPreview for cohort: ${cohortId}`);
 

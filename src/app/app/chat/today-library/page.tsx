@@ -20,7 +20,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { Participant } from '@/types/database';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
-import { getTodayString, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth } from '@/lib/date-utils';
+import { getTodayString, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
+import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -100,16 +101,30 @@ function TodayLibraryContent() {
     new Set([...similarFeaturedIds, ...oppositeFeaturedIds])
   );
 
+  // 어제 인증한 참가자 목록 조회
+  const { data: yesterdayVerifiedIds, isLoading: yesterdayVerifiedLoading } = useYesterdayVerifiedParticipants(cohortId || undefined);
+
   // Step 2-2: 마지막 날 체크
   // 슈퍼관리자는 1일차부터 항상 전체 프로필 볼 수 있음 (인증 불필요)
-  const showAllProfiles = isSuperAdmin || (cohort ? canViewAllProfiles(cohort) : false);
+  const isFinalDay = cohort ? canViewAllProfiles(cohort) : false;
   const showAllProfilesWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
+
+  // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
+  const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
+
+  // 새로운 규칙:
+  // 1. 슈퍼관리자 OR 마지막 날 → 전체 공개
+  // 2. profileUnlockDate 이상 + 오늘 인증 + 어제 인증자 존재 → 어제 인증자 전체 공개
+  const showAllProfiles = isSuperAdmin || isFinalDay || (isUnlockDayOrAfter && !isLocked && yesterdayVerifiedIds && yesterdayVerifiedIds.size > 0);
 
   // 추천 참가자들의 정보 가져오기
   // 마지막 날이면 전체 참가자 쿼리, 아니면 매칭된 4명만
+  const yesterdayIdsArray = yesterdayVerifiedIds ? Array.from(yesterdayVerifiedIds).sort() : [];
+  const yesterdayIdsKey = yesterdayIdsArray.join(',');
+
   const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
     queryKey: showAllProfiles
-      ? ['all-participants-final-day', cohortId, currentUserId]
+      ? ['all-participants-final-day', cohortId, currentUserId, todayDate, yesterdayIdsKey]
       : ['featured-participants-v3', activeMatchingDate, allFeaturedIds],
     queryFn: async () => {
       const db = getDb();
@@ -118,20 +133,40 @@ function TodayLibraryContent() {
       let participants: Participant[] = [];
 
       if (showAllProfiles) {
-        // Step 2-3: 마지막 날 - 전체 참가자 로드 (본인 + 슈퍼관리자 제외)
-        // ✅ cohortId 필터 추가
-        const q = query(participantsRef, where('cohortId', '==', cohortId));
-        const allSnapshot = await getDocs(q);
-        participants = allSnapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as Participant[];
+        // 어제 인증자 전체 또는 마지막 날 전체 참가자 로드
+        if (isFinalDay || isSuperAdmin) {
+          // 마지막 날 또는 슈퍼관리자: 전체 참가자
+          const q = query(participantsRef, where('cohortId', '==', cohortId));
+          const allSnapshot = await getDocs(q);
+          participants = allSnapshot.docs
+            .map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })) as Participant[];
 
-        // 본인과 슈퍼관리자 제외
-        participants = participants.filter(
-          (p) => p.id !== currentUserId && !p.isSuperAdmin
-        );
+          // 본인과 슈퍼관리자 제외
+          participants = participants.filter(
+            (p) => p.id !== currentUserId && !p.isSuperAdmin
+          );
+        } else {
+          // 평소: 어제 인증한 사람들만 (본인 제외)
+          const yesterdayIds = Array.from(yesterdayVerifiedIds || []).filter(id => id !== currentUserId);
+
+          if (yesterdayIds.length === 0) return [];
+
+          // Firestore 'in' 쿼리는 최대 10개 제한 → 청크로 나눠서 조회
+          const chunks: Participant[] = [];
+          for (let i = 0; i < yesterdayIds.length; i += 10) {
+            const chunk = yesterdayIds.slice(i, i + 10);
+            const q = query(participantsRef, where('__name__', 'in', chunk));
+            const snapshot = await getDocs(q);
+            chunks.push(...snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })) as Participant[]);
+          }
+          participants = chunks;
+        }
       } else {
         // 평소 - 매칭된 4명만
         if (allFeaturedIds.length === 0) return [];
@@ -172,7 +207,7 @@ function TodayLibraryContent() {
     // 🔒 보안 수정: 인증된 유저(또는 관리자)만 개인정보 다운로드 가능
     // 단, 마지막 날부터 7일간은 인증 없이도 전체 프로필 조회 가능
     enabled: showAllProfiles
-      ? !!cohort && !!currentUserId
+      ? !!cohort && !!currentUserId && !yesterdayVerifiedLoading
       : !isLocked && allFeaturedIds.length > 0 && !!activeMatchingDate,
     gcTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결) - React Query v5: cacheTime → gcTime
     staleTime: 0, // 항상 신선한 데이터 fetch
@@ -210,7 +245,7 @@ function TodayLibraryContent() {
   }, [sessionLoading, cohortLoading, participant, cohortId, cohort, router, toast]);
 
   // 로딩 상태 - 스켈레톤 UI 표시
-  if (sessionLoading || cohortLoading || participantsLoading || viewerSubmissionLoading) {
+  if (sessionLoading || cohortLoading || participantsLoading || viewerSubmissionLoading || yesterdayVerifiedLoading) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden pt-14">
@@ -456,15 +491,16 @@ function TodayLibraryContent() {
   }
 
   // 3단계: 인증 완료 + 매칭 데이터 있음 → 실제 프로필 카드 표시
-  // Step 2-4: 성별 분류 (마지막 날에만 적용)
+  // Step 2-4: 성별 분류 (마지막 날/전체 공개 시에만 적용)
   let maleParticipants: FeaturedParticipant[] = [];
   let femaleParticipants: FeaturedParticipant[] = [];
   let similarParticipants: FeaturedParticipant[] = [];
   let oppositeParticipants: FeaturedParticipant[] = [];
 
   if (showAllProfiles) {
-    // 마지막 날: 성별로 분류
-    maleParticipants = featuredParticipants.filter(p => p.gender === 'male');
+    // 마지막 날/전체 공개: 성별로 분류
+    // gender 없는 경우 기본값 male로 처리 (방어 코드)
+    maleParticipants = featuredParticipants.filter(p => !p.gender || p.gender === 'male');
     femaleParticipants = featuredParticipants.filter(p => p.gender === 'female');
   } else {
     // 평소: theme별로 분류
@@ -490,9 +526,11 @@ function TodayLibraryContent() {
                     확인해보세요
                   </h1>
                   <p className="font-medium text-body-base text-text-secondary">
-                    {showAllProfiles
+                    {isFinalDay || showAllProfilesWithoutAuth
                       ? '14일간의 여정을 마치며 모든 멤버의 프로필을 공개합니다'
-                      : '새벽 2시까지만 읽을 수 있어요'
+                      : isUnlockDayOrAfter && showAllProfiles
+                        ? '어제 인증한 모든 멤버의 프로필을 확인할 수 있어요'
+                        : '새벽 2시까지만 읽을 수 있어요'
                     }
                   </p>
                 </div>

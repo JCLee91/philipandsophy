@@ -22,10 +22,11 @@ import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, canViewAllProfiles, canViewAllProfilesWithoutAuth, getTodayString } from '@/lib/date-utils';
+import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, canViewAllProfiles, canViewAllProfilesWithoutAuth, getTodayString, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
+import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 
 interface ProfileBookContentProps {
   params: Promise<{ participantId: string }>;
@@ -102,6 +103,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 접근 제어
   const { isSelf: checkIsSelf, isSuperAdmin, isVerified: isVerifiedToday } = useAccessControl();
+
+  // 어제 인증한 참가자 목록 조회
+  const { data: yesterdayVerifiedIds } = useYesterdayVerifiedParticipants(cohortId || undefined);
 
   const preferredMatchingDate = useMemo(() => {
     if (!matchingDate) return undefined;
@@ -235,6 +239,12 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   const isFeatured = accessibleProfileIds.has(participantId);
 
+  // 새로운 규칙: 어제 인증한 사람인지 체크
+  const isYesterdayVerified = yesterdayVerifiedIds?.has(participantId) ?? false;
+
+  // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
+  const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
+
   // 디버깅: 매칭 정보 로그
 
   // 매칭 이유 추출 (현재 보는 프로필이 similar인지 opposite인지 확인)
@@ -270,12 +280,14 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // - 본인 OR 슈퍼관리자: 항상 가능
   // - 14일차 + 인증 완료: 모든 프로필 접근 가능
   // - 15일차 이후: 인증 없이도 모든 프로필 접근 가능
-  // - 평소: 매칭된 4명만 (인증 완료 + 추천 멤버)
+  // - 새 규칙: profileUnlockDate 이상 + 오늘 인증 + 어제 인증한 사람 → 접근 가능
+  // - 기존: 매칭된 4명만 (인증 완료 + 추천 멤버)
   const hasAccess = isSelf ||
     isSuperAdmin ||
     (isAfterProgramWithoutAuth) ||  // 15일차 이후 (인증 불필요)
     (isFinalDayAccess && isVerifiedToday) ||  // 14일차 (인증 필요)
-    (isVerifiedToday && viewerHasAccessForDate && isFeatured);  // 평소 (매칭된 4명만)
+    (isUnlockDayOrAfter && isVerifiedToday && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상
+    (isVerifiedToday && viewerHasAccessForDate && isFeatured);  // 기존: 매칭된 4명만
 
   // 디버깅 로그
 

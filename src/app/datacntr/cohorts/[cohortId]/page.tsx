@@ -22,6 +22,8 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   const [cohort, setCohort] = useState<Cohort | null>(null);
   const [participants, setParticipants] = useState<CohortParticipant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingUnlockDay, setIsUpdatingUnlockDay] = useState(false);
+  const [tempUnlockDate, setTempUnlockDate] = useState<string>('');
 
   // Params 추출
   useEffect(() => {
@@ -65,6 +67,43 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
 
     fetchCohortDetail();
   }, [user, cohortId]);
+
+  // cohort 로드 시 tempUnlockDate 초기화
+  useEffect(() => {
+    if (cohort?.profileUnlockDate) {
+      setTempUnlockDate(cohort.profileUnlockDate);
+    }
+  }, [cohort?.profileUnlockDate]);
+
+  // profileUnlockDate 업데이트
+  const handleUpdateProfileUnlockDate = async (date: string | null) => {
+    if (!user || !cohortId) return;
+
+    setIsUpdatingUnlockDay(true);
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(`/api/datacntr/cohorts/${cohortId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ profileUnlockDate: date }),
+      });
+
+      if (!response.ok) {
+        throw new Error('프로필 공개 설정 업데이트 실패');
+      }
+
+      // 로컬 상태 업데이트
+      setCohort(prev => prev ? { ...prev, profileUnlockDate: date } : null);
+    } catch (error) {
+      console.error('프로필 공개 설정 업데이트 실패:', error);
+      alert('설정 업데이트에 실패했습니다.');
+    } finally {
+      setIsUpdatingUnlockDay(false);
+    }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -148,6 +187,58 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         >
           Daily Questions 관리
         </button>
+      </div>
+
+      {/* 프로필 공개 설정 */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">프로필북 공개 설정</h2>
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">
+            어제 인증한 사람들의 프로필을 모두 공개할 시작 날짜를 설정합니다.
+          </p>
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">
+              공개 시작 날짜:
+            </label>
+            <input
+              type="date"
+              value={tempUnlockDate}
+              onChange={(e) => setTempUnlockDate(e.target.value)}
+              disabled={isUpdatingUnlockDay}
+              min={cohort?.programStartDate}
+              max={cohort?.endDate}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={() => handleUpdateProfileUnlockDate(tempUnlockDate || null)}
+              disabled={isUpdatingUnlockDay || tempUnlockDate === (cohort?.profileUnlockDate ?? '')}
+              className="px-3 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              저장
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTempUnlockDate('');
+                handleUpdateProfileUnlockDate(null);
+              }}
+              disabled={isUpdatingUnlockDay || !cohort?.profileUnlockDate}
+              className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 transition-colors"
+            >
+              초기화
+            </button>
+            {isUpdatingUnlockDay && (
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            )}
+          </div>
+          <p className="text-xs text-gray-500">
+            {cohort?.profileUnlockDate
+              ? `${formatISODateKST(cohort.profileUnlockDate, 'yyyy년 M월 d일')}부터 오늘 인증한 사람은 어제 인증한 모든 사람의 프로필을 볼 수 있습니다.`
+              : '기본 설정: 매칭된 4명만 볼 수 있습니다.'
+            }
+          </p>
+        </div>
       </div>
 
       {/* 통계 카드 */}

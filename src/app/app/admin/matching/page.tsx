@@ -487,12 +487,9 @@ function MatchingPageContent() {
       }
 
       // Firebase Functions v2 (Cloud Run) URL 사용
-      // 환경변수에서 URL 가져오기 (재배포 시 .env.local만 수정)
-      const matchingUrl = process.env.NEXT_PUBLIC_MANUAL_MATCHING_URL;
-
-      if (!matchingUrl) {
-        throw new Error('매칭 서비스 URL이 설정되지 않았습니다. 관리자에게 문의하세요.');
-      }
+      // 환경변수 없으면 Next API 라우트로 폴백 (재배포 없이 동작)
+      const matchingUrl =
+        process.env.NEXT_PUBLIC_MANUAL_MATCHING_URL || '/api/admin/matching';
 
       const response = await fetch(matchingUrl, {
         method: 'POST',
