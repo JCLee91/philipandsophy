@@ -329,15 +329,8 @@ export function ChatClientView({
   const blockingParticipantsLoading = shouldLoadParticipants && participantsLoading;
 
   if (sessionLoading || cohortLoading || !participant || !cohort || !cohortId || blockingParticipantsLoading) {
-    return (
-      <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden pt-14">
-          <HeaderSkeleton />
-          <NoticeListSkeleton />
-          <FooterActionsSkeleton />
-        </div>
-      </PageTransition>
-    );
+    // ✅ 스켈레톤 대신 null 반환 (SplashScreen이 로딩 표시)
+    return null;
   }
 
   return (

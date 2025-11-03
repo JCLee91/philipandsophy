@@ -129,6 +129,7 @@ export default function Home() {
       }
 
       if (targetCohortId) {
+        // 채팅 페이지로 이동하되, 스플래시는 유지 (URL만 변경)
         router.replace(appRoutes.chat(targetCohortId));
       }
     }
@@ -154,10 +155,10 @@ export default function Home() {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  // ✅ 로그인 한 상태면 리다이렉트 대기
-  // 리다이렉트 중에는 아무것도 렌더링하지 않음 (빈 화면 방지를 위해 null 반환)
+  // ✅ 로그인 한 상태면 리다이렉트 대기 (스플래시 계속 표시)
+  // 채팅 페이지 렌더링 시작될 때까지 스플래시 유지
   if (participantStatus === 'ready' && participant) {
-    return null;
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
   // ✅ 로그인 필요 (로그아웃 상태 포함)
