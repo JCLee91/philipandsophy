@@ -14,14 +14,15 @@ export const dynamic = 'force-dynamic';
 
 // 로딩 타임아웃 설정 (10초)
 const MAX_LOADING_TIME = 10000;
-// 최소 스플래시 표시 시간 (즉시 전환)
-const MIN_SPLASH_TIME = 0;
+// 최소 스플래시 표시 시간 (1초)
+const MIN_SPLASH_TIME = 1000;
 
 export default function Home() {
   const router = useRouter();
   const { participant, participantStatus, isLoading } = useAuth();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
+  const [minSplashElapsed, setMinSplashElapsed] = useState(false);
 
   const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
   const {
@@ -33,13 +34,14 @@ export default function Home() {
     refetchOnWindowFocus: false,
   });
 
-  // ✅ 데이터 준비 완료 플래그
-  // - 일반 사용자: participant만 있으면 준비 완료
-  // - 관리자: participant + activeCohorts 둘 다 필요 (또는 에러/타임아웃)
-  const isDataReady = !isLoading && (
-    participantStatus === 'ready' &&
-    (!isAdminUser || !activeCohortsLoading || loadingTimeout || activeCohortsError)
-  );
+  // ✅ 최소 스플래시 시간 보장 (1초)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinSplashElapsed(true);
+    }, MIN_SPLASH_TIME);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // ✅ 로딩 타임아웃 (10초)
   useEffect(() => {
@@ -96,7 +98,7 @@ export default function Home() {
 
   // ✅ participant가 ready 상태이면 채팅으로 바로 이동
   useEffect(() => {
-    if (isDataReady && participant && !hasNavigated) {
+    if (participantStatus === 'ready' && participant && !hasNavigated) {
       let targetCohortId: string | null = null;
 
       // 관리자는 활성 코호트로, 일반 사용자는 자신의 코호트로 이동
@@ -119,7 +121,7 @@ export default function Home() {
       }
     }
   }, [
-    isDataReady,
+    participantStatus,
     participant,
     activeCohorts,
     activeCohortsLoading,
@@ -130,8 +132,8 @@ export default function Home() {
     router,
   ]);
 
-  // ✅ 로딩 중에만 스플래시 표시
-  if (isLoading) {
+  // ✅ 로딩 중이거나 최소 시간 미경과 시 스플래시 표시
+  if (isLoading || !minSplashElapsed) {
     return <SplashScreen />;
   }
 
