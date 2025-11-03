@@ -20,9 +20,8 @@ const MIN_SPLASH_TIME = 0;
 export default function Home() {
   const router = useRouter();
   const { participant, participantStatus, isLoading } = useAuth();
-  const [showSplash, setShowSplash] = useState(true);
-  const [minSplashComplete, setMinSplashComplete] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [hasNavigated, setHasNavigated] = useState(false);
 
   const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
   const {
@@ -41,20 +40,6 @@ export default function Home() {
     participantStatus === 'ready' &&
     (!isAdminUser || !activeCohortsLoading || loadingTimeout || activeCohortsError)
   );
-
-  // ✅ 최소 스플래시 시간 보장 (즉시 완료)
-  useEffect(() => {
-    if (MIN_SPLASH_TIME === 0) {
-      setMinSplashComplete(true);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setMinSplashComplete(true);
-    }, MIN_SPLASH_TIME);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // ✅ 로딩 타임아웃 (10초)
   useEffect(() => {
@@ -111,7 +96,7 @@ export default function Home() {
 
   // ✅ participant가 ready 상태이면 채팅으로 바로 이동
   useEffect(() => {
-    if (isDataReady && participant && minSplashComplete) {
+    if (isDataReady && participant && !hasNavigated) {
       let targetCohortId: string | null = null;
 
       // 관리자는 활성 코호트로, 일반 사용자는 자신의 코호트로 이동
@@ -129,7 +114,7 @@ export default function Home() {
       }
 
       if (targetCohortId) {
-        // 채팅 페이지로 이동하되, 스플래시는 유지 (URL만 변경)
+        setHasNavigated(true);
         router.replace(appRoutes.chat(targetCohortId));
       }
     }
@@ -140,32 +125,22 @@ export default function Home() {
     activeCohortsLoading,
     activeCohortsError,
     loadingTimeout,
-    minSplashComplete,
+    hasNavigated,
     isAdminUser,
     router,
   ]);
 
-  // ✅ 스플래시 화면 표시 조건
-  // - 초기 진입 시 (showSplash)
-  // - 데이터 준비 미완료 (!isDataReady)
-  // - 최소 스플래시 시간 미완료 (!minSplashComplete)
-  const shouldShowSplash = showSplash || !isDataReady || !minSplashComplete;
-
-  if (shouldShowSplash) {
-    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  // ✅ 스플래시 화면 표시: 로그인 완료 전까지만
+  if (participantStatus !== 'ready' || !participant) {
+    return <SplashScreen />;
   }
 
-  // ✅ 로그인 한 상태면 리다이렉트 대기 (스플래시 계속 표시)
-  // 채팅 페이지 렌더링 시작될 때까지 스플래시 유지
-  if (participantStatus === 'ready' && participant) {
-    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  // ✅ 로그인 완료 but 네비게이션 전: 스플래시 유지
+  // 채팅 페이지가 실제로 렌더링되기 전까지
+  if (!hasNavigated) {
+    return <SplashScreen />;
   }
 
-  // ✅ 로그인 필요 (로그아웃 상태 포함)
-  // participantStatus가 'idle', 'missing', 'error' 등 모든 비로그인 상태에서 로그인 화면 표시
-  return (
-    <div className="app-shell flex min-h-screen items-center justify-center p-4">
-      <PhoneAuthCard />
-    </div>
-  );
+  // ✅ 네비게이션 완료: null 반환 (채팅 페이지 표시)
+  // 이 코드는 실행되지 않음 (위에서 이미 return)
 }
