@@ -37,12 +37,23 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v6'; // Increment version to force update
+const CACHE_NAME = 'philipandsophy-v7'; // Increment version to force update
+
+// ✅ 앱 셸 프리캐시 (초기 로딩 필수 리소스)
 const urlsToCache = [
   '/',
   '/app',
   '/image/favicon.webp',
+  '/image/logo_app.webp',
+  '/image/app-icon-192.png',
+  '/image/badge-icon.webp',
 ];
+
+// ✅ 네비게이션 요청 감지 (HTML 페이지)
+function isNavigationRequest(request) {
+  return request.mode === 'navigate' ||
+         (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'));
+}
 
 // ============================================
 // PART 3: Service Worker Lifecycle Events
@@ -99,8 +110,8 @@ self.addEventListener('activate', (event) => {
 });
 
 /**
- * Fetch event - network first, fallback to cache
- * Handles all network requests
+ * Fetch event - cache-first for navigation, network-first for others
+ * Optimized for fast initial load
  */
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
@@ -135,7 +146,61 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network first, fallback to cache strategy
+  // ✅ Cache-first for navigation requests (HTML pages)
+  // 빠른 초기 로딩을 위해 캐시 우선, 백그라운드 업데이트
+  if (isNavigationRequest(event.request)) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        // 캐시가 있으면 즉시 반환하고 백그라운드에서 업데이트
+        if (cachedResponse) {
+          console.log('[Unified SW] Cache-first: serving from cache:', event.request.url);
+
+          // 백그라운드 업데이트 (await 없이)
+          fetch(event.request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.ok) {
+                caches.open(CACHE_NAME).then((cache) => {
+                  cache.put(event.request, networkResponse);
+                });
+              }
+            })
+            .catch(() => {
+              // 백그라운드 업데이트 실패는 무시
+            });
+
+          return cachedResponse;
+        }
+
+        // 캐시가 없으면 네트워크에서 가져오기
+        console.log('[Unified SW] Cache miss: fetching from network:', event.request.url);
+        return fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.ok) {
+              const responseToCache = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            // 네트워크도 실패하면 기본 오프라인 페이지 (선택사항)
+            return new Response(
+              '<!DOCTYPE html><html><body><h1>오프라인 상태입니다</h1></body></html>',
+              {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: { 'Content-Type': 'text/html; charset=utf-8' }
+              }
+            );
+          });
+      })
+    );
+    return;
+  }
+
+  // ✅ Network-first for non-navigation requests (CSS, JS, images)
+  // 최신 버전 우선, 실패 시 캐시 사용
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -155,10 +220,10 @@ self.addEventListener('fetch', (event) => {
         // Network failed, try cache
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
-            console.log('[Unified SW] Serving from cache:', event.request.url);
+            console.log('[Unified SW] Serving from cache (fallback):', event.request.url);
             return cachedResponse;
           }
-          // No cache available, return error response
+          // No cache available
           console.error('[Unified SW] No cache available for:', event.request.url);
           return new Response(
             'Network error and no cached version available',

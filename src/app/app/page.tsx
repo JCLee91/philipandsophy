@@ -14,8 +14,8 @@ export const dynamic = 'force-dynamic';
 
 // 로딩 타임아웃 설정 (10초)
 const MAX_LOADING_TIME = 10000;
-// 최소 스플래시 표시 시간 (1.5초)
-const MIN_SPLASH_TIME = 1500;
+// 최소 스플래시 표시 시간 (즉시 전환)
+const MIN_SPLASH_TIME = 0;
 
 export default function Home() {
   const router = useRouter();
@@ -34,8 +34,21 @@ export default function Home() {
     refetchOnWindowFocus: false,
   });
 
-  // ✅ 최소 스플래시 시간 보장 (1.5초)
+  // ✅ 데이터 준비 완료 플래그
+  // - 일반 사용자: participant만 있으면 준비 완료
+  // - 관리자: participant + activeCohorts 둘 다 필요 (또는 에러/타임아웃)
+  const isDataReady = !isLoading && (
+    participantStatus === 'ready' &&
+    (!isAdminUser || !activeCohortsLoading || loadingTimeout || activeCohortsError)
+  );
+
+  // ✅ 최소 스플래시 시간 보장 (즉시 완료)
   useEffect(() => {
+    if (MIN_SPLASH_TIME === 0) {
+      setMinSplashComplete(true);
+      return;
+    }
+
     const timer = setTimeout(() => {
       setMinSplashComplete(true);
     }, MIN_SPLASH_TIME);
@@ -98,7 +111,7 @@ export default function Home() {
 
   // ✅ participant가 ready 상태이면 채팅으로 바로 이동
   useEffect(() => {
-    if (!isLoading && participantStatus === 'ready' && participant && minSplashComplete) {
+    if (isDataReady && participant && minSplashComplete) {
       let targetCohortId: string | null = null;
 
       // 관리자는 활성 코호트로, 일반 사용자는 자신의 코호트로 이동
@@ -120,8 +133,7 @@ export default function Home() {
       }
     }
   }, [
-    isLoading,
-    participantStatus,
+    isDataReady,
     participant,
     activeCohorts,
     activeCohortsLoading,
@@ -134,14 +146,9 @@ export default function Home() {
 
   // ✅ 스플래시 화면 표시 조건
   // - 초기 진입 시 (showSplash)
-  // - 로딩 중 (isLoading)
-  // - 관리자의 활성 코호트 로딩 중 (단, 타임아웃 전까지만)
-  // - 최소 스플래시 시간 미완료
-  const shouldShowSplash =
-    showSplash ||
-    isLoading ||
-    !minSplashComplete ||
-    (isAdminUser && activeCohortsLoading && !loadingTimeout && !activeCohortsError);
+  // - 데이터 준비 미완료 (!isDataReady)
+  // - 최소 스플래시 시간 미완료 (!minSplashComplete)
+  const shouldShowSplash = showSplash || !isDataReady || !minSplashComplete;
 
   if (shouldShowSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;

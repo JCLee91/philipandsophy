@@ -18,15 +18,14 @@ import { logger } from '@/lib/logger';
  * - Scope 충돌 없음 (단일 scope: '/')
  */
 /**
- * Wait for Service Worker to control the page
+ * Wait for Service Worker to control the page (non-blocking)
  *
  * iOS PWA에서 컨트롤러 전환이 느릴 수 있으므로
- * controllerchange 이벤트를 대기합니다.
+ * controllerchange 이벤트를 대기하되, 짧은 타임아웃으로 앱 블로킹 방지
  */
-async function waitForController(timeoutMs: number = 5000): Promise<void> {
+async function waitForController(timeoutMs: number = 300): Promise<void> {
   // 이미 컨트롤러가 있으면 즉시 반환
   if (navigator.serviceWorker.controller) {
-
     return;
   }
 
@@ -37,31 +36,23 @@ async function waitForController(timeoutMs: number = 5000): Promise<void> {
     new Promise<void>((resolve) => {
       onControllerChange = () => {
         if (navigator.serviceWorker.controller) {
-
           resolve();
         }
       };
       navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
     }),
-    new Promise<void>((_, reject) => {
+    new Promise<void>((resolve) => {
       setTimeout(() => {
-
-        reject(new Error('Controller timeout'));
+        // 타임아웃 시 에러 대신 resolve (앱 블로킹 방지)
+        resolve();
       }, timeoutMs);
     }),
   ])
     .then(() => {
-      // ✅ 성공 시 리스너 정리
+      // ✅ 성공 또는 타임아웃 시 리스너 정리
       if (onControllerChange) {
         navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
       }
-    })
-    .catch(() => {
-      // ✅ 타임아웃 시에도 리스너 정리
-      if (onControllerChange) {
-        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-      }
-
     });
 }
 
@@ -123,8 +114,8 @@ export default function RegisterServiceWorker() {
 
         }
 
-        // Step 3: 컨트롤러 확보 대기 (iOS 최적화)
-        await waitForController(5000);
+        // Step 3: 컨트롤러 확보 대기 (비차단, 300ms 타임아웃)
+        await waitForController(300);
 
         navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
 

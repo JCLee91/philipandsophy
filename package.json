@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run build:sw && next build",
+    "build:sw": "echo '✅ Service Worker is already at public/sw.js (manual maintenance)'",
     "start": "next start",
     "lint": "next lint",
     "seed:notices": "tsx src/scripts/seed-notices.ts",
