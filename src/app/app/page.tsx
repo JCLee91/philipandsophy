@@ -130,17 +130,25 @@ export default function Home() {
     router,
   ]);
 
-  // ✅ 스플래시 화면 표시: 로그인 완료 전까지만
-  if (participantStatus !== 'ready' || !participant) {
+  // ✅ 로딩 중에만 스플래시 표시
+  if (isLoading) {
     return <SplashScreen />;
   }
 
-  // ✅ 로그인 완료 but 네비게이션 전: 스플래시 유지
-  // 채팅 페이지가 실제로 렌더링되기 전까지
-  if (!hasNavigated) {
-    return <SplashScreen />;
+  // ✅ 로그인 완료 상태
+  if (participantStatus === 'ready' && participant) {
+    // 네비게이션 전까지 스플래시 유지
+    if (!hasNavigated) {
+      return <SplashScreen />;
+    }
+    // 네비게이션 완료: null 반환 (채팅 페이지 표시)
+    return null;
   }
 
-  // ✅ 네비게이션 완료: null 반환 (채팅 페이지 표시)
-  // 이 코드는 실행되지 않음 (위에서 이미 return)
+  // ✅ 로그인 필요 (idle, missing, error 등)
+  return (
+    <div className="app-shell flex min-h-screen items-center justify-center p-4">
+      <PhoneAuthCard />
+    </div>
+  );
 }
