@@ -53,9 +53,9 @@ export const metadata: Metadata = {
     url: 'https://www.philipandsophy.kr/',
     images: [
       {
-        url: '/image/Thumbnail_V1_1080_1080.webp',
-        width: 1080,
-        height: 1080,
+        url: '/image/Thumbnail_V2.webp',
+        width: 2400,
+        height: 1260,
         alt: '필립앤소피 썸네일',
       },
     ],
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '필립앤소피 | 승인제 독서소셜클럽',
     description: '깊이 있는 대화가 설레는 만남으로 - 결이 맞는 사람을 만나는 가장 안전하고 쉬운 공간',
-    images: ['/image/Thumbnail_V1_1080_1080.webp'],
+    images: ['/image/Thumbnail_V2.webp'],
   },
   alternates: {
     canonical: 'https://www.philipandsophy.kr/',
