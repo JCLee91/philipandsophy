@@ -88,11 +88,14 @@ export async function GET(request: NextRequest) {
       participantNames.set(doc.id, data.name || '알 수 없음');
     });
 
-    nonAdminSubmissions.forEach((doc) => {
+    // draft 제외한 실제 제출물만 필터링
+    const validSubmissions = nonAdminSubmissions.filter((doc) => {
       const data = doc.data();
+      return data.status !== 'draft';
+    });
 
-      // draft 제외: 임시저장은 통계에서 제외
-      if (data.status === 'draft') return;
+    validSubmissions.forEach((doc) => {
+      const data = doc.data();
 
       // 시간대별 분포
       const submittedAt = timestampToKST(data.submittedAt);
@@ -156,7 +159,8 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const totalSubmissions = nonAdminSubmissions.length;
+    // draft 제외한 실제 제출 수
+    const totalSubmissions = validSubmissions.length;
 
     // 시간대별 백분율 계산
     const timeDistributionPercent = Object.entries(timeDistribution).map(([timeRange, count]) => ({

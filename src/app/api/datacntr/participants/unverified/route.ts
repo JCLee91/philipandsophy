@@ -57,11 +57,15 @@ export async function GET(request: NextRequest) {
       .where('submissionDate', '==', todayDateString)
       .get();
 
-    // Create a set of participant IDs who submitted today (filter by cohort participants)
+    // Create a set of participant IDs who submitted today (filter by cohort participants, exclude draft)
     const submittedParticipantIds = new Set(
       submissionsSnapshot.docs
+        .filter((doc) => {
+          const data = doc.data();
+          // draft 제외: 임시저장만 한 사람은 미인증으로 간주
+          return data.status !== 'draft' && allParticipantIds.includes(data.participantId);
+        })
         .map((doc) => doc.data().participantId)
-        .filter((participantId) => allParticipantIds.includes(participantId))
     );
 
     // Filter participants who haven't submitted today

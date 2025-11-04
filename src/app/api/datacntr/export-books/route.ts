@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
 
     // 책 제목별로 그룹화 (중복 제거)
     const bookMap = new Map<string, { title: string; author?: string; count: number }>();
+    let validSubmissionCount = 0; // 필터링 후 실제 제출 수
 
     snapshot.docs.forEach((doc) => {
       const data = doc.data();
@@ -40,6 +41,8 @@ export async function GET(request: NextRequest) {
 
       // draft 제출물 제외
       if (data.status === 'draft') return;
+
+      validSubmissionCount++; // 유효한 제출 수 집계
 
       const title = data.bookTitle;
       const author = data.bookAuthor || '저자 미상';
@@ -60,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      totalSubmissions: snapshot.size,
+      totalSubmissions: validSubmissionCount, // 필터 후 실제 제출 수
       uniqueBooks: bookList.length,
       books: bookList,
     });

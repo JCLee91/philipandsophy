@@ -53,15 +53,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       nonAdminParticipants.map(async (doc) => {
         const participantData = doc.data();
 
-        // 해당 참가자의 인증 횟수 조회
+        // 해당 참가자의 인증 횟수 조회 (draft 제외)
         const submissionsSnapshot = await db
           .collection(COLLECTIONS.READING_SUBMISSIONS)
           .where('participantId', '==', doc.id)
           .get();
 
+        // draft 제외한 실제 인증 수 집계
+        const validSubmissionCount = submissionsSnapshot.docs.filter((doc) => {
+          const data = doc.data();
+          return data.status !== 'draft';
+        }).length;
+
         return {
           ...sanitizeParticipantForClient({ id: doc.id, ...participantData }),
-          submissionCount: submissionsSnapshot.size,
+          submissionCount: validSubmissionCount,
         };
       })
     );
