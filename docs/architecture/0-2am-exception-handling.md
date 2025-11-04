@@ -31,7 +31,7 @@ This document details how the system implements the 2AM submission deadline poli
 ### 3. `getYesterdayString()`
 **Location**: `src/lib/date-utils.ts`
 - Always returns yesterday's date (no special 0-2AM handling)
-- Used as fallback when `getMatchingTargetDate()` throws error
+- Simple utility function for getting yesterday's date in KST
 
 ## Components with 0-2AM Handling
 

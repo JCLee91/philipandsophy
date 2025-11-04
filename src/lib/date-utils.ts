@@ -59,26 +59,31 @@ export function getSubmissionDate(): string {
 /**
  * 한국 시간(KST) 기준 매칭용 날짜를 반환 (새벽 2시 마감 정책 적용)
  *
- * 매칭 대상은 항상 "어제" 제출한 사람들입니다.
- * - 0시~1시 59분: 어제 날짜 (어제는 아직 진행 중이지만 매칭 대상)
- * - 2시~23시 59분: 어제 날짜 (어제가 마감되어 매칭 대상)
+ * 매칭 대상은 "완전히 마감된" 날짜의 제출 데이터입니다.
+ * - 0시~1시 59분: 이틀 전 날짜 (어제는 아직 진행 중, 이틀 전이 완전 마감)
+ * - 2시~23시 59분: 어제 날짜 (어제가 완전 마감)
  *
- * @returns 매칭 대상 날짜 문자열 (항상 어제 날짜)
+ * @returns 매칭 대상 날짜 문자열 (예: "2025-10-14")
  *
  * @example
  * // 10월 16일 새벽 1시
- * getMatchingTargetDate(); // "2025-10-15" (어제)
+ * getMatchingTargetDate(); // "2025-10-14" (이틀 전 - 완전 마감됨)
  *
  * // 10월 16일 오전 10시
- * getMatchingTargetDate(); // "2025-10-15" (어제)
+ * getMatchingTargetDate(); // "2025-10-15" (어제 - 완전 마감됨)
  */
 export function getMatchingTargetDate(): string {
   const nowUTC = new Date();
   const nowKST = toZonedTime(nowUTC, KOREA_TIMEZONE);
+  const hour = nowKST.getHours();
 
-  // 항상 어제 날짜 반환
-  // 0-2시: 어제는 아직 진행 중이지만 프로필북은 계속 볼 수 있어야 함
-  // 2시 이후: 어제가 마감되어 정식으로 매칭 대상
+  // 새벽 0시~1시 59분: 이틀 전 날짜 (어제는 아직 진행 중)
+  if (hour < 2) {
+    const twoDaysAgoKST = subDays(nowKST, 2);
+    return format(twoDaysAgoKST, 'yyyy-MM-dd');
+  }
+
+  // 새벽 2시~23시 59분: 어제 날짜 (어제가 마감됨)
   const yesterdayKST = subDays(nowKST, 1);
   return format(yesterdayKST, 'yyyy-MM-dd');
 }

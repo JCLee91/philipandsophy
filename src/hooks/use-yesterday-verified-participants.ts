@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase/client';
-import { getMatchingTargetDate, getYesterdayString } from '@/lib/date-utils';
+import { getMatchingTargetDate } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
 
 /**
