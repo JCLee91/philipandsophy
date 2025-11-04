@@ -73,6 +73,14 @@ export default function ServicePageClient() {
           className="main-image"
         />
 
+        <Image
+          src="/image/landing/PnS_Service_3.webp?v=4.0"
+          alt="필립앤소피 프로그램 추가 정보"
+          width={1170}
+          height={4797}
+          className="main-image"
+        />
+
         <div className="cta-section">
           <Tooltip />
           <a
