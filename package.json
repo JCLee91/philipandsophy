@@ -41,6 +41,7 @@
     "check:cohorts": "tsx src/scripts/check-cohort-participants.ts",
     "check:yesterday-submissions": "tsx src/scripts/check-yesterday-submissions.ts",
     "fix:yesterday-books": "tsx src/scripts/fix-yesterday-books.ts",
+    "fix:duplicate-submissions": "tsx src/scripts/fix-duplicate-submissions.ts",
     "add:backdated-submission": "tsx src/scripts/add-backdated-submission.ts",
     "update:occupations": "tsx src/scripts/update-all-occupations.ts",
     "check:admin-fields": "tsx src/scripts/check-admin-fields.ts",
