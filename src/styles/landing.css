@@ -226,7 +226,7 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 2000;
-    display: none; /* 모바일에서 숨김 */
+    display: block; /* 모든 화면에서 표시 */
 }
 
 .nav-container {
@@ -277,7 +277,7 @@
     top: 16px;
     right: 16px;
     z-index: 2000;
-    display: block; /* 기본 표시 (모바일) */
+    display: none; /* 햄버거 메뉴 사용 안 함 */
 }
 
 .nav-mobile-container {
@@ -349,13 +349,11 @@
     outline-offset: 2px;
 }
 
-/* Desktop: 768px 이상에서 데스크톱 네비 표시 */
-@media (min-width: 768px) {
-    .glass-nav {
-        display: block;
-    }
-    .glass-nav-mobile {
-        display: none;
+/* 모바일 네비게이션 폰트 크기 조정 */
+@media (max-width: 768px) {
+    .nav-tab {
+        padding: 10px 20px;
+        font-size: 14px;
     }
 }
 
