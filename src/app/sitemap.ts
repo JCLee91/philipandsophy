@@ -22,12 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
-    {
-      url: `${baseUrl}/program`,
-      lastModified: new Date('2025-10-28'),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
+    // /program은 비밀 페이지 (robots: noindex)이므로 사이트맵에서 제외
     {
       url: `${baseUrl}/app`,
       lastModified: new Date('2025-11-04'),
