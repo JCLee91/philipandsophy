@@ -57,14 +57,8 @@ function MatchingPageContent() {
 
   // 날짜 정의 (useMemo로 메모이제이션 - 불필요한 재계산 방지)
   // getMatchingTargetDate()를 사용해서 API와 일관성 유지
-  const submissionDate = useMemo(() => {
-    try {
-      return getMatchingTargetDate();
-    } catch (error) {
-      // 새벽 0-2시는 매칭 불가
-      return '';
-    }
-  }, []);
+  // 0-2시: 이틀 전 날짜, 2시 이후: 어제 날짜
+  const submissionDate = useMemo(() => getMatchingTargetDate(), []);
   const submissionQuestion = useMemo(() => getDailyQuestionText(submissionDate), [submissionDate]);
 
   // 오늘 날짜 (Firestore 매칭 키 & localStorage 키로 사용)

@@ -57,17 +57,17 @@ export function getSubmissionDate(): string {
 }
 
 /**
- * 한국 시간(KST) 기준 매칭용 어제 날짜를 반환 (새벽 2시 마감 정책 적용)
+ * 한국 시간(KST) 기준 매칭용 날짜를 반환 (새벽 2시 마감 정책 적용)
  *
- * 매칭은 "어제" 제출된 데이터를 기반으로 실행됩니다.
- * 새벽 0시~2시는 매칭 실행을 차단합니다 (데이터 정합성 보장).
+ * 매칭 대상은 항상 "어제" 제출한 사람들입니다.
+ * - 0시~1시 59분: 어제 날짜 (어제는 아직 진행 중이지만 매칭 대상)
+ * - 2시~23시 59분: 어제 날짜 (어제가 마감되어 매칭 대상)
  *
- * @returns 매칭 대상 날짜 문자열 (예: "2025-10-14")
- * @throws 새벽 0시~1시 59분에는 Error 발생
+ * @returns 매칭 대상 날짜 문자열 (항상 어제 날짜)
  *
  * @example
  * // 10월 16일 새벽 1시
- * getMatchingTargetDate(); // Error: "새벽 0시~2시는 매칭을 실행할 수 없습니다."
+ * getMatchingTargetDate(); // "2025-10-15" (어제)
  *
  * // 10월 16일 오전 10시
  * getMatchingTargetDate(); // "2025-10-15" (어제)
@@ -75,14 +75,10 @@ export function getSubmissionDate(): string {
 export function getMatchingTargetDate(): string {
   const nowUTC = new Date();
   const nowKST = toZonedTime(nowUTC, KOREA_TIMEZONE);
-  const hour = nowKST.getHours();
 
-  // 새벽 0시~1시 59분: 매칭 차단
-  if (hour < 2) {
-    throw new Error('새벽 0시~2시는 매칭을 실행할 수 없습니다. 데이터 마감 시간 이후에 다시 시도해주세요.');
-  }
-
-  // 새벽 2시~23시 59분: 어제 날짜 반환
+  // 항상 어제 날짜 반환
+  // 0-2시: 어제는 아직 진행 중이지만 프로필북은 계속 볼 수 있어야 함
+  // 2시 이후: 어제가 마감되어 정식으로 매칭 대상
   const yesterdayKST = subDays(nowKST, 1);
   return format(yesterdayKST, 'yyyy-MM-dd');
 }

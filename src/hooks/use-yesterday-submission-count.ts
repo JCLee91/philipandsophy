@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
-import { getMatchingTargetDate } from '@/lib/date-utils';
+import { getMatchingTargetDate, getYesterdayString } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
 
 /**
@@ -32,16 +32,8 @@ export function useYesterdaySubmissionCount(cohortId?: string) {
     }
 
     // 새벽 2시 마감 정책 적용된 매칭 대상 날짜
-    // 새벽 0-2시는 에러 대신 빈값 처리
-    let targetDate: string;
-    try {
-      targetDate = getMatchingTargetDate();
-    } catch (err) {
-      // 새벽 0-2시는 카운트 0으로 처리
-      setCount(0);
-      setIsLoading(false);
-      return;
-    }
+    // 0-2시: 이틀 전 날짜, 2시 이후: 어제 날짜
+    const targetDate = getMatchingTargetDate();
 
     setIsLoading(true);
     setError(null);
