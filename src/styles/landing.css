@@ -351,6 +351,10 @@
 
 /* 모바일 네비게이션 폰트 크기 조정 */
 @media (max-width: 768px) {
+    .glass-nav {
+        top: 12px;
+    }
+
     .nav-tab {
         padding: 10px 20px;
         font-size: 14px;
