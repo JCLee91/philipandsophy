@@ -363,6 +363,43 @@
    비디오 섹션
    ========================================== */
 
+/* 이미지 위에 동영상 오버레이 */
+.image-with-video-overlay {
+    position: relative;
+    width: 100%;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 800px;
+    z-index: 10;
+}
+
+.overlay-video {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 모바일: 동영상 크기 조정 */
+@media (max-width: 768px) {
+    .video-overlay {
+        width: 85%;
+        max-width: none;
+    }
+
+    .overlay-video {
+        border-radius: 12px;
+    }
+}
+
 .video-section {
     width: 100%;
     max-width: 1170px;

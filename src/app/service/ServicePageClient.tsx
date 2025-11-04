@@ -39,14 +39,31 @@ export default function ServicePageClient() {
       </div>
 
       <div className="container">
-        <Image
-          src="/image/landing/PnS_Program_1.webp?v=4.0"
-          alt="필립앤소피 독서 프로그램 소개"
-          width={1170}
-          height={3963}
-          className="main-image"
-          priority
-        />
+        {/* 첫 번째 이미지 + 동영상 오버레이 */}
+        <div className="image-with-video-overlay">
+          <Image
+            src="/image/landing/PnS_Program_1.webp?v=4.0"
+            alt="필립앤소피 독서 프로그램 소개"
+            width={1170}
+            height={3963}
+            className="main-image"
+            priority
+          />
+
+          {/* 중간 비어있는 공간에 동영상 배치 */}
+          <div className="video-overlay">
+            <video
+              className="overlay-video"
+              src="/video/mockup.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              poster="/image/landing/PnS_Program_1.webp?v=4.0"
+              aria-label="필립앤소피 프로그램 목업 영상"
+            />
+          </div>
+        </div>
 
         <Image
           src="/image/landing/PnS_Program_2.webp?v=4.0"
@@ -55,20 +72,6 @@ export default function ServicePageClient() {
           height={5871}
           className="main-image"
         />
-
-        {/* 목업 영상 섹션 */}
-        <div className="video-section">
-          <video
-            className="main-video"
-            src="/video/mockup.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            poster="/image/landing/PnS_Program_1.webp?v=4.0"
-            aria-label="필립앤소피 프로그램 목업 영상"
-          />
-        </div>
 
         <div className="cta-section">
           <Tooltip />
