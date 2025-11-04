@@ -215,6 +215,154 @@
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
+/* ==========================================
+   글라스모피즘 네비게이션
+   ========================================== */
+
+/* Desktop Navigation */
+.glass-nav {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    display: none; /* 모바일에서 숨김 */
+}
+
+.nav-container {
+    backdrop-filter: var(--blur-xl);
+    -webkit-backdrop-filter: var(--blur-xl);
+    background: rgba(45, 45, 48, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    padding: 6px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.nav-tab {
+    padding: 12px 32px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.nav-tab:hover {
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-tab-active {
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile Navigation */
+.glass-nav-mobile {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 2000;
+    display: block; /* 기본 표시 (모바일) */
+}
+
+.nav-mobile-container {
+    position: relative;
+}
+
+.nav-mobile-toggle {
+    backdrop-filter: var(--blur-xl);
+    -webkit-backdrop-filter: var(--blur-xl);
+    background: rgba(45, 45, 48, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 12px;
+    color: rgba(255, 255, 255, 0.95);
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.nav-mobile-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.nav-mobile-menu {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    min-width: 200px;
+    backdrop-filter: var(--blur-xl);
+    -webkit-backdrop-filter: var(--blur-xl);
+    background: rgba(45, 45, 48, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nav-mobile-item {
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: block;
+}
+
+.nav-mobile-item:hover {
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-mobile-item-active {
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Desktop: 768px 이상에서 데스크톱 네비 표시 */
+@media (min-width: 768px) {
+    .glass-nav {
+        display: block;
+    }
+    .glass-nav-mobile {
+        display: none;
+    }
+}
+
+/* ==========================================
+   비디오 섹션
+   ========================================== */
+
+.video-section {
+    width: 100%;
+    max-width: 1170px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.main-video {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 0;
+    background: #000;
+}
+
 /* CTA 섹션 - 랜딩 페이지에만 적용 */
 .landing-page .cta-section {
     position: fixed;

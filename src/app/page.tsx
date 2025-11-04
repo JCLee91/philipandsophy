@@ -2,53 +2,15 @@
 
 import Image from 'next/image';
 import Script from 'next/script';
-import '../styles/landing.css';
-import Footer from '@/components/Footer';
+import LandingLayout from '@/components/landing/LandingLayout';
 import Tooltip from '@/components/Tooltip';
 
 // ✅ Disable static generation - providers require runtime context
 export const dynamic = 'force-dynamic';
 
-export default function LandingPage() {
+export default function HomePage() {
   return (
-    <div className="landing-page">
-      {/* Meta Pixel Code */}
-      <Script id="meta-pixel" strategy="afterInteractive">
-        {`
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '1365426628495741');
-          fbq('track', 'PageView');
-        `}
-      </Script>
-      <noscript>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          height="1"
-          width="1"
-          style={{ display: 'none' }}
-          src="https://www.facebook.com/tr?id=1365426628495741&ev=PageView&noscript=1"
-          alt="Facebook pixel tracking"
-        />
-      </noscript>
-
-      {/* Google tag (gtag.js) */}
-      <Script async src="https://www.googletagmanager.com/gtag/js?id=G-EKZ9VRV269" />
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-EKZ9VRV269');
-        `}
-      </Script>
-
+    <LandingLayout>
       {/* JSON-LD Structured Data - Organization */}
       <Script id="json-ld-org" type="application/ld+json" strategy="afterInteractive">
         {JSON.stringify({
@@ -76,77 +38,32 @@ export default function LandingPage() {
         <p>NO 스몰토크 - 필립앤소피만의 방식으로 깊이 있는 대화를 나눕니다.</p>
         <p>NO 억지 텐션 - 편안한 분위기 속에서 자연스럽게 관계를 발전시킵니다.</p>
         <p>NO 일회성 만남 - 나와 같이 맞는 오래갈 인연을 발견할 수 있습니다.</p>
-
-        <h2>EXCLUSIVE PROGRAM - 만남을 기다리면서 시작하는 설렘</h2>
-        <p>서울에서 진행되는 2주간 온라인 독서 프로그램입니다.</p>
-        <ul>
-            <li>선별된 20명의 멤버가 함께하는 2주간 격주 프로그램</li>
-            <li>2주간 각자 책을 읽고 감상을 공유</li>
-            <li>책 읽기를 인증하고 멤버들의 견해를 나누기</li>
-            <li>온라인에서 친해진 후 오프라인 파티에서 직접 만나기</li>
-        </ul>
-
-        <h3>매력적인 사람은 책을 읽습니다</h3>
-        <p>2주간 각자 선택한 책을 읽고 감상을 공유합니다. 완독 부담 없이 책을 펴는 순간을 응원합니다.</p>
-
-        <h3>성취와 대화를 즐길 수 있습니다</h3>
-        <p>2주간 함께한 사람들과 자연스럽게 깊은 대화를 나눌 수 있습니다.</p>
-
-        <h3>지속할 수 있는 관계로 연결됩니다</h3>
-        <p>일회성 만남이 아닌, 지속 가능한 인간관계를 만들 수 있습니다.</p>
-
-        <h2>MEMBERS ONLY! 필립앤소피 프로그램 안내</h2>
-        <p>프로그램은 승인제로 운영되며 설문과 10분 전화 인터뷰를 통해 승인 여부가 결정됩니다.</p>
-        <p>Invitation Only - 생각이 통하는 인연을 만나는 곳 필립앤소피로 당신을 초대합니다.</p>
-        <p>11월의 필립앤소피 - 12만원에서 9만원(25% 할인, 2주 프로그램)</p>
-
-        <h3>프로그램 일정 (2025년 10-11월)</h3>
-        <p>10월 23일 - 모집 마감일 전까지 결제를 완료해 주세요</p>
-        <p>10월 25일 - 온라인 OT가 진행됩니다</p>
-        <p>10월 25일~11월 7일 - 프로그램에서 자연스럽게 서로를 알아가요</p>
-        <p>11월 8일 - 멤버들과 클로징 파티를 즐겨요</p>
-
-        <h3>프로그램 구성</h3>
-        <p>온라인 독서 프로그램 → 승인된 멤버와의 교류 → 즐거운 클로징 파티 → 다음 기수 프로그램 참여 연결</p>
-        <p>11월 클로징 파티는 서울의 프리미엄 공간에서 개최되며 식사 및 주류가 무제한으로 제공됩니다.</p>
-
-        <h3>서울 소셜클럽 네트워킹 독서모임</h3>
-        <p>더 이상 소극적인 만남에 시간을 낭비하지 마세요. 당신의 매력을 아는 사람들 속에서 가장 빛날 기회입니다.</p>
-        <p>필립앤소피에서 대화의 깊이와 설렘을 경험하세요. 25-40세 직장인 전문직 승인제 멤버십 클럽입니다.</p>
       </div>
 
       <div className="container">
         <Image
-          src="/image/PnS_1.webp?v=3.0"
+          src="/image/landing/PnS_1.webp?v=4.0"
           alt="필립앤소피(P&S) 승인제 독서소셜클럽 - 깊이 있는 대화가 설레는 만남으로"
           width={1170}
-          height={2637}
+          height={2400}
           className="main-image"
           priority
         />
 
         <Image
-          src="/image/PnS_2.webp?v=3.0"
+          src="/image/landing/PnS_2.webp?v=4.0"
           alt="필립앤소피 소셜클럽 소개"
           width={1170}
-          height={5574}
+          height={5526}
           className="main-image"
           priority
         />
 
         <Image
-          src="/image/PnS_3.webp?v=3.0"
+          src="/image/landing/PnS_3.webp?v=4.0"
           alt="필립앤소피 서비스 특징"
           width={1170}
-          height={5601}
-          className="main-image"
-        />
-
-        <Image
-          src="/image/PnS_4_nofooter.webp?v=3.1"
-          alt="필립앤소피 가입 안내"
-          width={1560}
-          height={6728}
+          height={6930}
           className="main-image"
         />
 
@@ -173,13 +90,6 @@ export default function LandingPage() {
           </a>
         </div>
       </div>
-
-      {/* 푸터 영역 */}
-      <Footer />
-
-      {/* Vercel Analytics */}
-      <Script defer src="/_vercel/speed-insights/script.js" />
-      <Script defer src="/_vercel/insights/script.js" />
-    </div>
+    </LandingLayout>
   );
 }
