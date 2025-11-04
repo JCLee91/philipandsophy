@@ -66,10 +66,10 @@ export default function ServicePageClient() {
         </div>
 
         <Image
-          src="/image/landing/PnS_Program_2.webp?v=4.0"
+          src="/image/landing/PnS_Service_2.webp?v=4.1"
           alt="필립앤소피 프로그램 상세 안내"
           width={1170}
-          height={5871}
+          height={5151}
           className="main-image"
         />
 
