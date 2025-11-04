@@ -4,7 +4,7 @@ import { Suspense, useRef, useCallback, useEffect, useMemo, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { scrollToBottom } from '@/lib/utils';
-import { getTodayString } from '@/lib/date-utils';
+import { getTodayString, getSubmissionDate } from '@/lib/date-utils';
 import { getTimestampMillis } from '@/lib/firebase/timestamp-utils';
 import { parseISO, differenceInDays } from 'date-fns';
 import { APP_CONSTANTS } from '@/constants/app';
@@ -138,7 +138,10 @@ export function ChatClientView({
   });
 
   const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);
-  const todaySubmission = submissions.find((sub) => sub.submissionDate === getTodayString());
+  // 새벽 2시 마감 정책 적용: getSubmissionDate() 사용
+  // 새벽 0-2시에 제출한 것은 어제로 간주되어 "수정하기" 버튼 표시
+  const todaySubmissionDate = getSubmissionDate();
+  const todaySubmission = submissions.find((sub) => sub.submissionDate === todaySubmissionDate);
   const hasSubmittedToday = !!todaySubmission;
   const todaySubmissionId = todaySubmission?.id;
 
