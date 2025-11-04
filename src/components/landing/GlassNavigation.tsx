@@ -47,7 +47,7 @@ export default function GlassNavigation() {
           <button
             className="nav-mobile-toggle"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="메뉴 열기"
+            aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

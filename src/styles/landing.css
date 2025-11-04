@@ -266,6 +266,11 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.nav-tab:focus-visible {
+    outline: 2px solid rgba(98, 187, 255, 0.6);
+    outline-offset: 2px;
+}
+
 /* Mobile Navigation */
 .glass-nav-mobile {
     position: fixed;
@@ -332,6 +337,16 @@
 .nav-mobile-item-active {
     color: rgba(255, 255, 255, 0.95);
     background: rgba(255, 255, 255, 0.15);
+}
+
+.nav-mobile-item:focus-visible {
+    outline: 2px solid rgba(98, 187, 255, 0.6);
+    outline-offset: 2px;
+}
+
+.nav-mobile-toggle:focus-visible {
+    outline: 2px solid rgba(98, 187, 255, 0.6);
+    outline-offset: 2px;
 }
 
 /* Desktop: 768px 이상에서 데스크톱 네비 표시 */
@@ -427,6 +442,12 @@
     backdrop-filter: var(--blur-lg);
     -webkit-backdrop-filter: var(--blur-lg);
     transition: all 0.3s ease;
+}
+
+/* 키보드 포커스 스타일 */
+.landing-page .cta-button:focus-visible {
+    outline: 2px solid rgba(98, 187, 255, 0.8);
+    outline-offset: 4px;
 }
 
 /* 반짝이는 효과 */
@@ -724,6 +745,11 @@
         transparent);
     transition: left 0.5s ease;
     z-index: 1;
+}
+
+.landing-page .footer-nav-link:focus-visible {
+    outline: 2px solid rgba(98, 187, 255, 0.6);
+    outline-offset: 2px;
 }
 
 .landing-page .footer-nav-link:hover {

@@ -66,9 +66,8 @@ export default function ServicePageClient() {
             loop
             playsInline
             poster="/image/landing/PnS_Program_1.webp?v=4.0"
-          >
-            <track kind="captions" />
-          </video>
+            aria-label="필립앤소피 프로그램 목업 영상"
+          />
         </div>
 
         <div className="cta-section">
