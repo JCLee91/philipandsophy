@@ -161,7 +161,7 @@
 
 /* 레이아웃 - 랜딩 페이지에만 적용 */
 .landing-page .container {
-    width: 500px;
+    max-width: 500px;
     margin: 0 auto;
     padding: 0;
 }
@@ -535,7 +535,7 @@
 }
 
 .landing-page .footer-content {
-    width: 500px;
+    max-width: 500px;
     margin: 0 auto;
     padding: 0 20px;
     display: flex;
