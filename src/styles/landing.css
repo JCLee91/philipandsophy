@@ -258,7 +258,6 @@
 .nav-tab:hover {
     color: rgba(255, 255, 255, 0.95);
     background: rgba(255, 255, 255, 0.08);
-    transform: scale(1.03);
 }
 
 .nav-tab-active {
@@ -333,7 +332,6 @@
 .nav-mobile-item:hover {
     color: rgba(255, 255, 255, 0.95);
     background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.02);
 }
 
 .nav-mobile-item-active {
