@@ -105,12 +105,12 @@ export async function GET(request: NextRequest) {
         : db.collection(COLLECTIONS.PARTICIPANTS).get(),
     ]);
 
-    // 슈퍼관리자 ID 목록 생성 (일반 관리자는 포함)
-    const superAdminIds = new Set(
+    // 어드민, 슈퍼어드민, 고스트 ID 목록 생성
+    const excludedIds = new Set(
       allParticipantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isSuperAdmin === true;
+          return data.isSuperAdmin === true || data.isAdministrator === true || data.isGhost === true;
         })
         .map((doc) => doc.id)
     );
@@ -137,8 +137,8 @@ export async function GET(request: NextRequest) {
       // 그날까지 푸시 허용한 참가자 수 (누적)
       const pushEnabledCount = allParticipantsSnapshot.docs.filter((doc) => {
         const data = doc.data();
-        // 슈퍼관리자만 제외 (일반 관리자는 포함)
-        if (data.isSuperAdmin) return false;
+        // 어드민, 슈퍼어드민, 고스트 제외
+        if (data.isSuperAdmin || data.isAdministrator || data.isGhost) return false;
         // 푸시 구독/토큰 확인
         if (!hasAnyPushSubscription(data)) return false;
         // 그날까지 가입한 참가자 (그날 늦게 가입한 사용자도 포함)
@@ -159,11 +159,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 독서 인증 집계 (슈퍼관리자만 제외)
+    // 독서 인증 집계 (어드민, 슈퍼어드민, 고스트 제외)
     submissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      // 슈퍼관리자 인증만 제외 (일반 관리자는 포함)
-      if (superAdminIds.has(data.participantId)) return;
+      // 어드민, 슈퍼어드민, 고스트 제외
+      if (excludedIds.has(data.participantId)) return;
 
       const submittedAt = safeTimestampToDate(data.submittedAt);
       if (!submittedAt) {

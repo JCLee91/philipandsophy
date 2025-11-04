@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
         cohortId: data.cohortId,
       });
 
-      // 슈퍼관리자 ID만 수집 (일반 관리자는 포함)
-      if (data.isSuperAdmin) {
+      // 어드민, 슈퍼어드민, 고스트 제외
+      if (data.isSuperAdmin || data.isAdministrator || data.isGhost) {
         superAdminIds.add(doc.id);
       } else {
         targetParticipantIds.push(doc.id);

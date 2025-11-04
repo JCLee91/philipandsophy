@@ -16,6 +16,17 @@ export async function GET(request: NextRequest) {
     }
 
     const db = getAdminDb();
+
+    // 어드민, 슈퍼어드민, 고스트 ID 목록 수집
+    const participantsSnapshot = await db.collection(COLLECTIONS.PARTICIPANTS).get();
+    const excludedIds = new Set<string>();
+    participantsSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      if (data.isSuperAdmin || data.isAdministrator || data.isGhost) {
+        excludedIds.add(doc.id);
+      }
+    });
+
     const snapshot = await db.collection(COLLECTIONS.READING_SUBMISSIONS).get();
 
     // 책 제목별로 그룹화 (중복 제거)
@@ -23,6 +34,13 @@ export async function GET(request: NextRequest) {
 
     snapshot.docs.forEach((doc) => {
       const data = doc.data();
+
+      // 어드민, 슈퍼어드민, 고스트 제출물 제외
+      if (excludedIds.has(data.participantId)) return;
+
+      // draft 제출물 제외
+      if (data.status === 'draft') return;
+
       const title = data.bookTitle;
       const author = data.bookAuthor || '저자 미상';
 

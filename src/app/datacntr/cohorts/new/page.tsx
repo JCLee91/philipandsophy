@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 type ParticipantRow = {
   name: string;
   phone: string;
-  role: 'participant' | 'admin';
+  role: 'participant' | 'admin' | 'ghost';
 };
 
 type QuestionsOption = 'copy' | 'manual' | 'later';
@@ -107,7 +107,7 @@ export default function CohortCreatePage() {
           return {
             name: name || '',
             phone: phone || '',
-            role: (role === 'admin' ? 'admin' : 'participant') as 'participant' | 'admin',
+            role: (role === 'admin' ? 'admin' : role === 'ghost' ? 'ghost' : 'participant') as 'participant' | 'admin' | 'ghost',
           };
         }).filter(p => p.name && p.phone); // 빈 행 제외
 
@@ -137,7 +137,8 @@ export default function CohortCreatePage() {
     const template = `이름,핸드폰번호,역할
 홍길동,01012345678,participant
 김철수,01087654321,participant
-이영희,01011112222,admin`;
+이영희,01011112222,admin
+테스터,01099998888,ghost`;
 
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -376,6 +377,7 @@ export default function CohortCreatePage() {
                         options={[
                           { value: 'participant', label: '참가자' },
                           { value: 'admin', label: '관리자' },
+                          { value: 'ghost', label: '고스트' },
                         ]}
                       />
                     </td>

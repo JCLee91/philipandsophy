@@ -42,8 +42,14 @@ export async function GET(request: NextRequest) {
       .where('cohortId', '==', cohortId)
       .get();
 
-    // Get all participant IDs in the cohort
-    const allParticipantIds = participantsSnapshot.docs.map((doc) => doc.id);
+    // 어드민, 슈퍼어드민, 고스트 제외 필터링
+    const filteredParticipants = participantsSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+    });
+
+    // Get all participant IDs in the cohort (excluding admins and ghosts)
+    const allParticipantIds = filteredParticipants.map((doc) => doc.id);
 
     // Get today's submissions for these participants
     const submissionsSnapshot = await db
@@ -59,7 +65,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Filter participants who haven't submitted today
-    const unverifiedParticipants = participantsSnapshot.docs
+    const unverifiedParticipants = filteredParticipants
       .filter((doc) => !submittedParticipantIds.has(doc.id))
       .map((doc) => ({
         id: doc.id,
@@ -70,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       participants: unverifiedParticipants,
-      totalParticipants: participantsSnapshot.docs.length,
+      totalParticipants: filteredParticipants.length,
       submittedToday: submittedParticipantIds.size,
       unverifiedCount: unverifiedParticipants.length,
     });

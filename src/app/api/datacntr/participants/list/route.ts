@@ -34,11 +34,17 @@ export async function GET(request: NextRequest) {
       .orderBy('name', 'asc')
       .get();
 
-    const participants = participantsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      name: doc.data().name || doc.id,
-      role: doc.data().role || 'participant',
-    }));
+    // 어드민, 슈퍼어드민, 고스트 제외 필터링
+    const participants = participantsSnapshot.docs
+      .filter((doc) => {
+        const data = doc.data();
+        return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+      })
+      .map((doc) => ({
+        id: doc.id,
+        name: doc.data().name || doc.id,
+        role: doc.data().role || 'participant',
+      }));
 
     return NextResponse.json({ participants });
   } catch (error) {

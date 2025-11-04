@@ -52,10 +52,10 @@ export async function GET(request: NextRequest) {
       .orderBy('createdAt', 'asc')
       .get();
 
-    // 슈퍼 관리자 제외 필터링 (일반 관리자는 통계에 포함)
+    // 어드민, 슈퍼어드민, 고스트 제외 필터링
     const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !data.isSuperAdmin;
+      return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
     });
 
     // 코호트 정보 맵 생성 (이름 + 시작일)

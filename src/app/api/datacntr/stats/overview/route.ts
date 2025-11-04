@@ -46,18 +46,18 @@ export async function GET(request: NextRequest) {
       ? await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
       : await db.collection(COLLECTIONS.PARTICIPANTS).get();
 
-    // 슈퍼관리자 + 고스트 제외 (일반 관리자는 통계에 포함)
+    // 어드민, 슈퍼어드민, 고스트 제외
     const nonSuperAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !data.isSuperAdmin && !data.isGhost;
+      return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
     });
 
-    // 슈퍼관리자 + 고스트 ID 목록 생성
+    // 어드민, 슈퍼어드민, 고스트 ID 목록 생성
     const excludedIds = new Set(
       participantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isSuperAdmin === true || data.isGhost === true;
+          return data.isSuperAdmin === true || data.isAdministrator === true || data.isGhost === true;
         })
         .map((doc) => doc.id)
     );

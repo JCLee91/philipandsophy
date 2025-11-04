@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
         phoneNumber: p.phone,
         isAdministrator: p.role === 'admin',
         isSuperAdmin: false,
+        isGhost: p.role === 'ghost',
         firebaseUid: null, // 첫 로그인 시 자동 연결
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),

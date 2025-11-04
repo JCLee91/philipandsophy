@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
 
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      if (data.isSuperAdmin) {
+      // 어드민, 슈퍼어드민, 고스트 제외
+      if (data.isSuperAdmin || data.isAdministrator || data.isGhost) {
         adminIds.add(doc.id);
       } else {
         targetParticipantIds.push(doc.id);

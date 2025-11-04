@@ -1582,7 +1582,8 @@ export const manualMatchingPreview = onRequest(
         const participant = participantDataMap.get(participantId);
         if (!participant) continue;
         if (!participant.cohortId || participant.cohortId !== cohortId) continue;
-        if (participant.isSuperAdmin) continue;
+        // 어드민, 슈퍼어드민, 고스트 매칭에서 제외
+        if (participant.isSuperAdmin || participant.isAdministrator || participant.isGhost) continue;
 
         participantAnswers.push({
           id: participantId,
@@ -1615,7 +1616,8 @@ export const manualMatchingPreview = onRequest(
       const notSubmittedParticipants = allCohortParticipantsSnapshot.docs
         .filter((doc) => {
           const participant = doc.data();
-          return !submittedIds.has(doc.id) && !participant.isSuperAdmin;
+          // 어드민, 슈퍼어드민, 고스트 제외 + 제출 안한 사람만
+          return !submittedIds.has(doc.id) && !participant.isSuperAdmin && !participant.isAdministrator && !participant.isGhost;
         })
         .map((doc) => ({
           id: doc.id,
