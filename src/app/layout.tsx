@@ -17,6 +17,7 @@ export const metadata: Metadata = {
     template: '%s | 필립앤소피',
   },
   description: '깊이 있는 대화가 설레는 만남으로 - 결이 맞는 사람을 만나는 가장 안전하고 쉬운 공간',
+  keywords: ['독서모임', '독서소셜클럽', '승인제', '네트워킹', '직장인 모임', '서울 소셜클럽', '독서클럽', '프리미엄 모임', '25-40세'],
   metadataBase: new URL('https://www.philipandsophy.kr'),
   formatDetection: {
     telephone: false,

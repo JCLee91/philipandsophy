@@ -20,12 +20,18 @@ export default function HomePage() {
           "alternateName": "필립앤소피",
           "description": "25-40세 직장인 전문직을 위한 승인제 독서소셜클럽",
           "url": "https://www.philipandsophy.kr/",
-          "sameAs": ["https://smore.im/form/0C2SFfq79d#_q=rtwE0JeU"],
+          "logo": "https://www.philipandsophy.kr/image/app-icon.webp",
+          "sameAs": [
+            "https://www.instagram.com/philip_and_sophy",
+            "https://smore.im/form/0C2SFfq79d#_q=rtwE0JeU"
+          ],
           "address": {
             "@type": "PostalAddress",
             "addressLocality": "서울",
+            "addressRegion": "서울특별시",
             "addressCountry": "KR"
-          }
+          },
+          "foundingDate": "2025"
         })}
       </Script>
 
