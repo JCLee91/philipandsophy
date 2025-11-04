@@ -1,9 +1,9 @@
 'use client';
 
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
+import { Z_INDEX } from '@/constants/z-index';
 
 interface ImageViewerDialogProps {
   open: boolean;
@@ -36,30 +36,44 @@ export default function ImageViewerDialog({
     }
   }, [open, imageUrl]);
 
-  // 빈 URL이면 렌더링하지 않음
-  if (!imageUrl || imageUrl.trim() === '') {
+  // ESC 키 핸들러
+  const handleEscapeKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      onOpenChange(false);
+    }
+  }, [onOpenChange]);
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
+    }
+  }, [open, handleEscapeKey]);
+
+  // 빈 URL이거나 닫혀있으면 렌더링하지 않음
+  if (!open || !imageUrl || imageUrl.trim() === '') {
     return null;
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-transparent border-0 shadow-none z-[60] place-items-center"
-        onEscapeKeyDown={(e) => {
-          // ESC 키로 ImageViewer만 닫기 (DM Dialog는 유지)
-          e.stopPropagation();
-          onOpenChange(false);
-        }}
-        onClick={(e) => {
-          // 이미지 자체를 클릭한 경우가 아니라면 닫기
-          if (e.target === e.currentTarget) {
-            onOpenChange(false);
-          }
-        }}
+    <>
+      {/* Backdrop - DM 다이얼로그보다 위에 표시 */}
+      <div
+        className={`fixed inset-0 z-[${Z_INDEX.IMAGE_VIEWER_BACKDROP}] bg-black/80 backdrop-blur-sm animate-in fade-in-0 duration-normal`}
+        onClick={() => onOpenChange(false)}
+        aria-hidden="true"
+      />
+
+      {/* Image Container - 백드롭 위에 표시 */}
+      <div
+        className={`fixed inset-0 z-[${Z_INDEX.IMAGE_VIEWER_CONTENT}] flex items-center justify-center p-4`}
+        onClick={() => onOpenChange(false)}
       >
         {/* 접근성을 위한 숨겨진 제목 */}
-        <DialogTitle className="sr-only">이미지 크게 보기 (클릭하여 닫기)</DialogTitle>
+        <h2 className="sr-only">이미지 크게 보기 (클릭하여 닫기)</h2>
 
         {/* 이미지 - 중앙 정렬 */}
         {imageError ? (
@@ -73,12 +87,15 @@ export default function ImageViewerDialog({
             alt="크게 보기"
             width={1000}
             height={1000}
-            className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
+            className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out animate-in zoom-in-95 fade-in-0 duration-fast"
             onError={() => setImageError(true)}
-            onClick={() => onOpenChange(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenChange(false);
+            }}
           />
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </>
   );
 }

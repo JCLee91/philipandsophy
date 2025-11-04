@@ -132,9 +132,9 @@ async function filterByCohort(
     const participantsSnapshot = await getDocs(participantsQuery);
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      // 🔒 슈퍼 관리자만 제외 (isSuperAdmin=true)
+      // 🔒 슈퍼 관리자와 고스트 참가자는 제외
       // 일반 관리자(isAdministrator=true)는 매칭 대상이므로 포함
-      if (!data.isSuperAdmin) {
+      if (!data.isSuperAdmin && !data.isGhost) {
         validParticipantIds.add(doc.id);
       }
     });

@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase/client';
-import { getMatchingTargetDate } from '@/lib/date-utils';
+import { getMatchingTargetDate, getYesterdayString } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
 
 /**
@@ -25,8 +25,22 @@ export function useYesterdayVerifiedParticipants(cohortId: string | undefined) {
       if (!cohortId) return new Set<string>();
 
       try {
-        // 어제 날짜 계산 (매칭 타겟 날짜)
-        const targetDate = getMatchingTargetDate();
+        // 어제 날짜 계산
+        let targetDate: string;
+        try {
+          targetDate = getMatchingTargetDate();
+        } catch (error) {
+          // 특정 에러 메시지(새벽 0-2시 차단)만 처리
+          if (error instanceof Error &&
+              error.message.includes('새벽 0시~2시는 매칭을 실행할 수 없습니다')) {
+            // 새벽 0-2시: 어제 날짜 사용 (새벽 2시까지는 어제 인증자로 간주)
+            targetDate = getYesterdayString();
+            logger.info('새벽 0-2시: 어제 날짜로 인증자 목록 조회', { targetDate });
+          } else {
+            // 다른 에러는 그대로 전파 (타임존 오류 등)
+            throw error;
+          }
+        }
 
         // reading_submissions에서 어제 제출물 조회
         // submissionDate === targetDate (cohortId는 참가자 조인으로 필터링)

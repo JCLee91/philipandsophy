@@ -12,6 +12,7 @@ import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo } from
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { FOOTER_STYLES } from '@/constants/ui';
 import { APP_CONSTANTS } from '@/constants/app';
+import { Z_INDEX } from '@/constants/z-index';
 import ImageViewerDialog from '@/components/ImageViewerDialog';
 import DateDivider from '@/components/DateDivider';
 import MessageGroup from '@/components/MessageGroup';
@@ -178,14 +179,14 @@ export default function DirectMessageDialog({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm"
+        className={`fixed inset-0 z-[${Z_INDEX.DM_DIALOG}] bg-black/50 backdrop-blur-sm`}
         onClick={() => onOpenChange(false)}
         aria-hidden="true"
       />
 
       {/* Dialog */}
       <div
-        className="fixed inset-x-4 z-[9999] max-w-lg mx-auto transition-all duration-300"
+        className={`fixed inset-x-4 z-[${Z_INDEX.DM_DIALOG}] max-w-lg mx-auto transition-all duration-300`}
         onClick={(e) => e.stopPropagation()}
         style={{
           top: keyboardHeight > 0 ? '1rem' : '50%',

@@ -302,6 +302,15 @@ docs/
 
 플랫폼별 버그 및 이슈 해결 가이드:
 
+### [Firebase Multi-Database Access Issue](./troubleshooting/firebase-multi-database-issue.md) ✨ NEW
+**최종 업데이트**: 2025-11-04
+**주요 내용**:
+- 🔍 Firebase Admin SDK에서 Seoul DB 접근 실패 문제
+- ❌ `admin.firestore(app, 'seoul')` API가 default DB 조회하는 버그
+- ✅ `getFirestore(app, 'seoul')` 새로운 API로 해결
+- 📊 검증 결과: 11월 3일 15명 인증 데이터 정상 조회
+- 🔧 영향받은 파일 목록 및 수정 가이드
+
 ### [iOS PWA Scroll Bug Fix](./troubleshooting/ios-pwa-scroll.md)
 **최종 업데이트**: 2025-10-13
 **주요 내용**:
@@ -361,6 +370,7 @@ docs/
 - **Data Center 구현**: [implementation/datacenter-implementation-guide.md](./implementation/datacenter-implementation-guide.md)
 
 #### 문제 해결
+- **Firebase Multi-DB 이슈**: [troubleshooting/firebase-multi-database-issue.md](./troubleshooting/firebase-multi-database-issue.md) ✨ NEW
 - **iOS PWA 버그**: [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
 - **Firebase Admin 일반 이슈**: [troubleshooting/firebase-admin-common-issues.md](./troubleshooting/firebase-admin-common-issues.md)
 
@@ -393,6 +403,7 @@ docs/
 - 애니메이션 → [design/animation.md](./design/animation.md) (V1.1)
 
 #### 플랫폼별 이슈
+- Firebase Multi-DB 접근 → [troubleshooting/firebase-multi-database-issue.md](./troubleshooting/firebase-multi-database-issue.md) ✨ NEW
 - iOS PWA 스크롤 문제 → [troubleshooting/ios-pwa-scroll.md](./troubleshooting/ios-pwa-scroll.md)
 - Firebase Admin SDK → [troubleshooting/firebase-admin-common-issues.md](./troubleshooting/firebase-admin-common-issues.md)
 
