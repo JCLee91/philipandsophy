@@ -12,10 +12,21 @@
 프로젝트에 정의된 커스텀 duration을 사용합니다.
 
 ```css
-/* globals.css에 정의됨 */
---duration-fast: 150ms;    /* 빠른 피드백 (버튼 클릭, 호버) */
---duration-normal: 200ms;  /* 일반 전환 (아이콘 회전, fade) */
---duration-slow: 300ms;    /* 부드러운 전환 (페이지, 아코디언) */
+/* src/app/globals.css에 정의됨 */
+:root {
+  --duration-fast: 150ms;    /* 빠른 피드백 (버튼 클릭, 호버) */
+  --duration-normal: 200ms;  /* 일반 전환 (아이콘 회전, fade) */
+  --duration-slow: 300ms;    /* 부드러운 전환 (페이지, 아코디언) */
+}
+```
+
+**Tailwind 설정** (`tailwind.config.ts`):
+```typescript
+transitionDuration: {
+  'fast': 'var(--duration-fast)',
+  'normal': 'var(--duration-normal)',
+  'slow': 'var(--duration-slow)',
+}
 ```
 
 **Tailwind 클래스:**
@@ -37,9 +48,19 @@ transition={{ duration: 0.3 }}   // slow
 자연스러운 움직임을 위한 커스텀 easing 함수입니다.
 
 ```css
-/* globals.css에 정의됨 */
---ease-smooth: cubic-bezier(0.23, 1, 0.32, 1);  /* 부드러운 감속 */
---ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* 빠른 시작, 부드러운 끝 */
+/* src/app/globals.css에 정의됨 */
+:root {
+  --ease-smooth: cubic-bezier(0.23, 1, 0.32, 1);  /* 부드러운 감속 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* 빠른 시작, 부드러운 끝 */
+}
+```
+
+**Tailwind 설정** (`tailwind.config.ts`):
+```typescript
+transitionTimingFunction: {
+  'smooth': 'var(--ease-smooth)',
+  'out': 'var(--ease-out)',
+}
 ```
 
 **Tailwind 클래스:**
@@ -740,6 +761,15 @@ module.exports = {
 
 ---
 
-**Last Updated**: 2025-10-13
+**Last Updated**: 2025-11-04
+**Document Version**: 1.1
 **Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/design/animation.md`
+
+**업데이트 내역**:
+- 2025-11-04: 현재 구현 검증 완료
+  - Custom animation tokens 검증 (globals.css의 --duration-*, --ease-* 변수)
+  - Tailwind duration/easing utilities 확인 (tailwind.config.ts)
+  - Framer Motion 사용 패턴 확인
+  - 모든 코드 예제의 정확성 검증
+- 2025-10-13: 초기 작성

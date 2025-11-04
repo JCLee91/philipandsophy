@@ -33,7 +33,72 @@
 
 ## 기본 쿼리 패턴
 
-### 1. 단일 문서 조회
+### 1. 관리자/테스트 계정 필터링 (필수)
+
+**모든 통계 쿼리에서 우선적으로 적용해야 하는 필터링 패턴입니다.**
+
+```typescript
+import { getAdminDb } from '@/lib/firebase/admin';
+import { COLLECTIONS } from '@/types/database';
+
+// Data Center API 표준 필터링 패턴
+async function getFilteredParticipants(cohortId?: string) {
+  const db = getAdminDb();
+
+  // 1. 참가자 조회 (cohortId 필터링 옵션)
+  const participantsQuery = cohortId
+    ? db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId)
+    : db.collection(COLLECTIONS.PARTICIPANTS);
+
+  const participantsSnapshot = await participantsQuery.get();
+
+  // 2. 어드민, 슈퍼어드민, 고스트 제외
+  const realParticipants = participantsSnapshot.docs.filter((doc) => {
+    const data = doc.data();
+    return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+  });
+
+  // 3. 제외할 ID Set 생성 (성능 최적화)
+  const excludedIds = new Set(
+    participantsSnapshot.docs
+      .filter((doc) => {
+        const data = doc.data();
+        return data.isSuperAdmin === true || data.isAdministrator === true || data.isGhost === true;
+      })
+      .map((doc) => doc.id)
+  );
+
+  return { realParticipants, excludedIds };
+}
+```
+
+**필터링 필드 설명:**
+- `isSuperAdmin: true` - 시스템 관리자 (통계 완전 제외)
+- `isAdministrator: true` - 일반 관리자/운영진 (통계 제외)
+- `isGhost: true` - 테스트/고스트 계정 (통계 제외)
+
+### 2. Draft 제출물 필터링
+
+**임시저장 데이터는 통계에서 제외합니다.**
+
+```typescript
+// ✅ 승인된 제출물만 조회 (draft 제외)
+const submissionsSnapshot = await db
+  .collection(COLLECTIONS.READING_SUBMISSIONS)
+  .where('participantId', 'in', participantIds)
+  .get();
+
+// 클라이언트 필터링: draft 제외
+const approvedSubmissions = submissionsSnapshot.docs.filter(doc =>
+  doc.data().status !== 'draft'
+);
+```
+
+**주의사항:**
+- Firestore는 `IN` 쿼리와 `!=` 쿼리를 동시에 사용할 수 없음
+- `status != 'draft'` 조건은 클라이언트에서 필터링 필요
+
+### 3. 단일 문서 조회
 
 ```typescript
 import { getParticipantById } from '@/lib/firebase';
@@ -48,7 +113,7 @@ if (participant) {
 }
 ```
 
-### 2. 조건부 쿼리 (where)
+### 4. 조건부 쿼리 (where)
 
 ```typescript
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -68,7 +133,7 @@ const participants = snapshot.docs.map(doc => ({
 }));
 ```
 
-### 3. 정렬 쿼리 (orderBy)
+### 5. 정렬 쿼리 (orderBy)
 
 ```typescript
 import { getParticipantsByCohort } from '@/lib/firebase';
@@ -86,7 +151,7 @@ const q = query(
 );
 ```
 
-### 4. 복합 쿼리 (where + orderBy)
+### 6. 복합 쿼리 (where + orderBy)
 
 ```typescript
 import { getSubmissionsByParticipant } from '@/lib/firebase';
@@ -103,6 +168,223 @@ const q = query(
   orderBy('submittedAt', 'desc')
 );
 ```
+
+---
+
+## Data Center 통계 쿼리 패턴
+
+### 1. 오늘 인증 현황 (Overview Stats)
+
+```typescript
+// src/app/api/datacntr/stats/overview/route.ts 패턴
+import { getTodayString } from '@/lib/date-utils';
+
+async function getTodaySubmissionStats(cohortId?: string) {
+  const db = getAdminDb();
+  const todayString = getTodayString(); // KST 기준 'YYYY-MM-DD'
+
+  // 1. 참가자 필터링
+  const { realParticipants, excludedIds } = await getFilteredParticipants(cohortId);
+  const targetParticipantIds = realParticipants.map(doc => doc.id);
+
+  // 2. 오늘 제출물 조회 (IN 쿼리, 10개씩 분할)
+  const todaySubmissions: any[] = [];
+  const chunkSize = 10;
+
+  for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
+    const chunk = targetParticipantIds.slice(i, i + chunkSize);
+    const todayChunk = await db
+      .collection(COLLECTIONS.READING_SUBMISSIONS)
+      .where('participantId', 'in', chunk)
+      .where('submissionDate', '==', todayString)
+      .get();
+
+    // draft 제외 필터링
+    const nonDraftSubmissions = todayChunk.docs.filter(doc =>
+      doc.data().status !== 'draft'
+    );
+    todaySubmissions.push(...nonDraftSubmissions);
+  }
+
+  // 3. 중복 제거 (참가자별 1회만 카운트)
+  const todaySubmitters = new Set<string>();
+  todaySubmissions.forEach(doc => {
+    const participantId = doc.data().participantId;
+    if (!excludedIds.has(participantId)) {
+      todaySubmitters.add(participantId);
+    }
+  });
+
+  return {
+    totalParticipants: realParticipants.length,
+    todaySubmissions: todaySubmitters.size,
+  };
+}
+```
+
+### 2. 참가자 목록 with 인증 횟수 (Participants List)
+
+```typescript
+// src/app/api/datacntr/participants/route.ts 패턴
+async function getParticipantsWithStats(cohortId?: string) {
+  const db = getAdminDb();
+
+  // 1. 참가자 필터링
+  const { realParticipants, excludedIds } = await getFilteredParticipants(cohortId);
+  const participantIds = realParticipants.map(doc => doc.id);
+
+  // 2. 인증 횟수 집계 (N+1 문제 해결: 배치 쿼리)
+  const submissionCountMap = new Map<string, number>();
+
+  if (participantIds.length > 0) {
+    const chunkSize = 10;
+    for (let i = 0; i < participantIds.length; i += chunkSize) {
+      const chunk = participantIds.slice(i, i + chunkSize);
+      const submissionsSnapshot = await db
+        .collection(COLLECTIONS.READING_SUBMISSIONS)
+        .where('participantId', 'in', chunk)
+        .get();
+
+      submissionsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        // draft 제외
+        if (data.status === 'draft') return;
+
+        const participantId = data.participantId;
+        submissionCountMap.set(participantId, (submissionCountMap.get(participantId) || 0) + 1);
+      });
+    }
+  }
+
+  // 3. 참가자 + 통계 병합
+  return realParticipants.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    submissionCount: submissionCountMap.get(doc.id) || 0,
+  }));
+}
+```
+
+### 3. 활동 차트 데이터 (Activity Chart)
+
+```typescript
+// src/app/api/datacntr/stats/activity/route.ts 패턴
+import { format, subDays, addDays, differenceInDays } from 'date-fns';
+
+async function getDailyActivityData(cohortId?: string, days: number = 7) {
+  const db = getAdminDb();
+
+  // 1. 참가자 필터링
+  const { realParticipants, excludedIds } = await getFilteredParticipants(cohortId);
+
+  // 2. 기간 설정
+  const startDate = subDays(new Date(), days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // 3. 제출물 조회 (draft 제외)
+  const submissionsSnapshot = cohortId
+    ? await db.collection(COLLECTIONS.READING_SUBMISSIONS)
+        .where('submittedAt', '>=', startDate)
+        .get()
+        .then(async snap => {
+          const participants = await db.collection(COLLECTIONS.PARTICIPANTS)
+            .where('cohortId', '==', cohortId)
+            .get();
+          const participantIds = participants.docs.map(d => d.id);
+          return {
+            docs: snap.docs.filter(d =>
+              participantIds.includes(d.data().participantId) &&
+              d.data().status !== 'draft' // draft 제외
+            )
+          };
+        })
+    : await db.collection(COLLECTIONS.READING_SUBMISSIONS)
+        .where('submittedAt', '>=', startDate)
+        .get()
+        .then(snap => ({
+          docs: snap.docs.filter(d => d.data().status !== 'draft') // draft 제외
+        }));
+
+  // 4. 날짜별 집계
+  const activityMap = new Map<string, { submissions: number }>();
+
+  for (let i = 0; i < days; i++) {
+    const date = addDays(startDate, i);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    activityMap.set(dateStr, { submissions: 0 });
+  }
+
+  submissionsSnapshot.docs.forEach(doc => {
+    const data = doc.data();
+    // 어드민, 슈퍼어드민, 고스트 제외
+    if (excludedIds.has(data.participantId)) return;
+
+    const submittedAt = data.submittedAt?.toDate();
+    if (!submittedAt) return;
+
+    const dateStr = format(submittedAt, 'yyyy-MM-dd');
+    const activity = activityMap.get(dateStr);
+    if (activity) {
+      activity.submissions += 1;
+    }
+  });
+
+  return Array.from(activityMap.entries()).map(([date, data]) => ({
+    date,
+    submissions: data.submissions,
+  }));
+}
+```
+
+### 4. 제출물 목록 조회 (Submissions List)
+
+```typescript
+// src/app/api/datacntr/submissions/route.ts 패턴
+async function getSubmissionsList(cohortId?: string) {
+  const db = getAdminDb();
+
+  // 1. 참가자 필터링
+  const { realParticipants, excludedIds } = await getFilteredParticipants(cohortId);
+  const targetParticipantIds = realParticipants.map(doc => doc.id);
+
+  // 2. 제출물 조회 (IN 쿼리, 10개씩 분할)
+  const submissions: any[] = [];
+
+  if (targetParticipantIds.length > 0) {
+    const chunkSize = 10;
+    for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
+      const chunk = targetParticipantIds.slice(i, i + chunkSize);
+      const chunkSnapshot = await db
+        .collection(COLLECTIONS.READING_SUBMISSIONS)
+        .where('participantId', 'in', chunk)
+        .orderBy('submittedAt', 'desc')
+        .get();
+      submissions.push(...chunkSnapshot.docs);
+    }
+  }
+
+  // 3. 최신순 정렬 + draft 제외
+  const sortedSubmissions = submissions
+    .sort((a, b) => {
+      const aTime = a.data().submittedAt?.toMillis() || 0;
+      const bTime = b.data().submittedAt?.toMillis() || 0;
+      return bTime - aTime;
+    })
+    .filter(doc => doc.data().status !== 'draft'); // draft 제외
+
+  return sortedSubmissions.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+}
+```
+
+**Data Center 쿼리 공통 패턴:**
+1. ✅ 항상 `getFilteredParticipants()`로 참가자 필터링
+2. ✅ IN 쿼리는 10개씩 분할 (Firestore 제약)
+3. ✅ `status !== 'draft'` 조건으로 임시저장 제외
+4. ✅ `excludedIds` Set으로 관리자 데이터 제외
+5. ✅ 중복 제거 시 `Set<string>` 사용
 
 ---
 
@@ -633,8 +915,8 @@ Firebase Console → Firestore → Usage 탭에서 다음 지표 확인:
 
 ---
 
-**최종 업데이트**: 2025년 10월 16일
+**최종 업데이트**: 2025년 11월 04일
 **문서 위치**: `docs/database/query-patterns.md`
-**문서 버전**: v1.0
+**문서 버전**: v1.1
 
 *이 문서는 projectpns 프로젝트의 Firestore 쿼리 패턴에 대한 유일한 권위 있는 문서입니다.*

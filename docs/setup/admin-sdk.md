@@ -54,6 +54,11 @@ Service Account 키 다운로드 후:
 
 ---
 
-**Last Updated**: 2025-10-13
-**Version**: V1.0 (프로덕션 배포 완료)
+**Last Updated**: 2025-11-04
+**Version**: V1.1 (설정 검증 완료)
 **Location**: `docs/setup/admin-sdk.md`
+
+## 🔗 관련 문서
+
+- [Firebase Custom Claims](./firebase-custom-claims.md) - Ghost/Super Admin 역할 설정
+- [Internal Service Secret](./internal-service-secret.md) - Functions ↔ API 인증

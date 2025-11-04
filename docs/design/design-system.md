@@ -1,8 +1,8 @@
 # 필립앤소피 디자인 시스템
 
-**문서 버전**: 1.0
-**최종 업데이트**: 2025년 10월 16일
-**작성자**: Technical Documentation Specialist
+**문서 버전**: 1.1
+**최종 업데이트**: 2025년 11월 4일
+**작성자**: Claude Design System Specialist
 
 ---
 
@@ -84,9 +84,9 @@
 | 이름 | Hex Code | 용도 | Tailwind Class |
 |------|----------|------|----------------|
 | **Page Background** | `#eff6ff` | 페이지 전체 배경 (Data Center) | `bg-admin-bg-page` |
-| **Card Background** | `#ffffff` | 카드, 모달 배경 | `bg-admin-bg-card` |
-| **Gray Background** | `#f5f5f5` | 비활성 영역 | `bg-admin-bg-gray` |
-| **Hover** | `#f9fafb` | 호버 상태 | `hover:bg-admin-bg-hover` |
+| **Card Background** | `#ffffff` | 카드, 모달 배경 | `bg-admin-bg-card` or `bg-card` |
+| **Gray Background** | `#f5f5f5` | 비활성 영역 | `bg-admin-bg-gray` or `bg-muted` |
+| **Hover** | `#f9fafb` | 호버 상태 | `hover:bg-admin-bg-hover` or `hover:bg-muted/50` |
 
 ### 2.4 색상 대비 (WCAG 2.1 AA 준수)
 
@@ -105,12 +105,31 @@
 
 **Pretendard Variable**: 전체 프로젝트 기본 폰트
 
-```css
-/* src/app/layout.tsx */
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+```tsx
+// src/app/layout.tsx에서 CDN으로 로드
+<link
+  rel="stylesheet"
+  as="style"
+  crossOrigin="anonymous"
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
+/>
+```
 
+```css
+/* src/app/globals.css - 전역 적용 */
 body {
-  font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI',
+    'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic',
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+}
+
+/* 모든 요소에 강제 적용 */
+*,
+*::before,
+*::after {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif !important;
 }
 ```
 
@@ -118,6 +137,7 @@ body {
 - 가변 폰트 (Variable Font): weight 100-900 동적 조정
 - 한글 최적화
 - 모던한 가독성
+- 모든 요소에 일관되게 적용 (important로 우선순위 보장)
 
 ### 3.2 폰트 스케일
 
@@ -186,25 +206,34 @@ body {
 
 **사용 중인 컴포넌트**:
 
-| 컴포넌트 | 용도 | 설치 명령 |
-|----------|------|-----------|
-| **Button** | 기본 버튼 (웹앱에선 커스텀 버튼 사용) | `npx shadcn@latest add button` |
-| **Dialog** | 모달 다이얼로그 (독서 인증 폼) | `npx shadcn@latest add dialog` |
-| **Toast** | 알림 메시지 | `npx shadcn@latest add toast` |
-| **Card** | 콘텐츠 카드 | `npx shadcn@latest add card` |
-| **Avatar** | 프로필 이미지 | `npx shadcn@latest add avatar` |
-| **Textarea** | 여러 줄 입력 (리뷰 작성) | `npx shadcn@latest add textarea` |
-| **Label** | 폼 라벨 | `npx shadcn@latest add label` |
-| **Scroll Area** | 스크롤 영역 | `npx shadcn@latest add scroll-area` |
+| 컴포넌트 | 용도 | 설치 명령 | 사용 위치 |
+|----------|------|-----------|----------|
+| **Button** | 일반 버튼 (Data Center 전용) | `npx shadcn@latest add button` | `/datacntr/*` |
+| **Dialog** | 모달 다이얼로그 | `npx shadcn@latest add dialog` | 독서 인증 폼, 프로필 편집 |
+| **Sheet** | 측면 슬라이드 패널 | `npx shadcn@latest add sheet` | 모바일 메뉴, 필터 |
+| **Toast** | 알림 메시지 | `npx shadcn@latest add toast` | 전역 알림 시스템 |
+| **Card** | 콘텐츠 카드 | `npx shadcn@latest add card` | 공지사항, 독서 인증 카드 |
+| **Avatar** | 프로필 이미지 | `npx shadcn@latest add avatar` | 사용자 프로필 |
+| **Badge** | 배지/태그 | `npx shadcn@latest add badge` | 상태 표시, 라벨 |
+| **Textarea** | 여러 줄 입력 | `npx shadcn@latest add textarea` | 리뷰 작성, 공지 편집 |
+| **Label** | 폼 라벨 | `npx shadcn@latest add label` | 폼 필드 레이블 |
+| **Input** | 단일 줄 입력 | `npx shadcn@latest add input` | 검색, 텍스트 입력 |
+| **Select** | 드롭다운 선택 | `npx shadcn@latest add select` | 필터링, 옵션 선택 |
+| **Table** | 데이터 테이블 | `npx shadcn@latest add table` | Data Center 대시보드 |
+| **Scroll Area** | 스크롤 영역 | `npx shadcn@latest add scroll-area` | 긴 리스트, 모달 내용 |
+| **Dropdown Menu** | 드롭다운 메뉴 | `npx shadcn@latest add dropdown-menu` | 더보기 메뉴, 설정 |
+
+**중요**: 웹앱(`/app/*`)에서는 Shadcn Button 사용 금지. 대신 커스텀 버튼 시스템 사용. ([버튼 시스템 가이드](./button-system.md) 참조)
 
 ### 4.2 커스텀 컴포넌트
 
 #### 4.2.1 Unified Button System (웹앱 전용)
 
 **디자인 명세**:
-- **위치**: `/app/*` 경로 (랜딩페이지 제외)
-- **구조**: FooterActions 기반 통일된 디자인
-- **Shadcn Button 사용 금지**: 플레인 `<button>` 태그 사용
+- **위치**: `/app/*` 경로 (랜딩페이지, Data Center 제외)
+- **구조**: FooterActions 컴포넌트 기반 통일된 디자인
+- **Shadcn Button 사용 금지**: 웹앱에서는 플레인 `<button>` 태그 사용
+- **일관성**: 모든 버튼이 동일한 패딩(py-4 = 16px), 테두리 반경(rounded-lg = 8px) 사용
 
 **Primary Button (Black)**:
 
@@ -217,6 +246,14 @@ body {
 </button>
 ```
 
+**시각적 사양**:
+- 배경: Black (#000000)
+- 텍스트: White (#FFFFFF), font-bold (700)
+- 호버: Gray 800 (#1F2937)
+- 테두리 반경: 8px (rounded-lg)
+- 패딩: 16px 상하, 16px 좌우
+- 전환: 150ms color transition
+
 **Secondary Button (White)**:
 
 ```tsx
@@ -227,6 +264,15 @@ body {
   오늘의 서재
 </button>
 ```
+
+**시각적 사양**:
+- 배경: White (#FFFFFF)
+- 텍스트: Black (#000000), font-bold (700)
+- 테두리: Gray 200 (#E5E7EB, 1px)
+- 호버: Gray 50 (#F9FAFB)
+- 테두리 반경: 8px (rounded-lg)
+- 패딩: 16px 상하, 16px 좌우
+- 전환: 150ms color transition
 
 **버튼 상태**:
 
@@ -402,15 +448,17 @@ transitionDuration: {
 
 ### 6.4 Shimmer 애니메이션
 
-**전역 유틸리티** (`globals.css`):
+**전역 유틸리티** (`src/app/globals.css`):
 
 ```css
 @layer utilities {
   .shimmer {
     @apply bg-gradient-to-r from-gray-200 via-white to-gray-200 bg-[length:200%_100%] animate-shimmer;
     will-change: background-position;
+    border-radius: 8px;
   }
 
+  /* WCAG 2.1 접근성: 모션 민감도 사용자를 위한 애니메이션 비활성화 */
   @media (prefers-reduced-motion: reduce) {
     .shimmer {
       animation: none;
@@ -421,18 +469,45 @@ transitionDuration: {
 }
 ```
 
+**Tailwind 설정** (`tailwind.config.ts`):
+
+```typescript
+keyframes: {
+  shimmer: {
+    '0%': { backgroundPosition: '-100% 0' },
+    '100%': { backgroundPosition: '100% 0' }
+  }
+},
+animation: {
+  shimmer: 'shimmer 1.5s infinite ease-in-out'
+}
+```
+
 **사용 예시**:
 
 ```tsx
-// 스켈레톤 로딩
+// 스켈레톤 로딩 - 전체 너비 박스
 <div className="shimmer h-10 w-full rounded-lg" />
 
-// 아바타 스켈레톤
+// 아바타 스켈레톤 - 원형
 <div className="shimmer h-12 w-12 rounded-full" />
 
-// 텍스트 스켈레톤
+// 텍스트 스켈레톤 - 한 줄
 <div className="shimmer h-4 w-32 rounded" />
+
+// 카드 스켈레톤 - 복합 구조
+<div className="space-y-3">
+  <div className="shimmer h-32 w-full" />
+  <div className="shimmer h-4 w-3/4" />
+  <div className="shimmer h-4 w-1/2" />
+</div>
 ```
+
+**특징**:
+- **DRY 원칙**: 15개 중복 애니메이션 정의 제거 → 단일 유틸리티 클래스
+- **성능**: GPU 가속 (`will-change: background-position`)
+- **접근성**: `prefers-reduced-motion` 미디어 쿼리 지원 (WCAG 2.1 준수)
+- **일관성**: 모든 스켈레톤 로딩 상태에서 동일한 애니메이션 (1.5s ease-in-out)
 
 ---
 
@@ -600,8 +675,17 @@ transitionDuration: {
 ---
 
 **문서 위치**: `docs/design/design-system.md`
-**최종 업데이트**: 2025년 10월 16일
-**문서 버전**: 1.0
+**최종 업데이트**: 2025년 11월 4일
+**문서 버전**: 1.1
+**업데이트 내역**:
+- 2025-11-04: 현재 구현과 일치하도록 전면 검토 및 업데이트
+  - Shadcn UI 컴포넌트 목록 확장 (Badge, Sheet, Dropdown Menu 등 추가)
+  - Pretendard 폰트 적용 방식 상세화 (CDN 로드 + globals.css 강제 적용)
+  - 버튼 시스템 시각적 사양 추가
+  - Shimmer 애니메이션 Tailwind 설정 추가
+  - 색상 시스템에 Shadcn 기본 클래스 추가
+- 2025-10-16: 초기 작성
+
 **다음 업데이트 예정**: V2.0 디자인 개선 시
 
 ---

@@ -1,22 +1,215 @@
 # Firebase Custom Claims 설정 가이드
 
-**Last Updated**: 2025-10-16
+**Last Updated**: 2025-11-04
 **Category**: setup
 
 ## Overview
 
-Firebase Custom Claims를 사용한 관리자 권한 설정 방법입니다. 이를 통해 보안 규칙에서 효율적으로 관리자를 확인할 수 있습니다.
+Firebase Custom Claims와 Participant 필드를 사용한 역할 기반 권한 관리 시스템입니다.
 
-## 현재 상황
+## 현재 시스템 아키텍처
 
-### 임시 방안 (현재 사용 중)
-- Firestore Rules: 알려진 participant 문서 ID (admin, admin2, admin3) 직접 확인
-- Storage Rules: 알려진 Firebase UID 하드코딩 (교체 필요)
+### 역할 구조 (Participant 필드 기반)
 
-### 문제점
-- 새 관리자 추가 시 규칙 재배포 필요
-- 문서 ID 변경 시 관리 기능 무력화
-- 성능 저하 (매번 3개 문서 조회)
+이 프로젝트는 **Participant 문서 필드**를 사용하여 3가지 특수 역할을 관리합니다:
+
+```typescript
+interface ParticipantData {
+  id: string;
+  name: string;
+  gender?: 'male' | 'female' | 'other';
+
+  // 🔐 역할 필드
+  isSuperAdmin?: boolean;   // 슈퍼 관리자 (모든 프로필 열람, 리스트 미표시)
+  isAdministrator?: boolean; // 일반 관리자 (공지사항 관리, 프로필 열람 제약 동일)
+  isGhost?: boolean;         // 고스트 참가자 (테스트용, 리스트 미표시, 오늘의 서재 접근 가능)
+
+  cohortId: string;
+  // ... other fields
+}
+```
+
+### 역할 권한 매트릭스
+
+| 기능 | Super Admin | Administrator | Ghost | Regular User |
+|------|-------------|---------------|-------|--------------|
+| **Data Center 접근** | ✅ 전체 | ✅ 전체 | ❌ 불가 | ❌ 불가 |
+| **모든 프로필 열람** | ✅ 가능 | ❌ 제약 동일 | ❌ 제약 동일 | ❌ 제약 동일 |
+| **공지사항 작성/수정/삭제** | ✅ 가능 | ✅ 가능 | ❌ 불가 | ❌ 불가 |
+| **참가자 리스트 표시** | ❌ 숨김 | ✅ 표시 | ❌ 숨김 | ✅ 표시 |
+| **오늘의 서재 접근** | ✅ 가능 | ✅ 가능 | ✅ 가능 | ✅ 가능 |
+| **AI 매칭 관리** | ✅ 가능 | ✅ 가능 | ❌ 불가 | ❌ 불가 |
+
+### 현재 관리자 계정
+
+**Super Admin (1명)**:
+- `admin` - 운영자 (전화번호: `01000000001`)
+
+**Administrators (2명)**:
+- `admin2` - 문준영 (전화번호: `42633467921`)
+- `admin3` - 김현지 (전화번호: `42627615193`)
+
+**참고**: 일반 관리자는 Data Center 접근 가능하지만 Super Admin처럼 모든 프로필을 자유롭게 열람할 수 없음
+
+### Custom Claims vs Participant Fields
+
+| 방식 | 장점 | 단점 | 현재 사용 여부 |
+|------|------|------|---------------|
+| **Custom Claims** | • Firestore Rules에서 빠른 검증<br>• 토큰 기반 인증 | • Firebase Functions 필요<br>• 토큰 갱신 필요 (최대 1시간 지연) | ❌ 미사용 |
+| **Participant Fields** | • 즉시 반영<br>• 구현 간단<br>• Functions 불필요 | • API Route에서 추가 조회 필요 | ✅ **현재 사용 중** |
+
+**결정 사유**: 소규모 프로젝트에서는 Participant 필드 방식이 더 간단하고 즉시 반영되어 효율적
+
+---
+
+## 🎯 Quick Start: Ghost/Super Admin 설정
+
+### Ghost 참가자 추가 (테스트용)
+
+Firebase Console에서 Participant 문서에 직접 필드 추가:
+
+```javascript
+// Firestore Console에서 participants/{participantId} 문서 수정
+{
+  id: "ghost-test",
+  name: "테스트 고스트",
+  cohortId: "cohort1",
+  isGhost: true,          // ✅ 고스트 플래그 추가
+  isAdministrator: false,
+  isSuperAdmin: false
+}
+```
+
+**효과**:
+- ✅ 오늘의 서재 접근 가능
+- ✅ 독서 인증 제출 가능
+- ✅ 참가자 리스트에서 숨김
+- ❌ Data Center 접근 불가
+- ❌ 관리자 기능 불가
+
+### Super Admin 추가
+
+```javascript
+// Firestore Console에서 participants/admin 문서 수정
+{
+  id: "admin",
+  name: "운영자",
+  cohortId: "cohort1",
+  isSuperAdmin: true,      // ✅ 슈퍼 관리자 플래그
+  isAdministrator: true,   // ✅ 일반 관리자 플래그도 true로
+  isGhost: false
+}
+```
+
+**효과**:
+- ✅ Data Center 접근 가능
+- ✅ 모든 프로필 자유롭게 열람
+- ✅ 공지사항 관리
+- ✅ AI 매칭 관리
+- ✅ 참가자 리스트에서 숨김
+
+### Administrator 추가
+
+```javascript
+// Firestore Console에서 participants/admin2 문서 수정
+{
+  id: "admin2",
+  name: "문준영",
+  cohortId: "cohort1",
+  isSuperAdmin: false,     // ❌ 슈퍼 관리자 아님
+  isAdministrator: true,   // ✅ 일반 관리자만
+  isGhost: false
+}
+```
+
+**효과**:
+- ✅ Data Center 접근 가능
+- ❌ 프로필 열람 제약 (일반 참가자와 동일)
+- ✅ 공지사항 관리
+- ✅ AI 매칭 관리
+- ✅ 참가자 리스트에 표시됨
+
+---
+
+## 🛠️ 구현 세부사항
+
+### API Route 권한 검증
+
+```typescript
+// src/lib/api-auth.ts (line 111-125)
+export async function requireAuthToken(request: NextRequest) {
+  // ... Firebase Auth 검증 ...
+
+  const participant = await getParticipantByFirebaseUid(decoded.uid);
+
+  // Super Admin 또는 Administrator만 Data Center 접근 가능
+  if (participant.isSuperAdmin !== true && participant.isAdministrator !== true) {
+    return {
+      participant: null,
+      firebaseUid: null,
+      email: null,
+      error: NextResponse.json(
+        { error: '데이터센터 접근 권한이 없습니다.', code: 'INSUFFICIENT_PRIVILEGES' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { participant, firebaseUid: decoded.uid, email: decoded.email, error: null };
+}
+```
+
+### Firestore Security Rules
+
+```javascript
+// firestore.rules (line 18-20, 29-35)
+function isAdminClaim() {
+  return isSignedIn() && request.auth.token.admin == true;
+}
+
+function isAdminParticipant() {
+  return isSignedIn() &&
+         exists(/databases/$(database)/documents/participants/admin) &&
+         get(/databases/$(database)/documents/participants/admin).data.firebaseUid == request.auth.uid &&
+         get(/databases/$(database)/documents/participants/admin).data.isAdministrator == true;
+}
+```
+
+**참고**: 현재 Rules는 Custom Claims 준비만 되어있고 실제로는 Participant 필드로 검증
+
+### UI 레벨 권한 제어
+
+```typescript
+// src/hooks/use-access-control.ts
+export function useAccessControl() {
+  const { participant } = useAuth();
+
+  const isSuperAdmin = participant?.isSuperAdmin === true;
+  const isAdministrator = participant?.isAdministrator === true;
+  const isGhost = participant?.isGhost === true;
+
+  const canAccessDataCenter = isSuperAdmin || isAdministrator;
+  const canViewAllProfiles = isSuperAdmin;
+  const canManageNotices = isSuperAdmin || isAdministrator;
+  const isHiddenFromList = isSuperAdmin || isGhost;
+
+  return {
+    isSuperAdmin,
+    isAdministrator,
+    isGhost,
+    canAccessDataCenter,
+    canViewAllProfiles,
+    canManageNotices,
+    isHiddenFromList,
+  };
+}
+```
+
+---
+
+## 📚 Custom Claims 마이그레이션 가이드 (선택사항)
+
+현재 시스템은 Participant 필드를 사용하지만, 향후 Custom Claims로 마이그레이션할 수 있습니다.
 
 ## Firebase Functions로 Custom Claims 설정
 

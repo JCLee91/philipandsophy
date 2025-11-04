@@ -76,8 +76,10 @@
 | `profileImage` | string | OPTIONAL | 프로필 이미지 URL (큰 이미지, 프로필 상세용) |
 | `profileImageCircle` | string | OPTIONAL | 원형 프로필 이미지 URL (작은 아바타용) |
 | `profileBookUrl` | string | OPTIONAL | 프로필북 URL |
-| `isAdmin` | boolean | OPTIONAL | 운영자 여부 (legacy 필드) |
-| `isAdministrator` | boolean | OPTIONAL | 관리자 여부 (최신 필드명) |
+| `isAdmin` | boolean | OPTIONAL | 운영자 여부 (legacy 필드, deprecated) |
+| `isAdministrator` | boolean | OPTIONAL | 관리자 여부 (통계에서 제외) |
+| `isSuperAdmin` | boolean | OPTIONAL | 슈퍼관리자 여부 (시스템 관리자, 통계에서 완전 제외) |
+| `isGhost` | boolean | OPTIONAL | 고스트/테스트 계정 여부 (통계에서 제외) |
 | `occupation` | string | OPTIONAL | 직업/하는 일 |
 | `bio` | string | OPTIONAL | 한 줄 소개 (2줄 이내) |
 | `currentBookTitle` | string | OPTIONAL | 현재 읽는 책 제목 (프로필북에 표시) |
@@ -136,15 +138,28 @@
 
 **중요 변경사항:**
 - **세션 관리**: `sessionToken`과 `sessionExpiry` 필드 추가 (24시간 세션 토큰)
-- **관리자 필드**: `isAdmin` (legacy) + `isAdministrator` (최신) 병행 사용
+- **관리자 필드**:
+  - `isAdmin` (legacy, deprecated)
+  - `isAdministrator` (일반 관리자, 통계 제외)
+  - `isSuperAdmin` (슈퍼관리자, 통계 완전 제외)
+  - `isGhost` (테스트 계정, 통계 제외)
 - **프로필 이미지**: `profileImage` (큰 이미지) + `profileImageCircle` (아바타용) 분리
 - **성별 정보**: `gender` 필드 추가 (선택)
+- **통계 필터링 필수**: 모든 통계 쿼리에서 `isSuperAdmin`, `isAdministrator`, `isGhost` 계정 제외 필요
 
 **쿼리 패턴:**
 - 전화번호로 조회: `where('phoneNumber', '==', cleanNumber)`
 - 기수별 조회: `where('cohortId', '==', cohortId), orderBy('createdAt', 'asc')`
 - ID로 조회: `getDoc(doc(db, 'participants', participantId))`
 - 세션 토큰으로 조회: `where('sessionToken', '==', token)` (세션 검증용)
+- **통계용 필터링** (필수):
+  ```typescript
+  // 어드민, 슈퍼어드민, 고스트 제외
+  const realParticipants = participantsSnapshot.docs.filter((doc) => {
+    const data = doc.data();
+    return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+  });
+  ```
 
 **복합 인덱스 (필요):**
 - `cohortId` (ASC) + `createdAt` (ASC)
@@ -168,7 +183,7 @@
 | `dailyAnswer` | string | REQUIRED | 오늘의 질문 답변 |
 | `submittedAt` | Timestamp | AUTO | 제출 일시 |
 | `submissionDate` | string | AUTO | 제출 날짜 (YYYY-MM-DD 형식) |
-| `status` | string | DEPRECATED | ⚠️ DEPRECATED: 승인 상태 (항상 'approved', DB 호환성 위해 유지) |
+| `status` | string | REQUIRED | 제출 상태 ('approved': 정식 제출, 'draft': 임시저장) |
 | `reviewNote` | string | DEPRECATED | ⚠️ DEPRECATED: 검토 메모 (승인 프로세스 제거됨, DB 호환성 위해 유지) |
 | `createdAt` | Timestamp | AUTO | 생성 일시 |
 | `updatedAt` | Timestamp | AUTO | 수정 일시 |
@@ -198,16 +213,25 @@
 ```
 
 **중요 변경사항:**
-- **자동 승인**: 모든 제출물은 `status: 'approved'` 상태로 생성됨 (승인 프로세스 제거)
+- **임시저장 기능**: `status: 'draft'` 임시저장, `status: 'approved'` 정식 제출
 - **책 소개글**: `bookDescription` 필드 추가 (네이버 책 검색 API에서 자동 채움)
-- **Deprecated 필드**: `status`와 `reviewNote`는 DB 호환성을 위해 유지되지만 사용되지 않음
+- **Deprecated 필드**: `reviewNote`는 DB 호환성을 위해 유지되지만 사용되지 않음
+- **통계 필터링 필수**: 모든 통계 쿼리에서 `status: 'draft'` 제외 필요
 
 **쿼리 패턴:**
 - 참가자별 조회: `where('participantId', '==', participantId), orderBy('submittedAt', 'desc')`
 - 코드별 조회: `where('participationCode', '==', code), orderBy('submittedAt', 'desc')`
-- 오늘 인증 조회: `where('submissionDate', '==', today), where('status', 'in', ['pending', 'approved'])`
-  - ⚠️ `status` 필드는 deprecated이지만 기존 데이터 호환성을 위해 쿼리에서 사용
-  - 모든 새 제출물은 자동으로 `status: 'approved'`로 생성됨
+- 오늘 인증 조회:
+  ```typescript
+  // draft 제외 (클라이언트 필터링)
+  const submissions = await db
+    .collection('reading_submissions')
+    .where('submissionDate', '==', today)
+    .get();
+
+  const approved = submissions.docs.filter(doc => doc.data().status !== 'draft');
+  ```
+  - ⚠️ Firestore는 `IN` 쿼리와 `!=` 쿼리를 동시에 사용할 수 없으므로 클라이언트에서 필터링
 
 **복합 인덱스 (필요):**
 - `participantId` (ASC) + `submittedAt` (DESC)
@@ -423,6 +447,66 @@ const getConversationId = (userId1: string, userId2: string): string => {
 - participants ↔ messages: N:M (참가자 간 다대다 메시지)
 - matching_jobs: 비동기 작업 큐 (완료 후 cohorts 업데이트)
 ```
+
+---
+
+## Data Center 통계 필터링 (Statistics Filtering)
+
+### 필수 필터링 규칙
+
+**모든 통계 및 집계 쿼리에서 다음 계정을 반드시 제외해야 합니다:**
+
+1. **isSuperAdmin: true** - 슈퍼관리자 (시스템 관리자, 통계 완전 제외)
+2. **isAdministrator: true** - 일반 관리자/운영진 (통계 제외)
+3. **isGhost: true** - 테스트/고스트 계정 (통계 제외)
+4. **status: 'draft'** - 임시저장 제출물 (제출 통계 제외)
+
+### 표준 필터링 패턴
+
+```typescript
+// src/app/api/datacntr/**/*.ts 표준 패턴
+async function getFilteredParticipants(cohortId?: string) {
+  const db = getAdminDb();
+
+  // 1. 참가자 조회
+  const participantsQuery = cohortId
+    ? db.collection('participants').where('cohortId', '==', cohortId)
+    : db.collection('participants');
+
+  const participantsSnapshot = await participantsQuery.get();
+
+  // 2. 어드민, 슈퍼어드민, 고스트 제외
+  const realParticipants = participantsSnapshot.docs.filter((doc) => {
+    const data = doc.data();
+    return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+  });
+
+  // 3. 제외할 ID Set 생성 (성능 최적화)
+  const excludedIds = new Set(
+    participantsSnapshot.docs
+      .filter((doc) => {
+        const data = doc.data();
+        return data.isSuperAdmin === true || data.isAdministrator === true || data.isGhost === true;
+      })
+      .map((doc) => doc.id)
+  );
+
+  return { realParticipants, excludedIds };
+}
+```
+
+### 적용 위치
+
+**필터링이 필요한 API 엔드포인트:**
+- `/api/datacntr/stats/overview` - 대시보드 전체 통계
+- `/api/datacntr/stats/activity` - 활동 차트 데이터
+- `/api/datacntr/participants` - 참가자 목록
+- `/api/datacntr/submissions` - 독서 인증 제출물
+
+**필터링이 필요한 통계:**
+- ✅ 전체 참가자 수, 오늘 인증, 총 인증 횟수
+- ✅ 주간/월간 참여율, 총 인증률
+- ✅ 활동 상태 집계, 푸시 알림 허용 인원
 
 ---
 
@@ -2623,6 +2707,6 @@ allow create: if request.resource.data.status == 'approved'
 
 ---
 
-**Last Updated:** 2025년 10월 13일
-**Document Version:** 1.2.0
+**Last Updated:** 2025년 11월 04일
+**Document Version:** 1.3.0
 **Location:** `docs/optimization/database.md`

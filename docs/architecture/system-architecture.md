@@ -1,7 +1,7 @@
 # System Architecture Documentation
 
-**Last Updated**: 2025-10-16
-**Document Version**: v1.0.0
+**Last Updated**: 2025-11-04
+**Document Version**: v1.1.0
 **Category**: architecture
 
 ---
@@ -524,7 +524,7 @@ async function checkAdminPermission(): Promise<boolean> {
 
 #### Firestore 필드 기반 권한
 
-Participant 문서의 `isAdministrator` 필드로도 권한을 관리합니다:
+Participant 문서의 `isAdministrator`와 `isGhost` 필드로 권한을 관리합니다:
 
 ```typescript
 // Participant 문서 구조
@@ -533,6 +533,7 @@ Participant 문서의 `isAdministrator` 필드로도 권한을 관리합니다:
   name: '운영자',
   phoneNumber: '01000000001',
   isAdministrator: true, // ← 관리자 플래그
+  isGhost: false,        // ← 고스트 플래그 (테스트 사용자)
   cohortId: 'cohort1',
   // ...
 }
@@ -546,6 +547,11 @@ function canCreateNotice(participant: Participant): boolean {
   return participant.isAdministrator === true;
 }
 
+// 통계/매칭에서 고스트 사용자 제외
+function isRealParticipant(participant: Participant): boolean {
+  return !participant.isAdministrator && !participant.isGhost;
+}
+
 // UI 조건부 렌더링
 {participant?.isAdministrator && (
   <Button onClick={handleCreateNotice}>
@@ -556,10 +562,17 @@ function canCreateNotice(participant: Participant): boolean {
 
 ### 사용자 역할 구조
 
-| 역할 | isAdministrator | 권한 |
-|------|-----------------|------|
-| **관리자** | `true` | 공지 작성/편집/삭제, AI 매칭 실행, 모든 DM 조회 |
-| **일반 참가자** | `false` 또는 `undefined` | 독서 인증 제출, 프로필 조회, DM 전송 |
+| 역할 | isAdministrator | isGhost | 권한 |
+|------|-----------------|---------|------|
+| **관리자** | `true` | `false` 또는 `undefined` | 공지 작성/편집/삭제, AI 매칭 실행, 모든 DM 조회 |
+| **일반 참가자** | `false` 또는 `undefined` | `false` 또는 `undefined` | 독서 인증 제출, 프로필 조회, DM 전송 |
+| **고스트** | `false` 또는 `undefined` | `true` | 테스트 사용자 (통계/매칭에서 제외됨) |
+
+**고스트 사용자 특징**:
+- 일반 참가자와 동일한 UI 접근 권한
+- 통계 및 분석에서 자동 필터링
+- AI 매칭에서 제외
+- 내부 테스트 및 데모용으로 사용
 
 ### 보안 고려사항
 
@@ -584,6 +597,13 @@ function canCreateNotice(participant: Participant): boolean {
        match /notices/{noticeId} {
          allow read: if request.auth.uid != null;
          allow create, update, delete: if request.auth.token.isAdministrator == true;
+       }
+
+       // 독서 인증: 고스트 사용자도 제출 가능 (but 통계에서 제외)
+       match /reading_submissions/{submissionId} {
+         allow read: if request.auth.uid != null;
+         allow create: if request.auth.uid != null;
+         allow update, delete: if request.auth.token.isAdministrator == true;
        }
      }
    }
@@ -677,7 +697,8 @@ Firebase Firestore: reading_submissions 컬렉션에 문서 생성
          bookCoverUrl: 'https://...',
          bookImageUrl: 'https://storage...',
          review: '간단 감상평',
-         status: 'approved', // 자동 승인
+         status: 'approved',       // 자동 승인
+         isDraft: false,           // 완료된 제출물
          submittedAt: Timestamp,
        }
        ↓
@@ -691,6 +712,11 @@ Firebase Firestore: participants 컬렉션 업데이트
          currentBookAuthor: '저자',
          currentBookCoverUrl: 'https://...',
        }
+
+**참고: 임시 저장 (Draft) 처리**
+- isDraft: true인 제출물은 통계/매칭에서 제외
+- 사용자가 완료하지 않은 미완성 제출물로 간주
+- 프로필북에는 표시되지만 "임시 저장" 라벨 표시
 ```
 
 #### 2. 공지사항 조회 플로우
@@ -725,6 +751,13 @@ POST /api/admin/matching
        }
        ↓
 서버: 어제 독서 인증한 참가자 조회
+       {
+         필터링 조건:
+         - isAdministrator !== true (관리자 제외)
+         - isGhost !== true (고스트 사용자 제외)
+         - isDraft !== true (임시 저장 제출물 제외)
+         - status === 'approved' (승인된 제출물만)
+       }
        ↓
 OpenAI API 호출 (GPT-4)
        {
@@ -1181,12 +1214,17 @@ service cloud.firestore {
     }
 
     // 독서 인증: 자신의 제출물만 생성/조회 가능
+    // 고스트 사용자도 제출 가능하지만 통계에서 필터링됨
     match /reading_submissions/{submissionId} {
       allow read: if isAuthenticated() &&
                      (request.auth.uid == resource.data.firebaseUid || isAdmin());
       allow create: if isAuthenticated() &&
                        request.auth.uid == request.resource.data.firebaseUid;
       allow update, delete: if isAdmin();
+
+      // 참고: isDraft 필드로 임시 저장 구분
+      // - isDraft: true → 통계/매칭 제외
+      // - isDraft: false 또는 undefined → 완료된 제출물
     }
 
     // 메시지: 발신자/수신자만 조회, 발신자만 생성
@@ -1532,6 +1570,42 @@ logger.error('Failed to load notices', error);
 - **단기**: React Query 캐싱, 이미지 최적화, 코드 스플리팅
 - **중기**: 페이지네이션, 배치 처리, 복합 인덱스
 - **장기**: 마이크로서비스 분리, 전용 백엔드 API, 글로벌 CDN 확장
+
+---
+
+## 문서 변경 이력 (Changelog)
+
+### v1.1.0 (2025-11-04)
+
+**주요 변경사항**:
+- **사용자 역할 시스템 업데이트**:
+  - Ghost 역할 추가 (isGhost: true)
+  - 관리자, 일반 참가자, 고스트 3개 역할 체계
+  - 고스트 사용자는 통계/매칭에서 자동 제외
+
+- **독서 인증 제출 시스템**:
+  - Draft 제출물 처리 로직 추가 (isDraft 필드)
+  - 임시 저장 제출물은 통계/매칭에서 제외
+  - 제출 플로우에 draft 처리 설명 추가
+
+- **AI 매칭 로직 개선**:
+  - 관리자/고스트/임시저장 제출물 필터링 명시
+  - 매칭 참가자 선정 기준 상세화
+
+- **보안 아키텍처**:
+  - Firestore Security Rules에 고스트 사용자 권한 추가
+  - Draft 제출물 처리 규칙 추가
+
+### v1.0.0 (2025-10-16)
+
+**초기 버전**:
+- 전체 시스템 아키텍처 문서 작성
+- Next.js 15 + Firebase 서버리스 아키텍처 정의
+- 3대 섹션 구조 (Landing, Member Portal, Data Center)
+- 인증/권한 관리 시스템
+- 데이터 흐름 및 상태 관리 전략
+- 보안 아키텍처 4계층 구조
+- 확장성 고려사항 및 최적화 전략
 
 ---
 

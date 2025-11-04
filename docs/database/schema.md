@@ -1,7 +1,7 @@
 # Firestore 데이터베이스 스키마
 
-**최종 업데이트**: 2025년 10월 16일
-**문서 버전**: v1.0
+**최종 업데이트**: 2025년 11월 4일
+**문서 버전**: v1.1
 **프로젝트**: projectpns (필립앤소피 독서 소셜클럽)
 
 ---
@@ -15,6 +15,7 @@
 5. [인덱스 전략](#인덱스-전략)
 6. [보안 규칙](#보안-규칙)
 7. [데이터 타입 가이드](#데이터-타입-가이드)
+8. [통계 및 분석](#통계-및-분석-statistics-and-analytics)
 
 ---
 
@@ -141,8 +142,21 @@ Single Field Indexes:
 | `firebaseUid` | `string` | ❌ | Firebase Auth UID (Phone Auth 연동용) | `"firebase-uid-abc123"` |
 | `pushToken` | `string` | ❌ | 푸시 알림 토큰 (FCM) | `"fcm-token-xyz"` |
 | `lastActivityAt` | `Timestamp` | ❌ | 마지막 활동 시간 (데이터센터용) | `Timestamp(2025-10-15)` |
+| `isGhost` | `boolean` | ❌ | 고스트 사용자 여부 (테스트용, 통계 제외) | `false` |
+| `isSuperAdmin` | `boolean` | ❌ | 슈퍼 관리자 권한 여부 | `false` |
 | `createdAt` | `Timestamp` | ✅ | 생성 일시 | `Timestamp(2025-01-01)` |
 | `updatedAt` | `Timestamp` | ✅ | 수정 일시 | `Timestamp(2025-10-15)` |
+
+#### 사용자 역할 (User Roles)
+
+| 필드 | 설명 | 통계 포함 여부 |
+|------|------|-------------|
+| `isAdministrator: true` | 일반 관리자 (공지 작성, 참가자 관리) | ❌ 통계 제외 |
+| `isSuperAdmin: true` | 슈퍼 관리자 (전체 시스템 관리) | ❌ 통계 제외 |
+| `isGhost: true` | 고스트 사용자 (테스트/데모용) | ❌ 통계 제외 |
+| 일반 참가자 | 위 필드가 모두 false 또는 undefined | ✅ 통계 포함 |
+
+**중요**: 데이터센터의 모든 통계 및 분석에서 `isAdministrator`, `isSuperAdmin`, `isGhost` 사용자는 자동으로 제외됩니다.
 
 #### `bookHistory` 구조
 
@@ -230,15 +244,25 @@ Composite Indexes:
 | `dailyAnswer` | `string` | ✅ | 오늘의 질문 답변 | `"리팩토링 원칙이 인상 깊었습니다"` |
 | `submittedAt` | `Timestamp` | ✅ | 제출 일시 | `Timestamp(2025-10-15 09:30:00)` |
 | `submissionDate` | `string` (YYYY-MM-DD) | ✅ | 제출 날짜 (날짜 비교용) | `"2025-10-15"` |
-| `status` | `'pending' \| 'approved' \| 'rejected'` | ✅ | ⚠️ **DEPRECATED**: 승인 상태 (자동 승인으로 변경) | `"approved"` |
+| `status` | `'pending' \| 'approved' \| 'rejected' \| 'draft'` | ✅ | 제출 상태 (draft: 임시 저장) | `"approved"` |
 | `reviewNote` | `string` | ❌ | ⚠️ **DEPRECATED**: 검토 메모 (승인 프로세스 제거) | `""` |
 | `createdAt` | `Timestamp` | ✅ | 생성 일시 | `Timestamp(2025-10-15 09:30:00)` |
 | `updatedAt` | `Timestamp` | ✅ | 수정 일시 | `Timestamp(2025-10-15 09:30:00)` |
 | `metadata` | `Record<string, any>` | ❌ | 추가 메타데이터 (확장 가능) | `{ source: 'mobile' }` |
 
+#### 제출 상태 (Submission Status)
+
+| 상태 | 설명 | 통계 포함 여부 |
+|------|------|-------------|
+| `'approved'` | 승인된 제출 (기본 상태) | ✅ 통계 포함 |
+| `'pending'` | 승인 대기 중 (레거시) | ✅ 통계 포함 |
+| `'rejected'` | 거부된 제출 (레거시) | ✅ 통계 포함 |
+| `'draft'` | 임시 저장 (작성 중) | ❌ 통계 제외 |
+
+**중요**: `status === 'draft'` 제출은 모든 통계, 카운트, 분석에서 자동으로 제외됩니다.
+
 #### ⚠️ Deprecated 필드 안내
 
-- **`status`**: 모든 제출은 자동으로 `'approved'` 상태로 저장됩니다. 승인 프로세스는 제거되었으며, DB 호환성을 위해 필드만 유지됩니다.
 - **`reviewNote`**: 승인 프로세스 제거로 더 이상 사용되지 않습니다. 신규 제출 시 비워두거나 생략 가능합니다.
 
 #### 코드 예시
@@ -980,6 +1004,140 @@ await updateDoc(docRef, {
 
 ---
 
+## 통계 및 분석 (Statistics and Analytics)
+
+### 통계 필터링 정책
+
+필립앤소피 데이터센터의 모든 통계 및 분석 기능에서는 다음 항목들이 자동으로 제외됩니다:
+
+#### 제외 대상 사용자 (Excluded Users)
+
+| 필드 | 설명 | 사유 |
+|------|------|------|
+| `isAdministrator: true` | 일반 관리자 | 운영진 활동은 실제 참가자 통계에 포함하지 않음 |
+| `isSuperAdmin: true` | 슈퍼 관리자 | 시스템 관리 활동은 통계에서 제외 |
+| `isGhost: true` | 고스트 사용자 | 테스트/데모 계정은 통계 왜곡 방지를 위해 제외 |
+
+#### 제외 대상 제출물 (Excluded Submissions)
+
+| 상태 | 설명 | 사유 |
+|------|------|------|
+| `status === 'draft'` | 임시 저장 제출 | 작성 중인 제출물은 완료되지 않은 상태로 통계에서 제외 |
+
+### 영향을 받는 기능 (Affected Features)
+
+통계 필터링이 적용되는 데이터센터 기능 목록:
+
+1. **제출물 대시보드 (Submissions Dashboard)**
+   - 일별 제출 건수
+   - 주간/월간 제출 통계
+   - 제출 완료율 계산
+
+2. **기수 통계 (Cohort Statistics)**
+   - 활성 참가자 수
+   - 평균 독서량
+   - 참여율 계산
+
+3. **참가자 목록 (Participant Lists)**
+   - 활성 참가자 목록 조회
+   - 참가자 순위
+   - 활동 내역 집계
+
+4. **매칭 시스템 (Matching System)**
+   - AI 추천 대상 선정
+   - 유사/반대 성향 매칭
+   - 오늘의 서재 큐레이션
+
+5. **내보내기 기능 (Export Functions)**
+   - Excel/CSV 데이터 내보내기
+   - 통계 보고서 생성
+   - 참가자 활동 리포트
+
+### 쿼리 예시 (Query Examples)
+
+#### 실제 참가자만 조회 (Regular Participants Only)
+
+```typescript
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getDb } from '@/lib/firebase';
+
+const db = getDb();
+
+// 통계용 참가자 쿼리
+const participantsQuery = query(
+  collection(db, 'participants'),
+  where('cohortId', '==', cohortId),
+  where('isAdministrator', '!=', true),
+  where('isSuperAdmin', '!=', true),
+  where('isGhost', '!=', true)
+);
+
+const snapshot = await getDocs(participantsQuery);
+const regularParticipants = snapshot.docs.map(doc => ({
+  id: doc.id,
+  ...doc.data()
+}));
+```
+
+#### 완료된 제출물만 조회 (Approved Submissions Only)
+
+```typescript
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getDb } from '@/lib/firebase';
+
+const db = getDb();
+
+// 통계용 제출물 쿼리
+const submissionsQuery = query(
+  collection(db, 'reading_submissions'),
+  where('participationCode', '==', code),
+  where('status', '!=', 'draft'),
+  where('submissionDate', '==', today)
+);
+
+const snapshot = await getDocs(submissionsQuery);
+const approvedSubmissions = snapshot.docs.map(doc => ({
+  id: doc.id,
+  ...doc.data()
+}));
+```
+
+#### 참가자 필터링 헬퍼 함수 (Filtering Helper)
+
+```typescript
+// lib/utils/statistics.ts
+
+/**
+ * 통계 집계 대상 참가자 여부 확인
+ * @param participant - 참가자 객체
+ * @returns true: 통계 포함, false: 통계 제외
+ */
+export function isRegularParticipant(participant: Participant): boolean {
+  return (
+    !participant.isAdministrator &&
+    !participant.isSuperAdmin &&
+    !participant.isGhost
+  );
+}
+
+/**
+ * 통계 집계 대상 제출물 여부 확인
+ * @param submission - 제출물 객체
+ * @returns true: 통계 포함, false: 통계 제외
+ */
+export function isApprovedSubmission(submission: ReadingSubmission): boolean {
+  return submission.status !== 'draft';
+}
+```
+
+### 주의사항
+
+- **Firestore 쿼리 제약**: `!=` 연산자는 하나의 필드에만 사용 가능하므로, 여러 필드 필터링 시 클라이언트 측에서 추가 필터링 필요
+- **인덱스 요구사항**: 복합 쿼리 사용 시 Firestore 콘솔에서 인덱스 생성 필요
+- **성능 고려**: 대량 데이터 조회 시 페이지네이션 적용 권장
+
+---
+
 ## 부록: 쿼리 패턴 예시
 
 ### 1. 기수별 참가자 조회 (캐싱 없이)
@@ -1054,8 +1212,37 @@ await updateParticipantBookInfo(
 
 ---
 
-**최종 업데이트**: 2025년 10월 16일
+## 변경 이력 (Changelog)
+
+### v1.1 (2025년 11월 4일)
+
+**Participant Schema 업데이트:**
+- `isGhost` 필드 추가: 고스트 사용자 표시 (테스트용, 통계 제외)
+- `isSuperAdmin` 필드 추가: 슈퍼 관리자 권한 표시 (통계 제외)
+- 사용자 역할 섹션 추가: 관리자/고스트 사용자 통계 제외 정책 명시
+
+**Reading Submissions 업데이트:**
+- `status` 필드에 `'draft'` 상태 추가: 임시 저장 제출물 지원
+- 제출 상태 섹션 추가: draft 제출물은 통계에서 제외됨을 명시
+
+**통계 및 분석 섹션 신규 추가:**
+- 통계 필터링 정책 문서화
+- 제외 대상 사용자 및 제출물 명시
+- 영향을 받는 데이터센터 기능 목록 작성
+- 쿼리 예시 및 헬퍼 함수 제공
+- Firestore 쿼리 제약사항 및 주의사항 추가
+
+### v1.0 (2025년 10월 16일)
+
+- 초기 문서 작성
+- 6개 메인 컬렉션 스키마 정의
+- 인덱스 전략 및 보안 규칙 문서화
+- 쿼리 패턴 예시 제공
+
+---
+
+**최종 업데이트**: 2025년 11월 4일
 **문서 위치**: `docs/database/schema.md`
-**문서 버전**: v1.0
+**문서 버전**: v1.1
 
 *이 문서는 projectpns 프로젝트의 Firestore 데이터베이스 스키마에 대한 유일한 권위 있는 문서입니다.*

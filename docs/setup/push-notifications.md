@@ -1,7 +1,9 @@
 # Push Notifications Setup Guide
 
-**Last Updated**: 2025-10-13
+**Last Updated**: 2025-11-04
 **Category**: setup
+
+**⚠️ Important**: This document covers basic FCM setup. For complete iOS PWA Web Push implementation (dual-strategy), see [Web Push Implementation Guide](./web-push-implementation.md).
 
 ## Overview
 
@@ -44,34 +46,56 @@ firebase projects:list
 
 ```env
 # Firebase FCM VAPID public key (Android / Desktop)
-NEXT_PUBLIC_FCM_VAPID_KEY=YOUR_VAPID_PUBLIC_KEY
+# Get from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
+NEXT_PUBLIC_FCM_VAPID_KEY=BNrl2wjTDPpeSG2d8oIHzz5sfvOkeCXSpqjlldrZz1d1AqsvbBlFezEXLKk2Ewkpfj3nq5Y8Qt6IvyoxzoOyhQg
 
 # Standard Web Push VAPID public key (iOS PWA 포함)
-# 대부분의 경우 FCM VAPID 키와 동일한 값을 사용합니다.
-NEXT_PUBLIC_WEBPUSH_VAPID_KEY=YOUR_VAPID_PUBLIC_KEY
+# Generate with: npx web-push generate-vapid-keys
+NEXT_PUBLIC_WEBPUSH_VAPID_KEY=BLuDF-xf1T6QMG0p_gZbYq1CSps7cK2zXp8KFIQ6jqg_6bJQFneMoG6CK0WDEQSkUSynUTgZJnxdhxvu67Fz2LY
+
+# Web Push Private Key (Server-Side Only - NEVER expose to client)
+WEBPUSH_VAPID_PRIVATE_KEY=tLN-WnLtCrKKj5ShI9PnJgEgtd5dX2WMNc2v2DB0hRY
 ```
+
+**환경 변수 설명**:
+- `NEXT_PUBLIC_FCM_VAPID_KEY`: Firebase 제공 VAPID 키 (Android/Desktop)
+- `NEXT_PUBLIC_WEBPUSH_VAPID_KEY`: 표준 Web Push 공개키 (iOS Safari + All)
+- `WEBPUSH_VAPID_PRIVATE_KEY`: Web Push 비공개키 (서버 전용, 절대 노출 금지)
 
 ### Firebase Functions (로컬 + 프로덕션)
 
-`functions/.env` 파일 및 Firebase Functions 런타임 환경에 동일한 키 쌍을 설정하세요.
+`functions/.env` 파일에 동일한 키 설정:
 
 ```env
-# functions/.env
-WEBPUSH_VAPID_PUBLIC_KEY=YOUR_VAPID_PUBLIC_KEY
-WEBPUSH_VAPID_PRIVATE_KEY=YOUR_VAPID_PRIVATE_KEY
+# functions/.env (local development only)
+WEBPUSH_VAPID_PUBLIC_KEY=BLuDF-xf1T6QMG0p_gZbYq1CSps7cK2zXp8KFIQ6jqg_6bJQFneMoG6CK0WDEQSkUSynUTgZJnxdhxvu67Fz2LY
+WEBPUSH_VAPID_PRIVATE_KEY=tLN-WnLtCrKKj5ShI9PnJgEgtd5dX2WMNc2v2DB0hRY
 ```
 
-Firebase에 배포할 때는 다음 명령으로 런타임 환경 변수도 등록합니다:
+Firebase 프로덕션 배포 시 런타임 환경 변수 설정:
 
 ```bash
 cd functions
+
+# Set VAPID keys for production
 firebase functions:config:set \
-  WEBPUSH_VAPID_PUBLIC_KEY="YOUR_VAPID_PUBLIC_KEY" \
-  WEBPUSH_VAPID_PRIVATE_KEY="YOUR_VAPID_PRIVATE_KEY"
+  webpush.vapid_public_key="BLuDF-xf1T6QMG0p_gZbYq1CSps7cK2zXp8KFIQ6jqg_6bJQFneMoG6CK0WDEQSkUSynUTgZJnxdhxvu67Fz2LY" \
+  webpush.vapid_private_key="tLN-WnLtCrKKj5ShI9PnJgEgtd5dX2WMNc2v2DB0hRY"
+
+# Verify configuration
+firebase functions:config:get
+
+# Deploy functions to apply config
+firebase deploy --only functions
 ```
 
 > 🔁 **중요**: Next.js와 Firebase Functions가 동일한 VAPID 키 쌍을 사용해야
 > `webpush.sendNotification`와 클라이언트 구독이 정상 동작합니다.
+
+**참고**:
+- Firebase FCM VAPID 키와 표준 Web Push VAPID 키는 **다른 키**입니다
+- FCM VAPID: Firebase Console에서 생성
+- Web Push VAPID: `npx web-push generate-vapid-keys`로 생성
 
 ## Step 3: Verify Firebase Admin Setup
 

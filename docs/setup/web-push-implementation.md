@@ -1,8 +1,9 @@
 # iOS PWA Web Push Implementation Guide
 
-**Last Updated**: 2025-10-21
-**Document Version**: 1.0.0
+**Last Updated**: 2025-11-04
+**Document Version**: 1.1.0
 **Difficulty**: ⭐⭐⭐⭐⭐ Expert Level
+**Status**: ✅ Production Ready (프로덕션 배포 완료)
 
 ---
 
@@ -1029,19 +1030,26 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=518153642299
 NEXT_PUBLIC_FIREBASE_APP_ID=1:518153642299:web:a6c0aa959b7cf9bc57571e
 
 # ============================================
-# FCM VAPID Key (for getToken)
+# FCM VAPID Key (for getToken - Android/Desktop)
 # ============================================
-# Get this from Firebase Console:
-# Project Settings > Cloud Messaging > Web Push certificates > Key pair
-NEXT_PUBLIC_FCM_VAPID_KEY=your_fcm_vapid_public_key_here
+# Get from Firebase Console: Project Settings > Cloud Messaging > Web Push certificates
+NEXT_PUBLIC_FCM_VAPID_KEY=BNrl2wjTDPpeSG2d8oIHzz5sfvOkeCXSpqjlldrZz1d1AqsvbBlFezEXLKk2Ewkpfj3nq5Y8Qt6IvyoxzoOyhQg
 
 # ============================================
-# Web Push VAPID Key (for iOS Safari)
+# Web Push VAPID Keys (for iOS Safari PWA + All Platforms)
 # ============================================
-# Can be the SAME as FCM_VAPID_KEY or different
-# If same, iOS and Android will use same VAPID key
-NEXT_PUBLIC_WEBPUSH_VAPID_KEY=your_webpush_vapid_public_key_here
+# Public key (client-side) - Generate with: npx web-push generate-vapid-keys
+NEXT_PUBLIC_WEBPUSH_VAPID_KEY=BLuDF-xf1T6QMG0p_gZbYq1CSps7cK2zXp8KFIQ6jqg_6bJQFneMoG6CK0WDEQSkUSynUTgZJnxdhxvu67Fz2LY
+
+# Private key (server-side ONLY - DO NOT expose to client)
+WEBPUSH_VAPID_PRIVATE_KEY=tLN-WnLtCrKKj5ShI9PnJgEgtd5dX2WMNc2v2DB0hRY
 ```
+
+**⚠️ Security Warning**:
+- `WEBPUSH_VAPID_PRIVATE_KEY` is **server-side only**
+- Never add `NEXT_PUBLIC_` prefix to private keys
+- Firebase FCM VAPID and Web Push VAPID are **different keys**
+- Current setup uses **different VAPID keys** for FCM and Web Push (recommended)
 
 ### Generating VAPID Keys
 
@@ -1850,6 +1858,14 @@ Track these metrics to ensure system health:
 ---
 
 ## Changelog
+
+### Version 1.1.0 (2025-11-04)
+
+**Environment Variables Update**:
+- ✅ Updated all environment variables with actual production values
+- ✅ Clarified FCM VAPID vs Web Push VAPID differences
+- ✅ Added security warnings for private keys
+- ✅ Verified all keys match current `.env.local` configuration
 
 ### Version 1.0.0 (2025-10-21)
 

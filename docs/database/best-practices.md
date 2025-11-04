@@ -115,7 +115,105 @@ participants/{participantId}/submissions/{submissionId}
 
 ## 쿼리 최적화
 
-### 1. 인덱스 생성 전략
+### 1. 관리자 및 테스트 계정 필터링 (CRITICAL)
+
+**✅ 모든 통계/집계 쿼리에서 필수 필터링**
+
+프로덕션 통계와 관리자 데이터를 분리하기 위해 다음 계정을 **반드시** 제외해야 합니다:
+
+```typescript
+// ✅ 참가자 필터링 패턴 (Data Center API 표준)
+const participantsSnapshot = await db.collection('participants')
+  .where('cohortId', '==', cohortId)
+  .get();
+
+// 어드민, 슈퍼어드민, 고스트 제외
+const realParticipants = participantsSnapshot.docs.filter((doc) => {
+  const data = doc.data();
+  return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+});
+
+// 제외할 참가자 ID Set 생성 (성능 최적화)
+const excludedIds = new Set(
+  participantsSnapshot.docs
+    .filter((doc) => {
+      const data = doc.data();
+      return data.isSuperAdmin === true || data.isAdministrator === true || data.isGhost === true;
+    })
+    .map((doc) => doc.id)
+);
+```
+
+**필터링해야 하는 필드:**
+- `isSuperAdmin: true` - 슈퍼관리자 (시스템 관리자, 통계에서 완전 제외)
+- `isAdministrator: true` - 일반 관리자 (운영진, 통계에서 제외)
+- `isGhost: true` - 테스트/고스트 계정 (통계에서 제외)
+
+**필터링이 필요한 쿼리:**
+- ✅ 전체 참가자 수 조회
+- ✅ 오늘 인증 현황
+- ✅ 주간/월간 참여율
+- ✅ 인게이지먼트 점수 계산
+- ✅ 활동 상태 집계
+- ✅ 푸시 알림 허용 인원
+- ✅ 모든 대시보드 통계
+
+**예시: 오늘 인증 조회**
+```typescript
+// 1. 참가자 필터링
+const participantsSnapshot = await db.collection('participants').get();
+const excludedIds = new Set(
+  participantsSnapshot.docs
+    .filter(doc => doc.data().isSuperAdmin || doc.data().isAdministrator || doc.data().isGhost)
+    .map(doc => doc.id)
+);
+
+// 2. 제출물 조회 및 필터링
+const todayString = '2025-11-04';
+const submissionsSnapshot = await db.collection('reading_submissions')
+  .where('submissionDate', '==', todayString)
+  .get();
+
+// 3. 실제 참가자만 카운트 (중복 제거)
+const todaySubmitters = new Set<string>();
+submissionsSnapshot.docs.forEach(doc => {
+  const participantId = doc.data().participantId;
+  if (!excludedIds.has(participantId) && doc.data().status !== 'draft') {
+    todaySubmitters.add(participantId);
+  }
+});
+
+console.log('오늘 인증한 참가자:', todaySubmitters.size);
+```
+
+### 2. Draft 제출물 필터링
+
+**✅ 임시저장 데이터는 통계에서 제외**
+
+독서 인증 제출물(`reading_submissions`)에서 `status: 'draft'`인 데이터는 통계에 포함하지 않습니다:
+
+```typescript
+// ❌ 나쁜 예: 모든 제출물 포함
+const submissions = await db.collection('reading_submissions')
+  .where('participantId', 'in', participantIds)
+  .get();
+
+// ✅ 좋은 예: draft 제외 (클라이언트 필터)
+const submissions = await db.collection('reading_submissions')
+  .where('participantId', 'in', participantIds)
+  .get();
+
+const approvedSubmissions = submissions.docs.filter(doc =>
+  doc.data().status !== 'draft'
+);
+```
+
+**주의사항:**
+- Firestore는 `IN` 쿼리와 `!=` 쿼리를 동시에 사용할 수 없음
+- 따라서 `status != 'draft'`는 클라이언트에서 필터링
+- 또는 분할 쿼리를 사용하여 서버에서 필터링
+
+### 3. 인덱스 생성 전략
 
 **✅ 복합 쿼리는 반드시 인덱스 생성**
 ```typescript
@@ -140,7 +238,7 @@ query(
 - **단일 필드**: 자동 인덱스 생성 (별도 설정 불필요)
 - **복합 필드**: 수동 인덱스 생성 필요 (Firebase Console 또는 CLI)
 
-### 2. 쿼리 제한 (limit) 사용
+### 4. 쿼리 제한 (limit) 사용
 
 **✅ 권장: 항상 limit 설정**
 ```typescript
@@ -168,7 +266,7 @@ const q = query(
 - 무한 스크롤: 20개 (페이지네이션)
 - 전체 조회가 필요한 경우: 200-500개 (주의)
 
-### 3. 불필요한 실시간 구독 피하기
+### 5. 불필요한 실시간 구독 피하기
 
 **✅ 권장: 정적 데이터는 getDocs 사용**
 ```typescript
@@ -190,7 +288,7 @@ onSnapshot(query(collection(db, 'participants')), (snapshot) => {
 - ❌ 참가자 목록 (거의 변하지 않음)
 - ❌ 기수 정보 (정적 데이터)
 
-### 4. 클라이언트 필터링 활용
+### 6. 클라이언트 필터링 활용
 
 **언제 클라이언트 필터링을 사용할까?**
 
@@ -554,8 +652,8 @@ npx tsx src/scripts/migrate-add-gender-field.ts
 
 ---
 
-**최종 업데이트**: 2025년 10월 16일
+**최종 업데이트**: 2025년 11월 04일
 **문서 위치**: `docs/database/best-practices.md`
-**문서 버전**: v1.0
+**문서 버전**: v1.1
 
 *이 문서는 projectpns 프로젝트의 Firestore 사용 모범 사례에 대한 유일한 권위 있는 문서입니다.*

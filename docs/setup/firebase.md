@@ -40,13 +40,49 @@ Firebase Firestore를 사용하여 참가자 정보 및 독서 인증 자료를 
 `.env.local` 파일에 Firebase 구성 정보를 입력하세요:
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+# Firebase Configuration (Client-Side)
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCEFXW_Gvp_lJtYy35xe288ncvtfSHbFqY
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=philipandsophy.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=philipandsophy
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=philipandsophy.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=518153642299
+NEXT_PUBLIC_FIREBASE_APP_ID=1:518153642299:web:a6c0aa959b7cf9bc57571e
+
+# Naver Book Search API (Server-Side Only - NO NEXT_PUBLIC_ prefix)
+NAVER_CLIENT_ID=your_naver_client_id
+NAVER_CLIENT_SECRET=your_naver_client_secret
+
+# Firebase Admin Service Account Path (Migration Scripts Only)
+FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
+
+# AI Provider Configuration (Vercel AI SDK)
+AI_PROVIDER=google
+AI_MODEL=gemini-2.5-flash
+GOOGLE_GENERATIVE_AI_API_KEY=your_google_ai_api_key
+
+# Firebase Cloud Messaging - Push Notifications
+NEXT_PUBLIC_FCM_VAPID_KEY=your_fcm_vapid_public_key
+
+# Standard Web Push API - VAPID Keys (iOS Safari + All Platforms)
+NEXT_PUBLIC_WEBPUSH_VAPID_KEY=your_webpush_vapid_public_key
+WEBPUSH_VAPID_PRIVATE_KEY=your_webpush_vapid_private_key
+
+# Internal Service Secret (Cron ↔ Next.js API authentication)
+INTERNAL_SERVICE_SECRET=your_internal_service_secret
+
+# Firebase Functions URL
+NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL=https://us-central1-philipandsophy.cloudfunctions.net
+
+# Manual Matching Preview Function (Cloud Run URL)
+NEXT_PUBLIC_MANUAL_MATCHING_URL=your_manual_matching_url
+MANUAL_MATCHING_URL=your_manual_matching_url
 ```
+
+**중요 환경 변수 설명**:
+- `NEXT_PUBLIC_*`: 클라이언트 사이드에서 접근 가능 (브라우저 노출 OK)
+- `NAVER_*`: 서버 사이드 전용 (절대 NEXT_PUBLIC_ 붙이지 않기)
+- `INTERNAL_SERVICE_SECRET`: Firebase Functions ↔ Next.js API 인증용
+- `WEBPUSH_VAPID_PRIVATE_KEY`: 서버 전용 (절대 노출 금지)
 
 ## 📊 데이터베이스 구조
 
@@ -238,6 +274,6 @@ const submissions = await getSubmissionsByCode('ABC123');
 
 ---
 
-**Last Updated**: 2025-10-13
-**Version**: V1.0 (프로덕션 배포 완료)
+**Last Updated**: 2025-11-04
+**Version**: V2.0 (환경 변수 전체 업데이트)
 **Location**: `docs/setup/firebase.md`

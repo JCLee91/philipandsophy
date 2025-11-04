@@ -551,6 +551,14 @@ export function NoticeSkeleton() {
 
 ---
 
-**Last Updated**: 2025-10-13
+**Last Updated**: 2025-11-04
+**Document Version**: 1.1
 **Project Version**: V1.0 (프로덕션 배포 완료)
 **Location**: `docs/design/ui-guide.md`
+
+**업데이트 내역**:
+- 2025-11-04: 현재 구현과 일치하도록 검토 및 검증 완료
+  - Shimmer 애니메이션 구현 확인 (globals.css + tailwind.config.ts)
+  - BookSearchAutocomplete 컴포넌트 props 인터페이스 검증
+  - 모든 코드 예제의 실제 작동 여부 확인
+- 2025-10-13: 초기 작성
