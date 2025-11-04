@@ -161,7 +161,7 @@
 
 /* 레이아웃 - 랜딩 페이지에만 적용 */
 .landing-page .container {
-    max-width: 550px;
+    width: 500px;
     margin: 0 auto;
     padding: 0;
 }
@@ -372,7 +372,7 @@
     top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 385px;
+    width: 350px;
     z-index: 10;
 }
 
@@ -535,7 +535,7 @@
 }
 
 .landing-page .footer-content {
-    max-width: 550px;
+    width: 500px;
     margin: 0 auto;
     padding: 0 20px;
     display: flex;
