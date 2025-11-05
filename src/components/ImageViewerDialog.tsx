@@ -62,14 +62,16 @@ export default function ImageViewerDialog({
     <>
       {/* Backdrop - DM 다이얼로그보다 위에 표시 */}
       <div
-        className={`fixed inset-0 z-[${Z_INDEX.IMAGE_VIEWER_BACKDROP}] bg-black/80 backdrop-blur-sm animate-in fade-in-0 duration-normal`}
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in-0 duration-normal"
+        style={{ zIndex: Z_INDEX.IMAGE_VIEWER_BACKDROP }}
         onClick={() => onOpenChange(false)}
         aria-hidden="true"
       />
 
       {/* Image Container - 백드롭 위에 표시 */}
       <div
-        className={`fixed inset-0 z-[${Z_INDEX.IMAGE_VIEWER_CONTENT}] flex items-center justify-center p-4`}
+        className="fixed inset-0 flex items-center justify-center p-4"
+        style={{ zIndex: Z_INDEX.IMAGE_VIEWER_CONTENT }}
         onClick={() => onOpenChange(false)}
       >
         {/* 접근성을 위한 숨겨진 제목 */}

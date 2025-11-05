@@ -179,16 +179,18 @@ export default function DirectMessageDialog({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[${Z_INDEX.DM_DIALOG}] bg-black/50 backdrop-blur-sm`}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        style={{ zIndex: Z_INDEX.DM_DIALOG }}
         onClick={() => onOpenChange(false)}
         aria-hidden="true"
       />
 
       {/* Dialog */}
       <div
-        className={`fixed inset-x-4 z-[${Z_INDEX.DM_DIALOG}] max-w-lg mx-auto transition-all duration-300`}
+        className="fixed inset-x-4 max-w-lg mx-auto transition-all duration-300"
         onClick={(e) => e.stopPropagation()}
         style={{
+          zIndex: Z_INDEX.DM_DIALOG,
           top: keyboardHeight > 0 ? '1rem' : '50%',
           transform: keyboardHeight > 0 ? 'none' : 'translateY(-50%)',
           height: keyboardHeight > 0 ? `calc(100vh - 2rem - ${keyboardHeight}px)` : '600px',
