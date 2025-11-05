@@ -37,7 +37,7 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v8'; // Increment version to force update
+const CACHE_NAME = 'philipandsophy-v9'; // Increment version to force update (v9: Badge API added)
 
 // ✅ 앱 셸 프리캐시 (초기 로딩 필수 리소스)
 const urlsToCache = [
@@ -247,7 +247,16 @@ self.addEventListener('notificationclick', (event) => {
 
   // Handle action buttons
   if (event.action === 'close') {
+    // ✅ 닫기 버튼 클릭 시에도 배지 제거
+    if ('clearAppBadge' in navigator) {
+      navigator.clearAppBadge();
+    }
     return;
+  }
+
+  // ✅ 알림 클릭 시 앱 아이콘 배지 제거
+  if ('clearAppBadge' in navigator) {
+    navigator.clearAppBadge();
   }
 
   // Open the app or focus existing window
@@ -314,7 +323,19 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    (async () => {
+      // 알림 표시
+      await self.registration.showNotification(title, options);
+
+      // ✅ 앱 아이콘 배지 표시 (읽지 않은 알림 있음)
+      try {
+        if ('setAppBadge' in navigator) {
+          await navigator.setAppBadge(1);
+        }
+      } catch (error) {
+        console.error('[SW] Failed to set app badge:', error);
+      }
+    })()
   );
 });
 
