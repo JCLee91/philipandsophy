@@ -90,7 +90,7 @@ export default function DataCenterBoardPage() {
             data.id = doc.id;
             return data;
           })
-          .filter((p) => !p.isSuperAdmin); // Exclude only super admins
+          .filter((p) => !p.isSuperAdmin && !p.isAdministrator && !p.isGhost); // Exclude admins, super admins, and ghosts
 
         // 5. Get all submissions for this cohort's participants
         // NOTE: reading_submissions doesn't have cohortId field, so we query by participantId
