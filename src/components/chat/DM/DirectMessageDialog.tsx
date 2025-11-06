@@ -145,6 +145,15 @@ export default function DirectMessageDialog({
     prevMessagesLengthRef.current = messages.length;
   }, [messages, currentUserId, isUserScrolling, scrollToBottomSmooth]);
 
+  // 키보드가 올라올 때 자동으로 최신 메시지로 스크롤
+  useEffect(() => {
+    if (keyboardHeight > 0) {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+  }, [keyboardHeight]);
+
   const handleSend = useCallback(async () => {
     const success = await sendMessage({
       content: messageContent,
