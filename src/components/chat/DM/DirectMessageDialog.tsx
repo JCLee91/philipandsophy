@@ -109,6 +109,16 @@ export default function DirectMessageDialog({
     }
   }, [open]);
 
+  // ✅ DM 다이얼로그 열릴 때 dm 타입 알림 제거 (알림센터 정리)
+  useEffect(() => {
+    if (open && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CLEAR_NOTIFICATIONS_BY_TYPE',
+        notificationType: 'dm',
+      });
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open || !conversationId || !currentUser || !currentUserId || messages.length === 0) {
       return;

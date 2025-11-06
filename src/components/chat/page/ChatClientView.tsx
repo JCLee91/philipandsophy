@@ -128,6 +128,16 @@ export function ChatClientView({
     }
   }, [searchParams, router, cohortId, toast]);
 
+  // ✅ 페이지 진입 시 notice 타입 알림 제거 (알림센터 정리)
+  useEffect(() => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CLEAR_NOTIFICATIONS_BY_TYPE',
+        notificationType: 'notice',
+      });
+    }
+  }, []); // 마운트 시 한 번만 실행
+
   const {
     data: noticesData = [],
     isLoading: noticesLoading,

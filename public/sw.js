@@ -347,4 +347,24 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+
+  // ✅ 특정 타입의 알림들을 모두 제거
+  // 사용자가 앱 내에서 공지/DM 페이지로 이동했을 때 알림센터의 알림을 제거
+  if (event.data && event.data.type === 'CLEAR_NOTIFICATIONS_BY_TYPE') {
+    const notificationType = event.data.notificationType; // 'notice', 'dm', 'matching'
+
+    event.waitUntil(
+      self.registration.getNotifications().then((notifications) => {
+        let closedCount = 0;
+        notifications.forEach((notification) => {
+          // notification.data.type이 매칭되면 닫기
+          if (notification.data?.type === notificationType) {
+            notification.close();
+            closedCount++;
+          }
+        });
+        console.log(`[SW] Closed ${closedCount} notifications of type: ${notificationType}`);
+      })
+    );
+  }
 });
