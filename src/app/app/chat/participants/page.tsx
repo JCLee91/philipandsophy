@@ -27,6 +27,7 @@ import { getInitials, getFirstName } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { SYSTEM_IDS } from '@/constants/app';
 import type { Participant } from '@/types/database';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -72,7 +73,7 @@ function ParticipantRow({
           <div className="relative">
             <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
               <AvatarImage
-                src={participant.profileImageCircle || participant.profileImage}
+                src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
                 alt={participant.name}
               />
               <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
@@ -130,7 +131,7 @@ function ParticipantRow({
       <div className="relative">
         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
           <AvatarImage
-            src={participant.profileImageCircle || participant.profileImage}
+            src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
             alt={participant.name}
           />
           <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
@@ -244,7 +245,7 @@ function ParticipantsPageContent() {
                       <div className="relative">
                         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                           <AvatarImage
-                            src={participant.profileImageCircle || participant.profileImage}
+                            src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
                             alt={participant.name}
                           />
                           <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">

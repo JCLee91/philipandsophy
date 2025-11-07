@@ -21,6 +21,7 @@ import Image from 'next/image';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { useDirectMessageActions } from '@/hooks/chat/useDirectMessageActions';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -210,7 +211,7 @@ export default function DirectMessageDialog({
     currentUser?.isSuperAdmin || currentUser?.isAdministrator ? otherUser?.name || '' : APP_CONSTANTS.ADMIN_NAME;
   const profileImageUrl =
     currentUser?.isSuperAdmin || currentUser?.isAdministrator
-      ? otherUser?.profileImageCircle || otherUser?.profileImage
+      ? getResizedImageUrl(otherUser?.profileImageCircle || otherUser?.profileImage) || otherUser?.profileImageCircle || otherUser?.profileImage
       : '/favicon.webp';
 
   // Early returns AFTER all hooks

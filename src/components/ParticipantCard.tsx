@@ -13,6 +13,7 @@ import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 export interface ParticipantCardProps {
   participant: Participant;
@@ -73,7 +74,7 @@ export function ParticipantCard({
           <div className="relative">
             <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
               <AvatarImage
-                src={participant.profileImageCircle || participant.profileImage}
+                src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
                 alt={participant.name}
               />
               <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
@@ -139,7 +140,7 @@ export function ParticipantCard({
       <div className="relative">
         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
           <AvatarImage
-            src={participant.profileImageCircle || participant.profileImage}
+            src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
             alt={participant.name}
           />
           <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">

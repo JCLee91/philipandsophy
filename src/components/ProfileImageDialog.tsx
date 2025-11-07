@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Participant } from '@/types/database';
 import { UI_CONFIG } from '@/constants/migration';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 interface ProfileImageDialogProps {
   participant: Participant | null;
@@ -149,7 +150,7 @@ export default function ProfileImageDialog({
         {participant.profileImage && imageLoaded ? (
           <div className="relative max-w-[90vw] max-h-[90vh]" style={{ aspectRatio: 'auto' }}>
             <Image
-              src={participant.profileImage}
+              src={getResizedImageUrl(participant.profileImage) || participant.profileImage}
               alt={participant.name}
               width={1024}
               height={1024}
