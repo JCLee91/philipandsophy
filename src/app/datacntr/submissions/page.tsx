@@ -17,6 +17,7 @@ import AllBooksPanel from '@/components/datacntr/dashboard/AllBooksPanel';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -211,7 +212,7 @@ export default function SubmissionsPage() {
               {submission.bookImageUrl && (
                 <div className="aspect-video bg-muted relative">
                   <Image
-                    src={submission.bookImageUrl}
+                    src={getResizedImageUrl(submission.bookImageUrl) || submission.bookImageUrl}
                     alt={submission.bookTitle}
                     fill
                     sizes="(max-width: 768px) 100vw, 400px"

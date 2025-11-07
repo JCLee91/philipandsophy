@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Upload, X, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
+import { getResizedImageUrl } from '@/lib/image-utils';
 import { logger } from '@/lib/logger';
 import type { Cohort } from '@/types/database';
 

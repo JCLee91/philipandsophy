@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { getResizedImageUrl } from '@/lib/image-utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, MessageSquare, CheckCheck, Clock } from 'lucide-react';
@@ -143,7 +144,7 @@ export default function MessagesPage() {
               {message.imageUrl && (
                 <div className="mt-3">
                   <Image
-                    src={message.imageUrl}
+                    src={getResizedImageUrl(message.imageUrl) || message.imageUrl}
                     alt="메시지 이미지"
                     width={400}
                     height={400}
