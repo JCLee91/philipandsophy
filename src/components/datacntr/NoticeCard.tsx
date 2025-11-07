@@ -144,7 +144,6 @@ export default function NoticeCard({
                 width={200}
                 height={150}
                 className="max-w-[200px] rounded border border-gray-200 h-auto"
-                unoptimized
               />
             </div>
           )}

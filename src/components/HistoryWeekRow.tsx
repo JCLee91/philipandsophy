@@ -53,7 +53,6 @@ const HistoryWeekRow = memo(function HistoryWeekRow({
                   alt="완료"
                   width={40}
                   height={40}
-                  unoptimized
                 />
               ) : (
                 <Image
@@ -61,7 +60,6 @@ const HistoryWeekRow = memo(function HistoryWeekRow({
                   alt="미완료"
                   width={40}
                   height={40}
-                  unoptimized
                 />
               )}
             </div>

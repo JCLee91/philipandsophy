@@ -291,7 +291,6 @@ export default function NoticeEditPage() {
                 width={600}
                 height={400}
                 className="rounded-lg border border-gray-200 w-full h-auto"
-                unoptimized
               />
               <button
                 type="button"

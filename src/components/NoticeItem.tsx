@@ -91,7 +91,6 @@ export default function NoticeItem({
                   height={400}
                   className="object-contain w-full h-auto"
                   priority={priority}
-                  unoptimized
                 />
               </div>
             </div>

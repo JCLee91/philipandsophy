@@ -60,7 +60,6 @@ export default function BookmarkCard({
                 src={lockedImage || '/image/today-library/locked-profile-1.png'}
                 alt="잠긴 프로필 이미지"
                 fill
-                unoptimized
                 className="object-cover"
                 sizes={`${BOOKMARK_DIMENSIONS.PROFILE_SIZE_LOCKED}px`}
               />
@@ -78,7 +77,6 @@ export default function BookmarkCard({
                 src={profileImage}
                 alt={name}
                 fill
-                unoptimized
                 className="object-cover"
                 sizes={`${BOOKMARK_DIMENSIONS.PROFILE_SIZE_UNLOCKED}px`}
               />
@@ -102,7 +100,6 @@ export default function BookmarkCard({
                 alt=""
                 src={config.flagSvg}
                 fill
-                unoptimized
                 sizes="21px"
                 className="block max-w-none size-full object-contain"
               />
@@ -124,7 +121,6 @@ export default function BookmarkCard({
                 alt="잠금 아이콘"
                 src={config.lockSvg}
                 fill
-                unoptimized
                 sizes={`${BOOKMARK_DIMENSIONS.LOCK_ICON_SIZE}px`}
                 className="block max-w-none size-full object-contain"
               />

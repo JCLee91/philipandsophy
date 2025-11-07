@@ -155,7 +155,6 @@ export default function ProfileImageDialog({
               width={1024}
               height={1024}
               className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
-              unoptimized
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();

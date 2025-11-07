@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    unoptimized: true, // Vercel Image Optimization 비활성화 - Firebase Resize Extension 사용
     remotePatterns: [
       {
         protocol: 'https',

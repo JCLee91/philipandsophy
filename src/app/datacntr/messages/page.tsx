@@ -148,7 +148,6 @@ export default function MessagesPage() {
                     width={400}
                     height={400}
                     className="max-w-xs rounded-lg border border-gray-200 h-auto w-full"
-                    unoptimized
                   />
                 </div>
               )}

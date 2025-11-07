@@ -95,7 +95,6 @@ export default function ImageViewerDialog({
               e.stopPropagation();
               onOpenChange(false);
             }}
-            unoptimized
           />
         )}
       </div>
