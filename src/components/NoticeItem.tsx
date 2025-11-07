@@ -11,6 +11,7 @@ import { Notice } from '@/types/database';
 import { APP_CONSTANTS } from '@/constants/app';
 import { Pencil, Trash2, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
+import { getResizedImageUrl } from '@/lib/image-utils';
 import { Timestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import ImageViewerDialog from '@/components/ImageViewerDialog';
@@ -85,7 +86,7 @@ export default function NoticeItem({
                 onClick={() => setSelectedImage(notice.imageUrl || null)}
               >
                 <Image
-                  src={notice.imageUrl}
+                  src={getResizedImageUrl(notice.imageUrl) || notice.imageUrl}
                   alt="공지 이미지"
                   width={600}
                   height={400}

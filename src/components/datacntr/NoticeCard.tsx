@@ -3,6 +3,7 @@
 import { Edit, MoreVertical, Save, Trash2, User } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { getResizedImageUrl } from '@/lib/image-utils';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import type { Notice } from '@/types/database';
 
@@ -139,7 +140,7 @@ export default function NoticeCard({
           {notice.imageUrl && (
             <div className="mt-2">
               <Image
-                src={notice.imageUrl}
+                src={getResizedImageUrl(notice.imageUrl) || notice.imageUrl}
                 alt="공지 이미지"
                 width={200}
                 height={150}

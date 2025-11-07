@@ -7,6 +7,7 @@ import { formatMessageTime } from '@/lib/message-grouping';
 import { APP_CONSTANTS } from '@/constants/app';
 import { getFirstName } from '@/lib/utils';
 import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 interface MessageGroupProps {
   senderId: string;
@@ -48,10 +49,10 @@ export default function MessageGroup({
 
   // 아바타 이미지 URL
   const avatarSrc = isMine
-    ? currentUser?.profileImageCircle || currentUser?.profileImage || '/favicon.webp'
+    ? getResizedImageUrl(currentUser?.profileImageCircle || currentUser?.profileImage) || currentUser?.profileImageCircle || currentUser?.profileImage || '/favicon.webp'
     : isFromAdminTeam
       ? '/favicon.webp'
-      : otherUser.profileImageCircle || otherUser.profileImage;
+      : getResizedImageUrl(otherUser.profileImageCircle || otherUser.profileImage) || otherUser.profileImageCircle || otherUser.profileImage;
 
   const avatarAlt = isMine ? '나' : isFromAdminTeam ? '필립앤소피' : displayName;
   const avatarFallback = isMine ? '나' : isFromAdminTeam ? '필' : displayName[0];
@@ -98,7 +99,7 @@ export default function MessageGroup({
                 onClick={() => onImageClick(msg.imageUrl!)}
               >
                 <Image
-                  src={msg.imageUrl}
+                  src={getResizedImageUrl(msg.imageUrl) || msg.imageUrl}
                   alt="첨부 이미지"
                   fill
                   sizes="192px"

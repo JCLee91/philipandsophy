@@ -25,12 +25,13 @@ export function getResizedImageUrl(originalUrl: string | undefined | null): stri
   try {
     // URL 파싱
     const url = new URL(originalUrl);
-    const pathMatch = url.pathname.match(/\/o\/(.+)/);
 
+    // /v0/b/{bucket}/o/{encodedPath} 형식에서 버킷명 추출
+    const pathMatch = url.pathname.match(/\/v0\/b\/([^/]+)\/o\/(.+)/);
     if (!pathMatch) return originalUrl;
 
-    // 인코딩된 경로 디코딩
-    const encodedPath = pathMatch[1];
+    const bucket = pathMatch[1];  // 버킷명 그대로 유지
+    const encodedPath = pathMatch[2];
     const decodedPath = decodeURIComponent(encodedPath);
 
     // 파일 확장자 추출
@@ -44,8 +45,11 @@ export function getResizedImageUrl(originalUrl: string | undefined | null): stri
     const resizedPath = `${pathWithoutExt}_1200x1200${extension}`;
     const encodedResizedPath = encodeURIComponent(resizedPath);
 
-    // 새 URL 구성 (쿼리 파라미터 제거 - alt=media만 유지)
-    return `${url.origin}/v0/b/${url.hostname.split('.')[0]}.appspot.com/o/${encodedResizedPath}?alt=media`;
+    // 새 URL 구성 (기존 쿼리 파라미터 모두 유지)
+    const searchParams = url.searchParams.toString();
+    const queryString = searchParams ? `?${searchParams}` : '';
+
+    return `${url.origin}/v0/b/${bucket}/o/${encodedResizedPath}${queryString}`;
   } catch (error) {
     console.warn('Failed to generate resized image URL:', error);
     return originalUrl;

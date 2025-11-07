@@ -362,7 +362,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           <div className="absolute left-1/2 transform -translate-x-1/2 top-[36px] z-10">
             <div className="relative w-[80px] h-[80px]">
               <Avatar className="w-full h-full border-[3px] border-[#31363e]">
-                <AvatarImage src={participant.profileImageCircle || participant.profileImage} alt={participant.name} />
+                <AvatarImage src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage} alt={participant.name} />
                 <AvatarFallback className="bg-gray-200 text-2xl font-bold text-gray-700">
                   {initials}
                 </AvatarFallback>
