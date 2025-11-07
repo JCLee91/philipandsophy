@@ -269,10 +269,10 @@ export function isAfterProgram(cohort: Cohort): boolean {
 export function canViewAllProfiles(cohort: Cohort): boolean {
   if (!cohort?.endDate) return false;
 
-  const today = parseISO(getTodayString());
+  const today = parseISO(getSubmissionDate()); // ✅ 새벽 2시 마감 정책 적용
   const endDate = parseISO(cohort.endDate);
 
-  // 14일차 (마지막 날)부터 무제한
+  // 14일차 (마지막 날)부터 무제한 (새벽 2시부터)
   return today >= endDate;
 }
 
@@ -286,10 +286,10 @@ export function canViewAllProfiles(cohort: Cohort): boolean {
 export function canViewAllProfilesWithoutAuth(cohort: Cohort): boolean {
   if (!cohort?.endDate) return false;
 
-  const today = parseISO(getTodayString());
+  const today = parseISO(getSubmissionDate()); // ✅ 새벽 2시 마감 정책 적용
   const endDate = parseISO(cohort.endDate);
 
-  // 15일차 (마지막 날 + 1일)부터 무제한
+  // 15일차 (마지막 날 + 1일)부터 무제한 (새벽 2시부터)
   const startDate = addDays(endDate, 1);
 
   return today >= startDate;
@@ -311,11 +311,11 @@ export function canViewAllProfilesWithoutAuth(cohort: Cohort): boolean {
 export function shouldShowAllYesterdayVerified(cohort: Cohort): boolean {
   if (!cohort?.profileUnlockDate) return false;
 
-  const today = parseISO(getTodayString());
+  const today = parseISO(getSubmissionDate()); // ✅ 새벽 2시 마감 정책 적용
   const unlockDate = parseISO(cohort.profileUnlockDate);
 
   if (!isValid(today) || !isValid(unlockDate)) return false;
 
-  // 오늘이 설정된 날짜 이상이면 true
+  // 오늘이 설정된 날짜 이상이면 true (새벽 2시부터)
   return today >= unlockDate;
 }
