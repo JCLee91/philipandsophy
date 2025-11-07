@@ -22,7 +22,7 @@ import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, canViewAllProfiles, canViewAllProfilesWithoutAuth, getTodayString, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
+import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
@@ -137,7 +137,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const isAfterProgramWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
 
   // 14일차나 15일차 이후인지 확인 (특별 파라미터로 전달됨)
-  const isFinalDayAccess = matchingDate === getTodayString() && isFinalDayOrAfter;
+  // ✅ FIX: getSubmissionDate() 기준으로 비교 (새벽 2시 마감 정책 적용)
+  const isFinalDayAccess = matchingDate === getSubmissionDate() && isFinalDayOrAfter;
 
   // 프로필북 표시 규칙:
   // - 14일차 또는 15일차 이후: 최신 제출물 모두 표시 (cutoff 없음)

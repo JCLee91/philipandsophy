@@ -7,13 +7,14 @@
  */
 
 import { getFirebaseAdmin } from '../lib/firebase/admin-init';
-import { getYesterdayString, getTodayString } from '../lib/date-utils';
+import { getYesterdayString, getSubmissionDate } from '../lib/date-utils';
 
 async function checkYesterdaySubmissions() {
   try {
     const { db } = getFirebaseAdmin();
     const yesterday = getYesterdayString();
-    const today = getTodayString();
+    // ✅ FIX: 새벽 2시 마감 정책 적용
+    const today = getSubmissionDate();
 
     console.log('==================================================');
     console.log('어제 날짜로 인증한 참가자 조회');

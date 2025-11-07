@@ -232,28 +232,36 @@ export function getMatchingAccessDates(submissionDates: Iterable<string>): Set<s
 }
 
 /**
- * 오늘이 프로그램 마지막 날인지 체크
+ * 오늘이 프로그램 마지막 날인지 체크 (새벽 2시 마감 정책 적용)
  *
  * @param cohort - 기수 정보
- * @returns true if 오늘 = endDate (KST 기준)
+ * @returns true if 오늘 = endDate (새벽 2시 기준)
+ *
+ * @example
+ * // 10월 14일 새벽 1시: today="2025-10-13" → endDate="2025-10-13"이면 true
+ * // 10월 14일 오전 10시: today="2025-10-14" → endDate="2025-10-14"이면 true
  */
 export function isFinalDay(cohort: Cohort): boolean {
   if (!cohort?.endDate) return false;
 
-  const today = getTodayString();
+  const today = getSubmissionDate(); // ✅ 새벽 2시 마감 정책 적용
   return today === cohort.endDate;
 }
 
 /**
- * 프로그램 종료 후인지 체크
+ * 프로그램 종료 후인지 체크 (새벽 2시 마감 정책 적용)
  *
  * @param cohort - 기수 정보
- * @returns true if 오늘 > endDate
+ * @returns true if 오늘 > endDate (새벽 2시 기준)
+ *
+ * @example
+ * // 10월 15일 새벽 1시: today="2025-10-14" → endDate="2025-10-14"이면 false
+ * // 10월 15일 오전 10시: today="2025-10-15" → endDate="2025-10-14"이면 true
  */
 export function isAfterProgram(cohort: Cohort): boolean {
   if (!cohort?.endDate) return false;
 
-  const today = parseISO(getTodayString());
+  const today = parseISO(getSubmissionDate()); // ✅ 새벽 2시 마감 정책 적용
   const endDate = parseISO(cohort.endDate);
 
   return isAfter(today, endDate);

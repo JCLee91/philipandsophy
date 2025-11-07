@@ -1526,12 +1526,13 @@ export const manualMatchingPreview = onRequest(
       // ✅ Firebase Functions에서 직접 AI 매칭 실행
       const { matchParticipantsByAI } = await import("./lib/ai-matching");
       const { getDailyQuestionText } = await import("./constants/daily-questions");
-      const { getMatchingTargetDate, getTodayString } = await import("./lib/date-utils");
+      const { getMatchingTargetDate, getSubmissionDate } = await import("./lib/date-utils");
       const { MATCHING_CONFIG } = await import("./constants/matching");
 
+      // ✅ FIX: 새벽 2시 마감 정책 적용
       // 날짜 정의
-      const submissionDate = getMatchingTargetDate();
-      const matchingDate = getTodayString();
+      const submissionDate = getMatchingTargetDate(); // 매칭 대상 날짜 (새벽 2시 마감 고려)
+      const matchingDate = getSubmissionDate(); // Firebase dailyFeaturedParticipants 키 (새벽 2시 기준)
       const submissionQuestion = getDailyQuestionText(submissionDate);
 
       logger.info("Starting AI matching", { cohortId, submissionDate, matchingDate });

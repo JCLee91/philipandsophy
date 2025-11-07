@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
-import { getTodayString } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { logger } from '@/lib/logger';
 
@@ -11,6 +11,9 @@ import { logger } from '@/lib/logger';
  * 실시간 제출 현황 카운트 Hook
  * Firebase onSnapshot으로 자동 업데이트
  * 🔒 해당 코호트 참가자만 필터링 (다중 코호트 운영 시 데이터 혼입 방지)
+ *
+ * @param cohortId - 코호트 ID
+ * @param date - 조회할 날짜 (기본값: 오늘, 새벽 2시 마감 정책 적용)
  */
 export function useSubmissionCount(cohortId?: string, date?: string) {
   const [count, setCount] = useState<number>(0);
@@ -27,7 +30,8 @@ export function useSubmissionCount(cohortId?: string, date?: string) {
       return;
     }
 
-    const targetDate = date || getTodayString();
+    // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
+    const targetDate = date || getSubmissionDate();
     const question = getDailyQuestionText(targetDate);
 
     setIsLoading(true);

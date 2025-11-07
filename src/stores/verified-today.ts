@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { useEffect } from 'react';
 import { subscribeTodayVerified } from '@/lib/firebase';
-import { getTodayString, getSubmissionDate } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { APP_CONSTANTS } from '@/constants/app';
 
 interface VerifiedTodayState {

@@ -20,7 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Participant } from '@/types/database';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
-import { getTodayString, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
+import { getSubmissionDate, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 
 // ✅ Disable static generation - requires runtime data
@@ -39,7 +39,8 @@ function TodayLibraryContent() {
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { toast } = useToast();
-  const todayDate = getTodayString();
+  // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
+  const todayDate = getSubmissionDate();
   const { data: viewerSubmissions = [], isLoading: viewerSubmissionLoading } = useParticipantSubmissionsRealtime(currentUserId);
   const viewerSubmissionDates = useMemo(
     () => new Set(viewerSubmissions.map((submission) => submission.submissionDate)),
@@ -315,8 +316,9 @@ function TodayLibraryContent() {
   const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
     // 15일차 이후: 인증 체크 완전 스킵 (별도 로직)
     if (showAllProfilesWithoutAuth) {
+      // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
       // 인증 없이 바로 접근 가능
-      const matchingDate = getTodayString();
+      const matchingDate = getSubmissionDate();
       const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
       router.push(profileUrl);
       return;
@@ -331,8 +333,9 @@ function TodayLibraryContent() {
         });
         return;
       }
+      // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
       // 인증됨 - 접근 허용
-      const matchingDate = getTodayString();
+      const matchingDate = getSubmissionDate();
       const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
       router.push(profileUrl);
       return;

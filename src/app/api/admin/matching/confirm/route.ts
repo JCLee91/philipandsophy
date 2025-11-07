@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
-import { getTodayString } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { MatchingSchema } from '@/types/schemas';
 import { logger } from '@/lib/logger';
@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
       throw validationError;
     }
 
-    const matchingDate = date || getTodayString(); // 매칭 날짜 (Firebase 키로 사용)
+    // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
+    const matchingDate = date || getSubmissionDate(); // 매칭 날짜 (Firebase 키로 사용)
 
     // Validate date format
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;

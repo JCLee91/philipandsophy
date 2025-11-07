@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDailyQuestionText } from '@/constants/daily-questions';
-import { getTodayString } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { logger } from '@/lib/logger';
@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const cohortId = searchParams.get('cohortId');
-    const date = searchParams.get('date') || getTodayString();
+    // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
+    const date = searchParams.get('date') || getSubmissionDate();
 
     if (!cohortId) {
       return NextResponse.json(

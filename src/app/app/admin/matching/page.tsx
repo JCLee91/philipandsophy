@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, X, Loader2 } from 'lucide-react';
-import { getTodayString, getMatchingTargetDate } from '@/lib/date-utils';
+import { getSubmissionDate, getMatchingTargetDate } from '@/lib/date-utils';
 import { getDailyQuestionText } from '@/constants/daily-questions';
 import { MATCHING_CONFIG } from '@/constants/matching';
 import { CARD_STYLES } from '@/constants/ui';
@@ -61,8 +61,9 @@ function MatchingPageContent() {
   const submissionDate = useMemo(() => getMatchingTargetDate(), []);
   const submissionQuestion = useMemo(() => getDailyQuestionText(submissionDate), [submissionDate]);
 
+  // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
   // 오늘 날짜 (Firestore 매칭 키 & localStorage 키로 사용)
-  const todayDate = useMemo(() => getTodayString(), []); // KST 기준 오늘 날짜
+  const todayDate = useMemo(() => getSubmissionDate(), []); // 새벽 2시 마감 기준 날짜
   const todayQuestion = useMemo(() => getDailyQuestionText(todayDate), [todayDate]);
 
   // 로컬 스토리지 키 (todayDate 기준 - Firestore 키와 일치)

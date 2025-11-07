@@ -8,7 +8,7 @@ import { useMessages } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 import { Send, Paperclip, X, ArrowDown } from 'lucide-react';
-import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo, CSSProperties } from 'react';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { FOOTER_STYLES } from '@/constants/ui';
 import { APP_CONSTANTS } from '@/constants/app';
@@ -194,6 +194,25 @@ export default function DirectMessageDialog({
   // Early returns AFTER all hooks
   if (!otherUser || !open) return null;
 
+  const isKeyboardOpen = keyboardHeight > 0;
+  const keyboardBottomOffset = isKeyboardOpen
+    ? `calc(${keyboardHeight}px + env(safe-area-inset-bottom, 0px) + 0.75rem)`
+    : undefined;
+
+  const dialogDynamicStyle: CSSProperties = isKeyboardOpen
+    ? {
+        top: '1rem',
+        bottom: keyboardBottomOffset,
+        transform: 'none',
+        height: 'auto',
+        maxHeight: 'calc(100vh - 2rem)',
+      }
+    : {
+        top: '50%',
+        transform: 'translateY(-50%)',
+        height: '600px',
+      };
+
   return (
     <>
       {/* Backdrop */}
@@ -210,9 +229,7 @@ export default function DirectMessageDialog({
         onClick={(e) => e.stopPropagation()}
         style={{
           zIndex: Z_INDEX.DM_DIALOG,
-          top: keyboardHeight > 0 ? '1rem' : '50%',
-          transform: keyboardHeight > 0 ? 'none' : 'translateY(-50%)',
-          height: keyboardHeight > 0 ? `calc(100vh - 2rem - ${keyboardHeight}px)` : '600px',
+          ...dialogDynamicStyle,
         }}
       >
         <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">

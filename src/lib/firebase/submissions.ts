@@ -16,7 +16,7 @@ import {
   onSnapshot,
   QuerySnapshot,
 } from 'firebase/firestore';
-import { getTodayString, getSubmissionDate } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { getDb } from './client';
 import { ReadingSubmission, COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';

@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 import type { OverviewStats } from '@/types/datacntr';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
-import { getTodayString } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { hasAnyPushSubscription } from '@/lib/push/helpers';
 
 export async function GET(request: NextRequest) {
@@ -21,8 +21,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const cohortId = searchParams.get('cohortId');
 
+    // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
     // 오늘 날짜 (KST) - submissionDate 필드를 사용해 타임존 이슈 제거
-    const todayString = getTodayString();
+    const todayString = getSubmissionDate();
 
     // Cohort 정보 조회 (총 인증률 계산을 위해)
     let cohortData = null;

@@ -4,7 +4,7 @@ import { Suspense, useRef, useCallback, useEffect, useMemo, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { scrollToBottom } from '@/lib/utils';
-import { getTodayString, getSubmissionDate } from '@/lib/date-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
 import { getTimestampMillis } from '@/lib/firebase/timestamp-utils';
 import { parseISO, differenceInDays } from 'date-fns';
 import { APP_CONSTANTS } from '@/constants/app';
@@ -155,8 +155,9 @@ export function ChatClientView({
   const hasSubmittedToday = !!todaySubmission;
   const todaySubmissionId = todaySubmission?.id;
 
+  // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
   const currentDay = cohort && cohort.programStartDate
-    ? differenceInDays(parseISO(getTodayString()), parseISO(cohort.programStartDate)) + 1
+    ? differenceInDays(parseISO(getSubmissionDate()), parseISO(cohort.programStartDate)) + 1
     : null;
   const isDay1 = currentDay === 1;
   const isAfterDay14 = currentDay !== null && currentDay > 14;
