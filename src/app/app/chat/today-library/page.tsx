@@ -569,7 +569,7 @@ function TodayLibraryContent() {
     oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
   }
 
-  // v2.0: 미인증 시 성별 기반 랜덤 선택 (남1+여1)
+  // v2.0: 미인증 시 성별 기반 랜덤 선택 (남1+여1 보장)
   const { unlockedMale, unlockedFemale, genderDiversityWarning } = useMemo(() => {
     if (!isRandomMatching || !isLocked || isSuperAdmin) {
       // 인증됨 또는 v1.0: 전체 표시
@@ -580,21 +580,25 @@ function TodayLibraryContent() {
       };
     }
 
-    // 미인증 v2.0: 각 성별에서 랜덤 1명 선택
-    const randomMale = maleParticipants.length > 0
-      ? [maleParticipants[Math.floor(Math.random() * maleParticipants.length)]]
-      : [];
-
-    const randomFemale = femaleParticipants.length > 0
-      ? [femaleParticipants[Math.floor(Math.random() * femaleParticipants.length)]]
-      : [];
-
-    // 성별 다양성 검증
+    // 미인증 v2.0: 각 성별에서 랜덤 1명씩 선택
+    let randomMale: FeaturedParticipant[] = [];
+    let randomFemale: FeaturedParticipant[] = [];
     let warning = null;
-    if (maleParticipants.length === 0 && femaleParticipants.length > 0) {
-      warning = '여성 프로필만 샘플링되었습니다';
-    } else if (femaleParticipants.length === 0 && maleParticipants.length > 0) {
-      warning = '남성 프로필만 샘플링되었습니다';
+
+    if (maleParticipants.length > 0 && femaleParticipants.length > 0) {
+      // 이상적: 남/여 모두 있음 → 각 1명씩
+      randomMale = [maleParticipants[Math.floor(Math.random() * maleParticipants.length)]];
+      randomFemale = [femaleParticipants[Math.floor(Math.random() * femaleParticipants.length)]];
+    } else if (maleParticipants.length > 0) {
+      // 남성만 있음 → 남성 2명
+      const shuffled = [...maleParticipants].sort(() => Math.random() - 0.5);
+      randomMale = shuffled.slice(0, 2);
+      warning = '여성 프로필을 찾지 못해 남성 프로필 2개를 표시합니다';
+    } else if (femaleParticipants.length > 0) {
+      // 여성만 있음 → 여성 2명
+      const shuffled = [...femaleParticipants].sort(() => Math.random() - 0.5);
+      randomFemale = shuffled.slice(0, 2);
+      warning = '남성 프로필을 찾지 못해 여성 프로필 2개를 표시합니다';
     }
 
     return {
@@ -727,9 +731,10 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (남자) */}
                       {isLocked && Array.from({ length: Math.ceil(lockedCount / 2) }).map((_, idx) => {
-                        // 전체 열린 카드 수(2개) 이후부터 시작
+                        // 자물쇠 인덱스는 항상 unlockedProfileBooks(=2) 이상
                         const totalUnlockedCount = unlockedMale.length + unlockedFemale.length;
-                        const cardIndex = totalUnlockedCount + idx;
+                        const minLockedIndex = Math.max(totalUnlockedCount, profileBookAccess.unlockedProfileBooks);
+                        const cardIndex = minLockedIndex + idx;
                         return (
                           <div key={`locked-male-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
@@ -769,10 +774,11 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (여자) */}
                       {isLocked && Array.from({ length: Math.floor(lockedCount / 2) }).map((_, idx) => {
-                        // 전체 열린 카드 수 + 남성 자물쇠 수 이후부터 시작
+                        // 자물쇠 인덱스는 항상 unlockedProfileBooks(=2) 이상
                         const totalUnlockedCount = unlockedMale.length + unlockedFemale.length;
+                        const minLockedIndex = Math.max(totalUnlockedCount, profileBookAccess.unlockedProfileBooks);
                         const maleLockedCount = Math.ceil(lockedCount / 2);
-                        const cardIndex = totalUnlockedCount + maleLockedCount + idx;
+                        const cardIndex = minLockedIndex + maleLockedCount + idx;
                         return (
                           <div key={`locked-female-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
