@@ -44,9 +44,11 @@ export default function DirectMessageDialog({
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [inputAreaHeight, setInputAreaHeight] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(0);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
   const keyboardHeight = useKeyboardHeight();
 
   const conversationId = useMemo(() => {
@@ -155,6 +157,21 @@ export default function DirectMessageDialog({
     prevMessagesLengthRef.current = messages.length;
   }, [messages, currentUserId, isUserScrolling, scrollToBottomSmooth]);
 
+  // 입력 영역 높이를 추적하여 메시지 리스트 하단 패딩에 반영
+  useEffect(() => {
+    if (!inputContainerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setInputAreaHeight(entry.contentRect.height);
+      }
+    });
+
+    observer.observe(inputContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   // 키보드가 올라올 때 자동으로 최신 메시지로 스크롤
   useEffect(() => {
     if (keyboardHeight > 0) {
@@ -195,17 +212,16 @@ export default function DirectMessageDialog({
   if (!otherUser || !open) return null;
 
   const isKeyboardOpen = keyboardHeight > 0;
-  const keyboardBottomOffset = isKeyboardOpen
-    ? `calc(${keyboardHeight}px + env(safe-area-inset-bottom, 0px) + 0.75rem)`
-    : undefined;
+  const bottomSafeSpacing = 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)';
+  const messageListPaddingBottom = `calc(${Math.max(inputAreaHeight, 72)}px + env(safe-area-inset-bottom, 0px) + 1rem)`;
 
   const dialogDynamicStyle: CSSProperties = isKeyboardOpen
     ? {
         top: '1rem',
-        bottom: keyboardBottomOffset,
         transform: 'none',
-        height: 'auto',
-        maxHeight: 'calc(100vh - 2rem)',
+        height: `calc(100vh - 1rem - ${bottomSafeSpacing} - ${keyboardHeight}px)`,
+        maxHeight: `calc(100vh - 1rem - ${bottomSafeSpacing})`,
+        minHeight: '360px',
       }
     : {
         top: '50%',
@@ -262,6 +278,10 @@ export default function DirectMessageDialog({
             ref={messageContainerRef}
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto px-5 py-4 space-y-4"
+            style={{
+              paddingBottom: messageListPaddingBottom,
+              scrollPaddingBottom: messageListPaddingBottom,
+            }}
           >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
@@ -306,7 +326,7 @@ export default function DirectMessageDialog({
           </div>
 
           {/* Footer Input */}
-          <div className={FOOTER_STYLES.INPUT_CONTAINER}>
+          <div className={FOOTER_STYLES.INPUT_CONTAINER} ref={inputContainerRef}>
             {imagePreview && (
               <div
                 className={`${FOOTER_STYLES.IMAGE_PREVIEW_MARGIN} relative inline-block w-32 h-32 animate-in fade-in-0 duration-fast`}
