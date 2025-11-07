@@ -280,7 +280,7 @@ export default function ParticipantsList({
           </div>
 
           {/* 로그아웃 버튼 - 하단 고정 */}
-          <div className="border-t px-4 pt-4 pb-[60px]">
+          <div className="border-t px-4 pt-4 pb-[30px]">
             <button
               type="button"
               onClick={async () => {
