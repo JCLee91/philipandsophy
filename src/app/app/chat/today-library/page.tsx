@@ -144,9 +144,9 @@ function TodayLibraryContent() {
               ...doc.data(),
             })) as Participant[];
 
-          // 본인과 슈퍼관리자 제외
+          // 본인과 슈퍼관리자, 일반 관리자, 고스트 제외
           participants = participants.filter(
-            (p) => p.id !== currentUserId && !p.isSuperAdmin && !p.isGhost
+            (p) => p.id !== currentUserId && !p.isSuperAdmin && !p.isAdministrator && !p.isGhost
           );
         } else {
           // 평소: 어제 인증한 사람들만 (본인 제외)
@@ -244,6 +244,16 @@ function TodayLibraryContent() {
       }
     }
   }, [sessionLoading, cohortLoading, participant, cohortId, cohort, router, toast]);
+
+  // ✅ 페이지 진입 시 matching 타입 알림 제거 (프로필북 도착 알림센터 정리)
+  useEffect(() => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CLEAR_NOTIFICATIONS_BY_TYPE',
+        notificationType: 'matching',
+      });
+    }
+  }, []); // 마운트 시 한 번만 실행
 
   // 로딩 상태 - 스켈레톤 UI 표시
   if (sessionLoading || cohortLoading || participantsLoading || viewerSubmissionLoading || yesterdayVerifiedLoading) {
