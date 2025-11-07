@@ -10,6 +10,7 @@
     "lint": "next lint",
     "fix:duplicate-submissions": "tsx src/scripts/fix-duplicate-submissions.ts",
     "migrate:storage": "tsx src/scripts/migrate-storage-structure.ts",
+    "migrate:notices-submissions": "tsx src/scripts/migrate-notices-and-fix-submissions.ts",
     "update:cohort-active": "tsx src/scripts/update-cohort-active-status.ts",
     "stats": "tsx scripts/show-database-statistics.ts",
     "stats:cohort1": "tsx scripts/generate-cohort1-statistics.ts"

@@ -48,7 +48,16 @@ service firebase.storage {
     }
 
     // ============================================
-    // 공지사항 이미지 - 공개 읽기
+    // 공지사항 이미지 (신규 구조)
+    // ============================================
+    match /cohorts/{cohortId}/notices/{fileName} {
+      allow read: if true;  // 공개 읽기 허용 (공지사항은 모든 사용자에게 표시)
+      allow create, update: if isSignedIn() && isValidImage() && isUnder10MB();
+      allow delete: if isSignedIn();  // UI 레벨에서 관리자만 가능
+    }
+
+    // ============================================
+    // 공지사항 이미지 (구버전 - 하위 호환)
     // ============================================
     match /notices/{cohortId}/{fileName} {
       allow read: if true;  // 공개 읽기 허용 (공지사항은 모든 사용자에게 표시)

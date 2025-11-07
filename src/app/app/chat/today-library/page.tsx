@@ -536,13 +536,14 @@ function TodayLibraryContent() {
                 {/* Header Section */}
                 <div className="flex flex-col gap-3">
                   <h1 className="font-bold text-heading-xl text-black">
-                    프로필 북을
-                    <br />
-                    확인해보세요
+                    {isFinalDay || showAllProfilesWithoutAuth
+                      ? <>오늘의 서재가<br />전면 개방됐어요</>
+                      : <>프로필 북을<br />확인해보세요</>
+                    }
                   </h1>
                   <p className="font-medium text-body-base text-text-secondary">
                     {isFinalDay || showAllProfilesWithoutAuth
-                      ? '14일간의 여정을 마치며 모든 멤버의 프로필을 공개합니다'
+                      ? '2주간의 여정을 마무리하며 모든 멤버의 프로필 북을 공개합니다'
                       : isUnlockDayOrAfter && showAllProfiles
                         ? '어제 인증한 모든 멤버의 프로필을 확인할 수 있어요'
                         : '새벽 2시까지만 읽을 수 있어요'

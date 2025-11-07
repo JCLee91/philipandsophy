@@ -226,8 +226,9 @@
 }
 
 /* 헤더 높이 보정 - fixed 헤더 아래 컨텐츠가 헤더를 덮지 않도록 */
+/* safe-area는 HeaderNavigation에서 이미 처리하므로 여기서는 헤더 높이만 적용 */
 .app-main-content {
-  padding-top: calc(56px + env(safe-area-inset-top));
+  padding-top: 56px;
 }
 
 /* 프로필 페이지 상단바 - safe area 고려 */
@@ -238,7 +239,7 @@
 /* iOS 11.2 이전 버전 호환성 */
 @supports (padding-top: constant(safe-area-inset-top)) {
   .app-main-content {
-    padding-top: calc(56px + constant(safe-area-inset-top));
+    padding-top: 56px;
   }
 
   .safe-area-header {
