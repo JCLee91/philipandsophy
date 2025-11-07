@@ -530,8 +530,8 @@ function TodayLibraryContent() {
 
         {/* Main Content */}
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-md px-6 w-full pt-4 pb-6">
-            <div className="flex flex-col gap-12">
+          <div className="mx-auto max-w-md px-6 w-full pt-3 md:pt-2 pb-6">
+            <div className="flex flex-col gap-6">
               {/* Header Section */}
               <div className="flex flex-col gap-3">
                   <h1 className="font-bold text-heading-xl text-black">
