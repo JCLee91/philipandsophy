@@ -109,16 +109,16 @@ function TodayLibraryContent() {
   // v2.0 (랜덤 매칭) 여부 판단
   const isRandomMatching = assignedIds.length > 0;
 
-  // v2.0 미인증 시: 10개 샘플링 (성별 다양성 확보)
+  // v2.0 미인증 시: 성별 다양성 확보를 위한 스마트 샘플링
   // v2.0 인증 시: 전체 ID 다운로드
   // v1.0: similar + opposite (기존 로직)
   const allFeaturedIds = useMemo(() => {
     if (isRandomMatching) {
       // v2.0 랜덤 매칭
       if (isLocked && !isSuperAdmin) {
-        // 미인증: 10개 샘플링 (성별 편향 방지)
-        // 나중에 성별 기반 랜덤 선택하여 2개만 표시
-        return assignedIds.slice(0, 10);
+        // 미인증: 각 성별 최소 1명씩 확보 가능하도록 충분히 샘플링
+        // 최대 20개까지만 (보안 + 성능 균형)
+        return assignedIds.slice(0, 20);
       }
 
       // 인증: 전체
@@ -570,10 +570,14 @@ function TodayLibraryContent() {
   }
 
   // v2.0: 미인증 시 성별 기반 랜덤 선택 (남1+여1)
-  const { unlockedMale, unlockedFemale } = useMemo(() => {
+  const { unlockedMale, unlockedFemale, genderDiversityWarning } = useMemo(() => {
     if (!isRandomMatching || !isLocked || isSuperAdmin) {
       // 인증됨 또는 v1.0: 전체 표시
-      return { unlockedMale: maleParticipants, unlockedFemale: femaleParticipants };
+      return {
+        unlockedMale: maleParticipants,
+        unlockedFemale: femaleParticipants,
+        genderDiversityWarning: null
+      };
     }
 
     // 미인증 v2.0: 각 성별에서 랜덤 1명 선택
@@ -585,8 +589,27 @@ function TodayLibraryContent() {
       ? [femaleParticipants[Math.floor(Math.random() * femaleParticipants.length)]]
       : [];
 
-    return { unlockedMale: randomMale, unlockedFemale: randomFemale };
+    // 성별 다양성 검증
+    let warning = null;
+    if (maleParticipants.length === 0 && femaleParticipants.length > 0) {
+      warning = '여성 프로필만 샘플링되었습니다';
+    } else if (femaleParticipants.length === 0 && maleParticipants.length > 0) {
+      warning = '남성 프로필만 샘플링되었습니다';
+    }
+
+    return {
+      unlockedMale: randomMale,
+      unlockedFemale: randomFemale,
+      genderDiversityWarning: warning
+    };
   }, [isRandomMatching, isLocked, isSuperAdmin, maleParticipants, femaleParticipants]);
+
+  // 성별 다양성 경고 로깅 (개발 환경)
+  useEffect(() => {
+    if (genderDiversityWarning && process.env.NODE_ENV === 'development') {
+      console.warn(`[Gender Diversity] ${genderDiversityWarning}`);
+    }
+  }, [genderDiversityWarning]);
 
   // v2.0: 프로필북 개수 계산 (백엔드 할당 개수 기준)
   const totalCount = isRandomMatching
