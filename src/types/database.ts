@@ -29,6 +29,7 @@ export interface ParticipantData {
 
 /**
  * Daily matching metadata shared across admin & participant views
+ * @deprecated AI 매칭 시스템에서만 사용 (랜덤 매칭에서는 미사용)
  */
 export interface DailyMatchingReasons {
   similar?: string;
@@ -36,14 +37,27 @@ export interface DailyMatchingReasons {
   summary?: string;
 }
 
+/**
+ * 참가자별 프로필북 할당 정보
+ * v2.0 (랜덤 매칭) 구조
+ */
 export interface DailyParticipantAssignment {
-  similar: string[];
-  opposite: string[];
-  reasons?: DailyMatchingReasons;
+  // v2.0: 랜덤 매칭 (2025-11-07 이후)
+  assigned?: string[]; // 할당된 프로필북 ID 배열 (누적 인증 기반 개수)
+
+  // v1.0: AI 매칭 (레거시 호환용 - 읽기 전용)
+  similar?: string[]; // 유사한 가치관 참가자 ID
+  opposite?: string[]; // 상반된 가치관 참가자 ID
+  reasons?: DailyMatchingReasons; // AI 매칭 이유
 }
 
+/**
+ * 날짜별 프로필북 매칭 결과
+ */
 export interface DailyMatchingEntry {
   assignments: Record<string, DailyParticipantAssignment>;
+  matchingVersion?: 'ai' | 'random'; // 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭)
+
   // Legacy 데이터 호환용 (v1.0 - 읽기 전용, 신규 저장 시 사용 안 함)
   similar?: string[];
   opposite?: string[];
