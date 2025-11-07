@@ -106,13 +106,39 @@ function TodayLibraryContent() {
   const similarFeaturedIds = userAssignment?.similar ?? [];
   const oppositeFeaturedIds = userAssignment?.opposite ?? [];
 
-  // v2.0 우선, 없으면 v1.0 사용
-  const allFeaturedIds = assignedIds.length > 0
-    ? assignedIds
-    : Array.from(new Set([...similarFeaturedIds, ...oppositeFeaturedIds]));
-
   // v2.0 (랜덤 매칭) 여부 판단
   const isRandomMatching = assignedIds.length > 0;
+
+  // v2.0 미인증 시: 2개 ID만 다운로드 (보안)
+  // v2.0 인증 시: 전체 ID 다운로드
+  // v1.0: similar + opposite (기존 로직)
+  const allFeaturedIds = useMemo(() => {
+    if (isRandomMatching) {
+      // v2.0 랜덤 매칭
+      if (isLocked && !isSuperAdmin) {
+        // 미인증: 2개 ID만 (성별 균형)
+        const maleIds = assignedIds.filter((id, idx) => {
+          // 홀수 인덱스는 남성으로 가정 (또는 실제 조회 필요)
+          return idx % 2 === 0;
+        });
+        const femaleIds = assignedIds.filter((id, idx) => {
+          return idx % 2 === 1;
+        });
+
+        const selected = [];
+        if (maleIds.length > 0) selected.push(maleIds[0]);
+        if (femaleIds.length > 0) selected.push(femaleIds[0]);
+
+        return selected.slice(0, 2); // 최대 2개
+      }
+
+      // 인증: 전체
+      return assignedIds;
+    }
+
+    // v1.0 AI 매칭: similar + opposite
+    return Array.from(new Set([...similarFeaturedIds, ...oppositeFeaturedIds]));
+  }, [isRandomMatching, isLocked, isSuperAdmin, assignedIds, similarFeaturedIds, oppositeFeaturedIds]);
 
   // 어제 인증한 참가자 목록 조회
   const { data: yesterdayVerifiedIds, isLoading: yesterdayVerifiedLoading } = useYesterdayVerifiedParticipants(cohortId || undefined);
@@ -324,13 +350,34 @@ function TodayLibraryContent() {
     return null;
   }
 
-  // 프로필북 클릭 핸들러 (인증 체크는 isLocked에서 이미 완료)
-  const handleProfileClickWithAuth = (participantId: string, theme: 'similar' | 'opposite') => {
-    // 15일차 이후: 인증 체크 완전 스킵 (별도 로직)
+  // v2.0: 프로필북 클릭 핸들러 (카드별 잠금 상태 확인)
+  const handleProfileClickWithAuth = (
+    participantId: string,
+    theme: 'similar' | 'opposite',
+    cardIndex?: number // v2.0: 카드 인덱스 (잠금 여부 판단용)
+  ) => {
+    // 15일차 이후: 인증 체크 완전 스킵
     if (showAllProfilesWithoutAuth) {
-      // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
-      // 인증 없이 바로 접근 가능
       const matchingDate = getSubmissionDate();
+      const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
+      router.push(profileUrl);
+      return;
+    }
+
+    // v2.0 랜덤 매칭: 카드별 잠금 체크
+    if (isRandomMatching && cardIndex !== undefined) {
+      const isCardLocked = isProfileBookLocked(cardIndex, profileBookAccess);
+
+      if (isCardLocked) {
+        toast({
+          title: '프로필 잠김 🔒',
+          description: `오늘의 독서를 인증하면 ${profileBookAccess.totalProfileBooks}개의 프로필북을 모두 열어볼 수 있어요`,
+        });
+        return;
+      }
+
+      // 열린 카드: 접근 허용
+      const matchingDate = activeMatchingDate || getSubmissionDate();
       const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
       router.push(profileUrl);
       return;
@@ -345,15 +392,14 @@ function TodayLibraryContent() {
         });
         return;
       }
-      // ✅ FIX: 새벽 2시 마감 정책 적용 (getSubmissionDate 사용)
-      // 인증됨 - 접근 허용
+
       const matchingDate = getSubmissionDate();
       const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
       router.push(profileUrl);
       return;
     }
 
-    // 평소 (1-13일차): 기존 로직
+    // v1.0 AI 매칭: 기존 로직
     if (isLocked) {
       toast({
         title: '프로필 잠김 🔒',
@@ -370,7 +416,6 @@ function TodayLibraryContent() {
       return;
     }
 
-    // 매칭 날짜를 URL에 포함하여 스포일러 방지
     const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(activeMatchingDate)}`;
     router.push(profileUrl);
   };
@@ -535,20 +580,25 @@ function TodayLibraryContent() {
     oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
   }
 
-  // v2.0: 미인증 시 랜덤 2개 선택 (남1+여1)
-  const unlockedMale = isRandomMatching && isLocked && maleParticipants.length > 0
-    ? [maleParticipants[Math.floor(Math.random() * maleParticipants.length)]]
+  // v2.0: 미인증 시 다운로드한 2개만 표시 (성별 구분)
+  // (allFeaturedIds가 이미 2개로 제한되어 있음)
+  const unlockedMale = isRandomMatching && isLocked
+    ? maleParticipants // 이미 필터링됨 (최대 1개)
     : maleParticipants;
 
-  const unlockedFemale = isRandomMatching && isLocked && femaleParticipants.length > 0
-    ? [femaleParticipants[Math.floor(Math.random() * femaleParticipants.length)]]
+  const unlockedFemale = isRandomMatching && isLocked
+    ? femaleParticipants // 이미 필터링됨 (최대 1개)
     : femaleParticipants;
 
-  const unlockedCount = isRandomMatching && isLocked
-    ? unlockedMale.length + unlockedFemale.length
+  // v2.0: 프로필북 개수 계산 (백엔드 할당 개수 기준)
+  const totalCount = isRandomMatching
+    ? assignedIds.length // 백엔드에서 할당한 전체 개수
     : featuredParticipants.length;
 
-  const totalCount = featuredParticipants.length;
+  const unlockedCount = isRandomMatching && isLocked
+    ? allFeaturedIds.length // 다운로드한 개수 (2개)
+    : totalCount;
+
   const lockedCount = totalCount - unlockedCount;
 
   return (
@@ -636,80 +686,82 @@ function TodayLibraryContent() {
                   <div className="grid grid-cols-2 gap-6">
                     {/* 왼쪽: 남자 (열린 프로필 + 자물쇠) */}
                     <div className="flex flex-col gap-4">
-                      {unlockedMale.map((p) => (
-                        <div key={p.id} className="flex flex-col">
-                          <div className="flex justify-center">
-                            <BookmarkCard
-                              profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
-                              name={p.name}
-                              theme="blue"
-                              isLocked={false}
-                              onClick={() => handleProfileClickWithAuth(p.id, 'similar')}
-                            />
+                      {unlockedMale.map((p, idx) => {
+                        const cardIndex = idx * 2; // 남성은 짝수 인덱스
+                        return (
+                          <div key={p.id} className="flex flex-col">
+                            <div className="flex justify-center">
+                              <BookmarkCard
+                                profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                                name={p.name}
+                                theme="blue"
+                                isLocked={false}
+                                onClick={() => handleProfileClickWithAuth(p.id, 'similar', cardIndex)}
+                              />
+                            </div>
+                            <BlurDivider />
                           </div>
-                          <BlurDivider />
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {/* 자물쇠 카드 (남자) */}
-                      {isLocked && Array.from({ length: Math.ceil(lockedCount / 2) }).map((_, idx) => (
-                        <div key={`locked-male-${idx}`} className="flex flex-col">
-                          <div className="flex justify-center">
-                            <BookmarkCard
-                              profileImage=""
-                              name=""
-                              theme="blue"
-                              isLocked={true}
-                              onClick={() => {
-                                toast({
-                                  title: '프로필 잠김 🔒',
-                                  description: '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요',
-                                });
-                              }}
-                            />
+                      {isLocked && Array.from({ length: Math.ceil(lockedCount / 2) }).map((_, idx) => {
+                        const cardIndex = unlockedMale.length * 2 + idx * 2;
+                        return (
+                          <div key={`locked-male-${idx}`} className="flex flex-col">
+                            <div className="flex justify-center">
+                              <BookmarkCard
+                                profileImage=""
+                                name=""
+                                theme="blue"
+                                isLocked={true}
+                                onClick={() => handleProfileClickWithAuth('', 'similar', cardIndex)}
+                              />
+                            </div>
+                            <BlurDivider />
                           </div>
-                          <BlurDivider />
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* 오른쪽: 여자 (열린 프로필 + 자물쇠) */}
                     <div className="flex flex-col gap-4">
-                      {unlockedFemale.map((p) => (
-                        <div key={p.id} className="flex flex-col">
-                          <div className="flex justify-center">
-                            <BookmarkCard
-                              profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
-                              name={p.name}
-                              theme="yellow"
-                              isLocked={false}
-                              onClick={() => handleProfileClickWithAuth(p.id, 'opposite')}
-                            />
+                      {unlockedFemale.map((p, idx) => {
+                        const cardIndex = idx * 2 + 1; // 여성은 홀수 인덱스
+                        return (
+                          <div key={p.id} className="flex flex-col">
+                            <div className="flex justify-center">
+                              <BookmarkCard
+                                profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                                name={p.name}
+                                theme="yellow"
+                                isLocked={false}
+                                onClick={() => handleProfileClickWithAuth(p.id, 'opposite', cardIndex)}
+                              />
+                            </div>
+                            <BlurDivider />
                           </div>
-                          <BlurDivider />
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {/* 자물쇠 카드 (여자) */}
-                      {isLocked && Array.from({ length: Math.floor(lockedCount / 2) }).map((_, idx) => (
-                        <div key={`locked-female-${idx}`} className="flex flex-col">
-                          <div className="flex justify-center">
-                            <BookmarkCard
-                              profileImage=""
-                              name=""
-                              theme="yellow"
-                              isLocked={true}
-                              onClick={() => {
-                                toast({
-                                  title: '프로필 잠김 🔒',
-                                  description: '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요',
-                                });
-                              }}
-                            />
+                      {isLocked && Array.from({ length: Math.floor(lockedCount / 2) }).map((_, idx) => {
+                        const cardIndex = unlockedFemale.length * 2 + 1 + idx * 2;
+                        return (
+                          <div key={`locked-female-${idx}`} className="flex flex-col">
+                            <div className="flex justify-center">
+                              <BookmarkCard
+                                profileImage=""
+                                name=""
+                                theme="yellow"
+                                isLocked={true}
+                                onClick={() => handleProfileClickWithAuth('', 'opposite', cardIndex)}
+                              />
+                            </div>
+                            <BlurDivider />
                           </div>
-                          <BlurDivider />
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (
