@@ -80,12 +80,26 @@ export const scheduledRandomMatching = onSchedule(
 
       logger.info(`Active cohort: ${cohortId}`);
 
-      // 3. profileUnlockDate 체크
+      // 3. Cohort 데이터 조회
       const cohortDoc = activeCohortsSnapshot.empty
         ? await db.collection("cohorts").doc(cohortId).get()
         : activeCohortsSnapshot.docs[0];
 
       const cohortData = cohortDoc.data();
+
+      // 3-1. endDate 체크: 종료된 cohort 스킵 (자동 제외)
+      if (cohortData?.endDate) {
+        const today = new Date().toLocaleString('en-CA', {
+          timeZone: 'Asia/Seoul'
+        }).split(',')[0]; // YYYY-MM-DD
+
+        if (today > cohortData.endDate) {
+          logger.info(`Cohort ${cohortId} ended (${cohortData.endDate}), skipping matching`);
+          return;
+        }
+      }
+
+      // 3-2. profileUnlockDate 체크: 전체 공개 모드 스킵
       const profileUnlockDate = cohortData?.profileUnlockDate;
 
       if (profileUnlockDate) {
