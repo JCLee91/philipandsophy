@@ -109,16 +109,16 @@ function TodayLibraryContent() {
   // v2.0 (랜덤 매칭) 여부 판단
   const isRandomMatching = assignedIds.length > 0;
 
-  // v2.0 미인증 시: 6개 샘플링 (성별 선택용 풀)
+  // v2.0 미인증 시: 10개 샘플링 (성별 다양성 확보)
   // v2.0 인증 시: 전체 ID 다운로드
   // v1.0: similar + opposite (기존 로직)
   const allFeaturedIds = useMemo(() => {
     if (isRandomMatching) {
       // v2.0 랜덤 매칭
       if (isLocked && !isSuperAdmin) {
-        // 미인증: 6개 샘플링 (성별 다양성 확보)
+        // 미인증: 10개 샘플링 (성별 편향 방지)
         // 나중에 성별 기반 랜덤 선택하여 2개만 표시
-        return assignedIds.slice(0, 6);
+        return assignedIds.slice(0, 10);
       }
 
       // 인증: 전체
@@ -685,7 +685,7 @@ function TodayLibraryContent() {
                     {/* 왼쪽: 남자 (열린 프로필 + 자물쇠) */}
                     <div className="flex flex-col gap-4">
                       {unlockedMale.map((p, idx) => {
-                        const cardIndex = idx * 2; // 남성은 짝수 인덱스
+                        const cardIndex = idx; // 남성: 0부터 시작
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -704,7 +704,9 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (남자) */}
                       {isLocked && Array.from({ length: Math.ceil(lockedCount / 2) }).map((_, idx) => {
-                        const cardIndex = unlockedMale.length * 2 + idx * 2;
+                        // 전체 열린 카드 수(2개) 이후부터 시작
+                        const totalUnlockedCount = unlockedMale.length + unlockedFemale.length;
+                        const cardIndex = totalUnlockedCount + idx;
                         return (
                           <div key={`locked-male-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
@@ -725,7 +727,7 @@ function TodayLibraryContent() {
                     {/* 오른쪽: 여자 (열린 프로필 + 자물쇠) */}
                     <div className="flex flex-col gap-4">
                       {unlockedFemale.map((p, idx) => {
-                        const cardIndex = idx * 2 + 1; // 여성은 홀수 인덱스
+                        const cardIndex = unlockedMale.length + idx; // 남성 이후 연속 인덱스
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -744,7 +746,10 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (여자) */}
                       {isLocked && Array.from({ length: Math.floor(lockedCount / 2) }).map((_, idx) => {
-                        const cardIndex = unlockedFemale.length * 2 + 1 + idx * 2;
+                        // 전체 열린 카드 수 + 남성 자물쇠 수 이후부터 시작
+                        const totalUnlockedCount = unlockedMale.length + unlockedFemale.length;
+                        const maleLockedCount = Math.ceil(lockedCount / 2);
+                        const cardIndex = totalUnlockedCount + maleLockedCount + idx;
                         return (
                           <div key={`locked-female-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
