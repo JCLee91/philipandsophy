@@ -436,6 +436,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               fill
                               sizes="60px"
                               className="object-contain"
+                              unoptimized
                             />
                           </div>
                         )}
@@ -559,6 +560,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                       sizes="(max-width: 768px) 90vw, 420px"
                       className="object-contain"
                       priority={false}
+                      unoptimized
                       onLoadingComplete={({ naturalWidth, naturalHeight }) => {
                         if (naturalWidth > 0 && naturalHeight > 0) {
                           setDetailImageAspectRatio(naturalWidth / naturalHeight);

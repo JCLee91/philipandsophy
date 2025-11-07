@@ -176,7 +176,12 @@ export default function DirectMessageDialog({
   useEffect(() => {
     if (keyboardHeight > 0) {
       requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        const container = messageContainerRef.current;
+        if (!container) return;
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth',
+        });
       });
     }
   }, [keyboardHeight]);
@@ -212,7 +217,7 @@ export default function DirectMessageDialog({
   if (!otherUser || !open) return null;
 
   const isKeyboardOpen = keyboardHeight > 0;
-  const bottomSafeSpacing = 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)';
+  const bottomSafeSpacing = 'calc(env(safe-area-inset-bottom, 0px) + 0.25rem)';
   const messageListPaddingBottom = `calc(${Math.max(inputAreaHeight, 72)}px + env(safe-area-inset-bottom, 0px) + 1rem)`;
 
   const dialogDynamicStyle: CSSProperties = isKeyboardOpen
