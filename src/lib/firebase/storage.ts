@@ -82,15 +82,17 @@ export async function uploadMultipleFiles(
 
 /**
  * 이미지 업로드 (독서 인증용)
+ * 새 구조: cohorts/{cohortId}/submissions/{participantId}/{fileName}
  */
 export async function uploadReadingImage(
   file: File,
-  participationCode: string,
+  participantId: string,
+  cohortId: string,
   onProgress?: (progress: number) => void
 ): Promise<string> {
   const timestamp = Date.now();
   const fileName = `${timestamp}_${file.name}`;
-  const path = `reading_submissions/${participationCode}/${fileName}`;
+  const path = `cohorts/cohort${cohortId}/submissions/${participantId}/${fileName}`;
 
   return uploadFileWithProgress(file, path, onProgress);
 }

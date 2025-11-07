@@ -277,7 +277,7 @@ function Step3Content() {
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
       if (imageFile && imageFile instanceof File && !imageStorageUrl) {
-        const uploadedUrl = await uploadReadingImage(imageFile, participationCode);
+        const uploadedUrl = await uploadReadingImage(imageFile, participantId, cohortId);
         draftData.bookImageUrl = uploadedUrl;
         setImageStorageUrl(uploadedUrl);
       } else if (imageStorageUrl) {
@@ -373,7 +373,7 @@ function Step3Content() {
       let bookImageUrl = imageStorageUrl;
       if (!bookImageUrl && imageFile) {
         setUploadStep('이미지 업로드 중...');
-        bookImageUrl = await uploadReadingImage(imageFile, participationCode);
+        bookImageUrl = await uploadReadingImage(imageFile, participantId, cohortId);
         setImageStorageUrl(bookImageUrl);
       }
 
