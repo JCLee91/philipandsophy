@@ -6,6 +6,7 @@ import EllipseShadow from '@/components/EllipseShadow';
 import { SHADOW_OFFSETS, SPACING } from '@/constants/today-library';
 import { APP_CONSTANTS } from '@/constants/app';
 import { cn } from '@/lib/utils';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 interface ParticipantData {
   id: string;
@@ -63,6 +64,7 @@ export default function BookmarkRow({
           <BookmarkCard
             key={`${participant.theme}-${participant.id}`}
             profileImage={
+              getResizedImageUrl(participant.profileImageCircle || participant.profileImage) ||
               participant.profileImageCircle ||
               participant.profileImage ||
               APP_CONSTANTS.DEFAULT_PROFILE_IMAGE

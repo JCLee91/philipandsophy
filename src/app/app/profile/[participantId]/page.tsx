@@ -27,6 +27,7 @@ import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 interface ProfileBookContentProps {
   params: Promise<{ participantId: string }>;
@@ -431,7 +432,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                         {(latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl) && (
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-[60px] h-[88px] bg-white rounded-[4px] overflow-hidden shadow-sm">
                             <Image
-                              src={latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl}
+                              src={getResizedImageUrl(latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl) || latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl}
                               alt="책 표지"
                               fill
                               sizes="60px"
@@ -554,7 +555,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                     }}
                   >
                     <Image
-                      src={selectedSubmission.bookImageUrl}
+                      src={getResizedImageUrl(selectedSubmission.bookImageUrl) || selectedSubmission.bookImageUrl}
                       alt="책 사진"
                       fill
                       sizes="(max-width: 768px) 90vw, 420px"

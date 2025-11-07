@@ -22,6 +22,7 @@ import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { appRoutes } from '@/lib/navigation';
 import { getSubmissionDate, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -558,7 +559,7 @@ function TodayLibraryContent() {
                         <div key={p.id} className="flex flex-col">
                           <div className="flex justify-center">
                             <BookmarkCard
-                              profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                              profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
                               name={p.name}
                               theme="blue"
                               isLocked={false}
@@ -576,7 +577,7 @@ function TodayLibraryContent() {
                         <div key={p.id} className="flex flex-col">
                           <div className="flex justify-center">
                             <BookmarkCard
-                              profileImage={p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                              profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
                               name={p.name}
                               theme="yellow"
                               isLocked={false}
