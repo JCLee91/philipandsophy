@@ -107,14 +107,16 @@ export const scheduledRandomMatching = onSchedule(
 
       logger.info(`Matching date: ${yesterdayStr}`);
 
-      // 5. 어제 인증한 참가자 조회 (공급자: providers)
+      // 5. 어제 인증 완료한 참가자 조회 (공급자: providers)
+      // draft 제외, approved만 조회 (실제로 제출 완료한 사람만)
       const submissionsSnapshot = await db
         .collection("reading_submissions")
         .where("submissionDate", "==", yesterdayStr)
+        .where("status", "==", "approved") // draft 제외
         .get();
 
       if (submissionsSnapshot.empty) {
-        logger.warn(`No submissions for ${yesterdayStr}`);
+        logger.warn(`No approved submissions for ${yesterdayStr}`);
         return;
       }
 
@@ -122,7 +124,7 @@ export const scheduledRandomMatching = onSchedule(
         new Set(submissionsSnapshot.docs.map(doc => doc.data().participantId))
       );
 
-      logger.info(`${providerIds.length} participants submitted (providers)`);
+      logger.info(`${providerIds.length} participants approved (providers)`);
 
       // 6. 전체 cohort 멤버 조회 (수요자: viewers)
       // 관리자/고스트 계정 필터링
