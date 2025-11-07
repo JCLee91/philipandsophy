@@ -109,27 +109,16 @@ function TodayLibraryContent() {
   // v2.0 (랜덤 매칭) 여부 판단
   const isRandomMatching = assignedIds.length > 0;
 
-  // v2.0 미인증 시: 2개 ID만 다운로드 (보안)
+  // v2.0 미인증 시: 6개 샘플링 (성별 선택용 풀)
   // v2.0 인증 시: 전체 ID 다운로드
   // v1.0: similar + opposite (기존 로직)
   const allFeaturedIds = useMemo(() => {
     if (isRandomMatching) {
       // v2.0 랜덤 매칭
       if (isLocked && !isSuperAdmin) {
-        // 미인증: 2개 ID만 (성별 균형)
-        const maleIds = assignedIds.filter((id, idx) => {
-          // 홀수 인덱스는 남성으로 가정 (또는 실제 조회 필요)
-          return idx % 2 === 0;
-        });
-        const femaleIds = assignedIds.filter((id, idx) => {
-          return idx % 2 === 1;
-        });
-
-        const selected = [];
-        if (maleIds.length > 0) selected.push(maleIds[0]);
-        if (femaleIds.length > 0) selected.push(femaleIds[0]);
-
-        return selected.slice(0, 2); // 최대 2개
+        // 미인증: 6개 샘플링 (성별 다양성 확보)
+        // 나중에 성별 기반 랜덤 선택하여 2개만 표시
+        return assignedIds.slice(0, 6);
       }
 
       // 인증: 전체
@@ -580,15 +569,24 @@ function TodayLibraryContent() {
     oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
   }
 
-  // v2.0: 미인증 시 다운로드한 2개만 표시 (성별 구분)
-  // (allFeaturedIds가 이미 2개로 제한되어 있음)
-  const unlockedMale = isRandomMatching && isLocked
-    ? maleParticipants // 이미 필터링됨 (최대 1개)
-    : maleParticipants;
+  // v2.0: 미인증 시 성별 기반 랜덤 선택 (남1+여1)
+  const { unlockedMale, unlockedFemale } = useMemo(() => {
+    if (!isRandomMatching || !isLocked || isSuperAdmin) {
+      // 인증됨 또는 v1.0: 전체 표시
+      return { unlockedMale: maleParticipants, unlockedFemale: femaleParticipants };
+    }
 
-  const unlockedFemale = isRandomMatching && isLocked
-    ? femaleParticipants // 이미 필터링됨 (최대 1개)
-    : femaleParticipants;
+    // 미인증 v2.0: 각 성별에서 랜덤 1명 선택
+    const randomMale = maleParticipants.length > 0
+      ? [maleParticipants[Math.floor(Math.random() * maleParticipants.length)]]
+      : [];
+
+    const randomFemale = femaleParticipants.length > 0
+      ? [femaleParticipants[Math.floor(Math.random() * femaleParticipants.length)]]
+      : [];
+
+    return { unlockedMale: randomMale, unlockedFemale: randomFemale };
+  }, [isRandomMatching, isLocked, isSuperAdmin, maleParticipants, femaleParticipants]);
 
   // v2.0: 프로필북 개수 계산 (백엔드 할당 개수 기준)
   const totalCount = isRandomMatching
@@ -596,7 +594,7 @@ function TodayLibraryContent() {
     : featuredParticipants.length;
 
   const unlockedCount = isRandomMatching && isLocked
-    ? allFeaturedIds.length // 다운로드한 개수 (2개)
+    ? unlockedMale.length + unlockedFemale.length // 실제 표시되는 개수 (2개)
     : totalCount;
 
   const lockedCount = totalCount - unlockedCount;
