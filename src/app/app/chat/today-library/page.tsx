@@ -261,7 +261,7 @@ function TodayLibraryContent() {
   if (sessionLoading || cohortLoading || participantsLoading || viewerSubmissionLoading || yesterdayVerifiedLoading) {
     return (
       <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden pt-14">
+        <div className="app-shell flex flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="app-main-content flex-1 overflow-y-auto bg-background">
@@ -383,7 +383,7 @@ function TodayLibraryContent() {
     };
     return (
       <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden pt-14">
+        <div className="app-shell flex flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
           {/* Main Content */}
@@ -457,7 +457,7 @@ function TodayLibraryContent() {
   if (allFeaturedIds.length === 0 && !showAllProfiles) {
     return (
       <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden pt-14">
+        <div className="app-shell flex flex-col overflow-hidden">
           <HeaderNavigation title="오늘의 서재" />
 
           <main className="app-main-content flex flex-1 overflow-y-auto items-center justify-center bg-background">
@@ -525,16 +525,15 @@ function TodayLibraryContent() {
 
   return (
     <PageTransition>
-      <div className="app-shell flex flex-col overflow-hidden pt-14">
+      <div className="app-shell flex flex-col overflow-hidden">
         <HeaderNavigation title="오늘의 서재" />
 
         {/* Main Content */}
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-md px-6 w-full">
-            <div className="pt-6 pb-6">
-              <div className="flex flex-col gap-12">
-                {/* Header Section */}
-                <div className="flex flex-col gap-3">
+          <div className="mx-auto max-w-md px-6 w-full pt-4 pb-6">
+            <div className="flex flex-col gap-12">
+              {/* Header Section */}
+              <div className="flex flex-col gap-3">
                   <h1 className="font-bold text-heading-xl text-black">
                     {isFinalDay || showAllProfilesWithoutAuth
                       ? <>오늘의 서재가<br />전면 개방됐어요</>
@@ -612,7 +611,6 @@ function TodayLibraryContent() {
 
               </div>
             </div>
-          </div>
         </main>
 
         <FooterActions>
@@ -632,7 +630,7 @@ function TodayLibraryContent() {
 function LoadingSkeleton() {
   return (
     <PageTransition>
-      <div className="app-shell flex flex-col overflow-hidden pt-14">
+      <div className="app-shell flex flex-col overflow-hidden">
         <HeaderNavigation title="오늘의 서재" />
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-6 w-full">

@@ -1,0 +1,98 @@
+
+> philipandsophy@0.1.0 migrate:notices-submissions
+> tsx src/scripts/migrate-notices-and-fix-submissions.ts
+
+[dotenv@17.2.3] injecting env (20) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+==================================================
+공지사항 + 독서 인증 이미지 완전 마이그레이션
+==================================================
+
+==================================================
+1. 공지사항 이미지 마이그레이션
+==================================================
+
+📋 이미지가 있는 공지사항: 24개
+
+✅ [공지 yAazo6pWwsObxt6ACpFz] 1760263605202_IMG_2867.png 복사 완료
+📝 [공지 yAazo6pWwsObxt6ACpFz] DB URL 업데이트 완료
+✅ [공지 P141ZT5CLKGlsHsAe9vu] 1760350329806_PnS_공지.png 복사 완료
+📝 [공지 P141ZT5CLKGlsHsAe9vu] DB URL 업데이트 완료
+✅ [공지 MQ8WqSpIgE0dZOLWDFwa] 1760438558999_PnS_공지.png 복사 완료
+📝 [공지 MQ8WqSpIgE0dZOLWDFwa] DB URL 업데이트 완료
+✅ [공지 f9WQWj6ueiASMLv96pam] 1760530297316_IMG_2867.png 복사 완료
+📝 [공지 f9WQWj6ueiASMLv96pam] DB URL 업데이트 완료
+✅ [공지 HnMUIjnSrWOzYM2T8goG] 1760610931355_Notice_251016.png 복사 완료
+📝 [공지 HnMUIjnSrWOzYM2T8goG] DB URL 업데이트 완료
+✅ [공지 82nk5VgA63B3NEfFMvBR] 1760669734832_Notice_251017.png 복사 완료
+📝 [공지 82nk5VgA63B3NEfFMvBR] DB URL 업데이트 완료
+✅ [공지 GfC1yvBE1nbcATzMZ1Ez] 1760792032033_IMG_2867.png 복사 완료
+📝 [공지 GfC1yvBE1nbcATzMZ1Ez] DB URL 업데이트 완료
+✅ [공지 nBwNl2gV1ku7cl66XFtW] 1760881881601_IMG_2867.png 복사 완료
+📝 [공지 nBwNl2gV1ku7cl66XFtW] DB URL 업데이트 완료
+✅ [공지 JD3XZ3vdXH1HzdscHGvq] 1760960254712_Notice_251020.png 복사 완료
+📝 [공지 JD3XZ3vdXH1HzdscHGvq] DB URL 업데이트 완료
+✅ [공지 mRvqFyuWp1lRpSGjeyT5] 1761045696273_IMG_2867.png 복사 완료
+📝 [공지 mRvqFyuWp1lRpSGjeyT5] DB URL 업데이트 완료
+✅ [공지 mP8HtBKuUr7QK3QpJ4Ce] 1761303531438_IMG_2867.png 복사 완료
+📝 [공지 mP8HtBKuUr7QK3QpJ4Ce] DB URL 업데이트 완료
+✅ [공지 TNbKsJVKH79zRmoqPf48] 1761387069871_IMG_2867.png 복사 완료
+📝 [공지 TNbKsJVKH79zRmoqPf48] DB URL 업데이트 완료
+✅ [공지 h9Vj9AACoY2Hh6WEf9xi] 1761387069871_IMG_2867.png 복사 완료
+📝 [공지 h9Vj9AACoY2Hh6WEf9xi] DB URL 업데이트 완료
+✅ [공지 58pJgWo5HLy9RSAV57SL] 1761548427636_Notice_2일차.png 복사 완료
+📝 [공지 58pJgWo5HLy9RSAV57SL] DB URL 업데이트 완료
+✅ [공지 1HkGljZmNss1XFodfSJJ] 1761737386970_IMG_3062.png 복사 완료
+📝 [공지 1HkGljZmNss1XFodfSJJ] DB URL 업데이트 완료
+✅ [공지 GFgVfx08Y7wd4BlpFSSF] 1761821644354_Notice_5일차.png 복사 완료
+📝 [공지 GFgVfx08Y7wd4BlpFSSF] DB URL 업데이트 완료
+✅ [공지 IEpwOc7Wfp8bskABhZDH] 1761993288223_제목을 입력해주세요 (9).png 복사 완료
+📝 [공지 IEpwOc7Wfp8bskABhZDH] DB URL 업데이트 완료
+✅ [공지 04ZvX3AG4WH0EEYV9F02] 1762082937046_Notice_7일차.png 복사 완료
+📝 [공지 04ZvX3AG4WH0EEYV9F02] DB URL 업데이트 완료
+✅ [공지 BaERLA6XN0dvWfxK0rcw] 1762264009536_PnS_공지.png 복사 완료
+📝 [공지 BaERLA6XN0dvWfxK0rcw] DB URL 업데이트 완료
+✅ [공지 hYueVD9Y5M6KCGRGzFCy] 1762349625898_Notice_11일차.png 복사 완료
+📝 [공지 hYueVD9Y5M6KCGRGzFCy] DB URL 업데이트 완료
+✅ [공지 cMaZ7EtLZcycp6xspy0e] 1762422704736_Notice_12일차.png 복사 완료
+📝 [공지 cMaZ7EtLZcycp6xspy0e] DB URL 업데이트 완료
+✅ [공지 ogTK5QInSwjnkkykcASx] 1762500270024_Notice_13일차.png 복사 완료
+📝 [공지 ogTK5QInSwjnkkykcASx] DB URL 업데이트 완료
+✅ [공지 uh36NXlZkrChMSGmPvvZ] Notice_9일차.png 복사 완료
+📝 [공지 uh36NXlZkrChMSGmPvvZ] DB URL 업데이트 완료
+⚠️  [공지 zabKX2GHIEqvU2YUmpf4] URL 파싱 실패
+
+📊 공지사항 마이그레이션 결과:
+  - Storage 파일 복사: 23개
+  - DB URL 업데이트: 23개
+  - 오류: 1개
+
+==================================================
+2. 독서 인증 이미지 DB URL 업데이트
+==================================================
+
+📋 참가자 48명 조회 완료
+
+📋 총 392개 제출물 확인 중...
+
+📝 50개 업데이트 완료...
+📝 100개 업데이트 완료...
+📝 150개 업데이트 완료...
+📝 200개 업데이트 완료...
+📝 250개 업데이트 완료...
+📝 300개 업데이트 완료...
+📝 350개 업데이트 완료...
+
+📊 독서 인증 DB URL 업데이트 결과:
+  - 업데이트: 391개
+  - 스킵: 1개
+  - 오류: 0개
+
+==================================================
+마이그레이션 완료 요약
+==================================================
+✅ 공지사항 Storage 파일: 23개
+✅ 공지사항 DB URL: 23개
+✅ 독서 인증 DB URL: 391개
+❌ 총 오류: 1개
+
+✅ 완료
