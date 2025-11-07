@@ -58,10 +58,6 @@ export default function LandingLayout({ children }: LandingLayoutProps) {
 
       {/* Footer */}
       <Footer />
-
-      {/* Vercel Analytics */}
-      <Script defer src="/_vercel/speed-insights/script.js" />
-      <Script defer src="/_vercel/insights/script.js" />
     </div>
   );
 }

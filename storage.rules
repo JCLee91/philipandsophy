@@ -30,10 +30,19 @@ service firebase.storage {
     }
 
     // ============================================
-    // 독서 인증 이미지
+    // 독서 인증 이미지 (신규 구조)
+    // ============================================
+    match /cohorts/{cohortId}/submissions/{participationCode}/{fileName} {
+      allow read: if true;  // 공개 읽기 (프로필북에서 표시)
+      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // 독서 인증 이미지 (구버전 - 하위 호환)
     // ============================================
     match /reading_submissions/{participationCode}/{fileName} {
-      allow read: if isSignedIn();
+      allow read: if true;  // 공개 읽기로 변경
       allow create: if isSignedIn() && isValidImage() && isUnder50MB();
       allow update, delete: if false;
     }
@@ -51,34 +60,43 @@ service firebase.storage {
     // 다이렉트 메시지 이미지
     // ============================================
     match /direct_messages/{userId}/{fileName} {
-      allow read: if isSignedIn();
+      allow read: if true;  // 공개 읽기
       allow create: if isSignedIn() && isValidImage() && isUnder50MB();
       allow update, delete: if false;
     }
 
     // ============================================
-    // 프로필 이미지
+    // 프로필 이미지 (신규 구조)
+    // ============================================
+    match /cohorts/{cohortId}/profiles/{fileName} {
+      allow read: if true;  // 공개 읽기
+      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow delete: if isSignedIn();
+    }
+
+    // ============================================
+    // 프로필 이미지 (구버전 - 하위 호환)
     // ============================================
     match /profiles/{userId}/{fileName} {
-      allow read: if isSignedIn();
+      allow read: if true;  // 공개 읽기
       allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
       allow delete: if isSignedIn();
     }
 
-    // ============================================
-    // 프로필 이미지 (원형) - 공개 읽기
-    // ============================================
     match /profileImagesCircle/{fileName} {
-      allow read: if true;  // 공개 읽기 허용
+      allow read: if true;  // 공개 읽기
       allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
       allow delete: if isSignedIn();
     }
 
-    // ============================================
-    // 프로필 카드 이미지 - 공개 읽기
-    // ============================================
     match /profileImages/{fileName} {
-      allow read: if true;  // 공개 읽기 허용
+      allow read: if true;  // 공개 읽기
+      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow delete: if isSignedIn();
+    }
+
+    match /profile_images/{fileName} {
+      allow read: if true;  // 공개 읽기 (1기)
       allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
       allow delete: if isSignedIn();
     }
