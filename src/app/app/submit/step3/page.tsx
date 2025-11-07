@@ -64,6 +64,7 @@ function Step3Content() {
   const [uploadStep, setUploadStep] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const isSubmittingRef = useRef(false);
 
   const createSubmission = useCreateSubmission();
@@ -111,6 +112,8 @@ function Step3Content() {
 
     const loadDraftAndQuestion = async () => {
       setIsLoadingDraft(true);
+      setLoadError(null);
+
       try {
         // 1. 임시저장 불러오기
         const { getDraftSubmission } = await import('@/lib/firebase/submissions');
@@ -131,7 +134,13 @@ function Step3Content() {
           setDailyQuestion(question);
         }
       } catch (error) {
-        // 에러 무시
+        const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+        setLoadError(errorMessage);
+        toast({
+          title: '불러오기 실패',
+          description: '임시저장된 내용을 불러올 수 없습니다. 다시 시도해주세요.',
+          variant: 'destructive',
+        });
       } finally {
         setIsLoadingDraft(false);
       }
@@ -223,6 +232,8 @@ function Step3Content() {
         }
       } catch (error) {
         if (!cancelled) {
+          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+          setLoadError(errorMessage);
           toast({
             title: '제출물 불러오기 실패',
             description: '이전 제출을 불러오지 못했습니다. 다시 시도해주세요.',
@@ -362,19 +373,29 @@ function Step3Content() {
     isSubmittingRef.current = true; // 제출 시작 - 검증 useEffect 비활성화
 
     try {
-      setUploadStep('책 정보 저장 중...');
-      await updateParticipantBookInfo(
-        participantId,
-        finalTitle,
-        selectedBook?.author || undefined,
-        selectedBook?.image || undefined
-      );
+      // 단계 1: 책 정보 저장
+      try {
+        setUploadStep('책 정보 저장 중...');
+        await updateParticipantBookInfo(
+          participantId,
+          finalTitle,
+          selectedBook?.author || undefined,
+          selectedBook?.image || undefined
+        );
+      } catch (error) {
+        throw new Error(`책 정보 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      }
 
+      // 단계 2: 이미지 업로드
       let bookImageUrl = imageStorageUrl;
       if (!bookImageUrl && imageFile) {
-        setUploadStep('이미지 업로드 중...');
-        bookImageUrl = await uploadReadingImage(imageFile, participantId, cohortId);
-        setImageStorageUrl(bookImageUrl);
+        try {
+          setUploadStep('이미지 업로드 중...');
+          bookImageUrl = await uploadReadingImage(imageFile, participantId, cohortId);
+          setImageStorageUrl(bookImageUrl);
+        } catch (error) {
+          throw new Error(`이미지 업로드 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+        }
       }
 
       const submissionPayload = {
@@ -389,20 +410,25 @@ function Step3Content() {
         status: 'approved' as const,
       };
 
-      setUploadStep('제출물 저장 중...');
+      // 단계 3: 제출물 저장
+      try {
+        setUploadStep('제출물 저장 중...');
 
-      if (isEditing && existingSubmissionId) {
-        await updateSubmission.mutateAsync({
-          id: existingSubmissionId,
-          data: submissionPayload,
-        });
-      } else {
-        await createSubmission.mutateAsync({
-          participantId,
-          participationCode,
-          ...submissionPayload,
-          submittedAt: Timestamp.now(),
-        });
+        if (isEditing && existingSubmissionId) {
+          await updateSubmission.mutateAsync({
+            id: existingSubmissionId,
+            data: submissionPayload,
+          });
+        } else {
+          await createSubmission.mutateAsync({
+            participantId,
+            participationCode,
+            ...submissionPayload,
+            submittedAt: Timestamp.now(),
+          });
+        }
+      } catch (error) {
+        throw new Error(`제출물 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
       }
 
       if (!isEditing) {
@@ -432,18 +458,51 @@ function Step3Content() {
         description: errorMessage,
         variant: 'destructive',
       });
-      isSubmittingRef.current = false; // 에러 시에도 플래그 해제
     } finally {
       setUploading(false);
       setUploadStep('');
-      if (!router) {
-        isSubmittingRef.current = false;
-      }
+      isSubmittingRef.current = false; // 항상 해제
     }
   };
 
   if (sessionLoading || !participant || !cohortId || isLoadingDraft) {
     return <LoadingSpinner message="로딩 중..." />;
+  }
+
+  // 로드 실패 시 재시도 화면
+  if (loadError && !dailyQuestion) {
+    return (
+      <PageTransition>
+        <div className="app-shell flex flex-col overflow-hidden bg-background">
+          <BackHeader onBack={handleBack} title="독서 인증하기" variant="left" />
+          <div className="fixed top-14 left-0 right-0 z-[998]">
+            <ProgressIndicator currentStep={3} />
+          </div>
+
+          <main className="app-main-content flex-1 flex items-center justify-center">
+            <div className="text-center space-y-4 px-6">
+              <div className="text-4xl">⚠️</div>
+              <h3 className="text-lg font-bold text-gray-900">
+                질문을 불러올 수 없습니다
+              </h3>
+              <p className="text-sm text-gray-600">
+                네트워크 연결을 확인하고 다시 시도해주세요
+              </p>
+              <UnifiedButton
+                onClick={() => {
+                  hasLoadedDraftRef.current = false;
+                  setLoadError(null);
+                  window.location.reload();
+                }}
+                className="mt-4"
+              >
+                다시 시도
+              </UnifiedButton>
+            </div>
+          </main>
+        </div>
+      </PageTransition>
+    );
   }
 
   return (
