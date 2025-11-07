@@ -107,7 +107,7 @@ export const scheduledRandomMatching = onSchedule(
 
       logger.info(`Matching date: ${yesterdayStr}`);
 
-      // 5. 어제 인증한 참가자 조회
+      // 5. 어제 인증한 참가자 조회 (공급자: providers)
       const submissionsSnapshot = await db
         .collection("reading_submissions")
         .where("submissionDate", "==", yesterdayStr)
@@ -118,50 +118,64 @@ export const scheduledRandomMatching = onSchedule(
         return;
       }
 
-      const participantIds = Array.from(
+      const providerIds = Array.from(
         new Set(submissionsSnapshot.docs.map(doc => doc.data().participantId))
       );
 
-      logger.info(`${participantIds.length} participants submitted`);
+      logger.info(`${providerIds.length} participants submitted (providers)`);
 
-      // 6. 참가자 정보 및 누적 인증 횟수 조회
-      // Firestore 'in' 제한: 최대 30개씩 배치 처리
-      const participants: ParticipantWithSubmissionCount[] = [];
+      // 6. 전체 cohort 멤버 조회 (수요자: viewers)
+      // 관리자/고스트 계정 필터링
+      const allParticipantsSnapshot = await db
+        .collection("participants")
+        .where("cohortId", "==", cohortId)
+        .get();
 
-      for (let i = 0; i < participantIds.length; i += 30) {
-        const batch = participantIds.slice(i, i + 30);
+      const viewers: ParticipantWithSubmissionCount[] = [];
+      const providers: ParticipantWithSubmissionCount[] = [];
 
-        const participantsSnapshot = await db
-          .collection("participants")
-          .where("cohortId", "==", cohortId)
-          .where(admin.firestore.FieldPath.documentId(), "in", batch)
+      for (const participantDoc of allParticipantsSnapshot.docs) {
+        const participantData = participantDoc.data();
+
+        // 관리자/고스트 필터링 (기존 AI 매칭과 동일)
+        if (
+          participantData.isSuperAdmin === true ||
+          participantData.isAdministrator === true ||
+          participantData.isGhost === true
+        ) {
+          logger.info(`Skipping filtered participant: ${participantData.name} (admin/ghost)`);
+          continue;
+        }
+
+        // 누적 인증 횟수 계산
+        const allSubmissionsSnapshot = await db
+          .collection("reading_submissions")
+          .where("participantId", "==", participantDoc.id)
+          .where("status", "==", "approved")
           .get();
 
-        for (const participantDoc of participantsSnapshot.docs) {
-          const participantData = participantDoc.data();
+        // 중복 제거: submissionDate 기준
+        const uniqueDates = new Set(
+          allSubmissionsSnapshot.docs.map(doc => doc.data().submissionDate)
+        );
 
-          // 누적 인증 횟수 계산
-          const allSubmissionsSnapshot = await db
-            .collection("reading_submissions")
-            .where("participantId", "==", participantDoc.id)
-            .where("status", "==", "approved")
-            .get();
+        const participant: ParticipantWithSubmissionCount = {
+          id: participantDoc.id,
+          name: participantData.name || 'Unknown',
+          gender: participantData.gender,
+          submissionCount: uniqueDates.size,
+        };
 
-          // 중복 제거: submissionDate 기준
-          const uniqueDates = new Set(
-            allSubmissionsSnapshot.docs.map(doc => doc.data().submissionDate)
-          );
+        // 전체 멤버는 수요자(viewers)
+        viewers.push(participant);
 
-          participants.push({
-            id: participantDoc.id,
-            name: participantData.name || 'Unknown',
-            gender: participantData.gender,
-            submissionCount: uniqueDates.size,
-          });
+        // 어제 인증한 사람은 공급자(providers)
+        if (providerIds.includes(participantDoc.id)) {
+          providers.push(participant);
         }
       }
 
-      logger.info(`Loaded ${participants.length} participants`);
+      logger.info(`Loaded ${viewers.length} viewers, ${providers.length} providers`);
 
       // 7. 최근 3일간 매칭 이력 조회
       const recent3Days: string[] = [];
@@ -198,11 +212,14 @@ export const scheduledRandomMatching = onSchedule(
         }
       }
 
-      logger.info(`Recent matchings loaded for ${Object.keys(recentMatchings).length} participants`);
+      logger.info(`Recent matchings loaded for ${Object.keys(recentMatchings).length} viewers`);
 
       // 8. 랜덤 매칭 실행
+      logger.info(`Starting random matching: ${viewers.length} viewers, ${providers.length} providers`);
+
       const matchingResult = await matchParticipantsRandomly({
-        participants,
+        providers, // 어제 인증한 사람들 (프로필북 공급)
+        viewers, // 전체 cohort 멤버 (프로필북 수요)
         recentMatchings,
       });
 
@@ -255,7 +272,8 @@ export const scheduledRandomMatching = onSchedule(
         cohortId,
         date: yesterdayStr,
         matching: matchingEntry,
-        totalParticipants: participants.length,
+        totalParticipants: viewers.length,
+        providersCount: providers.length,
         confirmedAt: admin.firestore.Timestamp.now(),
         confirmedBy: "scheduled_random_matching",
         validationErrors: matchingResult.validation?.errors || [],
@@ -298,7 +316,8 @@ export const scheduledRandomMatching = onSchedule(
       logger.info(`✅ Random matching completed`, {
         cohortId,
         date: yesterdayStr,
-        participants: participants.length,
+        viewers: viewers.length,
+        providers: providers.length,
         matchingVersion: 'random',
       });
     } catch (error) {

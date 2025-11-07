@@ -29,10 +29,11 @@ export interface ParticipantWithSubmissionCount {
 }
 
 /**
- * 랜덤 매칭 입력
+ * 랜덤 매칭 입력 (공급자/수요자 분리)
  */
 export interface RandomMatchingInput {
-  participants: ParticipantWithSubmissionCount[]; // 어제 인증한 참가자 목록
+  providers: ParticipantWithSubmissionCount[]; // 프로필북 공급자 (어제 인증한 참가자)
+  viewers: ParticipantWithSubmissionCount[]; // 프로필북 수요자 (전체 cohort 멤버)
   recentMatchings?: Record<string, string[]>; // 최근 3일간 매칭 이력 (participantId → 받은 프로필북 ID 배열)
 }
 
@@ -97,16 +98,20 @@ function groupByGender(participants: ParticipantWithSubmissionCount[]): {
 
 /**
  * 후보 필터링: 본인 제외 + 최근 3일 중복 제외
+ *
+ * @param providers 프로필북 공급자 목록 (어제 인증한 사람들)
+ * @param currentViewerId 현재 수요자 ID
+ * @param recentlyAssignedIds 최근 3일간 받은 프로필북 ID
  */
 function filterCandidates(
-  allParticipants: ParticipantWithSubmissionCount[],
-  currentParticipantId: string,
+  providers: ParticipantWithSubmissionCount[],
+  currentViewerId: string,
   recentlyAssignedIds: string[]
 ): ParticipantWithSubmissionCount[] {
   const recentSet = new Set(recentlyAssignedIds);
 
-  return allParticipants.filter(p =>
-    p.id !== currentParticipantId && // 본인 제외
+  return providers.filter(p =>
+    p.id !== currentViewerId && // 본인 제외
     !recentSet.has(p.id) // 최근 3일간 받은 사람 제외
   );
 }
@@ -166,25 +171,27 @@ function selectWithGenderBalance(
 /**
  * 랜덤 매칭 실행
  *
- * @param input 매칭 입력 (참가자 목록, 최근 매칭 이력)
- * @returns 매칭 결과 (각 참가자별 할당된 프로필북 ID)
+ * @param input 매칭 입력 (공급자/수요자 분리)
+ * @returns 매칭 결과 (각 수요자별 할당된 프로필북 ID)
  */
 export async function matchParticipantsRandomly(
   input: RandomMatchingInput
 ): Promise<RandomMatchingResult> {
-  const { participants, recentMatchings = {} } = input;
+  const { providers, viewers, recentMatchings = {} } = input;
 
-  logger.info(`[Random Matching] 시작: ${participants.length}명`);
+  logger.info(
+    `[Random Matching] 시작: 공급자 ${providers.length}명, 수요자 ${viewers.length}명`
+  );
 
   const assignments: Record<string, { assigned: string[] }> = {};
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // 각 참가자에 대해 프로필북 할당
-  for (const participant of participants) {
-    const { id, name, submissionCount } = participant;
+  // 각 수요자(viewer)에 대해 프로필북 할당
+  for (const viewer of viewers) {
+    const { id, name, submissionCount } = viewer;
 
-    // 1. 프로필북 개수 계산
+    // 1. 프로필북 개수 계산 (누적 인증 기반)
     const profileBookCount = calculateProfileBookCount(submissionCount);
 
     // 2. 최근 3일간 받은 프로필북 ID 조회
@@ -192,7 +199,7 @@ export async function matchParticipantsRandomly(
 
     // 3. 후보 필터링 (본인 + 최근 3일 제외)
     const candidates = filterCandidates(
-      participants,
+      providers, // 공급자 목록에서 선택
       id,
       recentlyAssigned
     );
@@ -252,23 +259,23 @@ export function validateRandomMatching(
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  const { participants } = input;
+  const { viewers, providers } = input;
   const { assignments } = result;
 
-  // 1. 모든 참가자가 할당받았는지 확인
-  const unassigned = participants.filter(p => !assignments[p.id]);
+  // 1. 모든 수요자가 할당받았는지 확인
+  const unassigned = viewers.filter(v => !assignments[v.id]);
   if (unassigned.length > 0) {
     errors.push(
-      `할당받지 못한 참가자 ${unassigned.length}명: ${unassigned.map(p => p.name).join(', ')}`
+      `할당받지 못한 수요자 ${unassigned.length}명: ${unassigned.map(v => v.name).join(', ')}`
     );
   }
 
-  // 2. 각 참가자의 할당 검증
-  for (const participant of participants) {
-    const assignment = assignments[participant.id];
+  // 2. 각 수요자의 할당 검증
+  for (const viewer of viewers) {
+    const assignment = assignments[viewer.id];
     if (!assignment) continue;
 
-    const { id, name, submissionCount } = participant;
+    const { id, name, submissionCount } = viewer;
     const expectedCount = calculateProfileBookCount(submissionCount);
     const actualCount = assignment.assigned.length;
 
@@ -283,7 +290,14 @@ export function validateRandomMatching(
       errors.push(`${name}: 중복된 프로필북 ID 발견`);
     }
 
-    // 2-3. 할당 개수 경고 (부족한 경우)
+    // 2-3. 할당된 ID가 모두 공급자 목록에 있는지 확인
+    const providerIds = new Set(providers.map(p => p.id));
+    const invalidIds = assignment.assigned.filter(aid => !providerIds.has(aid));
+    if (invalidIds.length > 0) {
+      errors.push(`${name}: 유효하지 않은 프로필북 ID (공급자 목록에 없음): ${invalidIds.join(', ')}`);
+    }
+
+    // 2-4. 할당 개수 경고 (부족한 경우)
     if (actualCount < expectedCount) {
       warnings.push(
         `${name}: 기대 ${expectedCount}개, 실제 ${actualCount}개 할당 (후보 부족)`
