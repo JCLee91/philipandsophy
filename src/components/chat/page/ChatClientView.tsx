@@ -62,20 +62,38 @@ export function ChatClientView({
   // 유저가 참가한 모든 코호트 조회 (AuthContext에서 이미 조회한 데이터 활용)
   const [userCohorts, setUserCohorts] = useState<Array<{ cohortId: string; cohortName: string }>>([]);
   useEffect(() => {
-    if (allUserParticipants.length === 0) return;
+    if (!allUserParticipants || allUserParticipants.length === 0) return;
 
     const fetchCohortNames = async () => {
       try {
         const { getCohortById } = await import('@/lib/firebase');
-        const cohortPromises = allUserParticipants.map(async (p) => {
-          const cohort = await getCohortById(p.cohortId);
-          return { cohortId: p.cohortId, cohortName: cohort?.name || `${p.cohortId}기` };
-        });
+        const cohortPromises = allUserParticipants
+          .filter(p => p && p.cohortId) // null/undefined 필터링
+          .map(async (p) => {
+            try {
+              const cohort = await getCohortById(p.cohortId);
+              return {
+                cohortId: p.cohortId,
+                cohortName: cohort?.name || `${p.cohortId}기`
+              };
+            } catch (err) {
+              logger.error('Failed to fetch cohort', { cohortId: p.cohortId, error: err });
+              return {
+                cohortId: p.cohortId,
+                cohortName: `${p.cohortId}기`
+              };
+            }
+          });
 
         const cohorts = await Promise.all(cohortPromises);
-        setUserCohorts(cohorts);
+        setUserCohorts(cohorts.filter(c => c !== null));
       } catch (error) {
         logger.error('Failed to fetch cohort names', error);
+        // 에러 시 기본값 설정
+        const fallbackCohorts = allUserParticipants
+          .filter(p => p && p.cohortId)
+          .map(p => ({ cohortId: p.cohortId, cohortName: `${p.cohortId}기` }));
+        setUserCohorts(fallbackCohorts);
       }
     };
 
