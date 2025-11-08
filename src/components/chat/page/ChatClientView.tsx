@@ -56,22 +56,18 @@ export function ChatClientView({
   }, [initialCohortId, searchParams]);
   const cohortId = resolvedCohortId;
 
-  const { participant, isLoading: sessionLoading } = useAuth();
+  const { participant, isLoading: sessionLoading, allUserParticipants } = useAuth();
   const currentUserId = participant?.id;
 
-  // 유저가 참가한 모든 코호트 조회
+  // 유저가 참가한 모든 코호트 조회 (AuthContext에서 이미 조회한 데이터 활용)
   const [userCohorts, setUserCohorts] = useState<Array<{ cohortId: string; cohortName: string }>>([]);
   useEffect(() => {
-    if (!participant?.phoneNumber) return;
+    if (allUserParticipants.length === 0) return;
 
-    const fetchUserCohorts = async () => {
+    const fetchCohortNames = async () => {
       try {
-        const { getAllParticipantsByPhoneNumber } = await import('@/lib/firebase');
-        const allParticipants = await getAllParticipantsByPhoneNumber(participant.phoneNumber);
-
-        // 코호트 정보 조회
         const { getCohortById } = await import('@/lib/firebase');
-        const cohortPromises = allParticipants.map(async (p) => {
+        const cohortPromises = allUserParticipants.map(async (p) => {
           const cohort = await getCohortById(p.cohortId);
           return { cohortId: p.cohortId, cohortName: cohort?.name || `${p.cohortId}기` };
         });
@@ -79,12 +75,12 @@ export function ChatClientView({
         const cohorts = await Promise.all(cohortPromises);
         setUserCohorts(cohorts);
       } catch (error) {
-        logger.error('Failed to fetch user cohorts', error);
+        logger.error('Failed to fetch cohort names', error);
       }
     };
 
-    fetchUserCohorts();
-  }, [participant?.phoneNumber]);
+    fetchCohortNames();
+  }, [allUserParticipants]);
 
   const { writeDialog, editDialog, deleteDialog } = useNoticeDialogs();
   const dmDialog = useDirectMessageDialogState();

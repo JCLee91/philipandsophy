@@ -11,8 +11,9 @@ import { deleteClientCookie } from '@/lib/cookies';
 /**
  * AuthContext - Firebase Authentication + Participant 통합 관리
  *
- * 내부적으로 TanStack Query (useParticipant)를 사용하여 Participant 조회
- * 외부 API는 기존과 동일하게 유지 (하위 호환성)
+ * 여러 코호트 참가 지원:
+ * - URL cohortId에 따라 해당 코호트의 participant로 자동 전환
+ * - 전화번호로 모든 participants 조회 후 cohortId 매칭
  */
 
 // Participant 조회 상태
@@ -26,6 +27,7 @@ interface AuthContextType {
   isLoading: boolean;
   logout: () => Promise<void>;
   retryParticipantFetch: () => void;
+  allUserParticipants: Participant[]; // 유저의 모든 participant (여러 코호트)
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +36,33 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [allUserParticipants, setAllUserParticipants] = useState<Participant[]>([]);
+  const [urlCohortId, setUrlCohortId] = useState<string | null>(null);
+
+  // URL cohortId 감지 (window.location 사용)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updateCohortId = () => {
+      const params = new URLSearchParams(window.location.search);
+      setUrlCohortId(params.get('cohort'));
+    };
+
+    updateCohortId();
+
+    // URL 변경 감지
+    window.addEventListener('popstate', updateCohortId);
+    const originalPushState = window.history.pushState;
+    window.history.pushState = function(...args) {
+      originalPushState.apply(this, args);
+      updateCohortId();
+    };
+
+    return () => {
+      window.removeEventListener('popstate', updateCohortId);
+      window.history.pushState = originalPushState;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -64,6 +93,7 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
             }
             deleteClientCookie('pns-participant');
             deleteClientCookie('pns-cohort');
+            setAllUserParticipants([]); // 모든 participants 초기화
           }
         });
       } catch (error) {
@@ -82,13 +112,59 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // useParticipant는 컴포넌트 내부에서만 사용 가능
+  // 기본 participant 조회 (firebaseUid 기준)
   const {
-    data: participant,
+    data: baseParticipant,
     isLoading: participantLoading,
     isError: participantError,
     refetch: retryParticipantFetch,
   } = useParticipantQuery(user?.uid);
+
+  // 모든 participants 조회 (전화번호 기준)
+  useEffect(() => {
+    if (!baseParticipant?.phoneNumber) {
+      setAllUserParticipants([]);
+      return;
+    }
+
+    const fetchAllParticipants = async () => {
+      try {
+        const { getAllParticipantsByPhoneNumber } = await import('@/lib/firebase');
+        const participants = await getAllParticipantsByPhoneNumber(baseParticipant.phoneNumber);
+        setAllUserParticipants(participants);
+      } catch (error) {
+        logger.error('Failed to fetch all user participants', error);
+        setAllUserParticipants([baseParticipant]); // fallback to base
+      }
+    };
+
+    fetchAllParticipants();
+  }, [baseParticipant?.phoneNumber, baseParticipant?.id]);
+
+  // cohortId에 맞는 participant 선택
+  const activeCohortId = urlCohortId || baseParticipant?.cohortId;
+  const participant = activeCohortId && allUserParticipants.length > 0
+    ? allUserParticipants.find(p => p.cohortId === activeCohortId) || baseParticipant
+    : baseParticipant;
+
+  // participant 변경 시 쿠키 및 localStorage 업데이트
+  useEffect(() => {
+    if (!participant) return;
+
+    try {
+      // localStorage 업데이트
+      localStorage.setItem('participantId', participant.id);
+
+      // 쿠키 업데이트 (서버 사이드 라우팅용)
+      const { setClientCookie } = require('@/lib/cookies');
+      setClientCookie('pns-participant', participant.id);
+      if (participant.cohortId) {
+        setClientCookie('pns-cohort', participant.cohortId);
+      }
+    } catch (error) {
+      logger.error('Failed to update participant cookies', error);
+    }
+  }, [participant?.id, participant?.cohortId]);
 
   const logout = async () => {
     try {
@@ -130,6 +206,7 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         logout,
         retryParticipantFetch,
+        allUserParticipants,
       }}
     >
       {children}
