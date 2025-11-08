@@ -116,10 +116,13 @@ export function ChatClientView({
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined, {
     initialData: initialCohort ?? undefined,
   });
-  const isAdmin = useIsAdminMode();
+  const isAdminMode = useIsAdminMode(); // ViewMode 전환용 (UI 기능)
+
+  // 실제 관리자 권한 (participant.isAdministrator 기반) - 데이터 접근 권한
+  const isRealAdmin = participant?.isAdministrator === true || participant?.isSuperAdmin === true;
 
   const initialParticipantsLoaded = Boolean(initialParticipants && initialParticipants.length > 0);
-  const [shouldLoadParticipants, setShouldLoadParticipants] = useState(isAdmin || initialParticipantsLoaded);
+  const [shouldLoadParticipants, setShouldLoadParticipants] = useState(isAdminMode || initialParticipantsLoaded);
   const {
     data: participants = [],
     isLoading: participantsLoading,
@@ -130,10 +133,10 @@ export function ChatClientView({
   });
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdminMode) {
       setShouldLoadParticipants(true);
     }
-  }, [isAdmin]);
+  }, [isAdminMode]);
 
   useEffect(() => {
     if (initialParticipantsLoaded) {
@@ -395,7 +398,7 @@ export function ChatClientView({
         onWriteClick={writeDialog.open}
         onMessageAdminClick={handleMessageAdmin}
         onSettingsClick={() => setSettingsOpen(true)}
-        isAdmin={isAdmin}
+        isAdmin={isAdminMode}
         currentCohort={cohort ? { id: cohort.id, name: cohort.name } : null}
       />
       <PageTransition>
@@ -406,7 +409,7 @@ export function ChatClientView({
           currentUserId={currentUserId || ''}
           open={participantsOpen}
           onOpenChange={setParticipantsOpen}
-          isAdmin={isAdmin}
+          isAdmin={isAdminMode}
           onDMClick={handleDMClick}
           onProfileClick={(participant) => setSelectedParticipant(participant)}
           onProfileBookClick={handleProfileBookClick}
@@ -431,7 +434,7 @@ export function ChatClientView({
         <main className="app-main-content relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
           <NoticeTimeline
             notices={noticesData}
-            isAdmin={isAdmin}
+            isAdmin={isRealAdmin}
             onEdit={handleEditNotice}
             onRequestDelete={deleteDialog.openWithNotice}
             latestNoticeId={latestNoticeId}
@@ -440,7 +443,7 @@ export function ChatClientView({
         </main>
 
         <ChatFooterSection
-          isAdmin={isAdmin}
+          isAdmin={isAdminMode}
           isDay1={isDay1 ?? false}
           isAfterDay14={isAfterDay14}
           hasSubmittedToday={hasSubmittedToday}
