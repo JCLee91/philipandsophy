@@ -27,8 +27,17 @@ export function NoticeTimeline({
   latestNoticeId,
   latestNoticeRef,
 }: NoticeTimelineProps) {
+  // 추가 방어: 일반 참가자는 draft 제외
+  const filteredNotices = useMemo(() => {
+    if (isAdmin) {
+      return notices; // 관리자는 모두 표시
+    }
+    // 일반 참가자: draft 제외, status 없으면 published로 간주
+    return notices.filter(notice => notice.status !== 'draft');
+  }, [notices, isAdmin]);
+
   const grouped = useMemo(() => {
-    const groups = notices.reduce<Record<string, GroupedNotice>>((acc, notice) => {
+    const groups = filteredNotices.reduce<Record<string, GroupedNotice>>((acc, notice) => {
       const dateKey = formatDate(notice.createdAt);
       if (!acc[dateKey]) {
         acc[dateKey] = {
@@ -42,7 +51,7 @@ export function NoticeTimeline({
     }, {});
 
     return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
-  }, [notices]);
+  }, [filteredNotices]);
 
   if (grouped.length === 0) {
     return null;

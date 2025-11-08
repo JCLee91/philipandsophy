@@ -60,7 +60,15 @@ export const fetchChatNotices = cache(async (cohortId: string): Promise<Notice[]
     .orderBy('createdAt', 'asc')
     .get();
 
-  return mapSnapshot<Notice>(snapshot.docs);
+  const allNotices = mapSnapshot<Notice>(snapshot.docs);
+
+  // draft (임시저장) 필터링: 일반 참가자에게는 published만 표시
+  // status 필드가 없는 레거시 공지는 published로 간주
+  const publishedNotices = allNotices.filter(notice =>
+    notice.status !== 'draft'
+  );
+
+  return publishedNotices;
 });
 
 export const fetchChatCohort = cache(async (cohortId: string): Promise<Cohort | null> => {
