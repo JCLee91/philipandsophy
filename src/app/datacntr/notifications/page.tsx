@@ -285,8 +285,10 @@ export default function CustomNotificationsPage() {
   // Loading state
   if (loadingCohorts) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        <h1 className="mb-6 text-3xl font-bold">커스텀 푸시 알림</h1>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">커스텀 푸시 알림</h1>
+        </div>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           <span className="ml-2 text-gray-600">코호트 목록 불러오는 중...</span>
@@ -296,8 +298,10 @@ export default function CustomNotificationsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <h1 className="mb-6 text-3xl font-bold">커스텀 푸시 알림</h1>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">커스텀 푸시 알림</h1>
+      </div>
 
       <div className="rounded-lg border bg-card p-6">
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -186,134 +186,132 @@ export default function DataCenterBoardPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">독서 인증 현황판</h1>
-          <p className="text-muted-foreground">
-            {cohort.name} • {format(parseISO(cohort.startDate), 'M월 d일', { locale: ko })} -{' '}
-            {format(parseISO(cohort.endDate), 'M월 d일', { locale: ko })}
-          </p>
-        </div>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* 헤더 */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">독서 인증 현황판</h1>
+        <p className="text-gray-600 mt-2">
+          {cohort.name} • {format(parseISO(cohort.startDate), 'M월 d일', { locale: ko })} -{' '}
+          {format(parseISO(cohort.endDate), 'M월 d일', { locale: ko })}
+        </p>
+      </div>
 
-        {/* Statistics Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">총 참가자</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalParticipants}명</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">프로그램 기간</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalDays}일</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">총 인증 수</CardTitle>
-              <BookCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalSubmissions}건</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                평균 {(totalSubmissions / totalParticipants).toFixed(1)}건/인
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Board Table */}
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
         <Card>
-          <CardHeader>
-            <CardTitle>일별 인증 현황</CardTitle>
-            <CardDescription>
-              체크 표시를 클릭하면 해당 책 제목을 확인할 수 있습니다
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">총 참가자</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky left-0 z-10 bg-background min-w-[120px]">
-                      참가자
-                    </TableHead>
-                    {dates.map((date, index) => {
-                      const count = dailySubmissionCounts.get(date) || 0;
-                      const isFirstDay = index === 0;
-                      return (
-                        <TableHead key={date} className="text-center whitespace-nowrap px-2">
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span>{format(parseISO(date), 'M/d', { locale: ko })}</span>
-                            {!isFirstDay && (
-                              <span className="text-xs text-muted-foreground font-normal">
-                                ({count}명)
-                              </span>
-                            )}
-                          </div>
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {boardData.map((row) => {
-                    const completionRate = (row.submissions.size / (dates.length - 1)) * 100; // OT 제외
-                    return (
-                      <TableRow key={row.participant.id}>
-                        <TableCell className="sticky left-0 z-10 bg-background font-medium">
-                          <div className="flex items-center gap-2">
-                            <span>{row.participant.name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {row.submissions.size}회
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        {dates.map((date, index) => {
-                          const submission = row.submissions.get(date);
-                          const today = format(new Date(), 'yyyy-MM-dd');
-                          const isFuture = date > today;
-                          const isFirstDay = index === 0; // 첫 날은 OT
+            <div className="text-2xl font-bold">{totalParticipants}명</div>
+          </CardContent>
+        </Card>
 
-                          return (
-                            <TableCell key={date} className="text-center px-2">
-                              {isFirstDay ? (
-                                <span className="inline-block text-blue-600 font-bold text-xs">OT</span>
-                              ) : isFuture ? (
-                                <span className="inline-block text-gray-300 font-bold text-sm">-</span>
-                              ) : submission ? (
-                                <span
-                                  className="inline-block text-green-600 font-bold text-xl cursor-help"
-                                  title={submission.bookTitle}
-                                >
-                                  ✓
-                                </span>
-                              ) : (
-                                <span className="inline-block text-red-500 font-bold text-sm">✕</span>
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">프로그램 기간</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalDays}일</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">총 인증 수</CardTitle>
+            <BookCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalSubmissions}건</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              평균 {(totalSubmissions / totalParticipants).toFixed(1)}건/인
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Board Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>일별 인증 현황</CardTitle>
+          <CardDescription>
+            체크 표시를 클릭하면 해당 책 제목을 확인할 수 있습니다
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky left-0 z-10 bg-background min-w-[120px]">
+                    참가자
+                  </TableHead>
+                  {dates.map((date, index) => {
+                    const count = dailySubmissionCounts.get(date) || 0;
+                    const isFirstDay = index === 0;
+                    return (
+                      <TableHead key={date} className="text-center whitespace-nowrap px-2">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span>{format(parseISO(date), 'M/d', { locale: ko })}</span>
+                          {!isFirstDay && (
+                            <span className="text-xs text-muted-foreground font-normal">
+                              ({count}명)
+                            </span>
+                          )}
+                        </div>
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {boardData.map((row) => {
+                  const completionRate = (row.submissions.size / (dates.length - 1)) * 100; // OT 제외
+                  return (
+                    <TableRow key={row.participant.id}>
+                      <TableCell className="sticky left-0 z-10 bg-background font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{row.participant.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {row.submissions.size}회
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      {dates.map((date, index) => {
+                        const submission = row.submissions.get(date);
+                        const today = format(new Date(), 'yyyy-MM-dd');
+                        const isFuture = date > today;
+                        const isFirstDay = index === 0; // 첫 날은 OT
+
+                        return (
+                          <TableCell key={date} className="text-center px-2">
+                            {isFirstDay ? (
+                              <span className="inline-block text-blue-600 font-bold text-xs">OT</span>
+                            ) : isFuture ? (
+                              <span className="inline-block text-gray-300 font-bold text-sm">-</span>
+                            ) : submission ? (
+                              <span
+                                className="inline-block text-green-600 font-bold text-xl cursor-help"
+                                title={submission.bookTitle}
+                              >
+                                ✓
+                              </span>
+                            ) : (
+                              <span className="inline-block text-red-500 font-bold text-sm">✕</span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
