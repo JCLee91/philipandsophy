@@ -49,13 +49,26 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
     redirect('/app');
   }
 
+  // 일반 유저: 자신이 참가한 모든 코호트 접근 허용 (활성/종료 무관)
   if (!isAdmin && participant.cohortId && participant.cohortId !== cohortId) {
-    logger.warn('Non-admin participant attempted to access different cohort', {
-      participantId,
-      participantCohortId: participant.cohortId,
-      requestedCohortId: cohortId,
-    });
-    redirect(appRoutes.chat(participant.cohortId));
+    // 동일 전화번호로 여러 코호트 참가 여부 확인
+    const allParticipants = await db
+      .collection('participants')
+      .where('phoneNumber', '==', participant.phoneNumber)
+      .get();
+
+    const userCohortIds = allParticipants.docs.map(doc => doc.data().cohortId);
+
+    // 요청한 cohortId가 유저의 참가 목록에 없으면 리다이렉트
+    if (!userCohortIds.includes(cohortId)) {
+      logger.warn('Participant attempted to access non-participating cohort', {
+        participantId,
+        participantCohortId: participant.cohortId,
+        requestedCohortId: cohortId,
+        userCohortIds,
+      });
+      redirect(appRoutes.chat(participant.cohortId));
+    }
   }
 
   // 관리자가 다른 기수를 조회하는 경우, 다운스트림 훅이 동일한 쿠키를 기대하므로

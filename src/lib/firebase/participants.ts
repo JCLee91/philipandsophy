@@ -63,13 +63,15 @@ export async function getParticipantById(
 }
 
 /**
- * 참가자 조회 (전화번호로)
+ * 전화번호로 모든 참가자 조회 (여러 코호트 참가 지원)
+ *
+ * @param phoneNumber - 전화번호
+ * @returns 해당 전화번호로 등록된 모든 참가자 배열
  */
-export async function getParticipantByPhoneNumber(
+export async function getAllParticipantsByPhoneNumber(
   phoneNumber: string
-): Promise<Participant | null> {
+): Promise<Participant[]> {
   const db = getDb();
-  // 하이픈 제거
   const cleanNumber = phoneNumber.replace(/-/g, '');
   const q = query(
     collection(db, COLLECTIONS.PARTICIPANTS),
@@ -79,14 +81,67 @@ export async function getParticipantByPhoneNumber(
   const querySnapshot = await getDocs(q);
 
   if (querySnapshot.empty) {
+    return [];
+  }
+
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as Participant));
+}
+
+/**
+ * 참가자 조회 (전화번호로)
+ *
+ * 여러 코호트에 동일 전화번호로 등록된 경우:
+ * 1. 활성 코호트(isActive: true) 우선
+ * 2. 그 다음 최신 코호트 (cohortId 숫자 기준 내림차순)
+ */
+export async function getParticipantByPhoneNumber(
+  phoneNumber: string
+): Promise<Participant | null> {
+  const participants = await getAllParticipantsByPhoneNumber(phoneNumber);
+
+  if (participants.length === 0) {
     return null;
   }
 
-  const doc = querySnapshot.docs[0];
-  return {
-    id: doc.id,
-    ...doc.data(),
-  } as Participant;
+  if (participants.length === 1) {
+    return participants[0];
+  }
+
+  // 여러 코호트에 등록된 경우 활성 코호트 우선
+  const db = getDb();
+  const cohortIds = [...new Set(participants.map(p => p.cohortId))];
+  const cohortPromises = cohortIds.map(id =>
+    getDoc(doc(db, COLLECTIONS.COHORTS, id))
+  );
+  const cohortDocs = await Promise.all(cohortPromises);
+
+  const cohortActiveMap = new Map<string, boolean>();
+  cohortDocs.forEach((cohortDoc, index) => {
+    if (cohortDoc.exists()) {
+      cohortActiveMap.set(cohortIds[index], cohortDoc.data()?.isActive ?? false);
+    }
+  });
+
+  // 활성 코호트의 참가자 우선 반환
+  const activeParticipant = participants.find(p =>
+    cohortActiveMap.get(p.cohortId) === true
+  );
+
+  if (activeParticipant) {
+    return activeParticipant;
+  }
+
+  // 모두 비활성이면 최신 코호트 반환 (cohortId 숫자 기준 내림차순)
+  participants.sort((a, b) => {
+    const aNum = parseInt(a.cohortId) || 0;
+    const bNum = parseInt(b.cohortId) || 0;
+    return bNum - aNum;
+  });
+
+  return participants[0];
 }
 
 /**

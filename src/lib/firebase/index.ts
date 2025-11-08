@@ -38,6 +38,7 @@ export {
   createParticipant,
   getParticipantById,
   getParticipantByPhoneNumber,
+  getAllParticipantsByPhoneNumber,
   getParticipantsByCohort,
   getAllParticipants,
   updateParticipant,

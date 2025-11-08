@@ -59,6 +59,33 @@ export function ChatClientView({
   const { participant, isLoading: sessionLoading } = useAuth();
   const currentUserId = participant?.id;
 
+  // 유저가 참가한 모든 코호트 조회
+  const [userCohorts, setUserCohorts] = useState<Array<{ cohortId: string; cohortName: string }>>([]);
+  useEffect(() => {
+    if (!participant?.phoneNumber) return;
+
+    const fetchUserCohorts = async () => {
+      try {
+        const { getAllParticipantsByPhoneNumber } = await import('@/lib/firebase');
+        const allParticipants = await getAllParticipantsByPhoneNumber(participant.phoneNumber);
+
+        // 코호트 정보 조회
+        const { getCohortById } = await import('@/lib/firebase');
+        const cohortPromises = allParticipants.map(async (p) => {
+          const cohort = await getCohortById(p.cohortId);
+          return { cohortId: p.cohortId, cohortName: cohort?.name || `${p.cohortId}기` };
+        });
+
+        const cohorts = await Promise.all(cohortPromises);
+        setUserCohorts(cohorts);
+      } catch (error) {
+        logger.error('Failed to fetch user cohorts', error);
+      }
+    };
+
+    fetchUserCohorts();
+  }, [participant?.phoneNumber]);
+
   const { writeDialog, editDialog, deleteDialog } = useNoticeDialogs();
   const dmDialog = useDirectMessageDialogState();
 
@@ -355,6 +382,8 @@ export function ChatClientView({
         onMessageAdminClick={handleMessageAdmin}
         onSettingsClick={() => setSettingsOpen(true)}
         isAdmin={isAdmin}
+        currentCohort={cohort ? { id: cohort.id, name: cohort.name } : null}
+        userCohorts={userCohorts}
       />
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden pt-14">
