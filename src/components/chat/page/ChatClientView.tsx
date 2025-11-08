@@ -402,6 +402,7 @@ export function ChatClientView({
           isDay1={isDay1 ?? false}
           isAfterDay14={isAfterDay14}
           hasSubmittedToday={hasSubmittedToday}
+          cohortName={cohort?.name}
           onRequestSubmission={handleOpenSubmissionFlow}
           onNavigateMatching={handleNavigateMatching}
           onNavigateTodayLibrary={handleNavigateTodayLibrary}

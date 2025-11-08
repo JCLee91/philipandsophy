@@ -9,6 +9,7 @@ type ChatFooterSectionProps = {
   isDay1: boolean;
   isAfterDay14: boolean;
   hasSubmittedToday: boolean;
+  cohortName?: string; // 기수 이름 (예: "2기")
   onRequestSubmission: () => void;
   onNavigateMatching: () => void;
   onNavigateTodayLibrary: () => void;
@@ -19,6 +20,7 @@ export function ChatFooterSection({
   isDay1,
   isAfterDay14,
   hasSubmittedToday,
+  cohortName,
   onRequestSubmission,
   onNavigateMatching,
   onNavigateTodayLibrary,
@@ -47,7 +49,7 @@ export function ChatFooterSection({
               onClick={onNavigateTodayLibrary}
               className="col-span-2"
             >
-              10월 멤버의 서재
+              {cohortName ? `${cohortName} 멤버의 서재` : '멤버 프로필 둘러보기'}
             </UnifiedButton>
           ) : (
             <>
