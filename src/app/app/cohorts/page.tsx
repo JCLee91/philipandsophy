@@ -14,24 +14,45 @@ export const dynamic = 'force-dynamic';
 export default function CohortsPage() {
   const router = useRouter();
   const { participant, isLoading: authLoading } = useAuth();
-  const { data: cohorts = [], isLoading: cohortsLoading } = useAllCohorts();
+  const { data: allCohorts = [], isLoading: cohortsLoading } = useAllCohorts();
   const [selectedCohortId, setSelectedCohortId] = useState<string | null>(null);
+  const [userCohorts, setUserCohorts] = useState<typeof allCohorts>([]);
 
-  // 권한 체크: 일반 사용자는 자신의 코호트로 자동 이동
+  // 유저가 참가한 코호트 필터링
+  useEffect(() => {
+    if (!participant?.phoneNumber || allCohorts.length === 0) return;
+
+    const fetchUserCohorts = async () => {
+      try {
+        const { getAllParticipantsByPhoneNumber } = await import('@/lib/firebase');
+        const allParticipants = await getAllParticipantsByPhoneNumber(participant.phoneNumber);
+
+        const userCohortIds = allParticipants.map(p => p.cohortId);
+        const filteredCohorts = allCohorts.filter(c => userCohortIds.includes(c.id));
+
+        setUserCohorts(filteredCohorts);
+      } catch (error) {
+        logger.error('Failed to fetch user cohorts', error);
+        setUserCohorts(allCohorts); // 에러 시 전체 표시
+      }
+    };
+
+    fetchUserCohorts();
+  }, [participant?.phoneNumber, allCohorts]);
+
+  // 로그인 체크 및 1개 코호트만 참가한 경우 자동 이동
   useEffect(() => {
     if (!authLoading && !participant) {
       router.replace('/app');
       return;
     }
 
-    if (!authLoading && participant && !participant.isAdministrator && !participant.isSuperAdmin) {
-      // 일반 사용자는 자신의 코호트로 바로 이동
-      router.replace(appRoutes.chat(participant.cohortId));
-      return;
+    // 관리자가 아니고 참가 코호트가 1개면 바로 채팅으로 이동
+    const isAdmin = participant?.isAdministrator || participant?.isSuperAdmin;
+    if (!isAdmin && userCohorts.length === 1) {
+      router.replace(appRoutes.chat(userCohorts[0].id));
     }
-
-    // 관리자는 코호트 선택 화면 표시 (자동 리디렉션 제거)
-  }, [authLoading, participant, router]);
+  }, [authLoading, participant, router, userCohorts]);
 
   // 코호트 선택 처리
   const handleSelectCohort = (cohortId: string) => {
@@ -53,26 +74,26 @@ export default function CohortsPage() {
     );
   }
 
-  // 관리자가 아니면 렌더링하지 않음 (리다이렉트 처리됨)
-  if (!participant?.isAdministrator && !participant?.isSuperAdmin) {
-    return null;
-  }
-
-  // 코호트가 없는 경우
-  if (cohorts.length === 0) {
+  // 참가한 코호트가 없는 경우
+  if (userCohorts.length === 0 && !cohortsLoading) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col items-center justify-center min-h-screen bg-background p-4">
           <Users className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-bold text-foreground mb-2">코호트 없음</h2>
+          <h2 className="text-xl font-bold text-foreground mb-2">참가 중인 기수 없음</h2>
           <p className="text-sm text-muted-foreground text-center">
-            생성된 코호트가 없습니다.<br />
-            데이터센터에서 코호트를 생성해주세요.
+            참가 중인 기수가 없습니다.
           </p>
         </div>
       </PageTransition>
     );
   }
+
+  // 관리자 여부
+  const isAdmin = participant?.isAdministrator || participant?.isSuperAdmin;
+
+  // 표시할 코호트 (관리자: 전체, 일반 유저: 참가한 코호트만)
+  const displayCohorts = isAdmin ? allCohorts : userCohorts;
 
   return (
     <PageTransition>
@@ -80,15 +101,17 @@ export default function CohortsPage() {
         {/* 헤더 */}
         <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
           <div className="max-w-md mx-auto px-6 py-4">
-            <h1 className="text-xl font-bold text-gray-900">코호트 선택</h1>
-            <p className="text-sm text-gray-600 mt-1">관리할 기수를 선택하세요</p>
+            <h1 className="text-xl font-bold text-gray-900">기수 변경</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {isAdmin ? '관리할 기수를 선택하세요' : '참가 중인 기수를 선택하세요'}
+            </p>
           </div>
         </header>
 
         {/* 코호트 리스트 */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-md mx-auto px-6 py-6 space-y-3">
-            {cohorts.map((cohort) => {
+            {displayCohorts.map((cohort) => {
               const isSelected = selectedCohortId === cohort.id;
 
               return (
@@ -143,7 +166,9 @@ export default function CohortsPage() {
         <footer className="border-t border-gray-200 bg-gray-50">
           <div className="max-w-md mx-auto px-6 py-4">
             <p className="text-xs text-gray-600 text-center">
-              관리자 권한으로 모든 코호트에 접근할 수 있습니다
+              {isAdmin
+                ? '관리자 권한으로 모든 기수에 접근할 수 있습니다'
+                : '참가 중인 기수를 자유롭게 전환할 수 있습니다'}
             </p>
           </div>
         </footer>
