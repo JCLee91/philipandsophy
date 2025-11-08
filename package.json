@@ -13,6 +13,7 @@
     "migrate:notices-submissions": "tsx src/scripts/migrate-notices-and-fix-submissions.ts",
     "migrate:cohort3-id": "tsx src/scripts/migrate-cohort3-id.ts",
     "migrate:cohort3-participant-ids": "tsx src/scripts/migrate-cohort3-participant-ids.ts",
+    "add:cohort3-questions": "tsx src/scripts/add-cohort3-daily-questions.ts",
     "update:cohort-active": "tsx src/scripts/update-cohort-active-status.ts",
     "stats": "tsx scripts/show-database-statistics.ts",
     "stats:cohort1": "tsx scripts/generate-cohort1-statistics.ts",

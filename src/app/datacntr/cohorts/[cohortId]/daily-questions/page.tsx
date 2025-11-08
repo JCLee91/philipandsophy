@@ -103,7 +103,7 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
                 id: dayNumber.toString(),
                 dayNumber,
                 date,
-                category: '',
+                category: '__placeholder__',
                 question: '',
                 order: dayNumber,
                 createdAt: null as any,
@@ -182,7 +182,9 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
   // 저장
   const handleSave = async () => {
     // 유효성 검사
-    const emptyQuestions = questions.filter(q => !q.category || !q.question);
+    const emptyQuestions = questions.filter(
+      q => !q.category || q.category === '__placeholder__' || !q.question
+    );
     if (emptyQuestions.length > 0) {
       toast({
         title: '유효성 검사 실패',
@@ -274,15 +276,20 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
             <CardContent className="space-y-4">
               <FormSelect
                 label="카테고리"
-                value={q.category}
-                onChange={(value) => handleQuestionChange(index, 'category', value)}
+                value={q.category || '__placeholder__'}
+                onChange={(value) => {
+                  if (value !== '__placeholder__') {
+                    handleQuestionChange(index, 'category', value);
+                  }
+                }}
                 options={[
-                  { value: '', label: '선택하세요' },
+                  { value: '__placeholder__', label: '선택하세요' },
                   ...DAILY_QUESTION_CATEGORIES.map((cat) => ({
                     value: cat,
                     label: cat,
                   })),
                 ]}
+                placeholder="카테고리를 선택하세요"
                 className="mt-1"
               />
               <div>
