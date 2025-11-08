@@ -90,4 +90,84 @@ export const phoneFormatUtils = {
     return phone.startsWith(PHONE_VALIDATION.COUNTRY_CODE) &&
            phone.length === 13; // +821012345678
   },
+
+  /**
+   * 다양한 전화번호 형식을 한국 표준 형식으로 정규화
+   *
+   * 지원 형식:
+   * - 010-1234-5678 (하이픈)
+   * - 01012345678 (숫자만)
+   * - +821012345678 (국제 형식 +82)
+   * - 821012345678 (국제 형식 82)
+   * - 0821012345678 (국제 형식 082)
+   *
+   * @param phone - 정규화할 전화번호
+   * @returns 정규화된 전화번호 (01012345678 형식) 또는 null (유효하지 않은 경우)
+   */
+  normalize(phone: string): string | null {
+    if (!phone) return null;
+
+    // 모든 특수문자 제거 (하이픈, 공백, 괄호 등)
+    let cleanNumber = phone.replace(/[^\d+]/g, '');
+
+    // +82로 시작하는 경우 → 010으로 변환
+    if (cleanNumber.startsWith('+82')) {
+      cleanNumber = '0' + cleanNumber.slice(3);
+    }
+    // 82로 시작하는 경우 (+ 없이) → 010으로 변환
+    else if (cleanNumber.startsWith('82') && cleanNumber.length >= 12) {
+      cleanNumber = '0' + cleanNumber.slice(2);
+    }
+    // 082로 시작하는 경우 → 010으로 변환
+    else if (cleanNumber.startsWith('082')) {
+      cleanNumber = cleanNumber.slice(1); // 082 → 82 → 이후 위의 로직 재사용
+      if (cleanNumber.startsWith('82')) {
+        cleanNumber = '0' + cleanNumber.slice(2);
+      }
+    }
+
+    // 유효성 검증: 01로 시작하고 11자리
+    if (!cleanNumber.startsWith(PHONE_VALIDATION.KOREAN_PREFIX) ||
+        cleanNumber.length !== PHONE_VALIDATION.PHONE_LENGTH) {
+      return null;
+    }
+
+    return cleanNumber;
+  },
+
+  /**
+   * 전화번호 정규화 및 유효성 검증 (에러 메시지 포함)
+   *
+   * @param phone - 검증할 전화번호
+   * @returns { valid: boolean, normalized: string | null, error: string | null }
+   */
+  validateAndNormalize(phone: string): {
+    valid: boolean;
+    normalized: string | null;
+    error: string | null;
+  } {
+    if (!phone || !phone.trim()) {
+      return {
+        valid: false,
+        normalized: null,
+        error: '전화번호를 입력해주세요',
+      };
+    }
+
+    const normalized = this.normalize(phone);
+
+    if (!normalized) {
+      return {
+        valid: false,
+        normalized: null,
+        error: '올바른 전화번호 형식이 아닙니다 (예: 010-1234-5678)',
+      };
+    }
+
+    return {
+      valid: true,
+      normalized,
+      error: null,
+    };
+  },
 } as const;

@@ -256,25 +256,10 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
             <p className="text-gray-600 mt-1">14일간의 질문을 관리합니다</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleCopyFromCohort1}>
-            <Copy className="h-4 w-4 mr-2" />
-            1기 복사
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                저장 중...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                저장하기
-              </>
-            )}
-          </Button>
-        </div>
+        <Button variant="outline" onClick={handleCopyFromCohort1}>
+          <Copy className="h-4 w-4 mr-2" />
+          1기 복사
+        </Button>
       </div>
 
       {/* 질문 폼 */}

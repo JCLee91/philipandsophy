@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { Loader2, Upload, Download, Plus, X } from 'lucide-react';
 import FormSelect from '@/components/datacntr/form/FormSelect';
+import { phoneFormatUtils } from '@/constants/phone-format';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -135,10 +136,11 @@ export default function CohortCreatePage() {
   // CSV 템플릿 다운로드
   const handleDownloadTemplate = () => {
     const template = `이름,핸드폰번호,역할
-홍길동,01012345678,participant
+홍길동,010-1234-5678,participant
 김철수,01087654321,participant
-이영희,01011112222,admin
-테스터,01099998888,ghost`;
+이영희,+821011112222,admin
+박민수,821099998888,ghost
+최지영,0821055556666,participant`;
 
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -159,22 +161,24 @@ export default function CohortCreatePage() {
     }
 
     // 참가자 검증
+    const normalizedPhones: string[] = [];
     for (let i = 0; i < participants.length; i++) {
       const p = participants[i];
       if (!p.name.trim()) return `${i + 1}번째 참가자의 이름을 입력해주세요`;
       if (!p.phone.trim()) return `${i + 1}번째 참가자의 핸드폰 번호를 입력해주세요`;
 
-      // 핸드폰 번호 형식 검증 (간단하게)
-      const cleanPhone = p.phone.replace(/-/g, '');
-      if (!/^01\d{8,9}$/.test(cleanPhone)) {
-        return `${i + 1}번째 참가자의 핸드폰 번호 형식이 올바르지 않습니다`;
+      // 핸드폰 번호 정규화 및 검증 (다양한 형식 지원)
+      const validation = phoneFormatUtils.validateAndNormalize(p.phone);
+      if (!validation.valid) {
+        return `${i + 1}번째 참가자: ${validation.error}`;
       }
+
+      normalizedPhones.push(validation.normalized!);
     }
 
     // 중복 핸드폰 번호 체크
-    const phones = participants.map(p => p.phone.replace(/-/g, ''));
-    const uniquePhones = new Set(phones);
-    if (phones.length !== uniquePhones.size) {
+    const uniquePhones = new Set(normalizedPhones);
+    if (normalizedPhones.length !== uniquePhones.size) {
       return '중복된 핸드폰 번호가 있습니다';
     }
 
@@ -210,10 +214,14 @@ export default function CohortCreatePage() {
           startDate,
           endDate,
           programStartDate,
-          participants: participants.map(p => ({
-            ...p,
-            phone: p.phone.replace(/-/g, ''), // 하이픈 제거
-          })),
+          participants: participants.map(p => {
+            // 전화번호 정규화 (다양한 형식 지원: +82, 82, 082, 010-xxxx-xxxx 등)
+            const normalized = phoneFormatUtils.normalize(p.phone);
+            return {
+              ...p,
+              phone: normalized || p.phone.replace(/-/g, ''), // fallback
+            };
+          }),
           questionsOption,
         }),
       });

@@ -71,8 +71,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. 코호트 생성
-    const cohortRef = await db.collection(COLLECTIONS.COHORTS).add({
+    // 1. 코호트 ID 생성: "3기" → "3"
+    const cohortNumber = name.replace(/[^0-9]/g, '');
+    if (!cohortNumber) {
+      return NextResponse.json(
+        { error: '기수명에 숫자가 포함되어야 합니다 (예: 3기)' },
+        { status: 400 }
+      );
+    }
+
+    // 코호트 문서 ID를 숫자로 설정
+    const cohortId = cohortNumber;
+
+    // 중복 체크
+    const existingCohort = await db.collection(COLLECTIONS.COHORTS).doc(cohortId).get();
+    if (existingCohort.exists) {
+      return NextResponse.json(
+        { error: `${cohortId}기는 이미 존재합니다` },
+        { status: 400 }
+      );
+    }
+
+    // 코호트 생성 (명시적 ID 사용)
+    const cohortRef = db.collection(COLLECTIONS.COHORTS).doc(cohortId);
+    await cohortRef.set({
       name,
       startDate,
       endDate,
@@ -82,15 +104,38 @@ export async function POST(request: NextRequest) {
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    const cohortId = cohortRef.id;
-
-    // 2. 참가자 생성
+    // 2. 참가자 생성 (문서 ID: cohort{기수}-{이름(성제외)})
     const batch = db.batch();
     const participantIds: string[] = [];
 
+    // 이름에서 성 제외하는 함수
+    const getGivenName = (fullName: string): string => {
+      if (fullName.length === 2) {
+        return fullName.substring(1); // "김철" → "철"
+      } else if (fullName.length >= 3) {
+        return fullName.substring(1); // "홍길동" → "길동", "남궁민수" → "궁민수"
+      }
+      return fullName; // 1자는 그대로
+    };
+
+    // 중복 이름 카운터 (같은 이름이 여러 명일 경우 알파벳 추가)
+    const nameCountMap = new Map<string, number>();
+
     for (const p of participants) {
-      const participantRef = db.collection(COLLECTIONS.PARTICIPANTS).doc();
-      participantIds.push(participantRef.id);
+      const givenName = getGivenName(p.name);
+
+      // 중복 이름 처리
+      const count = nameCountMap.get(givenName) || 0;
+      nameCountMap.set(givenName, count + 1);
+
+      // 알파벳 suffix: A, B, C, D, ...
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const participantId = count === 0
+        ? `cohort${cohortId}-${givenName}`                              // 첫 번째: cohort3-철수
+        : `cohort${cohortId}-${givenName}${alphabet[count - 1]}`; // 두 번째 이후: cohort3-철수A, cohort3-철수B
+
+      const participantRef = db.collection(COLLECTIONS.PARTICIPANTS).doc(participantId);
+      participantIds.push(participantId);
 
       batch.set(participantRef, {
         cohortId,

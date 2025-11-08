@@ -11,9 +11,14 @@
     "fix:duplicate-submissions": "tsx src/scripts/fix-duplicate-submissions.ts",
     "migrate:storage": "tsx src/scripts/migrate-storage-structure.ts",
     "migrate:notices-submissions": "tsx src/scripts/migrate-notices-and-fix-submissions.ts",
+    "migrate:cohort3-id": "tsx src/scripts/migrate-cohort3-id.ts",
     "update:cohort-active": "tsx src/scripts/update-cohort-active-status.ts",
     "stats": "tsx scripts/show-database-statistics.ts",
-    "stats:cohort1": "tsx scripts/generate-cohort1-statistics.ts"
+    "stats:cohort1": "tsx scripts/generate-cohort1-statistics.ts",
+    "test:phone": "tsx scripts/test-phone-normalization.ts",
+    "test:doc-id": "tsx scripts/test-document-id-format.ts",
+    "check:template": "tsx scripts/check-cohort-template.ts",
+    "check:daily-questions": "tsx scripts/check-daily-questions-page.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.37",

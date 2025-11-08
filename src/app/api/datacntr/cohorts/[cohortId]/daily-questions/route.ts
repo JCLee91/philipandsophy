@@ -70,6 +70,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
+    // 기존 문서들 조회 (createdAt 유지용)
+    const existingDocsPromises = questions.map(q =>
+      db.collection(`${COLLECTIONS.COHORTS}/${cohortId}/daily_questions`)
+        .doc(q.dayNumber.toString())
+        .get()
+    );
+    const existingDocs = await Promise.all(existingDocsPromises);
+    const existingCreatedAtMap = new Map<string, any>();
+
+    existingDocs.forEach(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        existingCreatedAtMap.set(doc.id, data?.createdAt);
+      }
+    });
+
     // Batch로 저장
     const batch = db.batch();
 
@@ -78,9 +94,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
         throw new Error('모든 질문의 카테고리와 내용이 필요합니다');
       }
 
+      const docId = q.dayNumber.toString();
       const ref = db
         .collection(`${COLLECTIONS.COHORTS}/${cohortId}/daily_questions`)
-        .doc(q.dayNumber.toString());
+        .doc(docId);
+
+      const existingCreatedAt = existingCreatedAtMap.get(docId);
 
       batch.set(ref, {
         dayNumber: q.dayNumber,
@@ -88,7 +107,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         category: q.category,
         question: q.question,
         order: q.dayNumber,
-        createdAt: FieldValue.serverTimestamp(),
+        createdAt: existingCreatedAt || FieldValue.serverTimestamp(), // 기존 유지 또는 새로 생성
         updatedAt: FieldValue.serverTimestamp(),
       });
     });
