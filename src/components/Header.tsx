@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Users, PenSquare, Mail, Settings, ChevronDown } from 'lucide-react';
+import { Users, PenSquare, Mail, Settings } from 'lucide-react';
 import { useTotalUnreadCount } from '@/hooks/use-messages';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,7 +11,6 @@ interface HeaderProps {
   onSettingsClick?: () => void;
   isAdmin?: boolean;
   currentCohort?: { id: string; name: string } | null;
-  userCohorts?: Array<{ cohortId: string; cohortName: string }>;
 }
 
 export default function Header({
@@ -23,19 +20,9 @@ export default function Header({
   onSettingsClick,
   isAdmin,
   currentCohort,
-  userCohorts = [],
 }: HeaderProps) {
   const { participant } = useAuth();
   const { data: unreadCount = 0 } = useTotalUnreadCount(participant?.id || '');
-  const router = useRouter();
-  const [cohortMenuOpen, setCohortMenuOpen] = useState(false);
-
-  const hasMultipleCohorts = userCohorts.length > 1;
-
-  const handleCohortChange = (cohortId: string) => {
-    router.push(`/app/chat?cohort=${cohortId}`);
-    setCohortMenuOpen(false);
-  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[999] border-b bg-background safe-area-header isolate">
@@ -52,45 +39,10 @@ export default function Header({
           </button>
         </div>
 
-        {/* Center - Title / Cohort Selector */}
-        {hasMultipleCohorts ? (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setCohortMenuOpen(!cohortMenuOpen)}
-              className="flex items-center gap-1 text-lg font-bold text-foreground hover:bg-muted px-3 py-1 rounded-md transition-colors"
-            >
-              {currentCohort?.name || '필립앤소피'}
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            {cohortMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setCohortMenuOpen(false)}
-                />
-                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[150px]">
-                  {userCohorts.map((c) => (
-                    <button
-                      key={c.cohortId}
-                      type="button"
-                      onClick={() => handleCohortChange(c.cohortId)}
-                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                        c.cohortId === currentCohort?.id ? 'bg-blue-50 text-blue-700 font-semibold' : ''
-                      }`}
-                    >
-                      {c.cohortName}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        ) : (
-          <h1 className="text-lg font-bold text-foreground">
-            {currentCohort?.name || '필립앤소피'}
-          </h1>
-        )}
+        {/* Center - Title */}
+        <h1 className="text-lg font-bold text-foreground">
+          {currentCohort?.name || '필립앤소피'}
+        </h1>
 
         {/* Right side - Action icons */}
         <div className="absolute right-6 flex items-center gap-2">

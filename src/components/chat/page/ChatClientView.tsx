@@ -383,7 +383,6 @@ export function ChatClientView({
         onSettingsClick={() => setSettingsOpen(true)}
         isAdmin={isAdmin}
         currentCohort={cohort ? { id: cohort.id, name: cohort.name } : null}
-        userCohorts={userCohorts}
       />
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden pt-14">
@@ -463,7 +462,11 @@ export function ChatClientView({
           deleting={noticeActions.isDeleting}
         />
 
-        <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <SettingsDialog
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          userCohorts={userCohorts}
+        />
       </div>
     </PageTransition>
     </>

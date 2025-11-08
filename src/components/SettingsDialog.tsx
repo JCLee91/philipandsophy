@@ -12,15 +12,16 @@ import { logger } from '@/lib/logger';
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  userCohorts?: Array<{ cohortId: string; cohortName: string }>;
 }
 
 /**
  * 설정 다이얼로그
  * - 모드 전환 (관리자/참가자)
  * - 알림 토글
- * - 향후 추가 설정 항목
+ * - 기수 변경 (여러 코호트 참가 시)
  */
-export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
+export default function SettingsDialog({ isOpen, onClose, userCohorts = [] }: SettingsDialogProps) {
   useModalCleanup(isOpen);
   const router = useRouter();
   const { participant } = useAuth();
@@ -28,6 +29,9 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
 
   // 관리자 여부 확인
   const isAdmin = participant?.isAdministrator || participant?.isSuperAdmin;
+
+  // 여러 코호트 참가 여부 (관리자 또는 2개 이상 참가)
+  const hasMultipleCohorts = isAdmin || userCohorts.length > 1;
 
   // 코호트 변경 페이지로 이동
   const handleChangeCohort = () => {
@@ -127,10 +131,12 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
               ...
             </div> */}
 
-            {/* Cohort Change Section - 관리자만 표시, 맨 아래 배치 */}
-            {isAdmin && (
+            {/* Cohort Change Section - 여러 코호트 참가자 또는 관리자에게 표시 */}
+            {hasMultipleCohorts && (
               <div>
-                <h3 className="text-sm font-bold text-gray-900 mb-3">관리자 메뉴</h3>
+                <h3 className="text-sm font-bold text-gray-900 mb-3">
+                  {isAdmin ? '관리자 메뉴' : '기수 관리'}
+                </h3>
                 <button
                   type="button"
                   onClick={handleChangeCohort}
@@ -138,7 +144,7 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
                 >
                   <div className="flex items-center gap-3">
                     <RefreshCw className="h-5 w-5 text-gray-600" />
-                    <span>코호트 변경</span>
+                    <span>기수 변경</span>
                   </div>
                   <span className="text-sm text-gray-500">›</span>
                 </button>
