@@ -10,7 +10,6 @@ interface HeaderProps {
   onMessageAdminClick?: () => void;
   onSettingsClick?: () => void;
   isAdmin?: boolean;
-  currentCohort?: { id: string; name: string } | null;
 }
 
 export default function Header({
@@ -19,7 +18,6 @@ export default function Header({
   onMessageAdminClick,
   onSettingsClick,
   isAdmin,
-  currentCohort,
 }: HeaderProps) {
   const { participant } = useAuth();
   const { data: unreadCount = 0 } = useTotalUnreadCount(participant?.id || '');
@@ -41,7 +39,7 @@ export default function Header({
 
         {/* Center - Title */}
         <h1 className="text-lg font-bold text-foreground">
-          {currentCohort?.name || '필립앤소피'}
+          필립앤소피
         </h1>
 
         {/* Right side - Action icons */}
