@@ -396,6 +396,7 @@ export function ChatClientView({
         onMessageAdminClick={handleMessageAdmin}
         onSettingsClick={() => setSettingsOpen(true)}
         isAdmin={isAdmin}
+        currentCohort={cohort ? { id: cohort.id, name: cohort.name } : null}
       />
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden pt-14">
