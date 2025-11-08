@@ -231,7 +231,7 @@ function ParticipantsPageContent() {
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
         <BackHeader onBack={() => router.back()} title={`참가자 목록 (${sortedParticipants.length})`} />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pt-14">
           <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 py-4">
             {sortedParticipants.map((participant) => {
               const isMe = participant.id === currentUserId;
