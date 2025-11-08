@@ -6,6 +6,48 @@ import { logger } from '@/lib/logger';
 import { Timestamp } from 'firebase-admin/firestore';
 
 /**
+ * GET /api/datacntr/notice-templates/:templateId
+ * 템플릿 단일 조회
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ templateId: string }> }
+) {
+  try {
+    // Firebase Auth 검증
+    const auth = await requireWebAppAdmin(request);
+    if (auth.error) {
+      return auth.error;
+    }
+
+    const { templateId } = await params;
+    const db = getAdminDb();
+    const templateDoc = await db
+      .collection(COLLECTIONS.NOTICE_TEMPLATES)
+      .doc(templateId)
+      .get();
+
+    if (!templateDoc.exists) {
+      return NextResponse.json(
+        { error: '템플릿을 찾을 수 없습니다' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      id: templateDoc.id,
+      ...templateDoc.data(),
+    });
+  } catch (error) {
+    logger.error('Template fetch error:', error);
+    return NextResponse.json(
+      { error: '템플릿 조회 중 오류가 발생했습니다' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * PUT /api/datacntr/notice-templates/:templateId
  * 템플릿 수정
  */
