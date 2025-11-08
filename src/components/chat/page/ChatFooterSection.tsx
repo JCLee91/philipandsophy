@@ -45,7 +45,7 @@ export function ChatFooterSection({
             </div>
           ) : isAfterDay14 ? (
             <UnifiedButton
-              variant="secondary"
+              variant="primary"
               onClick={onNavigateTodayLibrary}
               className="col-span-2"
             >
