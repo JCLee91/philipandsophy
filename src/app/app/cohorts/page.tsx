@@ -74,8 +74,14 @@ export default function CohortsPage() {
     );
   }
 
-  // 참가한 코호트가 없는 경우
-  if (userCohorts.length === 0 && !cohortsLoading) {
+  // 관리자 여부
+  const isAdmin = participant?.isAdministrator || participant?.isSuperAdmin;
+
+  // 표시할 코호트 (관리자: 전체, 일반 유저: 참가한 코호트만)
+  const displayCohorts = isAdmin ? allCohorts : userCohorts;
+
+  // 표시할 코호트가 없는 경우 (관리자가 아닐 때만 체크)
+  if (!isAdmin && userCohorts.length === 0 && !cohortsLoading) {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -89,11 +95,20 @@ export default function CohortsPage() {
     );
   }
 
-  // 관리자 여부
-  const isAdmin = participant?.isAdministrator || participant?.isSuperAdmin;
-
-  // 표시할 코호트 (관리자: 전체, 일반 유저: 참가한 코호트만)
-  const displayCohorts = isAdmin ? allCohorts : userCohorts;
+  // 관리자인데 전체 코호트가 없는 경우
+  if (isAdmin && allCohorts.length === 0 && !cohortsLoading) {
+    return (
+      <PageTransition>
+        <div className="app-shell flex flex-col items-center justify-center min-h-screen bg-background p-4">
+          <Users className="h-16 w-16 text-muted-foreground mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">코호트 없음</h2>
+          <p className="text-sm text-muted-foreground text-center">
+            생성된 코호트가 없습니다.
+          </p>
+        </div>
+      </PageTransition>
+    );
+  }
 
   return (
     <PageTransition>
