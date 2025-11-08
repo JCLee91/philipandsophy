@@ -63,9 +63,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (questions.length !== 14) {
+    if (questions.length !== 13) {
       return NextResponse.json(
-        { error: '정확히 14개의 질문이 필요합니다' },
+        { error: '정확히 13개의 질문이 필요합니다 (Day 2~14)' },
         { status: 400 }
       );
     }

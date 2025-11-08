@@ -55,28 +55,40 @@ async function updateProfileImages() {
       return fullName.slice(1);
     }
 
-    console.log('🔍 파일명 파싱 디버깅 (처음 5개):\n');
+    console.log('🔍 파일명 파싱 디버깅 (처음 10개 파일):\n');
 
     let debugCount = 0;
     files.forEach((file) => {
-      const fileName = file.name.replace(STORAGE_PREFIX, '');
+      let fileName = file.name.replace(STORAGE_PREFIX, '');
 
-      if (debugCount < 5 && fileName) {
-        console.log(`파일명: "${fileName}"`);
-        console.log(`  전체 경로: ${file.name}`);
+      // 빈 파일명 스킵 (폴더 자체)
+      if (!fileName) {
+        return;
+      }
+
+      // 🔧 한글 NFD → NFC 정규화 (macOS 파일명 호환)
+      fileName = fileName.normalize('NFC');
+
+      if (debugCount < 10) {
+        console.log(`${debugCount + 1}. 파일명: "${fileName}"`);
+      }
+
+      // _1200x1200은 먼저 제외 (리사이즈 버전)
+      if (fileName.includes('_1200x1200')) {
+        if (debugCount < 10) {
+          console.log(`   ⏭️  스킵: 리사이즈 버전\n`);
+          debugCount++;
+        }
+        return;
       }
 
       // Profile_3기_이름.png 또는 Circle_3기_이름.png 형식
       const profileMatch = fileName.match(/^Profile_3기_([^.]+)\.png$/);
       const circleMatch = fileName.match(/^Circle_3기_([^.]+)\.png$/);
 
-      // _1200x1200은 제외 (리사이즈 버전)
-      if (fileName.includes('_1200x1200')) {
-        if (debugCount < 5) {
-          console.log(`  ⏭️  스킵: 리사이즈 버전\n`);
-        }
-        debugCount++;
-        return;
+      if (debugCount < 10) {
+        console.log(`   Profile 매치: ${profileMatch ? 'YES' : 'NO'}`);
+        console.log(`   Circle 매치: ${circleMatch ? 'YES' : 'NO'}`);
       }
 
       let fullName: string | null = null;
@@ -85,17 +97,19 @@ async function updateProfileImages() {
       if (profileMatch) {
         fullName = profileMatch[1];
         imageType = 'full';
-        if (debugCount < 5) {
-          console.log(`  ✅ Profile 매치: "${fullName}"`);
+        if (debugCount < 10) {
+          console.log(`   ✅ Profile 매치: "${fullName}"`);
         }
       } else if (circleMatch) {
         fullName = circleMatch[1];
         imageType = 'circle';
-        if (debugCount < 5) {
-          console.log(`  ✅ Circle 매치: "${fullName}"`);
+        if (debugCount < 10) {
+          console.log(`   ✅ Circle 매치: "${fullName}"`);
         }
-      } else if (debugCount < 5) {
-        console.log(`  ❌ 매치 실패`);
+      } else {
+        if (debugCount < 10) {
+          console.log(`   ❌ 매치 실패 (정규식 불일치)`);
+        }
       }
 
       if (fullName && imageType) {
@@ -103,8 +117,8 @@ async function updateProfileImages() {
         const givenName = extractGivenName(fullName);
         const participantId = `cohort3-${givenName}`;
 
-        if (debugCount < 5) {
-          console.log(`  → 참가자 ID: ${participantId}\n`);
+        if (debugCount < 10) {
+          console.log(`   → 참가자 ID: ${participantId}\n`);
         }
 
         if (!imageMap.has(participantId)) {
@@ -119,11 +133,15 @@ async function updateProfileImages() {
         } else {
           images.circle = publicUrl;
         }
-      } else if (debugCount < 5 && fileName) {
-        console.log('');
+      } else {
+        if (debugCount < 10) {
+          console.log('');
+        }
       }
 
-      debugCount++;
+      if (debugCount < 10) {
+        debugCount++;
+      }
     });
 
     console.log('');

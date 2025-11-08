@@ -152,13 +152,14 @@ export async function POST(request: NextRequest) {
 
     await batch.commit();
 
-    // 3. Daily Questions 처리
+    // 3. Daily Questions 처리 (Day 2~14만, 총 13개)
     if (questionsOption === 'copy') {
       try {
-        // 1기(cohortId='1') 질문 복사
+        // 1기(cohortId='1') 질문 복사 (Day 2부터 시작, Day 1은 OT)
         const sourceCohortId = '1';
         const sourceQuestionsSnapshot = await db
           .collection(`${COLLECTIONS.COHORTS}/${sourceCohortId}/daily_questions`)
+          .where('dayNumber', '>=', 2)
           .orderBy('dayNumber', 'asc')
           .get();
 

@@ -88,12 +88,12 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
           const questionsData = await questionsResponse.json();
           setQuestions(questionsData);
         } else {
-          // 질문이 없으면 빈 템플릿 생성
+          // 질문이 없으면 빈 템플릿 생성 (Day 2~14, 총 13개)
           if (cohortData.cohort?.programStartDate) {
-            const emptyQuestions = Array.from({ length: 14 }, (_, i) => {
-              const dayNumber = i + 1;
+            const emptyQuestions = Array.from({ length: 13 }, (_, i) => {
+              const dayNumber = i + 2; // Day 2부터 시작
               const date = format(
-                addDays(parseISO(cohortData.cohort.programStartDate), i),
+                addDays(parseISO(cohortData.cohort.programStartDate), dayNumber - 1),
                 'yyyy-MM-dd'
               );
               return {
@@ -150,13 +150,16 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
         throw new Error('프로그램 시작일이 설정되지 않았습니다');
       }
 
+      // Day 2부터 시작 (Day 1은 OT)
+      // 1기의 Day 2~14 질문만 가져오기
+      const filteredQuestions = sourceQuestions.filter((q: DailyQuestion) => q.dayNumber >= 2);
+
       // 날짜 재계산
-      const updated = sourceQuestions.map((q: DailyQuestion, i: number) => ({
+      const updated = filteredQuestions.map((q: DailyQuestion) => ({
         ...q,
-        id: (i + 1).toString(),
-        dayNumber: i + 1,
+        id: q.dayNumber.toString(),
         date: format(
-          addDays(parseISO(cohort.programStartDate), i),
+          addDays(parseISO(cohort.programStartDate), q.dayNumber - 1),
           'yyyy-MM-dd'
         ),
       }));
@@ -164,7 +167,7 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
       setQuestions(updated);
       toast({
         title: '복사 완료',
-        description: '1기의 질문을 불러왔습니다.',
+        description: `1기의 질문 ${updated.length}개를 불러왔습니다.`,
       });
     } catch (error) {
 
@@ -252,7 +255,7 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
             <h1 className="text-3xl font-bold text-gray-900">
               {cohort?.name} - Daily Questions
             </h1>
-            <p className="text-gray-600 mt-1">14일간의 질문을 관리합니다</p>
+            <p className="text-gray-600 mt-1">Day 2~14 질문 관리 (Day 1은 OT)</p>
           </div>
         </div>
         <Button variant="outline" onClick={handleCopyFromCohort1}>
