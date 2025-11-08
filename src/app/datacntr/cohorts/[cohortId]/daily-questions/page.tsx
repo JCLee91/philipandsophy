@@ -22,14 +22,11 @@ interface DailyQuestionsPageProps {
 }
 
 const DAILY_QUESTION_CATEGORIES = [
-  '생활 패턴',
-  '가치관 & 삶',
-  '독서 습관',
-  '관계 & 소통',
-  '취미 & 여가',
-  '일 & 커리어',
-  '자기계발',
-  '기타',
+  '취향',
+  '라이프스타일',
+  '가치관&삶',
+  '인간관계',
+  '꿈꾸는 미래',
 ] as const;
 
 export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) {
