@@ -22,7 +22,8 @@ export default function NoticeCreatePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [templateImageUrl, setTemplateImageUrl] = useState<string>(''); // ✅ 템플릿에서 가져온 이미지 URL
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false); // 임시저장 로딩
+  const [isPublishing, setIsPublishing] = useState(false); // 발행 로딩
   const [isLoading, setIsLoading] = useState(true);
 
   // URL에서 cohortId 가져오기
@@ -147,7 +148,12 @@ export default function NoticeCreatePage() {
 
     if (!user) return;
 
-    setIsSubmitting(true);
+    // 임시저장/발행에 따라 다른 로딩 상태 사용
+    if (isDraft) {
+      setIsDrafting(true);
+    } else {
+      setIsPublishing(true);
+    }
 
     try {
       const idToken = await user.getIdToken();
@@ -184,7 +190,12 @@ export default function NoticeCreatePage() {
 
       alert(error instanceof Error ? error.message : '공지 작성 중 오류가 발생했습니다.');
     } finally {
-      setIsSubmitting(false);
+      // 각각의 로딩 상태 해제
+      if (isDraft) {
+        setIsDrafting(false);
+      } else {
+        setIsPublishing(false);
+      }
     }
   };
 
@@ -311,10 +322,10 @@ export default function NoticeCreatePage() {
             <button
               type="button"
               onClick={(e) => handleSubmit(e, true)}
-              disabled={isSubmitting}
+              disabled={isDrafting || isPublishing}
               className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {isSubmitting ? (
+              {isDrafting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   저장 중...
@@ -325,10 +336,10 @@ export default function NoticeCreatePage() {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isDrafting || isPublishing}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {isSubmitting ? (
+              {isPublishing ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   작성 중...
