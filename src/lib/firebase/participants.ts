@@ -181,21 +181,21 @@ export async function getParticipantByFirebaseUid(
 
     // 나머지 문서의 firebaseUid를 null로 비동기 정리 (차단 안함)
     Promise.all(
-      docsToCleanup.map(docToClean =>
-        updateDoc(doc(db, COLLECTIONS.PARTICIPANTS, docToClean.id), {
+      docsToCleanup.map(docSnapshot =>
+        updateDoc(docSnapshot.ref, {
           firebaseUid: null,
           updatedAt: Timestamp.now(),
-        }).catch(err => logger.error(`[UID Cleanup] Failed to clean ${docToClean.id}:`, err))
+        }).catch(err => logger.error(`[UID Cleanup] Failed to clean ${docSnapshot.id}:`, err))
       )
     ).then(() => {
       logger.info(`[UID Cleanup] Completed for UID: ${firebaseUid}`);
     });
   }
 
-  const doc = querySnapshot.docs[0];
+  const selectedDoc = querySnapshot.docs[0];
   return {
-    id: doc.id,
-    ...doc.data(),
+    id: selectedDoc.id,
+    ...selectedDoc.data(),
   } as Participant;
 }
 

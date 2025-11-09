@@ -83,6 +83,20 @@ service cloud.firestore {
             isValidPushTokens(request.resource.data.pushTokens)) &&
           (!request.resource.data.keys().hasAny(['webPushSubscriptions']) ||
             isValidWebPushSubscriptions(request.resource.data.webPushSubscriptions))
+        ) ||
+
+        // 케이스 4: firebaseUid가 아직 연결되지 않은 참가자 (재참여자)도 동일 필드 업데이트 허용
+        (
+          (resource.data.firebaseUid == null || !('firebaseUid' in resource.data)) &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['name', 'profileImage', 'profileImageCircle', 'profileBookUrl',
+                      'occupation', 'bio', 'currentBookTitle', 'currentBookAuthor',
+                      'currentBookCoverUrl', 'bookHistory', 'pushToken', 'pushTokenUpdatedAt',
+                      'pushNotificationEnabled', 'lastActivityAt', 'pushTokens', 'webPushSubscriptions', 'updatedAt']) &&
+          (!request.resource.data.keys().hasAny(['pushTokens']) ||
+            isValidPushTokens(request.resource.data.pushTokens)) &&
+          (!request.resource.data.keys().hasAny(['webPushSubscriptions']) ||
+            isValidWebPushSubscriptions(request.resource.data.webPushSubscriptions))
         )
       );
 
