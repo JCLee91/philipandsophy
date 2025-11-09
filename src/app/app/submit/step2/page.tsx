@@ -403,9 +403,9 @@ function Step2Content() {
 
     setIsProcessing(true);
 
-    try {
-      // 자동 임시저장
-      if (!existingSubmissionId && participantId && participationCode) {
+    // 자동 임시저장 (실패해도 다음 단계 진행)
+    if (!existingSubmissionId && participantId && participationCode) {
+      try {
         const draftData: {
           bookImageUrl?: string;
           bookTitle?: string;
@@ -442,11 +442,17 @@ function Step2Content() {
         }
 
         await saveDraft(participantId, participationCode, draftData);
+      } catch (error) {
+        console.error('Draft save failed (continuing anyway):', error);
+        // 임시저장 실패는 무시하고 진행
       }
+    }
 
+    // 다음 단계로 이동 (임시저장 성공 여부와 무관)
+    try {
       router.push(`${appRoutes.submitStep3}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     } catch (error) {
-      console.error('Next step failed:', error);
+      console.error('Navigation failed:', error);
       toast({
         title: '다음 단계로 이동 실패',
         description: '잠시 후 다시 시도해주세요.',

@@ -5,6 +5,7 @@ import type { DailyMatchingEntry, DailyParticipantAssignment } from '@/types/dat
  */
 export interface NormalizedMatching {
   assignments: Record<string, DailyParticipantAssignment>;
+  matchingVersion?: 'ai' | 'random'; // 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭)
 }
 
 export interface MatchingLookupResult {
@@ -43,6 +44,7 @@ export function normalizeMatchingData(
   if (!rawMatching) {
     return {
       assignments: {},
+      matchingVersion: undefined,
     };
   }
 
@@ -50,6 +52,7 @@ export function normalizeMatchingData(
   if ('assignments' in rawMatching && rawMatching.assignments) {
     return {
       assignments: rawMatching.assignments,
+      matchingVersion: rawMatching.matchingVersion, // 매칭 버전 전달
     };
   }
 
@@ -57,6 +60,7 @@ export function normalizeMatchingData(
   // 빈 assignments 반환
   return {
     assignments: {},
+    matchingVersion: 'ai', // 레거시는 AI 매칭으로 간주
   };
 }
 

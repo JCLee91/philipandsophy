@@ -95,6 +95,7 @@ function TodayLibraryContent() {
 
   const activeMatchingDate = matchingLookup?.date ?? null;
   const assignments = matchingLookup?.matching.assignments ?? {};
+  const matchingVersion = matchingLookup?.matching.matchingVersion;
 
   const userAssignment = currentUserId && assignments
     ? assignments[currentUserId] ?? null
@@ -106,8 +107,8 @@ function TodayLibraryContent() {
   const similarFeaturedIds = userAssignment?.similar ?? [];
   const oppositeFeaturedIds = userAssignment?.opposite ?? [];
 
-  // v2.0 (랜덤 매칭) 여부 판단
-  const isRandomMatching = assignedIds.length > 0;
+  // v2.0 (랜덤 매칭) 여부 판단 (matchingVersion 우선, fallback: assigned 필드 존재)
+  const isRandomMatching = matchingVersion === 'random' || (matchingVersion === undefined && assignedIds.length > 0);
 
   // v2.0 미인증 시: 성별 다양성 확보를 위한 스마트 샘플링
   // v2.0 인증 시: 전체 ID 다운로드
@@ -197,16 +198,21 @@ function TodayLibraryContent() {
           participants = chunks.filter(p => !p.isGhost);
         }
       } else {
-        // 평소 - 매칭된 4명만
+        // 평소 - 매칭된 프로필북
         if (allFeaturedIds.length === 0) return [];
 
-        const q = query(participantsRef, where('__name__', 'in', allFeaturedIds));
-        const snapshot = await getDocs(q);
-
-        participants = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Participant[];
+        // Firestore 'in' 쿼리는 최대 10개 제한 → 청크로 나눠서 조회
+        const chunks: Participant[] = [];
+        for (let i = 0; i < allFeaturedIds.length; i += 10) {
+          const chunk = allFeaturedIds.slice(i, i + 10);
+          const q = query(participantsRef, where('__name__', 'in', chunk));
+          const snapshot = await getDocs(q);
+          chunks.push(...snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Participant[]);
+        }
+        participants = chunks;
       }
 
       // 각 참가자에 theme 정보 추가 (원형 이미지 처리 포함)

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useAccessControl } from './use-access-control';
 import { useSubmissionsByParticipant } from './use-submissions';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * 프로필북 접근 제어 결과
@@ -41,17 +42,23 @@ export interface ProfileBookAccessResult {
  */
 export function useProfileBookAccess(): ProfileBookAccessResult {
   const { userId, isVerified, isSuperAdmin, isLocked } = useAccessControl();
+  const { participant } = useAuth();
 
   // 사용자의 모든 제출물 조회
   const { data: submissions, isLoading } = useSubmissionsByParticipant(userId);
 
-  // 누적 인증 횟수 계산 (submissionDate 기준 중복 제거)
+  // 누적 인증 횟수 계산 (현재 기수만, submissionDate 기준 중복 제거)
   const cumulativeSubmissionCount = useMemo(() => {
-    if (!submissions) return 0;
+    if (!submissions || !participant) return 0;
 
-    // 승인된 제출물만 카운트
+    // participationCode가 없으면 participant.id로 fallback (제출 플로우와 동일)
+    const participationCode = participant.participationCode || participant.id;
+
+    // 현재 기수의 승인된 제출물만 카운트
     const approvedSubmissions = submissions.filter(
-      (s) => s.status === 'approved' && s.submissionDate
+      (s) => s.status === 'approved' &&
+            s.submissionDate &&
+            s.participationCode === participationCode
     );
 
     // submissionDate 기준 중복 제거
@@ -60,7 +67,7 @@ export function useProfileBookAccess(): ProfileBookAccessResult {
     );
 
     return uniqueDates.size;
-  }, [submissions]);
+  }, [submissions, participant?.participationCode, participant?.id]);
 
   // 받을 수 있는 총 프로필북 개수: 2 × (누적인증 + 1)
   const totalProfileBooks = 2 * (cumulativeSubmissionCount + 1);

@@ -21,7 +21,8 @@
     "test:phone": "tsx scripts/test-phone-normalization.ts",
     "test:doc-id": "tsx scripts/test-document-id-format.ts",
     "check:template": "tsx scripts/check-cohort-template.ts",
-    "check:daily-questions": "tsx scripts/check-daily-questions-page.ts"
+    "check:daily-questions": "tsx scripts/check-daily-questions-page.ts",
+    "check:participation-code": "tsx scripts/check-participation-code.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.37",

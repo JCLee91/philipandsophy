@@ -23,6 +23,7 @@ import { setGlobalOptions } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
 import * as webpush from "web-push";
 import { logger } from "./lib/logger";
+import { getSeoulDB } from "./lib/db-helper";
 import {
   NOTIFICATION_CONFIG,
   NOTIFICATION_MESSAGES,
@@ -59,15 +60,6 @@ const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
 
 // Initialize Firebase Admin
 admin.initializeApp();
-
-/**
- * Helper: Get Seoul DB instance
- * Seoul region DB 사용: getFirestore(app, 'databaseId')
- */
-function getSeoulDB() {
-  const { getFirestore } = require('firebase-admin/firestore');
-  return getFirestore(admin.app(), 'seoul');
-}
 
 // ✅ Configure Web Push VAPID details
 // These must match the keys in .env.local (NEXT_PUBLIC_WEBPUSH_VAPID_KEY and WEBPUSH_VAPID_PRIVATE_KEY)

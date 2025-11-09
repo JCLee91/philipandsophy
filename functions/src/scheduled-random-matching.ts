@@ -17,15 +17,11 @@ import { defineString } from "firebase-functions/params";
 import { subDays, format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { logger } from "./lib/logger";
+import { getSeoulDB } from "./lib/db-helper";
 import {
   matchParticipantsRandomly,
   type ParticipantWithSubmissionCount,
 } from "./lib/random-matching";
-
-// Seoul Firestore instance
-function getSeoulDB() {
-  return admin.firestore();
-}
 
 // Environment parameters
 const cohortIdParam = defineString("DEFAULT_COHORT_ID", {
@@ -163,10 +159,14 @@ export const scheduledRandomMatching = onSchedule(
           continue;
         }
 
-        // 누적 인증 횟수 계산
+        // 누적 인증 횟수 계산 (현재 기수만)
+        // participationCode가 없으면 participant.id로 fallback (제출 플로우와 동일)
+        const participationCode = participantData.participationCode || participantDoc.id;
+
         const allSubmissionsSnapshot = await db
           .collection("reading_submissions")
           .where("participantId", "==", participantDoc.id)
+          .where("participationCode", "==", participationCode)
           .where("status", "==", "approved")
           .get();
 
