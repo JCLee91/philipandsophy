@@ -288,7 +288,7 @@ function Step3Content() {
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
       if (imageFile && imageFile instanceof File && !imageStorageUrl) {
-        const uploadedUrl = await uploadReadingImage(imageFile, participantId, cohortId);
+        const uploadedUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
         draftData.bookImageUrl = uploadedUrl;
         setImageStorageUrl(uploadedUrl);
       } else if (imageStorageUrl) {
@@ -391,7 +391,7 @@ function Step3Content() {
       if (!bookImageUrl && imageFile) {
         try {
           setUploadStep('이미지 업로드 중...');
-          bookImageUrl = await uploadReadingImage(imageFile, participantId, cohortId);
+          bookImageUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
           setImageStorageUrl(bookImageUrl);
         } catch (error) {
           throw new Error(`이미지 업로드 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);

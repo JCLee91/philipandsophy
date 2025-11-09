@@ -241,7 +241,7 @@ function Step1Content() {
     try {
       let bookImageUrl = imageStorageUrl;
       if (!bookImageUrl) {
-        bookImageUrl = await uploadReadingImage(imageFile, participantId, cohortId);
+        bookImageUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
         setImageStorageUrl(bookImageUrl);
       }
 

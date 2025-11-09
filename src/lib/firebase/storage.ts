@@ -82,17 +82,22 @@ export async function uploadMultipleFiles(
 
 /**
  * 이미지 업로드 (독서 인증용)
- * 새 구조: cohorts/{cohortId}/submissions/{participantId}/{fileName}
+ * 새 구조: cohorts/{cohortId}/submissions/{participationCode}/{fileName}
+ *
+ * @param file - 업로드할 이미지 파일
+ * @param participationCode - 참가 코드 (기수별 고유 코드, participantId 아님!)
+ * @param cohortId - 코호트 ID (예: "3")
+ * @param onProgress - 진행률 콜백
  */
 export async function uploadReadingImage(
   file: File,
-  participantId: string,
+  participationCode: string,
   cohortId: string,
   onProgress?: (progress: number) => void
 ): Promise<string> {
   const timestamp = Date.now();
   const fileName = `${timestamp}_${file.name}`;
-  const path = `cohorts/cohort${cohortId}/submissions/${participantId}/${fileName}`;
+  const path = `cohorts/${cohortId}/submissions/${participationCode}/${fileName}`;
 
   return uploadFileWithProgress(file, path, onProgress);
 }
