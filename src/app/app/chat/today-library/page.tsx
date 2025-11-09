@@ -564,15 +564,17 @@ function TodayLibraryContent() {
   let similarParticipants: FeaturedParticipant[] = [];
   let oppositeParticipants: FeaturedParticipant[] = [];
 
-  // v2.0 랜덤 매칭 OR 전체 공개 모드
-  if (showAllProfiles || isRandomMatching) {
-    // 성별로 분류
-    maleParticipants = featuredParticipants.filter(p => !p.gender || p.gender === 'male');
-    femaleParticipants = featuredParticipants.filter(p => p.gender === 'female');
-  } else {
-    // v1.0 AI 매칭: theme별로 분류
+  // 레이아웃 결정: 슈퍼관리자는 항상 레거시 레이아웃 (similar/opposite)
+  const useLegacyLayout = !isRandomMatching || (isSuperAdmin && !isFinalDay);
+
+  if (useLegacyLayout) {
+    // v1.0 AI 매칭 레이아웃: theme별로 분류
     similarParticipants = featuredParticipants.filter(p => p.theme === 'similar');
     oppositeParticipants = featuredParticipants.filter(p => p.theme === 'opposite');
+  } else {
+    // v2.0 랜덤 매칭 OR 전체 공개 모드: 성별로 분류
+    maleParticipants = featuredParticipants.filter(p => !p.gender || p.gender === 'male');
+    femaleParticipants = featuredParticipants.filter(p => p.gender === 'female');
   }
 
   // v2.0: 미인증 시 성별 기반 랜덤 선택 (남1+여1 보장)
@@ -653,8 +655,26 @@ function TodayLibraryContent() {
                 )}
 
                 {/* Step 3-2, 3-3: 프로필 카드 레이아웃 */}
-                {showAllProfiles ? (
-                  /* 전체 공개: 성별 2열 레이아웃 */
+                {useLegacyLayout ? (
+                  /* v1.0 AI 매칭: 기존 2x2 그리드 (슈퍼관리자 포함) */
+                  <div className="flex flex-col w-full">
+                    <BookmarkRow
+                      participants={similarParticipants}
+                      theme="blue"
+                      isLocked={false}
+                      onCardClick={handleProfileClickWithAuth}
+                    />
+                    <BlurDivider />
+                    <BookmarkRow
+                      participants={oppositeParticipants}
+                      theme="yellow"
+                      isLocked={false}
+                      onCardClick={handleProfileClickWithAuth}
+                    />
+                    <BlurDivider />
+                  </div>
+                ) : showAllProfiles ? (
+                  /* 전체 공개: 성별 2열 레이아웃 (마지막 날) */
                   <div className="grid grid-cols-2 gap-6">
                     {/* 왼쪽: 남자 */}
                     <div className="flex flex-col gap-4">
@@ -692,7 +712,7 @@ function TodayLibraryContent() {
                       ))}
                     </div>
                   </div>
-                ) : isRandomMatching ? (
+                ) : (
                   /* v2.0 랜덤 매칭: 성별 2열 + 자물쇠 카드 */
                   <div className="grid grid-cols-2 gap-6">
                     {/* 왼쪽: 남자 (열린 프로필 + 자물쇠) */}
@@ -781,24 +801,6 @@ function TodayLibraryContent() {
                         );
                       })}
                     </div>
-                  </div>
-                ) : (
-                  /* v1.0 AI 매칭: 기존 2x2 그리드 */
-                  <div className="flex flex-col w-full">
-                    <BookmarkRow
-                      participants={similarParticipants}
-                      theme="blue"
-                      isLocked={false}
-                      onCardClick={handleProfileClickWithAuth}
-                    />
-                    <BlurDivider />
-                    <BookmarkRow
-                      participants={oppositeParticipants}
-                      theme="yellow"
-                      isLocked={false}
-                      onCardClick={handleProfileClickWithAuth}
-                    />
-                    <BlurDivider />
                   </div>
                 )}
 
