@@ -229,13 +229,15 @@ function TodayLibraryContent() {
 
         // ⚠️ 중요: BookmarkCard는 profileImage prop을 사용하므로,
         // profileImage 필드 자체를 원형 이미지로 덮어써야 함
+        const derivedTheme = showAllProfiles
+          ? (participant.gender === 'female' ? 'opposite' : 'similar')
+          : (similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite');
+
         return {
           ...participant,
           profileImage: circleImage || participant.profileImage, // 원형 이미지로 교체
           profileImageCircle: circleImage,
-          theme: showAllProfiles
-            ? 'similar' // 마지막 날은 theme 구분 없음 (나중에 성별로 분류)
-            : (similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite'),
+          theme: derivedTheme,
         };
       });
     },
@@ -564,8 +566,11 @@ function TodayLibraryContent() {
   let similarParticipants: FeaturedParticipant[] = [];
   let oppositeParticipants: FeaturedParticipant[] = [];
 
-  // 레이아웃 결정: 슈퍼관리자는 항상 레거시 레이아웃 (similar/opposite)
-  const useLegacyLayout = !isRandomMatching || (isSuperAdmin && !isFinalDay);
+  // 레이아웃 결정:
+  // - 전체 공개 모드(슈퍼관리자/마지막 날): 성별 2열
+  // - 랜덤 매칭: 성별 2열
+  // - AI 매칭: similar/opposite 2열
+  const useLegacyLayout = !isRandomMatching && !showAllProfiles;
 
   if (useLegacyLayout) {
     // v1.0 AI 매칭 레이아웃: theme별로 분류
