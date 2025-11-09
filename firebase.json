@@ -1,9 +1,11 @@
 {
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json",
-    "database": "seoul"
-  },
+  "firestore": [
+    {
+      "database": "seoul",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
   "storage": [
     {
       "bucket": "philipandsophy.firebasestorage.app",
