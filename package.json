@@ -24,7 +24,9 @@
     "check:daily-questions": "tsx scripts/check-daily-questions-page.ts",
     "check:participation-code": "tsx scripts/check-participation-code.ts",
     "cleanup:duplicate-uid": "tsx scripts/cleanup-duplicate-uid.ts",
-    "cleanup:duplicate-uid:apply": "tsx scripts/cleanup-duplicate-uid.ts --apply"
+    "cleanup:duplicate-uid:apply": "tsx scripts/cleanup-duplicate-uid.ts --apply",
+    "add:gender-data": "tsx scripts/add-gender-data.ts",
+    "add:gender-data:apply": "tsx scripts/add-gender-data.ts --apply"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.37",
