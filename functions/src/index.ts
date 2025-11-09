@@ -16,6 +16,8 @@ import * as admin from "firebase-admin";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { subDays, format } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 // import { beforeUserCreated } from "firebase-functions/v2/identity"; // Temporarily disabled
 import { setGlobalOptions } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
@@ -27,6 +29,10 @@ import {
   NOTIFICATION_ROUTES,
   NOTIFICATION_TYPES,
 } from "./constants/notifications";
+import {
+  matchParticipantsRandomly,
+  type ParticipantWithSubmissionCount,
+} from "./lib/random-matching";
 // Auth constants temporarily unused
 // import {
 //   ALLOWED_EMAIL_DOMAINS,
@@ -1080,11 +1086,15 @@ export const sendMatchingNotifications = onRequest(
 /**
  * 4. 매일 오후 2시 자동 매칭 실행 (Scheduled 함수)
  *
+ * @deprecated AI 매칭 방식 (v1.0)
+ * 새로운 랜덤 매칭 방식은 scheduled-random-matching.ts 참고
+ *
  * 매일 오후 2시 (KST)에 자동으로 실행
  * 1. Preview API 호출하여 매칭 결과 생성
  * 2. Confirm API 호출하여 즉시 확정 및 알림 전송
  */
-export const scheduledMatchingPreview = onSchedule(
+/* DEPRECATED: AI 매칭 방식 (주석 처리됨 - 2025-11-07)
+export const scheduledMatchingPreview_OLD = onSchedule(
   {
     schedule: "0 14 * * *", // 매일 오후 2시 (KST)
     timeZone: "Asia/Seoul",
@@ -1321,6 +1331,10 @@ export const scheduledMatchingPreview = onSchedule(
     }
   }
 );
+*/ // END DEPRECATED
+
+// ✅ 새로운 랜덤 매칭 시스템 (v2.0)
+export { scheduledRandomMatching as scheduledMatchingPreview } from "./scheduled-random-matching";
 
 /**
  * 5. 회원가입 전 도메인 검증 (Data Center용)

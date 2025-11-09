@@ -403,9 +403,9 @@ function Step2Content() {
 
     setIsProcessing(true);
 
-    // 자동 임시저장
-    if (!existingSubmissionId && participantId && participationCode) {
-      try {
+    try {
+      // 자동 임시저장
+      if (!existingSubmissionId && participantId && participationCode) {
         const draftData: {
           bookImageUrl?: string;
           bookTitle?: string;
@@ -442,14 +442,19 @@ function Step2Content() {
         }
 
         await saveDraft(participantId, participationCode, draftData);
-      } catch (error) {
-        // 임시저장 실패해도 다음 단계로 진행 (에러는 콘솔에만 기록)
-        console.error('Auto-save failed:', error);
-        setIsProcessing(false);
       }
-    }
 
-    router.push(`${appRoutes.submitStep3}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
+      router.push(`${appRoutes.submitStep3}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
+    } catch (error) {
+      console.error('Next step failed:', error);
+      toast({
+        title: '다음 단계로 이동 실패',
+        description: '잠시 후 다시 시도해주세요.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false); // 항상 해제
+    }
   };
 
   if (sessionLoading || !participant || !cohortId || isLoadingDraft) {
