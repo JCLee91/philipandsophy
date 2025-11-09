@@ -3,10 +3,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ============================================
-    // MVP 보안 규칙
+    // MVP 보안 규칙 (느슨한 버전 - 오류 방지 우선)
     // ============================================
     // Custom Claims 기반 간결한 규칙
     // 관리자 설정: Firebase Functions에서 request.auth.token.admin = true 설정 필요
+    // Last Updated: 2025-11-09
     // ============================================
 
     // Helper Functions
@@ -54,8 +55,8 @@ service cloud.firestore {
     // 기수 정보 (Cohorts)
     // ============================================
     match /cohorts/{cohortId} {
-      allow read: if true;              // MVP: 공개 (접근 코드 검증용)
-      allow write: if isAdminClaim();   // 관리자만
+      allow read: if true;              // 공개 읽기 허용
+      allow write: if isAdminClaim();   // 관리자만 쓰기
 
       // Daily Questions 서브컬렉션
       match /daily_questions/{questionId} {
