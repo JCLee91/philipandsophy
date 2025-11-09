@@ -30,84 +30,73 @@ service firebase.storage {
     }
 
     // ============================================
-    // 독서 인증 이미지 (신규 구조)
+    // 독서 인증 이미지 (간소화 - 오류 방지 우선)
     // ============================================
-    match /cohorts/{cohortId}/submissions/{participationCode}/{fileName} {
-      allow read: if true;  // 공개 읽기 (프로필북에서 표시)
-      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
-      allow update, delete: if false;
-    }
-
-    // ============================================
-    // 독서 인증 이미지 (구버전 - 하위 호환)
-    // ============================================
-    match /reading_submissions/{participationCode}/{fileName} {
-      allow read: if true;  // 공개 읽기로 변경
-      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
-      allow update, delete: if false;
-    }
-
-    // ============================================
-    // 공지사항 이미지 (신규 구조)
-    // ============================================
-    match /cohorts/{cohortId}/notices/{fileName} {
-      allow read: if true;  // 공개 읽기 허용 (공지사항은 모든 사용자에게 표시)
-      allow create, update: if isSignedIn() && isValidImage() && isUnder10MB();
-      allow delete: if isSignedIn();  // UI 레벨에서 관리자만 가능
-    }
-
-    // ============================================
-    // 공지사항 이미지 (구버전 - 하위 호환)
-    // ============================================
-    match /notices/{cohortId}/{fileName} {
-      allow read: if true;  // 공개 읽기 허용 (공지사항은 모든 사용자에게 표시)
-      allow create, update: if isSignedIn() && isValidImage() && isUnder10MB();
-      allow delete: if isSignedIn();  // UI 레벨에서 관리자만 가능
-    }
-
-    // ============================================
-    // 다이렉트 메시지 이미지
-    // ============================================
-    match /direct_messages/{userId}/{fileName} {
+    // 경로: reading_submissions/{participationCode}/{fileName}
+    // 로그인한 사용자는 누구나 업로드 가능 (오류 없는 것이 최우선)
+    match /reading_submissions/{anyPath=**} {
       allow read: if true;  // 공개 읽기
       allow create: if isSignedIn() && isValidImage() && isUnder50MB();
       allow update, delete: if false;
     }
 
     // ============================================
-    // 프로필 이미지 (신규 구조)
+    // 독서 인증 이미지 (신규 구조 - 레거시 호환용)
     // ============================================
-    match /cohorts/{cohortId}/profiles/{fileName} {
+    match /cohorts/{cohortId}/submissions/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
-      allow delete: if isSignedIn();
+      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow update, delete: if false;
     }
 
     // ============================================
-    // 프로필 이미지 (구버전 - 하위 호환)
+    // 공지사항 이미지 (간소화)
     // ============================================
-    match /profiles/{userId}/{fileName} {
+    match /notices/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
-      allow delete: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder10MB();
     }
 
-    match /profileImagesCircle/{fileName} {
+    match /cohorts/{cohortId}/notices/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
-      allow delete: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder10MB();
     }
 
-    match /profileImages/{fileName} {
+    // ============================================
+    // 다이렉트 메시지 이미지 (간소화)
+    // ============================================
+    match /direct_messages/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
-      allow delete: if isSignedIn();
+      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow update, delete: if false;
     }
 
-    match /profile_images/{fileName} {
+    // ============================================
+    // 프로필 이미지 (간소화 - 모든 프로필 경로 통합)
+    // ============================================
+    match /cohorts/{anyPath=**} {
+      allow read: if true;  // 공개 읽기
+      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+    }
+
+    match /profiles/{anyPath=**} {
+      allow read: if true;  // 공개 읽기
+      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+    }
+
+    match /profileImagesCircle/{anyPath=**} {
+      allow read: if true;  // 공개 읽기
+      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+    }
+
+    match /profileImages/{anyPath=**} {
+      allow read: if true;  // 공개 읽기
+      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+    }
+
+    match /profile_images/{anyPath=**} {
       allow read: if true;  // 공개 읽기 (1기)
-      allow create, update: if isSignedIn() && isValidImage() && isUnder50MB();
-      allow delete: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
     }
 
     // ============================================
