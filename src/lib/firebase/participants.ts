@@ -159,8 +159,8 @@ export async function getParticipantByFirebaseUid(
   const db = getDb();
   const q = query(
     collection(db, COLLECTIONS.PARTICIPANTS),
-    where('firebaseUid', '==', firebaseUid),
-    orderBy('createdAt', 'desc') // 최신 문서 우선
+    where('firebaseUid', '==', firebaseUid)
+    // orderBy 제거: 복합 인덱스 불필요, 메모리에서 정렬
   );
 
   const querySnapshot = await getDocs(q);
@@ -169,7 +169,12 @@ export async function getParticipantByFirebaseUid(
     return null;
   }
 
-  const docs = querySnapshot.docs;
+  // 메모리에서 createdAt 기준 정렬 (최신 우선)
+  const docs = querySnapshot.docs.sort((a, b) => {
+    const aTime = a.data().createdAt?.toMillis() || 0;
+    const bTime = b.data().createdAt?.toMillis() || 0;
+    return bTime - aTime; // desc
+  });
 
   // UID 중복 감지 및 자동 정리
   if (docs.length > 1) {
