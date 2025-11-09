@@ -7,6 +7,8 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { ThemeProvider } from 'next-themes';
 import { lazy, Suspense } from 'react';
 import { initializeFirebase } from '@/lib/firebase';
@@ -50,6 +52,14 @@ function makeQueryClient() {
 
 let browserQueryClient: QueryClient | undefined = undefined;
 
+// localStorage persister 생성 (브라우저 전용)
+const persister = typeof window !== 'undefined'
+  ? createSyncStoragePersister({
+      storage: window.localStorage,
+      key: 'philipandsophy-cache', // 캐시 저장 키
+    })
+  : undefined;
+
 function getQueryClient() {
   if (isServer) {
     // Server: always make a new query client
@@ -71,6 +81,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   //       render if it suspends and there is no boundary
   const queryClient = getQueryClient();
 
+  const content = (
+    <AuthProvider>
+      <PushNotificationRefresher />
+      {children}
+      <Toaster />
+      {/* React Query Devtools - lazy load (프로덕션 번들 제외) */}
+      {process.env.NODE_ENV === 'development' && (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </Suspense>
+      )}
+    </AuthProvider>
+  );
+
   return (
     <ThemeProvider
       attribute="class"
@@ -78,19 +102,18 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <PushNotificationRefresher />
-          {children}
-          <Toaster />
-          {/* React Query Devtools - lazy load (프로덕션 번들 제외) */}
-          {process.env.NODE_ENV === 'development' && (
-            <Suspense fallback={null}>
-              <ReactQueryDevtools initialIsOpen={false} />
-            </Suspense>
-          )}
-        </AuthProvider>
-      </QueryClientProvider>
+      {persister ? (
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+        >
+          {content}
+        </PersistQueryClientProvider>
+      ) : (
+        <QueryClientProvider client={queryClient}>
+          {content}
+        </QueryClientProvider>
+      )}
     </ThemeProvider>
   );
 }

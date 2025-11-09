@@ -245,9 +245,10 @@ function TodayLibraryContent() {
     // 인증 여부는 렌더링 단계에서 처리 (일부만 표시 vs 전체 표시)
     enabled: showAllProfiles
       ? !!cohort && !!currentUserId && !yesterdayVerifiedLoading
-      : allFeaturedIds.length > 0 && !!activeMatchingDate, // isLocked 조건 제거
-    gcTime: 0, // 캐시 지속성 방지 (세션 간 캐시 문제 해결) - React Query v5: cacheTime → gcTime
-    staleTime: 0, // 항상 신선한 데이터 fetch
+      : allFeaturedIds.length > 0 && !!activeMatchingDate,
+    staleTime: 60 * 1000, // 1분 캐시 (세션 중 재요청 최소화)
+    gcTime: 5 * 60 * 1000, // 5분 가비지 컬렉션
+    placeholderData: (previousData) => previousData, // 이전 데이터 유지 (빈 화면 방지)
   });
 
   // 세션 및 cohort 검증

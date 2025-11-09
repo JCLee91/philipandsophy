@@ -60,7 +60,7 @@ export function useNoticesByCohort(
     refetchOnReconnect: false,
     refetchOnMount: false,
     initialData: options?.initialData ?? undefined,
-    placeholderData: options?.initialData ?? undefined,
+    placeholderData: (previousData) => previousData ?? options?.initialData, // 이전 데이터 유지 (빈 화면 방지)
   });
 }
 
