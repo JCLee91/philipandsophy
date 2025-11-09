@@ -576,50 +576,30 @@ function TodayLibraryContent() {
   }
 
   // v2.0: 미인증 시 성별 기반 랜덤 선택 (남1+여1 보장)
-  const { unlockedMale, unlockedFemale, genderDiversityWarning } = useMemo(() => {
-    if (!isRandomMatching || !isLocked || isSuperAdmin) {
-      // 인증됨 또는 v1.0: 전체 표시
-      return {
-        unlockedMale: maleParticipants,
-        unlockedFemale: femaleParticipants,
-        genderDiversityWarning: null
-      };
-    }
+  let unlockedMale: FeaturedParticipant[] = maleParticipants;
+  let unlockedFemale: FeaturedParticipant[] = femaleParticipants;
+  let genderDiversityWarning: string | null = null;
 
+  if (isRandomMatching && isLocked && !isSuperAdmin) {
     // 미인증 v2.0: 각 성별에서 랜덤 1명씩 선택
-    let randomMale: FeaturedParticipant[] = [];
-    let randomFemale: FeaturedParticipant[] = [];
-    let warning = null;
-
     if (maleParticipants.length > 0 && femaleParticipants.length > 0) {
       // 이상적: 남/여 모두 있음 → 각 1명씩
-      randomMale = [maleParticipants[Math.floor(Math.random() * maleParticipants.length)]];
-      randomFemale = [femaleParticipants[Math.floor(Math.random() * femaleParticipants.length)]];
+      unlockedMale = [maleParticipants[Math.floor(Math.random() * maleParticipants.length)]];
+      unlockedFemale = [femaleParticipants[Math.floor(Math.random() * femaleParticipants.length)]];
     } else if (maleParticipants.length > 0) {
       // 남성만 있음 → 남성 2명
       const shuffled = [...maleParticipants].sort(() => Math.random() - 0.5);
-      randomMale = shuffled.slice(0, 2);
-      warning = '여성 프로필을 찾지 못해 남성 프로필 2개를 표시합니다';
+      unlockedMale = shuffled.slice(0, 2);
+      unlockedFemale = [];
+      genderDiversityWarning = '여성 프로필을 찾지 못해 남성 프로필 2개를 표시합니다';
     } else if (femaleParticipants.length > 0) {
       // 여성만 있음 → 여성 2명
       const shuffled = [...femaleParticipants].sort(() => Math.random() - 0.5);
-      randomFemale = shuffled.slice(0, 2);
-      warning = '남성 프로필을 찾지 못해 여성 프로필 2개를 표시합니다';
+      unlockedMale = [];
+      unlockedFemale = shuffled.slice(0, 2);
+      genderDiversityWarning = '남성 프로필을 찾지 못해 여성 프로필 2개를 표시합니다';
     }
-
-    return {
-      unlockedMale: randomMale,
-      unlockedFemale: randomFemale,
-      genderDiversityWarning: warning
-    };
-  }, [isRandomMatching, isLocked, isSuperAdmin, maleParticipants, femaleParticipants]);
-
-  // 성별 다양성 경고 로깅 (개발 환경)
-  useEffect(() => {
-    if (genderDiversityWarning && process.env.NODE_ENV === 'development') {
-      console.warn(`[Gender Diversity] ${genderDiversityWarning}`);
-    }
-  }, [genderDiversityWarning]);
+  }
 
   // v2.0: 프로필북 개수 계산 (백엔드 할당 개수 기준)
   const totalCount = isRandomMatching
