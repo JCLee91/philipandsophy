@@ -169,34 +169,69 @@ export async function getParticipantByFirebaseUid(
     return null;
   }
 
+  const docs = querySnapshot.docs;
+
   // UID 중복 감지 및 자동 정리
-  if (querySnapshot.docs.length > 1) {
-    logger.warn(`[UID Duplicate] Found ${querySnapshot.docs.length} participants with same UID: ${firebaseUid}`);
+  if (docs.length > 1) {
+    logger.warn(`[UID Duplicate] Found ${docs.length} participants with same UID: ${firebaseUid}`);
 
-    // 첫 번째 문서(최신)를 선택, 나머지는 UID 제거
-    const selectedDoc = querySnapshot.docs[0];
-    const docsToCleanup = querySnapshot.docs.slice(1);
+    const docsToCleanup = docs.slice(1);
 
-    logger.info(`[UID Cleanup] Selecting: ${selectedDoc.id}, Cleaning: ${docsToCleanup.map(d => d.id).join(', ')}`);
+    logger.info(`[UID Cleanup] Primary candidate: ${docs[0].id}, Cleaning: ${docsToCleanup.map(d => d.id).join(', ')}`);
 
-    // 나머지 문서의 firebaseUid를 null로 비동기 정리 (차단 안함)
     Promise.all(
-      docsToCleanup.map(docSnapshot =>
+      docsToCleanup.map((docSnapshot) =>
         updateDoc(docSnapshot.ref, {
           firebaseUid: null,
           updatedAt: Timestamp.now(),
-        }).catch(err => logger.error(`[UID Cleanup] Failed to clean ${docSnapshot.id}:`, err))
+        }).catch((err) => logger.error(`[UID Cleanup] Failed to clean ${docSnapshot.id}:`, err))
       )
     ).then(() => {
       logger.info(`[UID Cleanup] Completed for UID: ${firebaseUid}`);
     });
   }
 
-  const selectedDoc = querySnapshot.docs[0];
-  return {
-    id: selectedDoc.id,
-    ...selectedDoc.data(),
-  } as Participant;
+  const participantsWithDocs = docs.map((docSnapshot) => ({
+    docSnapshot,
+    participant: {
+      id: docSnapshot.id,
+      ...docSnapshot.data(),
+    } as Participant,
+  }));
+
+  if (participantsWithDocs.length === 1) {
+    return participantsWithDocs[0].participant;
+  }
+
+  // 여러 기수에 중복 등록된 경우 활성 코호트 우선 반환
+  const cohortIds = [...new Set(participantsWithDocs.map(({ participant }) => participant.cohortId).filter(Boolean))];
+  const cohortDocs = await Promise.all(
+    cohortIds.map((id) => getDoc(doc(db, COLLECTIONS.COHORTS, id)))
+  );
+
+  const cohortActiveMap = new Map<string, boolean>();
+  cohortDocs.forEach((cohortDoc, index) => {
+    if (cohortDoc.exists()) {
+      cohortActiveMap.set(cohortIds[index]!, cohortDoc.data()?.isActive ?? false);
+    }
+  });
+
+  const activeEntry = participantsWithDocs.find(
+    ({ participant }) => cohortActiveMap.get(participant.cohortId) === true
+  );
+
+  if (activeEntry) {
+    return activeEntry.participant;
+  }
+
+  // 모두 비활성이면 최신 코호트(숫자 큰 순) 반환
+  participantsWithDocs.sort((a, b) => {
+    const aNum = parseInt(a.participant.cohortId) || 0;
+    const bNum = parseInt(b.participant.cohortId) || 0;
+    return bNum - aNum;
+  });
+
+  return participantsWithDocs[0].participant;
 }
 
 /**
