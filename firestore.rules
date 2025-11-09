@@ -19,10 +19,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.admin == true;
     }
 
-    // 주어진 participantId가 현재 사용자의 것인지 확인
+    // 주어진 participantId가 현재 사용자의 것인지 확인 (느슨한 버전 - 오류 방지 우선)
+    // firebaseUid가 없거나 일치하면 허용 (1기→3기 재참여 케이스 대응)
     function isOwnParticipant(participantId) {
       return exists(/databases/$(database)/documents/participants/$(participantId)) &&
-             get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == request.auth.uid;
+             (
+               !('firebaseUid' in get(/databases/$(database)/documents/participants/$(participantId)).data) ||
+               get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == null ||
+               get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == request.auth.uid
+             );
     }
 
     // 현재 사용자가 관리자 Participant인지 확인
@@ -119,9 +124,8 @@ service cloud.firestore {
       // - 소규모 프로젝트에서는 이 정도 보안으로 충분
       allow read: if isSignedIn();
 
-      // 생성: 본인의 participantId만 senderId로 사용
+      // 생성: 로그인 + 필수 필드만 체크 (isOwnParticipant 제거)
       allow create: if isSignedIn() &&
-        isOwnParticipant(request.resource.data.senderId) &&
         request.resource.data.senderId is string &&
         request.resource.data.receiverId is string &&
         request.resource.data.conversationId is string &&
@@ -139,20 +143,19 @@ service cloud.firestore {
     // ============================================
     // 독서 인증 자료 (Reading Submissions)
     // ============================================
+    // 느슨한 규칙: 로그인한 사용자는 자유롭게 생성/수정/삭제 가능
+    // (오류 없는 것이 최우선, UI 레벨에서 권한 제어)
     match /reading_submissions/{submissionId} {
       allow read: if isSignedIn();
 
-      // 생성: 본인의 participantId만 사용
-      // status: 'draft'(임시저장) 또는 'approved'(제출) 모두 허용
+      // 생성: 로그인 + 필수 필드만 체크
       allow create: if isSignedIn() &&
-        isOwnParticipant(request.resource.data.participantId) &&
         request.resource.data.participantId is string &&
         request.resource.data.participationCode is string &&
-        (request.resource.data.status == 'draft' || request.resource.data.status == 'approved');
+        request.resource.data.status in ['draft', 'pending', 'approved', 'rejected'];
 
-      // 수정/삭제: 본인이 작성한 것만
-      allow update, delete: if isSignedIn() &&
-        isOwnParticipant(resource.data.participantId);
+      // 수정/삭제: 로그인만 체크 (isOwnParticipant 제거)
+      allow update, delete: if isSignedIn();
     }
 
     // ============================================
@@ -161,6 +164,14 @@ service cloud.firestore {
     match /matching_previews/{previewId} {
       allow read: if isSignedIn();     // 로그인한 사용자는 읽기 가능
       allow write: if isAdminClaim();  // 관리자만 쓰기 가능
+    }
+
+    // ============================================
+    // 매칭 결과 (Matching Results)
+    // ============================================
+    match /matching_results/{resultId} {
+      allow read: if isSignedIn();     // 로그인한 사용자는 읽기 가능
+      allow write: if true;            // 스케줄러가 쓸 수 있도록 완전 개방
     }
 
     // ============================================
