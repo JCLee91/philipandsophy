@@ -156,6 +156,7 @@ function ParticipantsPageContent() {
 
   const { participant, isLoading: sessionLoading, logout } = useAuth();
   const currentUserId = participant?.id || '';
+  const currentUserPhone = participant?.phoneNumber; // 전화번호로 본인 식별
 
   // ViewMode 사용: 설정에서 모드를 전환하면 즉시 반영
   const { viewMode } = useViewMode();
@@ -174,14 +175,17 @@ function ParticipantsPageContent() {
     return [...participants]
       .filter((p) => p.id !== SYSTEM_IDS.ADMIN && !p.isGhost) // admin 계정 + 고스트 제외
       .sort((a, b) => {
-        // 현재 사용자를 맨 위로
-        if (a.id === currentUserId) return -1;
-        if (b.id === currentUserId) return 1;
+        // 현재 사용자를 맨 위로 (전화번호 또는 ID로 매칭)
+        const isAMe = a.id === currentUserId || (currentUserPhone && a.phoneNumber === currentUserPhone);
+        const isBMe = b.id === currentUserId || (currentUserPhone && b.phoneNumber === currentUserPhone);
+
+        if (isAMe) return -1;
+        if (isBMe) return 1;
 
         // 나머지는 원래 순서 유지
         return 0;
       });
-  }, [participants, currentUserId]);
+  }, [participants, currentUserId, currentUserPhone]);
 
   const handleProfileBookClick = (participant: Participant) => {
     // cohortId는 URL에서 가져오거나, 없으면 참가자의 cohortId 사용
@@ -233,20 +237,21 @@ function ParticipantsPageContent() {
         <BackHeader onBack={() => router.back()} title={`참가자 목록 (${sortedParticipants.length})`} />
         <main className="flex-1 overflow-y-auto pt-14">
           <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 py-4">
-            {sortedParticipants.map((participant) => {
-              const isMe = participant.id === currentUserId;
-              const verified = verifiedIds?.has(participant.id) ?? false;
+            {sortedParticipants.map((p) => {
+              // 본인 식별: ID 또는 전화번호로 매칭 (1기→3기 재참여 대응)
+              const isMe = p.id === currentUserId || (currentUserPhone && p.phoneNumber === currentUserPhone);
+              const verified = verifiedIds?.has(p.id) ?? false;
 
               if (isMe) {
-                const initials = getInitials(participant.name);
+                const initials = getInitials(p.name);
                 return (
-                  <div key={participant.id} className="rounded-lg border bg-white p-3 shadow-sm">
+                  <div key={p.id} className="rounded-lg border bg-white p-3 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                           <AvatarImage
-                            src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
-                            alt={participant.name}
+                            src={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage}
+                            alt={p.name}
                           />
                           <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
                             {initials}
@@ -259,15 +264,15 @@ function ParticipantsPageContent() {
                         )}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
+                        <span className="text-sm font-medium text-foreground">{getFirstName(p.name)}</span>
                         <span className="text-xs text-muted-foreground">(나)</span>
                       </div>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
-                      <UnifiedButton variant="outline" onClick={() => setSelectedParticipant(participant)}>
+                      <UnifiedButton variant="outline" onClick={() => setSelectedParticipant(p)}>
                         간단 프로필 보기
                       </UnifiedButton>
-                      <UnifiedButton onClick={() => handleProfileBookClick(participant)}>
+                      <UnifiedButton onClick={() => handleProfileBookClick(p)}>
                         프로필북 보기
                       </UnifiedButton>
                     </div>
@@ -277,8 +282,8 @@ function ParticipantsPageContent() {
 
               return (
                 <ParticipantRow
-                  key={participant.id}
-                  participant={participant}
+                  key={p.id}
+                  participant={p}
                   currentUserId={currentUserId}
                   isAdmin={isAdmin}
                   verified={verified}
@@ -286,8 +291,8 @@ function ParticipantsPageContent() {
                   onProfileClick={setSelectedParticipant}
                   onProfileBookClick={handleProfileBookClick}
                   cohortId={cohortId}
-                  isOpen={openDropdownId === participant.id}
-                  onOpenChange={(open) => setOpenDropdownId(open ? participant.id : null)}
+                  isOpen={openDropdownId === p.id}
+                  onOpenChange={(open) => setOpenDropdownId(open ? p.id : null)}
                 />
               );
             })}
