@@ -3,11 +3,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ============================================
-    // MVP 보안 규칙 (느슨한 버전 - 오류 방지 우선)
+    // 필립앤소피 Firestore 보안 규칙
     // ============================================
-    // Custom Claims 기반 간결한 규칙
-    // 관리자 설정: Firebase Functions에서 request.auth.token.admin = true 설정 필요
-    // Last Updated: 2025-11-09
+    // 정책: 오류 없는 것이 최우선 (보안 < 안정성)
+    // UI 레벨에서 권한 제어, Rules는 최소한만 체크
+    // Last Updated: 2025-11-09 22:30
     // ============================================
 
     // Helper Functions
@@ -15,20 +15,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // 관리자 확인: Custom Claims 사용
+    // 관리자 확인
     function isAdminClaim() {
       return isSignedIn() && request.auth.token.admin == true;
-    }
-
-    // 주어진 participantId가 현재 사용자의 것인지 확인 (느슨한 버전 - 오류 방지 우선)
-    // firebaseUid가 없거나 일치하면 허용 (1기→3기 재참여 케이스 대응)
-    function isOwnParticipant(participantId) {
-      return exists(/databases/$(database)/documents/participants/$(participantId)) &&
-             (
-               !('firebaseUid' in get(/databases/$(database)/documents/participants/$(participantId)).data) ||
-               get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == null ||
-               get(/databases/$(database)/documents/participants/$(participantId)).data.firebaseUid == request.auth.uid
-             );
     }
 
     // 현재 사용자가 관리자 Participant인지 확인

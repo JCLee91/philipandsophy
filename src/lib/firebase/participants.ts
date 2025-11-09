@@ -148,6 +148,10 @@ export async function getParticipantByPhoneNumber(
  * 참가자 조회 (Firebase UID로)
  *
  * Firebase Phone Auth로 로그인한 사용자의 UID로 참가자 조회
+ *
+ * UID 중복 처리:
+ * - 동일 UID를 가진 문서가 여러 개면 최신 cohort 문서를 선택
+ * - 나머지 문서의 firebaseUid는 null로 정리 (재발 방지)
  */
 export async function getParticipantByFirebaseUid(
   firebaseUid: string
@@ -155,13 +159,37 @@ export async function getParticipantByFirebaseUid(
   const db = getDb();
   const q = query(
     collection(db, COLLECTIONS.PARTICIPANTS),
-    where('firebaseUid', '==', firebaseUid)
+    where('firebaseUid', '==', firebaseUid),
+    orderBy('createdAt', 'desc') // 최신 문서 우선
   );
 
   const querySnapshot = await getDocs(q);
 
   if (querySnapshot.empty) {
     return null;
+  }
+
+  // UID 중복 감지 및 자동 정리
+  if (querySnapshot.docs.length > 1) {
+    logger.warn(`[UID Duplicate] Found ${querySnapshot.docs.length} participants with same UID: ${firebaseUid}`);
+
+    // 첫 번째 문서(최신)를 선택, 나머지는 UID 제거
+    const selectedDoc = querySnapshot.docs[0];
+    const docsToCleanup = querySnapshot.docs.slice(1);
+
+    logger.info(`[UID Cleanup] Selecting: ${selectedDoc.id}, Cleaning: ${docsToCleanup.map(d => d.id).join(', ')}`);
+
+    // 나머지 문서의 firebaseUid를 null로 비동기 정리 (차단 안함)
+    Promise.all(
+      docsToCleanup.map(docToClean =>
+        updateDoc(doc(db, COLLECTIONS.PARTICIPANTS, docToClean.id), {
+          firebaseUid: null,
+          updatedAt: Timestamp.now(),
+        }).catch(err => logger.error(`[UID Cleanup] Failed to clean ${docToClean.id}:`, err))
+      )
+    ).then(() => {
+      logger.info(`[UID Cleanup] Completed for UID: ${firebaseUid}`);
+    });
   }
 
   const doc = querySnapshot.docs[0];

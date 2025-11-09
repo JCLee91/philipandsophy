@@ -9,6 +9,7 @@ import {
   UploadTaskSnapshot,
 } from 'firebase/storage';
 import { getStorageInstance } from './client';
+import { STORAGE_PATHS, generateStorageFileName } from '@/constants/storage';
 
 /**
  * Firebase Storage Operations
@@ -95,10 +96,8 @@ export async function uploadReadingImage(
   cohortId: string,
   onProgress?: (progress: number) => void
 ): Promise<string> {
-  const timestamp = Date.now();
-  const fileName = `${timestamp}_${file.name}`;
-  // 구버전 경로 사용 (Storage Rules와 일치)
-  const path = `reading_submissions/${participationCode}/${fileName}`;
+  const fileName = generateStorageFileName(file.name);
+  const path = STORAGE_PATHS.READING_SUBMISSION(participationCode, fileName);
 
   return uploadFileWithProgress(file, path, onProgress);
 }
@@ -110,9 +109,8 @@ export async function uploadNoticeImage(
   file: File,
   cohortId: string
 ): Promise<string> {
-  const timestamp = Date.now();
-  const fileName = `${timestamp}_${file.name}`;
-  const path = `notices/${cohortId}/${fileName}`;
+  const fileName = generateStorageFileName(file.name);
+  const path = STORAGE_PATHS.NOTICE(cohortId, fileName);
 
   return uploadFile(file, path);
 }
@@ -124,9 +122,8 @@ export async function uploadDMImage(
   file: File,
   userId: string
 ): Promise<string> {
-  const timestamp = Date.now();
-  const fileName = `${timestamp}_${file.name}`;
-  const path = `direct_messages/${userId}/${fileName}`;
+  const fileName = generateStorageFileName(file.name);
+  const path = STORAGE_PATHS.DIRECT_MESSAGE(userId, fileName);
 
   return uploadFile(file, path);
 }
