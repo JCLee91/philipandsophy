@@ -699,57 +699,10 @@ function MatchingPageContent() {
 
       }
 
-      // 매칭 알림 전송 (프로필북 도착 푸시)
-      try {
-        // 🔒 환경변수 검증
-        if (!process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL) {
-
-          toast({
-            title: '매칭 적용 완료',
-            description: '매칭은 완료되었으나 푸시 알림 설정이 누락되었습니다. 관리자에게 문의하세요.',
-            variant: 'default',
-          });
-          // 알림 전송 건너뛰고 계속 진행
-          return;
-        }
-
-        const notificationResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/sendMatchingNotifications`,
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              cohortId,
-              date: previewResult.date,
-            }),
-          }
-        );
-
-        if (!notificationResponse.ok) {
-          const notificationError = await notificationResponse.json();
-
-          // 알림 실패는 사용자에게 경고만 표시 (매칭은 이미 완료됨)
-          toast({
-            title: '매칭 적용 완료',
-            description: '매칭은 완료되었으나 알림 전송에 실패했습니다.',
-            variant: 'default',
-          });
-        } else {
-          const notificationResult = await notificationResponse.json();
-
-          toast({
-            title: '매칭 적용 완료',
-            description: '오늘의 서재에서 참가자들이 확인할 수 있습니다. 푸시 알림이 전송되었습니다.',
-          });
-        }
-      } catch (notificationError) {
-
-        // 알림 실패는 로그만 남기고 계속 진행
-        toast({
-          title: '매칭 적용 완료',
-          description: '오늘의 서재에서 참가자들이 확인할 수 있습니다.',
-        });
-      }
+      toast({
+        title: '매칭 적용 완료',
+        description: '오늘의 서재에서 참가자들이 확인할 수 있습니다. (푸시 알림은 전송되지 않습니다.)',
+      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : '매칭 저장 중 오류가 발생했습니다.';

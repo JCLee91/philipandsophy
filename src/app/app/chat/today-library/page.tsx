@@ -211,6 +211,15 @@ function TodayLibraryContent() {
           })) as Participant[]);
         }
         participants = chunks;
+
+        if (isRandomMatching) {
+          const orderMap = new Map(allFeaturedIds.map((id, index) => [id, index]));
+          participants.sort((a, b) => {
+            const indexA = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+            const indexB = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+            return indexA - indexB;
+          });
+        }
       }
 
       // 각 참가자에 theme 정보 추가 (원형 이미지 처리 포함)
@@ -344,6 +353,37 @@ function TodayLibraryContent() {
   if (!participant || !cohort || !cohortId) {
     return null;
   }
+
+  const maleParticipants: FeaturedParticipant[] = featuredParticipants.filter(
+    (p) => !p.gender || p.gender === 'male'
+  );
+  const femaleParticipants: FeaturedParticipant[] = featuredParticipants.filter(
+    (p) => p.gender === 'female'
+  );
+
+  const availableIds = !isRandomMatching
+    ? featuredParticipants.map((p) => p.id)
+    : isLocked && !isSuperAdmin
+      ? assignedProfileIds.slice(0, Math.min(20, assignedProfileIds.length))
+      : assignedProfileIds;
+
+  const unlockedLimit = isRandomMatching && isLocked && !isSuperAdmin
+    ? Math.min(profileBookAccess.unlockedProfileBooks, availableIds.length)
+    : availableIds.length;
+
+  const unlockedIdsSet = new Set(availableIds.slice(0, unlockedLimit));
+
+  const totalCount = isRandomMatching
+    ? assignedProfileIds.length
+    : featuredParticipants.length;
+
+  const unlockedCount = unlockedIdsSet.size;
+  const lockedCount = Math.max(totalCount - unlockedCount, 0);
+  const shouldShowLockedCards = isRandomMatching && isLocked && lockedCount > 0;
+  const visibleMale = maleParticipants.filter((p) => unlockedIdsSet.has(p.id));
+  const visibleFemale = femaleParticipants.filter((p) => unlockedIdsSet.has(p.id));
+  const maleLockedSlots = shouldShowLockedCards ? Math.max(maleParticipants.length - visibleMale.length, 0) : 0;
+  const femaleLockedSlots = shouldShowLockedCards ? Math.max(femaleParticipants.length - visibleFemale.length, 0) : 0;
 
   // v2.0: 프로필북 클릭 핸들러 (카드별 잠금 상태 확인)
   const handleProfileClickWithAuth = (
@@ -556,55 +596,6 @@ function TodayLibraryContent() {
   }
 
   // 3단계: 매칭 데이터 처리 (v2.0 기준 - 성별 기반 레이아웃 고정)
-  const maleParticipants: FeaturedParticipant[] = featuredParticipants.filter(
-    (p) => !p.gender || p.gender === 'male'
-  );
-  const femaleParticipants: FeaturedParticipant[] = featuredParticipants.filter(
-    (p) => p.gender === 'female'
-  );
-
-  // v2.0: 미인증 시 성별 기반 랜덤 선택 (남1+여1 보장)
-  let unlockedMale: FeaturedParticipant[] = maleParticipants;
-  let unlockedFemale: FeaturedParticipant[] = femaleParticipants;
-  let genderDiversityWarning: string | null = null;
-
-  if (isRandomMatching && isLocked && !isSuperAdmin) {
-    // 미인증 v2.0: 각 성별에서 랜덤 1명씩 선택
-    if (maleParticipants.length > 0 && femaleParticipants.length > 0) {
-      // 이상적: 남/여 모두 있음 → 각 1명씩
-      unlockedMale = [maleParticipants[Math.floor(Math.random() * maleParticipants.length)]];
-      unlockedFemale = [femaleParticipants[Math.floor(Math.random() * femaleParticipants.length)]];
-    } else if (maleParticipants.length > 0) {
-      // 남성만 있음 → 남성 2명
-      const shuffled = [...maleParticipants].sort(() => Math.random() - 0.5);
-      unlockedMale = shuffled.slice(0, 2);
-      unlockedFemale = [];
-      genderDiversityWarning = '여성 프로필을 찾지 못해 남성 프로필 2개를 표시합니다';
-    } else if (femaleParticipants.length > 0) {
-      // 여성만 있음 → 여성 2명
-      const shuffled = [...femaleParticipants].sort(() => Math.random() - 0.5);
-      unlockedMale = [];
-      unlockedFemale = shuffled.slice(0, 2);
-      genderDiversityWarning = '남성 프로필을 찾지 못해 여성 프로필 2개를 표시합니다';
-    }
-  }
-
-  // v2.0: 프로필북 개수 계산 (백엔드 할당 개수 기준)
-  const totalCount = isRandomMatching
-    ? assignedProfileIds.length // 백엔드에서 할당한 전체 개수
-    : featuredParticipants.length;
-
-  const unlockedCount = isRandomMatching && isLocked
-    ? unlockedMale.length + unlockedFemale.length // 실제 표시되는 개수 (2개)
-    : totalCount;
-
-  const lockedCount = totalCount - unlockedCount;
-  const shouldShowLockedCards = isRandomMatching && isLocked;
-  const visibleMale = shouldShowLockedCards ? unlockedMale : maleParticipants;
-  const visibleFemale = shouldShowLockedCards ? unlockedFemale : femaleParticipants;
-  const maleLockedSlots = shouldShowLockedCards ? Math.ceil(lockedCount / 2) : 0;
-  const femaleLockedSlots = shouldShowLockedCards ? Math.floor(lockedCount / 2) : 0;
-
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden">
@@ -691,7 +682,8 @@ function TodayLibraryContent() {
                     {/* 왼쪽: 남자 */}
                     <div className="flex flex-col gap-4">
                       {visibleMale.map((p, idx) => {
-                        const cardIndex = idx; // 남성: 0부터 시작
+                        const assignmentIndex = assignedProfileIds.indexOf(p.id);
+                        const cardIndex = assignmentIndex >= 0 ? assignmentIndex : idx;
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -710,10 +702,7 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (남자) */}
                       {shouldShowLockedCards && Array.from({ length: maleLockedSlots }).map((_, idx) => {
-                        // 자물쇠 인덱스는 항상 unlockedProfileBooks(=2) 이상
-                        const totalUnlockedCount = visibleMale.length + visibleFemale.length;
-                        const minLockedIndex = Math.max(totalUnlockedCount, profileBookAccess.unlockedProfileBooks);
-                        const cardIndex = minLockedIndex + idx;
+                        const cardIndex = unlockedCount + idx;
                         return (
                           <div key={`locked-male-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
@@ -734,7 +723,8 @@ function TodayLibraryContent() {
                     {/* 오른쪽: 여자 */}
                     <div className="flex flex-col gap-4">
                       {visibleFemale.map((p, idx) => {
-                        const cardIndex = visibleMale.length + idx; // 남성 이후 연속 인덱스
+                        const assignmentIndex = assignedProfileIds.indexOf(p.id);
+                        const cardIndex = assignmentIndex >= 0 ? assignmentIndex : visibleMale.length + idx;
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -753,10 +743,7 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (여자) */}
                       {shouldShowLockedCards && Array.from({ length: femaleLockedSlots }).map((_, idx) => {
-                        // 자물쇠 인덱스는 항상 unlockedProfileBooks(=2) 이상
-                        const totalUnlockedCount = visibleMale.length + visibleFemale.length;
-                        const minLockedIndex = Math.max(totalUnlockedCount, profileBookAccess.unlockedProfileBooks);
-                        const cardIndex = minLockedIndex + maleLockedSlots + idx;
+                        const cardIndex = unlockedCount + maleLockedSlots + idx;
                         return (
                           <div key={`locked-female-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">

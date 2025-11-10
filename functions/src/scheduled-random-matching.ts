@@ -38,17 +38,16 @@ const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
 });
 
 /**
- * 스케줄된 랜덤 매칭 (매일 오후 2시)
+ * 스케줄된 랜덤 매칭 (매일 새벽 2시)
  *
- * 매일 오후 2시 (KST)에 자동으로 실행
+ * 매일 새벽 2시 (KST)에 자동으로 실행
  * 1. 어제 인증한 참가자 조회
  * 2. 랜덤 매칭 실행
- * 3. Firestore에 저장
- * 4. 푸시 알림 전송
+ * 3. Firestore에 저장 (푸시 알림은 스케줄 실행 시 중단)
  */
-export const scheduledRandomMatching = onSchedule(
+export const scheduledMatchingPreview = onSchedule(
   {
-    schedule: "0 14 * * *", // 매일 오후 2시 (KST)
+    schedule: "0 2 * * *", // 매일 새벽 2시 (KST)
     timeZone: "Asia/Seoul",
     timeoutSeconds: 540, // 9분
     memory: "1GiB",
@@ -214,32 +213,7 @@ export const scheduledRandomMatching = onSchedule(
 
       logger.info(`✅ Matching saved to Firestore`);
 
-      // 10. 푸시 알림 전송
-      logger.info(`Sending matching notifications`);
-
-      const functionsUrl = `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/sendMatchingNotifications`;
-
-      const notificationResponse = await fetch(functionsUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Internal-Secret": internalSecret,
-        },
-        body: JSON.stringify({
-          cohortId,
-          date: yesterdayStr,
-        }),
-      });
-
-      if (!notificationResponse.ok) {
-        const error = await notificationResponse.json();
-        logger.error(`Notification failed: ${notificationResponse.status}`, error);
-      } else {
-        const result = await notificationResponse.json();
-        logger.info(`✅ Notifications sent: ${result.recipientCount || 'unknown'} recipients`);
-      }
-
-      logger.info(`✅ Random matching completed`, {
+      logger.info(`✅ Random matching completed (notifications skipped for scheduled run)`, {
         cohortId,
         date: yesterdayStr,
         viewers: viewers.length,

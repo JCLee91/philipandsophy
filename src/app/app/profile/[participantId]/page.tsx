@@ -26,6 +26,7 @@ import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, 
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { getAssignedProfiles, getLegacyMatchingReasons } from '@/lib/matching-compat';
 import { useParticipant } from '@/hooks/use-participants';
+import { useProfileBookAccess } from '@/hooks/use-profile-book-access';
 import { logger } from '@/lib/logger';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 import { getResizedImageUrl } from '@/lib/image-utils';
@@ -124,6 +125,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const { data: cohort } = useCohort(cohortId || undefined);
   const { data: rawSubmissions = [], isLoading: submissionsLoading } = useParticipantSubmissionsRealtime(participantId);
   const { data: viewerSubmissions = [], isLoading: viewerSubmissionLoading } = useParticipantSubmissionsRealtime(currentUserId);
+  const { unlockedProfileBooks } = useProfileBookAccess();
   const viewerSubmissionDates = useMemo(
     () => new Set(viewerSubmissions.map((submission) => submission.submissionDate)),
     [viewerSubmissions]
@@ -146,22 +148,52 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     return allowedMatchingDates.has(matchingDate) ? matchingDate : undefined;
   }, [matchingDate, allowedMatchingDates]);
 
-  const matchingLookup = useMemo(() => {
+  const matchingLookupWithinAccess = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
       return null;
     }
 
-    return findLatestMatchingForParticipant(
-      cohort.dailyFeaturedParticipants,
-      currentUserId,
-      isSuperAdmin
-        ? { preferredDate: preferredMatchingDate }
-        : {
-            preferredDate: preferredMatchingDate,
-            allowedDates: allowedMatchingDates,
-          }
-    );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate, allowedMatchingDates, isSuperAdmin]);
+    if (isSuperAdmin) {
+      return findLatestMatchingForParticipant(cohort.dailyFeaturedParticipants, currentUserId, {
+        preferredDate: preferredMatchingDate,
+      });
+    }
+
+    if (allowedMatchingDates.size === 0) {
+      return null;
+    }
+
+    return findLatestMatchingForParticipant(cohort.dailyFeaturedParticipants, currentUserId, {
+      preferredDate: preferredMatchingDate,
+      allowedDates: allowedMatchingDates,
+    });
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, isSuperAdmin, preferredMatchingDate, allowedMatchingDates]);
+
+  const matchingLookup = useMemo(() => {
+    if (matchingLookupWithinAccess) {
+      return matchingLookupWithinAccess;
+    }
+
+    if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
+      return null;
+    }
+
+    // 미인증자는 과거 매칭 접근 불가
+    if (!isSuperAdmin && allowedMatchingDates.size === 0) {
+      return null;
+    }
+
+    return findLatestMatchingForParticipant(cohort.dailyFeaturedParticipants, currentUserId, {
+      preferredDate: preferredMatchingDate,
+    });
+  }, [
+    matchingLookupWithinAccess,
+    cohort?.dailyFeaturedParticipants,
+    currentUserId,
+    preferredMatchingDate,
+    isSuperAdmin,
+    allowedMatchingDates,
+  ]);
 
   // 선택된 제출물의 날짜 라벨 (early return 이전에 선언)
   const submissionDateLabel = useMemo(() => {
@@ -330,6 +362,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const viewerAssignment = currentUserId
     ? assignments[currentUserId] ?? null
     : null;
+  const assignedProfileIds = useMemo(() => getAssignedProfiles(viewerAssignment), [viewerAssignment]);
 
   useEffect(() => {
     setDetailImageAspectRatio(null);
@@ -337,9 +370,22 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // v2.0/v1.0 호환: assigned 우선, fallback으로 similar + opposite
   const accessibleProfileIds = useMemo(() => {
-    const profileIds = getAssignedProfiles(viewerAssignment);
-    return new Set(profileIds);
-  }, [viewerAssignment]);
+    return new Set(assignedProfileIds);
+  }, [assignedProfileIds]);
+  const matchingVersion = matchingLookup?.matching.matchingVersion;
+  const isRandomMatching = matchingVersion === 'random' || Boolean(viewerAssignment?.assigned?.length);
+  const assignmentIndex = useMemo(() => assignedProfileIds.indexOf(participantId), [assignedProfileIds, participantId]);
+  const previewLimit = useMemo(() => {
+    if (
+      unlockedProfileBooks === null ||
+      unlockedProfileBooks === undefined ||
+      !Number.isFinite(unlockedProfileBooks)
+    ) {
+      return assignedProfileIds.length;
+    }
+    return Math.min(unlockedProfileBooks, assignedProfileIds.length);
+  }, [unlockedProfileBooks, assignedProfileIds.length]);
+  const canPreviewAccess = isRandomMatching && assignmentIndex >= 0 && assignmentIndex < previewLimit;
 
   const isFeatured = accessibleProfileIds.has(participantId);
 
@@ -396,9 +442,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     (isAfterProgramWithoutAuth) ||  // 15일차 이후 (인증 불필요)
     (isFinalDayAccess && isVerifiedToday) ||  // 14일차 (인증 필요)
     (isUnlockDayOrAfter && isVerifiedToday && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상
-    (isVerifiedToday && viewerHasAccessForDate && isFeatured);  // 기존: 매칭된 4명만
-
-  // 디버깅 로그
+    (isVerifiedToday && viewerHasAccessForDate && isFeatured) ||  // 기존: 매칭된 4명만
+    canPreviewAccess;  // 랜덤 매칭 미인증자: 제한된 미리 보기 허용
 
   // 로딩 상태
   if (sessionLoading || participantLoading || submissionsLoading || viewerSubmissionLoading) {
