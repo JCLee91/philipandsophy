@@ -3,25 +3,17 @@
 import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
-import Tooltip from '@/components/Tooltip';
+import CtaButton from '@/components/landing/CtaButton';
+import { getImageUrl } from '@/constants/landing';
+import { MEMBERSHIP_SCHEMA } from '@/constants/seo';
+import { ANALYTICS_EVENTS } from '@/constants/landing';
 
 export default function MembershipPageClient() {
   return (
     <LandingLayout>
       {/* JSON-LD Structured Data - Membership */}
       <Script id="json-ld-membership" type="application/ld+json" strategy="afterInteractive">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "MemberProgram",
-          "name": "필립앤소피 멤버십",
-          "provider": {
-            "@type": "Organization",
-            "name": "Philip & Sophy"
-          },
-          "description": "승인제 독서소셜클럽 멤버십 - 품격있는 만남과 깊이있는 대화",
-          "membershipType": "승인제",
-          "areaServed": "서울"
-        })}
+        {JSON.stringify(MEMBERSHIP_SCHEMA)}
       </Script>
 
       {/* SEO 최적화를 위한 숨김 텍스트 */}
@@ -37,7 +29,7 @@ export default function MembershipPageClient() {
 
       <div className="container">
         <Image
-          src="/image/landing/PnS_Membership_1.webp?v=1762739366900"
+          src={getImageUrl('/image/landing/PnS_Membership_1.webp')}
           alt="필립앤소피 멤버십 소개"
           width={1170}
           height={4131}
@@ -46,35 +38,17 @@ export default function MembershipPageClient() {
         />
 
         <Image
-          src="/image/landing/PnS_Membership_2.webp?v=1762739366900"
+          src={getImageUrl('/image/landing/PnS_Membership_2.webp')}
           alt="필립앤소피 멤버십 상세 안내"
           width={1170}
           height={3969}
           className="main-image"
         />
 
-        <div className="cta-section">
-          <Tooltip />
-          <a
-            href="https://smore.im/form/13J1nUevrX"
-            target="_blank"
-            rel="noopener"
-            aria-label="멤버십 신청하기"
-            className="cta-button"
-            onClick={() => {
-              if (typeof window !== 'undefined' && (window as any).fbq) {
-                (window as any).fbq('track', 'CompleteRegistration', {content_name: '멤버십_신청'});
-              }
-            }}
-          >
-            <span className="cta-text">필립앤소피 4기 참여하기</span>
-            <div className="cta-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </a>
-        </div>
+        <CtaButton
+          analyticsName={ANALYTICS_EVENTS.MEMBERSHIP}
+          ariaLabel="멤버십 신청하기"
+        />
       </div>
     </LandingLayout>
   );

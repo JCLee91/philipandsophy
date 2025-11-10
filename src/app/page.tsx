@@ -3,7 +3,10 @@
 import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
-import Tooltip from '@/components/Tooltip';
+import CtaButton from '@/components/landing/CtaButton';
+import { getImageUrl } from '@/constants/landing';
+import { ORGANIZATION_SCHEMA } from '@/constants/seo';
+import { ANALYTICS_EVENTS } from '@/constants/landing';
 
 // ✅ Disable static generation - providers require runtime context
 export const dynamic = 'force-dynamic';
@@ -13,26 +16,7 @@ export default function HomePage() {
     <LandingLayout>
       {/* JSON-LD Structured Data - Organization */}
       <Script id="json-ld-org" type="application/ld+json" strategy="afterInteractive">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "Philip & Sophy",
-          "alternateName": "필립앤소피",
-          "description": "25-40세 직장인 전문직을 위한 승인제 독서소셜클럽",
-          "url": "https://www.philipandsophy.kr/",
-          "logo": "https://www.philipandsophy.kr/image/app-icon.webp",
-          "sameAs": [
-            "https://www.instagram.com/philip_and_sophy",
-            "https://smore.im/form/0C2SFfq79d#_q=rtwE0JeU"
-          ],
-          "address": {
-            "@type": "PostalAddress",
-            "addressLocality": "서울",
-            "addressRegion": "서울특별시",
-            "addressCountry": "KR"
-          },
-          "foundingDate": "2025"
-        })}
+        {JSON.stringify(ORGANIZATION_SCHEMA)}
       </Script>
 
       {/* SEO 최적화를 위한 숨김 텍스트 */}
@@ -48,7 +32,7 @@ export default function HomePage() {
 
       <div className="container">
         <Image
-          src="/image/landing/PnS_1.webp?v=1762739366900"
+          src={getImageUrl('/image/landing/PnS_1.webp')}
           alt="필립앤소피(P&S) 승인제 독서소셜클럽 - 깊이 있는 대화가 설레는 만남으로"
           width={1170}
           height={2400}
@@ -57,7 +41,7 @@ export default function HomePage() {
         />
 
         <Image
-          src="/image/landing/PnS_2.webp?v=1762739366900"
+          src={getImageUrl('/image/landing/PnS_2.webp')}
           alt="필립앤소피 소셜클럽 소개"
           width={1170}
           height={5526}
@@ -66,35 +50,17 @@ export default function HomePage() {
         />
 
         <Image
-          src="/image/landing/PnS_3.webp?v=1762739366900"
+          src={getImageUrl('/image/landing/PnS_3.webp')}
           alt="필립앤소피 서비스 특징"
           width={1170}
           height={6930}
           className="main-image"
         />
 
-        <div className="cta-section">
-          <Tooltip />
-          <a
-            href="https://smore.im/form/13J1nUevrX"
-            target="_blank"
-            rel="noopener"
-            aria-label="사전 신청 설문 열기"
-            className="cta-button"
-            onClick={() => {
-              if (typeof window !== 'undefined' && (window as any).fbq) {
-                (window as any).fbq('track', 'CompleteRegistration', {content_name: '사전신청폼'});
-              }
-            }}
-          >
-            <span className="cta-text">필립앤소피 4기 참여하기</span>
-            <div className="cta-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </a>
-        </div>
+        <CtaButton
+          analyticsName={ANALYTICS_EVENTS.HOME}
+          ariaLabel="사전 신청 설문 열기"
+        />
       </div>
     </LandingLayout>
   );
