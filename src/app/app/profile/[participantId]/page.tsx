@@ -180,16 +180,26 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 14일치 날짜 배열 생성 (코호트의 programStartDate 기준)
   const startDate = useMemo(() => {
     if (!cohort) {
-
       return null;
     }
     const dateString = cohort.programStartDate || cohort.startDate;
     if (!dateString) {
-
       return null;
     }
-    return new Date(dateString);
-  }, [cohort, participantId, cohortId]);
+
+    // ✅ FIX: Invalid Date 체크
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      logger.error('Invalid programStartDate in profile', {
+        cohortId: cohort.id,
+        programStartDate: cohort.programStartDate,
+        startDate: cohort.startDate,
+      });
+      return null;
+    }
+
+    return date;
+  }, [cohort]);
 
   const fourteenDays = useMemo(() => {
     if (!startDate) return [];
