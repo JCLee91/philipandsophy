@@ -48,16 +48,19 @@ export const scrollToBottom = (
  * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
 export const formatDate = (timestamp: Timestamp | SerializedTimestamp | null | undefined): string => {
-  const date = getTimestampDate(timestamp);
+  try {
+    const date = getTimestampDate(timestamp);
+    if (!date || isNaN(date.getTime())) {
+      return '-';
+    }
 
-  // null이거나 Invalid Date인 경우 기본값 반환
-  if (!date || isNaN(date.getTime())) {
+    if (isToday(date)) return '오늘';
+    if (isYesterday(date)) return '어제';
+    return format(date, 'M월 d일', { locale: ko });
+  } catch (error) {
+    console.warn('Invalid timestamp in formatDate', { timestamp, error });
     return '-';
   }
-
-  if (isToday(date)) return '오늘';
-  if (isYesterday(date)) return '어제';
-  return format(date, 'M월 d일', { locale: ko });
 };
 
 /**
@@ -66,14 +69,17 @@ export const formatDate = (timestamp: Timestamp | SerializedTimestamp | null | u
  * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
 export const formatTime = (timestamp: Timestamp | SerializedTimestamp | null | undefined): string => {
-  const date = getTimestampDate(timestamp);
+  try {
+    const date = getTimestampDate(timestamp);
+    if (!date || isNaN(date.getTime())) {
+      return '-';
+    }
 
-  // null이거나 Invalid Date인 경우 기본값 반환
-  if (!date || isNaN(date.getTime())) {
+    return format(date, 'a h:mm', { locale: ko });
+  } catch (error) {
+    console.warn('Invalid timestamp in formatTime', { timestamp, error });
     return '-';
   }
-
-  return format(date, 'a h:mm', { locale: ko });
 };
 
 /**
@@ -82,14 +88,17 @@ export const formatTime = (timestamp: Timestamp | SerializedTimestamp | null | u
  * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
 export const formatShortDate = (timestamp: Timestamp | SerializedTimestamp | null | undefined): string => {
-  const date = getTimestampDate(timestamp);
+  try {
+    const date = getTimestampDate(timestamp);
+    if (!date || isNaN(date.getTime())) {
+      return '-';
+    }
 
-  // null이거나 Invalid Date인 경우 기본값 반환
-  if (!date || isNaN(date.getTime())) {
+    return format(date, 'M/d', { locale: ko });
+  } catch (error) {
+    console.warn('Invalid timestamp in formatShortDate', { timestamp, error });
     return '-';
   }
-
-  return format(date, 'M/d', { locale: ko });
 };
 
 /**

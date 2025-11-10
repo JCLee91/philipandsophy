@@ -16,7 +16,7 @@ import { useCohort } from '@/hooks/use-cohorts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { getInitials, formatShortDate } from '@/lib/utils';
-import { format, startOfDay } from 'date-fns';
+import { format, startOfDay, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
@@ -32,6 +32,24 @@ import { getResizedImageUrl } from '@/lib/image-utils';
 interface ProfileBookContentProps {
   params: { participantId: string };
 }
+
+const parseDateInput = (value?: string | null): Date | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsedIso = parseISO(trimmed);
+    if (!Number.isNaN(parsedIso.getTime())) {
+      return parsedIso;
+    }
+  } catch {
+    // ignore and fall back to native parser
+  }
+
+  const fallback = new Date(trimmed);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
+};
 
 function ProfileBookContent({ params }: ProfileBookContentProps) {
   const router = useRouter();
@@ -410,8 +428,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     if (!selectedSubmission) return null;
 
     if (selectedSubmission.submissionDate) {
-      const parsed = new Date(selectedSubmission.submissionDate);
-      if (!Number.isNaN(parsed.getTime())) {
+      const parsed = parseDateInput(selectedSubmission.submissionDate);
+      if (parsed) {
         return format(parsed, 'M/d', { locale: ko });
       }
 

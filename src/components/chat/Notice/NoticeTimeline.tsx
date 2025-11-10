@@ -27,18 +27,15 @@ export function NoticeTimeline({
   latestNoticeId,
   latestNoticeRef,
 }: NoticeTimelineProps) {
-  // 추가 방어: 관리자가 아니면 draft 제외 + createdAt 없는 notice 제외
+  // 추가 방어: 관리자가 아니면 draft 제외
   // isAdmin은 ViewMode가 아닌 participant.isAdministrator 기반이어야 함
   const filteredNotices = useMemo(() => {
-    // createdAt이 없는 notice 필터링 (데이터 무결성 보장)
-    const validNotices = notices.filter(notice => notice.createdAt);
-
     // 관리자는 draft 포함 모든 공지 표시
     if (isAdmin) {
-      return validNotices;
+      return notices;
     }
     // 일반 참가자: draft 제외, status 없으면 published로 간주
-    return validNotices.filter(notice => notice.status !== 'draft');
+    return notices.filter(notice => notice.status !== 'draft');
   }, [notices, isAdmin]);
 
   const grouped = useMemo(() => {
