@@ -406,6 +406,27 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 최근 제출물 (가장 최근 1개) - submissions는 desc 정렬이므로 첫 번째 항목이 최신
   const latestSubmission = submissions.length > 0 ? submissions[0] : null;
 
+  const submissionDateLabel = useMemo(() => {
+    if (!selectedSubmission) return null;
+
+    if (selectedSubmission.submissionDate) {
+      const parsed = new Date(selectedSubmission.submissionDate);
+      if (!Number.isNaN(parsed.getTime())) {
+        return format(parsed, 'M/d', { locale: ko });
+      }
+
+      logger.warn('Invalid submissionDate detected', {
+        participantId,
+        submissionId: selectedSubmission.id,
+        submissionDate: selectedSubmission.submissionDate,
+      });
+    }
+
+    return selectedSubmission.submittedAt
+      ? formatShortDate(selectedSubmission.submittedAt)
+      : null;
+  }, [participantId, selectedSubmission]);
+
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-y-auto" style={{ backgroundColor: colors.background }}>
@@ -606,9 +627,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
             <DialogContent className="profile-reading-dialog profile-reading-dialog-ios-safe sm:max-w-md sm:rounded-2xl">
               <DialogHeader className="text-left gap-1">
                 <DialogTitle className="text-base">
-                  {selectedSubmission.submissionDate
-                    ? format(new Date(selectedSubmission.submissionDate), 'M/d', { locale: ko })
-                    : formatShortDate(selectedSubmission.submittedAt)} 독서 기록
+                  {submissionDateLabel ?? '독서 기록'}
                 </DialogTitle>
               </DialogHeader>
               <div className="profile-reading-scroll space-y-4 overflow-y-auto">

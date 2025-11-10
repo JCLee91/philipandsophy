@@ -47,8 +47,14 @@ export const scrollToBottom = (
  * 오늘이면 '오늘', 어제면 '어제', 그 외에는 'M월 d일' 형식
  * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
-export const formatDate = (timestamp: Timestamp | SerializedTimestamp): string => {
+export const formatDate = (timestamp: Timestamp | SerializedTimestamp | null | undefined): string => {
   const date = getTimestampDate(timestamp);
+
+  // null이거나 Invalid Date인 경우 기본값 반환
+  if (!date || isNaN(date.getTime())) {
+    return '-';
+  }
+
   if (isToday(date)) return '오늘';
   if (isYesterday(date)) return '어제';
   return format(date, 'M월 d일', { locale: ko });
@@ -59,8 +65,14 @@ export const formatDate = (timestamp: Timestamp | SerializedTimestamp): string =
  * '오전/오후 h:mm' 형식
  * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
-export const formatTime = (timestamp: Timestamp | SerializedTimestamp): string => {
+export const formatTime = (timestamp: Timestamp | SerializedTimestamp | null | undefined): string => {
   const date = getTimestampDate(timestamp);
+
+  // null이거나 Invalid Date인 경우 기본값 반환
+  if (!date || isNaN(date.getTime())) {
+    return '-';
+  }
+
   return format(date, 'a h:mm', { locale: ko });
 };
 
@@ -69,8 +81,14 @@ export const formatTime = (timestamp: Timestamp | SerializedTimestamp): string =
  * 'M/d' 형식
  * SerializedTimestamp도 지원 (Server Component → Client Component)
  */
-export const formatShortDate = (timestamp: Timestamp | SerializedTimestamp): string => {
+export const formatShortDate = (timestamp: Timestamp | SerializedTimestamp | null | undefined): string => {
   const date = getTimestampDate(timestamp);
+
+  // null이거나 Invalid Date인 경우 기본값 반환
+  if (!date || isNaN(date.getTime())) {
+    return '-';
+  }
+
   return format(date, 'M/d', { locale: ko });
 };
 
