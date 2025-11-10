@@ -19,10 +19,10 @@ import { logger } from '@/lib/logger';
  * }
  */
 export function useYesterdayVerifiedParticipants(cohortId: string | undefined) {
-  return useQuery({
+  return useQuery<string[], Error, Set<string>>({
     queryKey: ['yesterdayVerifiedParticipants', cohortId],
     queryFn: async () => {
-      if (!cohortId) return new Set<string>();
+      if (!cohortId) return [];
 
       try {
         // 매칭 대상 날짜 계산 (새벽 2시 마감 정책 적용)
@@ -51,7 +51,7 @@ export function useYesterdayVerifiedParticipants(cohortId: string | undefined) {
 
         // 참가자 조회하여 cohortId 필터링
         if (tempParticipantIds.size === 0) {
-          return new Set<string>();
+          return [];
         }
 
         const participantsRef = collection(db, 'participants');
@@ -79,7 +79,7 @@ export function useYesterdayVerifiedParticipants(cohortId: string | undefined) {
           ids: Array.from(participantIds)
         });
 
-        return participantIds;
+        return Array.from(participantIds);
       } catch (error) {
         logger.error('어제 인증자 목록 조회 실패', error);
         throw error;
@@ -88,5 +88,6 @@ export function useYesterdayVerifiedParticipants(cohortId: string | undefined) {
     enabled: !!cohortId,
     staleTime: 1000 * 60 * 5, // 5분 캐시
     gcTime: 1000 * 60 * 10, // 10분 가비지 컬렉션
+    select: (ids) => new Set(ids ?? []),
   });
 }
