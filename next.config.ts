@@ -72,7 +72,7 @@ const nextConfig: NextConfig = {
               style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
               img-src 'self' data: blob: https: http:;
               font-src 'self' data: https://cdn.jsdelivr.net;
-              connect-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.cloudfunctions.net wss://*.firebaseio.com https://openapi.naver.com https://*.run.app https://www.google.com https://recaptchaenterprise.googleapis.com https://www.google-analytics.com;
+              connect-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.cloudfunctions.net wss://*.firebaseio.com https://openapi.naver.com https://*.run.app https://www.google.com https://recaptchaenterprise.googleapis.com https://www.google-analytics.com https://capig.datah04.com;
               frame-src 'self' https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com;
               frame-ancestors 'self' https://www.google.com;
             `.replace(/\s+/g, ' ').trim(),
