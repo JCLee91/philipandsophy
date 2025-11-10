@@ -28,6 +28,7 @@ import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 
 interface ProfileBookContentProps {
   params: { participantId: string };
@@ -49,6 +50,20 @@ const parseDateInput = (value?: string | null): Date | null => {
 
   const fallback = new Date(trimmed);
   return Number.isNaN(fallback.getTime()) ? null : fallback;
+};
+
+const getSubmissionTime = (submission: ReadingSubmission): number => {
+  const submissionDateTime = parseDateInput(submission.submissionDate);
+  if (submissionDateTime) {
+    return submissionDateTime.getTime();
+  }
+
+  const submittedAtDate = getTimestampDate(submission.submittedAt);
+  if (submittedAtDate) {
+    return submittedAtDate.getTime();
+  }
+
+  return 0;
 };
 
 function ProfileBookContent({ params }: ProfileBookContentProps) {
@@ -206,6 +221,10 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     const validSubmissions = rawSubmissions.filter(s => s.submittedAt) as Array<ReadingSubmission & { submittedAt: Timestamp }>;
     return filterSubmissionsByDate(validSubmissions, submissionCutoffDate);
   }, [rawSubmissions, submissionCutoffDate, isSelf]);
+
+  const sortedSubmissions = useMemo(() => {
+    return [...submissions].sort((a, b) => getSubmissionTime(b) - getSubmissionTime(a));
+  }, [submissions]);
 
   // 세션 검증 (리다이렉트 플래그로 중복 방지)
   const hasRedirectedRef = useRef(false);
@@ -444,7 +463,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   });
 
   // 최근 제출물 (가장 최근 1개) - submissions는 desc 정렬이므로 첫 번째 항목이 최신
-  const latestSubmission = submissions.length > 0 ? submissions[0] : null;
+  const latestSubmission = sortedSubmissions.length > 0 ? sortedSubmissions[0] : null;
 
   return (
     <PageTransition>

@@ -52,7 +52,7 @@ export function NoticeTimeline({
       return acc;
     }, {});
 
-    return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
+    return Object.values(groups).sort((a, b) => a.timestamp - b.timestamp);
   }, [filteredNotices]);
 
   if (grouped.length === 0) {
