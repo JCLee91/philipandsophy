@@ -52,54 +52,54 @@ export function NoticeTimeline({
       return acc;
     }, {});
 
-    return Object.values(groups).sort((a, b) => a.timestamp - b.timestamp);
+    return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
   }, [filteredNotices]);
 
   if (grouped.length === 0) {
     return null;
   }
 
-  return grouped.map(({ label, notices: dateNotices }) => {
-    const sortedDateNotices = [...dateNotices].sort(
-      (a, b) => getTimestampMillis(a.createdAt) - getTimestampMillis(b.createdAt)
-    );
-
-    return (
-    <div key={label}>
-      <div className="container mx-auto max-w-3xl px-4 py-4">
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-            {label}
-          </span>
-          <div className="h-px flex-1 bg-border" />
-       </div>
-      </div>
-
-      {sortedDateNotices.map((notice) => {
-        const isLatest = notice.id === latestNoticeId;
-        return (
-          <div
-            key={notice.id}
-            ref={isLatest ? latestNoticeRef : undefined}
-            className="group transition-colors duration-normal hover:bg-muted/50"
-          >
-            <div className="container mx-auto max-w-3xl px-4 py-3">
-              <NoticeItem
-                notice={notice}
-                isAdmin={isAdmin}
-                onEdit={onEdit}
-                onDelete={onRequestDelete}
-                formatTime={formatTime}
-                priority={isLatest && !!notice.imageUrl}
-              />
+  return (
+    <div className="flex flex-col-reverse">
+      {grouped.map(({ label, notices: dateNotices }) => (
+        <div key={label}>
+          <div className="container mx-auto max-w-3xl px-4 py-4">
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+                {label}
+              </span>
+              <div className="h-px flex-1 bg-border" />
             </div>
           </div>
-        );
-      })}
+
+          <div className="flex flex-col-reverse">
+            {dateNotices.map((notice) => {
+              const isLatest = notice.id === latestNoticeId;
+              return (
+                <div
+                  key={notice.id}
+                  ref={isLatest ? latestNoticeRef : undefined}
+                  className="group transition-colors duration-normal hover:bg-muted/50"
+                >
+                  <div className="container mx-auto max-w-3xl px-4 py-3">
+                    <NoticeItem
+                      notice={notice}
+                      isAdmin={isAdmin}
+                      onEdit={onEdit}
+                      onDelete={onRequestDelete}
+                      formatTime={formatTime}
+                      priority={isLatest && !!notice.imageUrl}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
-  });
 }
 
 export default NoticeTimeline;
