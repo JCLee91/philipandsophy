@@ -59,7 +59,12 @@ export function NoticeTimeline({
     return null;
   }
 
-  return grouped.map(({ label, notices: dateNotices }) => (
+  return grouped.map(({ label, notices: dateNotices }) => {
+    const sortedDateNotices = [...dateNotices].sort(
+      (a, b) => getTimestampMillis(a.createdAt) - getTimestampMillis(b.createdAt)
+    );
+
+    return (
     <div key={label}>
       <div className="container mx-auto max-w-3xl px-4 py-4">
         <div className="flex items-center gap-3">
@@ -71,7 +76,7 @@ export function NoticeTimeline({
        </div>
       </div>
 
-      {dateNotices.map((notice) => {
+      {sortedDateNotices.map((notice) => {
         const isLatest = notice.id === latestNoticeId;
         return (
           <div
@@ -93,7 +98,8 @@ export function NoticeTimeline({
         );
       })}
     </div>
-  ));
+  );
+  });
 }
 
 export default NoticeTimeline;

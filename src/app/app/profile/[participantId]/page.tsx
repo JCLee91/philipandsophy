@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useState, useEffect, useMemo, useRef, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -146,6 +146,28 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           }
     );
   }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate, allowedMatchingDates, isSuperAdmin]);
+
+  // 선택된 제출물의 날짜 라벨 (early return 이전에 선언)
+  const submissionDateLabel = useMemo(() => {
+    if (!selectedSubmission) return null;
+
+    if (selectedSubmission.submissionDate) {
+      const parsed = parseDateInput(selectedSubmission.submissionDate);
+      if (parsed) {
+        return format(parsed, 'M/d', { locale: ko });
+      }
+
+      logger.warn('Invalid submissionDate detected', {
+        participantId,
+        submissionId: selectedSubmission.id,
+        submissionDate: selectedSubmission.submissionDate,
+      });
+    }
+
+    return selectedSubmission.submittedAt
+      ? formatShortDate(selectedSubmission.submittedAt)
+      : null;
+  }, [participantId, selectedSubmission]);
 
   // 매칭 날짜 (접근 권한 체크용)
   const effectiveMatchingDate = matchingLookup?.date ?? preferredMatchingDate ?? null;
@@ -423,27 +445,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 최근 제출물 (가장 최근 1개) - submissions는 desc 정렬이므로 첫 번째 항목이 최신
   const latestSubmission = submissions.length > 0 ? submissions[0] : null;
-
-  const submissionDateLabel = useMemo(() => {
-    if (!selectedSubmission) return null;
-
-    if (selectedSubmission.submissionDate) {
-      const parsed = parseDateInput(selectedSubmission.submissionDate);
-      if (parsed) {
-        return format(parsed, 'M/d', { locale: ko });
-      }
-
-      logger.warn('Invalid submissionDate detected', {
-        participantId,
-        submissionId: selectedSubmission.id,
-        submissionDate: selectedSubmission.submissionDate,
-      });
-    }
-
-    return selectedSubmission.submittedAt
-      ? formatShortDate(selectedSubmission.submittedAt)
-      : null;
-  }, [participantId, selectedSubmission]);
 
   return (
     <PageTransition>
@@ -771,8 +772,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   );
 }
 
-export default async function ProfileBookPage({ params }: { params: Promise<{ participantId: string }> }) {
-  const resolvedParams = await params;
+export default function ProfileBookPage({ params }: { params: Promise<{ participantId: string }> }) {
+  const resolvedParams = use(params);
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <ProfileBookContent params={resolvedParams} />
