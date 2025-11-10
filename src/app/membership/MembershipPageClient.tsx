@@ -37,7 +37,7 @@ export default function MembershipPageClient() {
 
       <div className="container">
         <Image
-          src="/image/landing/PnS_Membership_1.webp?v=4.0"
+          src="/image/landing/PnS_Membership_1.webp?v=1762739366900"
           alt="필립앤소피 멤버십 소개"
           width={1170}
           height={4131}
@@ -46,7 +46,7 @@ export default function MembershipPageClient() {
         />
 
         <Image
-          src="/image/landing/PnS_Membership_2.webp?v=4.1"
+          src="/image/landing/PnS_Membership_2.webp?v=1762739366900"
           alt="필립앤소피 멤버십 상세 안내"
           width={1170}
           height={3969}

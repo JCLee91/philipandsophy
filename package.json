@@ -26,7 +26,8 @@
     "cleanup:duplicate-uid": "tsx scripts/cleanup-duplicate-uid.ts",
     "cleanup:duplicate-uid:apply": "tsx scripts/cleanup-duplicate-uid.ts --apply",
     "add:gender-data": "tsx scripts/add-gender-data.ts",
-    "add:gender-data:apply": "tsx scripts/add-gender-data.ts --apply"
+    "add:gender-data:apply": "tsx scripts/add-gender-data.ts --apply",
+    "convert:landing-images": "tsx scripts/convert-landing-images.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.37",
