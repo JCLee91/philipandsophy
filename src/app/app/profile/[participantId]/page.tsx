@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, use, useState, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -30,15 +30,14 @@ import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified
 import { getResizedImageUrl } from '@/lib/image-utils';
 
 interface ProfileBookContentProps {
-  params: Promise<{ participantId: string }>;
+  params: { participantId: string };
 }
 
 function ProfileBookContent({ params }: ProfileBookContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const resolvedParams = use(params);
   // URL 디코딩: %EC%9D%B4%EC%9C%A4%EC%A7%80-4321 → 이윤지-4321
-  const participantId = decodeURIComponent(resolvedParams.participantId);
+  const participantId = decodeURIComponent(params.participantId);
   const cohortId = searchParams.get('cohort');
 
   // 제출 날짜 cutoff (URL 파라미터: 스포일러 방지를 위해 이 날짜까지만 표시)
@@ -666,10 +665,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   );
 }
 
-export default function ProfileBookPage({ params }: ProfileBookContentProps) {
+export default async function ProfileBookPage({ params }: { params: Promise<{ participantId: string }> }) {
+  const resolvedParams = await params;
   return (
     <Suspense fallback={<LoadingSpinner />}>
-      <ProfileBookContent params={params} />
+      <ProfileBookContent params={resolvedParams} />
     </Suspense>
   );
 }
