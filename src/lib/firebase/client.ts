@@ -39,12 +39,21 @@ export function initializeFirebase() {
     if (!getApps().length) {
       app = initializeApp(firebaseConfig);
 
-      // Initialize App Check with reCAPTCHA Enterprise
-      if (typeof window !== 'undefined') {
-        initializeAppCheck(app, {
-          provider: new ReCaptchaEnterpriseProvider('6Lf5vQcsAAAAAP4vRkf38AJGwZO-ToNDpgAi0KzM'),
-          isTokenAutoRefreshEnabled: true
-        });
+      // Initialize App Check with reCAPTCHA Enterprise (optional)
+      // Only enable if RECAPTCHA_SITE_KEY is provided
+      if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+        try {
+          initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
+            isTokenAutoRefreshEnabled: true
+          });
+          logger.info('App Check initialized successfully');
+        } catch (error: any) {
+          // App Check is optional - don't block app initialization if it fails
+          logger.warn('App Check initialization failed (non-critical):', error?.message);
+        }
+      } else {
+        logger.info('App Check disabled - NEXT_PUBLIC_RECAPTCHA_SITE_KEY not configured');
       }
     } else {
       app = getApps()[0];
