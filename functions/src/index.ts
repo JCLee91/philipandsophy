@@ -1436,7 +1436,9 @@ export { sendCustomNotification } from "./custom-notifications";
  * POST /manualMatchingPreview
  * Body: { cohortId: string }
  *
- * Firebase Functions에서 직접 AI 매칭 실행 (Vercel 10초 타임아웃 회피)
+ * Firebase Functions에서 직접 랜덤 매칭 실행 (Vercel 10초 타임아웃 회피)
+ *
+ * @version 2.0.0 - 2025-11-10: AI 매칭 → 랜덤 매칭 전환
  */
 export const manualMatchingPreview = onRequest(
   {
@@ -1529,11 +1531,14 @@ export const manualMatchingPreview = onRequest(
         }
       }
 
-      // ✅ Firebase Functions에서 직접 AI 매칭 실행
-      const { matchParticipantsByAI } = await import("./lib/ai-matching");
+      // ✅ 랜덤 매칭으로 전환 (2025-11-10)
       const { getDailyQuestionText } = await import("./constants/daily-questions");
       const { getMatchingTargetDate, getSubmissionDate } = await import("./lib/date-utils");
       const { MATCHING_CONFIG } = await import("./constants/matching");
+      const {
+        loadProviders,
+        loadRecentMatchings,
+      } = await import("./lib/matching-inputs");
 
       // ✅ FIX: 새벽 2시 마감 정책 적용
       // 날짜 정의
@@ -1541,100 +1546,56 @@ export const manualMatchingPreview = onRequest(
       const matchingDate = getSubmissionDate(); // Firebase dailyFeaturedParticipants 키 (새벽 2시 기준)
       const submissionQuestion = getDailyQuestionText(submissionDate);
 
-      logger.info("Starting AI matching", { cohortId, submissionDate, matchingDate });
+      logger.info("Starting random matching", { cohortId, submissionDate, matchingDate });
 
-      // Firestore에서 제출물 가져오기
       const db = getSeoulDB();
-      const submissionsSnapshot = await db
-        .collection("reading_submissions")
-        .where("submissionDate", "==", submissionDate)
-        .where("status", "!=", "draft")
-        .get();
 
-      if (submissionsSnapshot.size < MATCHING_CONFIG.MIN_PARTICIPANTS) {
+      // 1. Providers와 Viewers 로드
+      const { providers, viewers, notSubmittedParticipants } = await loadProviders(
+        db,
+        cohortId,
+        submissionDate
+      );
+
+      // 2. 최소 인원 검증 (차별화된 에러 메시지)
+      if (providers.length === 0) {
         res.status(400).json({
-          error: "매칭하기에 충분한 참가자가 없습니다.",
-          message: `최소 ${MATCHING_CONFIG.MIN_PARTICIPANTS}명이 필요하지만 현재 ${submissionsSnapshot.size}명만 제출했습니다.`,
-          participantCount: submissionsSnapshot.size,
+          error: "제출자가 없습니다.",
+          message: `${submissionDate}에 제출한 참가자가 없습니다. 인증 제출 후 다시 시도해주세요.`,
+          participantCount: 0,
         });
         return;
       }
 
-      // 참가자 정보 수집
-      const submissionsMap = new Map();
-      submissionsSnapshot.docs.forEach((doc) => {
-        const submission = doc.data();
-        submissionsMap.set(submission.participantId, submission);
+      if (providers.length < MATCHING_CONFIG.MIN_PARTICIPANTS) {
+        res.status(400).json({
+          error: "최소 인원 미만입니다.",
+          message: `${providers.length}명이 제출했습니다. 매칭에는 최소 ${MATCHING_CONFIG.MIN_PARTICIPANTS}명이 필요합니다.`,
+          participantCount: providers.length,
+        });
+        return;
+      }
+
+      // 3. 최근 3일 매칭 이력 로드 (중복 방지용)
+      const recentMatchings = await loadRecentMatchings(db, cohortId, matchingDate);
+
+      // 랜덤 매칭 실행
+      logger.info("Executing random matching", {
+        providersCount: providers.length,
+        viewersCount: viewers.length,
       });
 
-      const uniqueParticipantIds = Array.from(submissionsMap.keys());
-      const participantDataMap = new Map();
+      const matching = await matchParticipantsRandomly({
+        providers,
+        viewers,
+        recentMatchings,
+      });
 
-      // Batch read (10개씩)
-      for (let i = 0; i < uniqueParticipantIds.length; i += MATCHING_CONFIG.BATCH_SIZE) {
-        const batchIds = uniqueParticipantIds.slice(i, i + MATCHING_CONFIG.BATCH_SIZE);
-        const participantDocs = await db
-          .collection("participants")
-          .where(admin.firestore.FieldPath.documentId(), "in", batchIds)
-          .get();
-
-        participantDocs.docs.forEach((doc) => {
-          participantDataMap.set(doc.id, doc.data());
-        });
-      }
-
-      // 참가자 답변 결합
-      const participantAnswers: any[] = [];
-      for (const [participantId, submission] of submissionsMap.entries()) {
-        const participant = participantDataMap.get(participantId);
-        if (!participant) continue;
-        if (!participant.cohortId || participant.cohortId !== cohortId) continue;
-        // 어드민, 슈퍼어드민, 고스트 매칭에서 제외
-        if (participant.isSuperAdmin || participant.isAdministrator || participant.isGhost) continue;
-
-        participantAnswers.push({
-          id: participantId,
-          name: participant.name,
-          answer: (submission as any).dailyAnswer,
-          gender: participant.gender,
-        });
-      }
-
-      if (participantAnswers.length < MATCHING_CONFIG.MIN_PARTICIPANTS) {
-        res.status(400).json({
-          error: "매칭하기에 충분한 참가자가 없습니다.",
-          message: `필터링 후 ${participantAnswers.length}명만 남았습니다.`,
-          participantCount: participantAnswers.length,
-        });
-        return;
-      }
-
-      // AI 매칭 실행
-      logger.info("Executing AI matching", { participantCount: participantAnswers.length });
-      const matching = await matchParticipantsByAI(submissionQuestion, participantAnswers);
-
-      // 제출 여부 통계
-      const allCohortParticipantsSnapshot = await db
-        .collection("participants")
-        .where("cohortId", "==", cohortId)
-        .get();
-
-      const submittedIds = new Set(participantAnswers.map((p) => p.id));
-      const notSubmittedParticipants = allCohortParticipantsSnapshot.docs
-        .filter((doc) => {
-          const participant = doc.data();
-          // 어드민, 슈퍼어드민, 고스트 제외 + 제출 안한 사람만
-          return !submittedIds.has(doc.id) && !participant.isSuperAdmin && !participant.isAdministrator && !participant.isGhost;
-        })
-        .map((doc) => ({
-          id: doc.id,
-          name: doc.data().name,
-        }));
-
-      logger.info("AI matching completed", {
+      logger.info("Random matching completed", {
         cohortId,
-        participantCount: participantAnswers.length,
+        assignedCount: Object.keys(matching.assignments).length,
         validationValid: matching.validation?.valid,
+        warnings: matching.validation?.warnings?.length || 0,
       });
 
       res.status(200).json({
@@ -1642,43 +1603,49 @@ export const manualMatchingPreview = onRequest(
         preview: true,
         date: matchingDate,
         submissionDate,
-        question: submissionQuestion,
-        totalParticipants: participantAnswers.length,
+        question: submissionQuestion, // 참고용 (랜덤 매칭은 질문 사용 안 함)
+        totalParticipants: viewers.length, // 전체 참가자 수
         matching: {
           assignments: matching.assignments,
+          matchingVersion: "random", // v2.0 랜덤 매칭
         },
         validation: matching.validation,
         submissionStats: {
-          submitted: participantAnswers.length,
+          submitted: providers.length, // 제출한 참가자 수
           notSubmitted: notSubmittedParticipants.length,
           notSubmittedList: notSubmittedParticipants,
         },
         debug: {
-          provider: process.env.AI_PROVIDER || "openai",
-          model: process.env.AI_MODEL || "gpt-4o-mini",
-          participantCount: participantAnswers.length,
+          matchingType: "random",
+          providersCount: providers.length,
+          viewersCount: viewers.length,
+          recentMatchingsCount: Object.keys(recentMatchings).length,
           timestamp: new Date().toISOString(),
         },
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const normalized = message.toLowerCase();
-      const isValidationError =
-        normalized.includes("성별 균형 매칭 불가") ||
-        normalized.includes("최소 4명의 참가자가 필요");
 
-      logger.error("Manual matching preview failed", {
+      logger.error("Random matching preview failed", {
         cohortId: requestCohortId,
         error: message,
       });
 
-      const status = isValidationError ? 400 : 500;
-      res.status(status).json({
-        error: status === 400
-          ? "매칭 실행 조건을 충족하지 못했습니다."
-          : "매칭 실행 중 오류가 발생했습니다.",
+      res.status(500).json({
+        error: "매칭 실행 중 오류가 발생했습니다.",
         message,
       });
     }
   }
 );
+
+/**
+ * Export Random Matching Functions
+ *
+ * v2.0: Random Matching (2025-11-07부터 사용)
+ * - scheduledMatchingPreview: 매일 오후 2시 자동 실행 (scheduled-random-matching.ts)
+ * - manualMatchingPreview: 위에서 직접 정의됨 (2025-11-10 리팩토링)
+ *
+ * Note: manual-random-matching.ts는 쿼리 문제로 deprecated
+ */
+// Removed: export { manualRandomMatching as manualMatchingPreview } from "./manual-random-matching";

@@ -24,6 +24,7 @@ import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
 import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
+import { getAssignedProfiles, getLegacyMatchingReasons } from '@/lib/matching-compat';
 import { useParticipant } from '@/hooks/use-participants';
 import { logger } from '@/lib/logger';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
@@ -334,10 +335,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     setDetailImageAspectRatio(null);
   }, [selectedSubmission?.bookImageUrl]);
 
-  const accessibleProfileIds = new Set([
-    ...(viewerAssignment?.similar ?? []),
-    ...(viewerAssignment?.opposite ?? []),
-  ]);
+  // v2.0/v1.0 호환: assigned 우선, fallback으로 similar + opposite
+  const accessibleProfileIds = useMemo(() => {
+    const profileIds = getAssignedProfiles(viewerAssignment);
+    return new Set(profileIds);
+  }, [viewerAssignment]);
 
   const isFeatured = accessibleProfileIds.has(participantId);
 
@@ -347,25 +349,30 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
   const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
 
-  // 디버깅: 매칭 정보 로그
-
-  // 매칭 이유 추출 (현재 보는 프로필이 similar인지 opposite인지 확인)
+  // 매칭 이유 추출 (v1.0 레거시만 해당)
   const matchingReason = useMemo(() => {
     if (!viewerAssignment || !isFeatured) return null;
+
+    // v1.0 (AI 매칭): reasons 필드 존재
+    const legacyReasons = getLegacyMatchingReasons(viewerAssignment);
+    if (!legacyReasons) {
+      // v2.0 (랜덤 매칭): 매칭 이유 없음
+      return null;
+    }
 
     const isSimilar = viewerAssignment.similar?.includes(participantId);
     const isOpposite = viewerAssignment.opposite?.includes(participantId);
 
-    // Theme은 매칭 타입에서 직접 유도 (URL theme은 무시)
-    if (isSimilar && viewerAssignment.reasons?.similar) {
+    // Theme은 매칭 타입에서 직접 유도
+    if (isSimilar && legacyReasons.similar) {
       return {
-        text: viewerAssignment.reasons.similar,
+        text: legacyReasons.similar,
         theme: 'similar' as ProfileTheme
       };
     }
-    if (isOpposite && viewerAssignment.reasons?.opposite) {
+    if (isOpposite && legacyReasons.opposite) {
       return {
-        text: viewerAssignment.reasons.opposite,
+        text: legacyReasons.opposite,
         theme: 'opposite' as ProfileTheme
       };
     }

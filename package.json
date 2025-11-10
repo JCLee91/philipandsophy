@@ -29,7 +29,8 @@
     "add:gender-data:apply": "tsx scripts/add-gender-data.ts --apply",
     "convert:landing-images": "tsx scripts/convert-landing-images.ts",
     "migrate:uid-to-latest": "tsx scripts/migrate-uid-to-latest-cohort.ts",
-    "migrate:uid-to-latest:apply": "tsx scripts/migrate-uid-to-latest-cohort.ts --apply"
+    "migrate:uid-to-latest:apply": "tsx scripts/migrate-uid-to-latest-cohort.ts --apply",
+    "audit:schema": "tsx scripts/audit-firestore-schema.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.37",

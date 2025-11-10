@@ -25,6 +25,7 @@ export interface ParticipantData {
   isAdministrator?: boolean; // 일반 관리자 (공지사항 관리, 프로필 열람 제약 동일)
   isGhost?: boolean; // 고스트 참가자 (테스트용, 리스트 미표시, 오늘의 서재 접근 가능)
   cohortId: string;
+  submissionCount?: number; // 누적 인증 횟수 (v2.0 랜덤 매칭용)
 }
 
 /**
@@ -43,24 +44,65 @@ export interface DailyMatchingReasons {
  */
 export interface DailyParticipantAssignment {
   // v2.0: 랜덤 매칭 (2025-11-07 이후)
-  assigned?: string[]; // 할당된 프로필북 ID 배열 (누적 인증 기반 개수)
+  /** 할당된 프로필북 ID 배열 (누적 인증 기반 개수) */
+  assigned?: string[];
 
-  // v1.0: AI 매칭 (레거시 호환용 - 읽기 전용)
-  similar?: string[]; // 유사한 가치관 참가자 ID
-  opposite?: string[]; // 상반된 가치관 참가자 ID
-  reasons?: DailyMatchingReasons; // AI 매칭 이유
+  // ============================================================
+  // v1.0 레거시 필드 (과거 데이터 읽기 전용)
+  // ============================================================
+
+  /**
+   * @deprecated v1.0 전용 - 새 코드에서 사용 금지
+   * v2.0에서는 `assigned` 필드 사용
+   * 레거시 데이터 호환을 위해 유지
+   */
+  similar?: string[];
+
+  /**
+   * @deprecated v1.0 전용 - 새 코드에서 사용 금지
+   * v2.0에서는 `assigned` 필드 사용
+   * 레거시 데이터 호환을 위해 유지
+   */
+  opposite?: string[];
+
+  /**
+   * @deprecated v1.0 전용 - 새 코드에서 사용 금지
+   * v2.0 랜덤 매칭은 매칭 이유 없음
+   * 레거시 데이터 호환을 위해 유지
+   */
+  reasons?: DailyMatchingReasons;
 }
 
 /**
  * 날짜별 프로필북 매칭 결과
  */
 export interface DailyMatchingEntry {
+  /** 참가자별 매칭 배정 정보 */
   assignments: Record<string, DailyParticipantAssignment>;
-  matchingVersion?: 'ai' | 'random'; // 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭)
 
-  // Legacy 데이터 호환용 (v1.0 - 읽기 전용, 신규 저장 시 사용 안 함)
+  /** 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭) */
+  matchingVersion?: 'ai' | 'random';
+
+  // ============================================================
+  // v1.0 레거시 필드 (과거 데이터 읽기 전용)
+  // ============================================================
+
+  /**
+   * @deprecated v1.0 전용 - 더 이상 사용하지 않음
+   * 레거시 데이터 호환을 위해 유지
+   */
   similar?: string[];
+
+  /**
+   * @deprecated v1.0 전용 - 더 이상 사용하지 않음
+   * 레거시 데이터 호환을 위해 유지
+   */
   opposite?: string[];
+
+  /**
+   * @deprecated v1.0 전용 - 더 이상 사용하지 않음
+   * 레거시 데이터 호환을 위해 유지
+   */
   reasons?: DailyMatchingReasons;
 }
 

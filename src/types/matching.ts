@@ -8,6 +8,9 @@
 
 /**
  * 매칭 이유 설명
+ *
+ * @deprecated v1.0 (AI 매칭) 전용 - v2.0 랜덤 매칭에서는 미사용
+ * 레거시 데이터 호환을 위해 유지
  */
 export interface MatchingReasons {
   /** 비슷한 가치관 이유 */
@@ -20,13 +23,24 @@ export interface MatchingReasons {
 
 /**
  * 참가자별 매칭 배정 정보
+ *
+ * @deprecated v1.0 (AI 매칭) 전용
+ * v2.0에서는 DailyParticipantAssignment 타입 사용 권장
  */
 export interface ParticipantAssignment {
-  /** 비슷한 가치관 참가자 ID 목록 */
+  /**
+   * @deprecated v1.0 전용 - v2.0에서는 `assigned` 필드 사용
+   */
   similar: string[];
-  /** 반대 가치관 참가자 ID 목록 */
+
+  /**
+   * @deprecated v1.0 전용 - v2.0에서는 `assigned` 필드 사용
+   */
   opposite: string[];
-  /** 매칭 이유 (선택) */
+
+  /**
+   * @deprecated v1.0 전용 - v2.0 랜덤 매칭에서는 매칭 이유 없음
+   */
   reasons?: MatchingReasons | null;
 }
 
@@ -56,8 +70,10 @@ export interface MatchingResponse {
   matching: {
     /** 전체 참가자 배정 */
     assignments: Record<string, ParticipantAssignment>;
+    /** 매칭 방식 (v2.0 필드) */
+    matchingVersion?: 'ai' | 'random';
   };
-  /** 매칭 검증 결과 (AI 매칭 품질 체크) */
+  /** 매칭 검증 결과 */
   validation?: MatchingValidation;
   /** 제출 통계 */
   submissionStats?: {

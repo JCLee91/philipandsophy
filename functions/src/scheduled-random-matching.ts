@@ -22,6 +22,10 @@ import {
   matchParticipantsRandomly,
   type ParticipantWithSubmissionCount,
 } from "./lib/random-matching";
+import {
+  loadProviders,
+  loadRecentMatchings,
+} from "./lib/matching-inputs";
 
 // Environment parameters
 const cohortIdParam = defineString("DEFAULT_COHORT_ID", {
@@ -117,116 +121,22 @@ export const scheduledRandomMatching = onSchedule(
 
       logger.info(`Matching date: ${yesterdayStr}`);
 
-      // 5. 어제 인증 완료한 참가자 조회 (공급자: providers)
-      // draft 제외, pending + approved 포함 (기존 시스템과 동일)
-      const submissionsSnapshot = await db
-        .collection("reading_submissions")
-        .where("submissionDate", "==", yesterdayStr)
-        .where("status", "in", ["pending", "approved"]) // draft만 제외
-        .get();
+      // 5. Providers와 Viewers 로드 (Helper 사용)
+      const { providers, viewers } = await loadProviders(
+        db,
+        cohortId,
+        yesterdayStr
+      );
 
-      if (submissionsSnapshot.empty) {
-        logger.warn(`No submitted (pending/approved) for ${yesterdayStr}`);
+      if (providers.length === 0) {
+        logger.warn(`No providers for ${yesterdayStr}`);
         return;
       }
 
-      const providerIds = Array.from(
-        new Set(submissionsSnapshot.docs.map(doc => doc.data().participantId))
-      );
+      logger.info(`Loaded ${providers.length} providers, ${viewers.length} viewers`);
 
-      logger.info(`${providerIds.length} participants submitted (providers)`);
-
-      // 6. 전체 cohort 멤버 조회 (수요자: viewers)
-      // 관리자/고스트 계정 필터링
-      const allParticipantsSnapshot = await db
-        .collection("participants")
-        .where("cohortId", "==", cohortId)
-        .get();
-
-      const viewers: ParticipantWithSubmissionCount[] = [];
-      const providers: ParticipantWithSubmissionCount[] = [];
-
-      for (const participantDoc of allParticipantsSnapshot.docs) {
-        const participantData = participantDoc.data();
-
-        // 관리자/고스트 필터링 (기존 AI 매칭과 동일)
-        if (
-          participantData.isSuperAdmin === true ||
-          participantData.isAdministrator === true ||
-          participantData.isGhost === true
-        ) {
-          logger.info(`Skipping filtered participant: ${participantData.name} (admin/ghost)`);
-          continue;
-        }
-
-        // 누적 인증 횟수 계산 (현재 기수만)
-        // participationCode가 없으면 participant.id로 fallback (제출 플로우와 동일)
-        const participationCode = participantData.participationCode || participantDoc.id;
-
-        const allSubmissionsSnapshot = await db
-          .collection("reading_submissions")
-          .where("participantId", "==", participantDoc.id)
-          .where("participationCode", "==", participationCode)
-          .where("status", "==", "approved")
-          .get();
-
-        // 중복 제거: submissionDate 기준
-        const uniqueDates = new Set(
-          allSubmissionsSnapshot.docs.map(doc => doc.data().submissionDate)
-        );
-
-        const participant: ParticipantWithSubmissionCount = {
-          id: participantDoc.id,
-          name: participantData.name || 'Unknown',
-          gender: participantData.gender,
-          submissionCount: uniqueDates.size,
-        };
-
-        // 전체 멤버는 수요자(viewers)
-        viewers.push(participant);
-
-        // 어제 인증한 사람은 공급자(providers)
-        if (providerIds.includes(participantDoc.id)) {
-          providers.push(participant);
-        }
-      }
-
-      logger.info(`Loaded ${viewers.length} viewers, ${providers.length} providers`);
-
-      // 7. 최근 3일간 매칭 이력 조회
-      const recent3Days: string[] = [];
-      for (let i = 1; i <= 3; i++) {
-        const date = format(subDays(yesterday, i), 'yyyy-MM-dd');
-        recent3Days.push(date);
-      }
-
-      const recentMatchings: Record<string, string[]> = {};
-
-      for (const date of recent3Days) {
-        const dailyFeatured = cohortData?.dailyFeaturedParticipants?.[date];
-        if (!dailyFeatured?.assignments) continue;
-
-        for (const [participantId, assignment] of Object.entries(
-          dailyFeatured.assignments as Record<string, any>
-        )) {
-          if (!recentMatchings[participantId]) {
-            recentMatchings[participantId] = [];
-          }
-
-          // v2.0: assigned 필드
-          if (assignment.assigned) {
-            recentMatchings[participantId].push(...assignment.assigned);
-          }
-
-          // v1.0: similar + opposite (레거시 호환)
-          if (assignment.similar) {
-            recentMatchings[participantId].push(...assignment.similar);
-          }
-          if (assignment.opposite) {
-            recentMatchings[participantId].push(...assignment.opposite);
-          }
-        }
-      }
+      // 6. 최근 3일 매칭 이력 로드 (Helper 사용)
+      const recentMatchings = await loadRecentMatchings(db, cohortId, yesterdayStr, 3);
 
       logger.info(`Recent matchings loaded for ${Object.keys(recentMatchings).length} viewers`);
 

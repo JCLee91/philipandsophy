@@ -20,6 +20,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import type { Participant } from '@/types/database';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
+import { getAssignedProfiles, detectMatchingVersion } from '@/lib/matching-compat';
 import { appRoutes } from '@/lib/navigation';
 import { getSubmissionDate, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
@@ -101,14 +102,12 @@ function TodayLibraryContent() {
     ? assignments[currentUserId] ?? null
     : null;
 
-  // v2.0 (랜덤 매칭): assigned 필드 사용
-  // v1.0 (AI 매칭): similar + opposite 필드 사용 (레거시 호환)
-  const assignedIds = userAssignment?.assigned ?? [];
-  const similarFeaturedIds = userAssignment?.similar ?? [];
-  const oppositeFeaturedIds = userAssignment?.opposite ?? [];
+  // v2.0/v1.0 호환: assigned 우선, fallback으로 similar + opposite
+  const assignedProfileIds = getAssignedProfiles(userAssignment);
+  const detectedVersion = detectMatchingVersion(userAssignment);
 
-  // v2.0 (랜덤 매칭) 여부 판단 (matchingVersion 우선, fallback: assigned 필드 존재)
-  const isRandomMatching = matchingVersion === 'random' || (matchingVersion === undefined && assignedIds.length > 0);
+  // v2.0 (랜덤 매칭) 여부 판단
+  const isRandomMatching = matchingVersion === 'random' || detectedVersion === 'v2';
 
   // v2.0 미인증 시: 성별 다양성 확보를 위한 스마트 샘플링
   // v2.0 인증 시: 전체 ID 다운로드
@@ -117,18 +116,17 @@ function TodayLibraryContent() {
     if (isRandomMatching) {
       // v2.0 랜덤 매칭
       if (isLocked && !isSuperAdmin) {
-        // 미인증: 각 성별 최소 1명씩 확보 가능하도록 충분히 샘플링
-        // 최대 20개까지만 (보안 + 성능 균형)
-        return assignedIds.slice(0, 20);
+        // 미인증: 최대 20개까지만 (보안 + 성능 균형)
+        return assignedProfileIds.slice(0, 20);
       }
 
       // 인증: 전체
-      return assignedIds;
+      return assignedProfileIds;
     }
 
-    // v1.0 AI 매칭: similar + opposite
-    return Array.from(new Set([...similarFeaturedIds, ...oppositeFeaturedIds]));
-  }, [isRandomMatching, isLocked, isSuperAdmin, assignedIds, similarFeaturedIds, oppositeFeaturedIds]);
+    // v1.0 AI 매칭 fallback
+    return assignedProfileIds;
+  }, [isRandomMatching, isLocked, isSuperAdmin, assignedProfileIds]);
 
   // 어제 인증한 참가자 목록 조회
   const { data: yesterdayVerifiedIds, isLoading: yesterdayVerifiedLoading } = useYesterdayVerifiedParticipants(cohortId || undefined);
@@ -229,9 +227,8 @@ function TodayLibraryContent() {
 
         // ⚠️ 중요: BookmarkCard는 profileImage prop을 사용하므로,
         // profileImage 필드 자체를 원형 이미지로 덮어써야 함
-        const derivedTheme = showAllProfiles
-          ? (participant.gender === 'female' ? 'opposite' : 'similar')
-          : (similarFeaturedIds.includes(participant.id) ? 'similar' : 'opposite');
+        // v2.0: 랜덤 매칭에서는 theme 구분 없음 (성별 기반으로만)
+        const derivedTheme = participant.gender === 'female' ? 'opposite' : 'similar';
 
         return {
           ...participant,
@@ -594,7 +591,7 @@ function TodayLibraryContent() {
 
   // v2.0: 프로필북 개수 계산 (백엔드 할당 개수 기준)
   const totalCount = isRandomMatching
-    ? assignedIds.length // 백엔드에서 할당한 전체 개수
+    ? assignedProfileIds.length // 백엔드에서 할당한 전체 개수
     : featuredParticipants.length;
 
   const unlockedCount = isRandomMatching && isLocked

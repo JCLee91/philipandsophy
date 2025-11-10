@@ -9,6 +9,7 @@ import { MATCHING_CONFIG } from '@/constants/matching';
 import { CARD_STYLES } from '@/constants/ui';
 import { logger } from '@/lib/logger';
 import { getAdminHeaders } from '@/lib/auth-utils';
+import { getAssignedProfiles, detectMatchingVersion } from '@/lib/matching-compat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-count';
@@ -335,17 +336,52 @@ function MatchingPageContent() {
     const currentResult = previewResult || confirmedResult;
     if (!currentResult?.matching.assignments) return [];
 
+    const matchingVersion = currentResult.matching.matchingVersion;
+
     return cohortParticipants
       .filter((participant) => {
         // 슈퍼 관리자만 제외 (일반 관리자는 매칭 대상 포함)
         if (participant.isSuperAdmin) return false;
 
-        // 매칭 결과가 있는 참가자만 포함 (어제 제출한 사람만)
+        // 매칭 결과가 있는 참가자만 포함
         const assignment = currentResult.matching.assignments?.[participant.id];
-        return assignment && (assignment.similar?.length > 0 || assignment.opposite?.length > 0);
+        const assignedProfiles = getAssignedProfiles(assignment);
+        return assignedProfiles.length > 0;
       })
       .map((participant) => {
         const assignment = currentResult.matching.assignments?.[participant.id];
+        const version = detectMatchingVersion(assignment);
+
+        // v2.0 (랜덤 매칭): assigned 필드 사용
+        if (version === 'v2' || matchingVersion === 'random') {
+          const assignedIds = getAssignedProfiles(assignment);
+
+          // 삭제된 참가자 ID 감지 및 로깅
+          const invalidIds = assignedIds.filter(id => !participantsById.has(id));
+          if (invalidIds.length > 0) {
+            logger.warn('Invalid assigned IDs detected', { participantId: participant.id, invalidIds });
+          }
+
+          const assignedTargets = assignedIds
+            .filter((id) => participantsById.has(id))
+            .map((id) => {
+              const target = participantsById.get(id)!;
+              return {
+                id,
+                name: target.name,
+              };
+            });
+
+          return {
+            viewerId: participant.id,
+            viewerName: participant.name,
+            similarTargets: assignedTargets, // v2.0: similar/opposite 구분 없음
+            oppositeTargets: [],
+            reasons: null, // v2.0: 매칭 이유 없음
+          };
+        }
+
+        // v1.0 (AI 매칭): similar + opposite 필드 사용 (레거시 fallback)
         const similarTargets = assignment?.similar ?? [];
         const oppositeTargets = assignment?.opposite ?? [];
 
@@ -353,7 +389,7 @@ function MatchingPageContent() {
         const invalidSimilarIds = similarTargets.filter(id => !participantsById.has(id));
         const invalidOppositeIds = oppositeTargets.filter(id => !participantsById.has(id));
         if (invalidSimilarIds.length > 0 || invalidOppositeIds.length > 0) {
-
+          logger.warn('Invalid v1.0 IDs detected', { participantId: participant.id, invalidSimilarIds, invalidOppositeIds });
         }
 
         return {
