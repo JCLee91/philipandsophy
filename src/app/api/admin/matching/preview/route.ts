@@ -31,16 +31,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 환경변수 검증
-    const functionsUrl = process.env.FUNCTIONS_BASE_URL;
+    // 환경변수 검증 (기존 환경변수명 사용)
+    const functionsUrl = process.env.MANUAL_MATCHING_URL;
     const internalSecret = process.env.INTERNAL_SERVICE_SECRET;
 
     if (!functionsUrl) {
-      logger.error('FUNCTIONS_BASE_URL not configured');
+      logger.error('MANUAL_MATCHING_URL not configured');
       return NextResponse.json(
         {
           error: '서버 설정 오류',
-          message: 'FUNCTIONS_BASE_URL 환경변수가 설정되지 않았습니다.',
+          message: 'MANUAL_MATCHING_URL 환경변수가 설정되지 않았습니다.',
         },
         { status: 500 }
       );

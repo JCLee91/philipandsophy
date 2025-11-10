@@ -59,6 +59,28 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: `
+              default-src 'self';
+              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net;
+              style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+              img-src 'self' data: blob: https: http:;
+              font-src 'self' data: https://cdn.jsdelivr.net;
+              connect-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.cloudfunctions.net wss://*.firebaseio.com https://openapi.naver.com https://*.run.app;
+              frame-src 'self' https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com;
+              frame-ancestors 'self' https://www.google.com;
+            `.replace(/\s+/g, ' ').trim(),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 // ✅ We're NOT using next-pwa anymore - it was overwriting our custom SW

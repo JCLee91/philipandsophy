@@ -48,6 +48,13 @@ function withTimeout<T>(
 export function initInvisibleRecaptcha(): RecaptchaVerifier {
   const auth = getFirebaseAuth();
 
+  // 개발 환경에서 reCAPTCHA 비활성화
+  if (process.env.NODE_ENV === 'development') {
+    // @ts-ignore
+    auth.settings.appVerificationDisabledForTesting = true;
+    logger.info('reCAPTCHA disabled for testing in development');
+  }
+
   // Clear any existing recaptcha
   const existingContainer = document.getElementById('recaptcha-container');
   if (existingContainer) {
@@ -61,6 +68,10 @@ export function initInvisibleRecaptcha(): RecaptchaVerifier {
     },
     'expired-callback': () => {
       logger.warn('reCAPTCHA expired');
+    },
+    'error-callback': (error: any) => {
+      logger.error('reCAPTCHA error:', error);
+      // Enterprise 실패시 v2로 자동 폴백됨
     },
   });
 }
