@@ -48,7 +48,7 @@ export default function HomePage() {
 
       <div className="container">
         <Image
-          src="/image/landing/PnS_1.webp?v=4.0"
+          src="/image/landing/PnS_1.webp?v=1762739366900"
           alt="필립앤소피(P&S) 승인제 독서소셜클럽 - 깊이 있는 대화가 설레는 만남으로"
           width={1170}
           height={2400}
@@ -57,7 +57,7 @@ export default function HomePage() {
         />
 
         <Image
-          src="/image/landing/PnS_2.webp?v=4.0"
+          src="/image/landing/PnS_2.webp?v=1762739366900"
           alt="필립앤소피 소셜클럽 소개"
           width={1170}
           height={5526}
@@ -66,7 +66,7 @@ export default function HomePage() {
         />
 
         <Image
-          src="/image/landing/PnS_3.webp?v=4.0"
+          src="/image/landing/PnS_3.webp?v=1762739366900"
           alt="필립앤소피 서비스 특징"
           width={1170}
           height={6930}
@@ -87,7 +87,7 @@ export default function HomePage() {
               }
             }}
           >
-            <span className="cta-text">필립앤소피 3기 참여하기</span>
+            <span className="cta-text">필립앤소피 4기 참여하기</span>
             <div className="cta-arrow">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

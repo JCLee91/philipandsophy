@@ -42,7 +42,7 @@ export default function ServicePageClient() {
         {/* 첫 번째 이미지 + 동영상 오버레이 */}
         <div className="image-with-video-overlay">
           <Image
-            src="/image/landing/PnS_Program_1.webp?v=4.0"
+            src="/image/landing/PnS_Service_1.webp?v=1762739366900"
             alt="필립앤소피 독서 프로그램 소개"
             width={1170}
             height={3963}
@@ -59,14 +59,14 @@ export default function ServicePageClient() {
               muted
               loop
               playsInline
-              poster="/image/landing/PnS_Program_1.webp?v=4.0"
+              poster="/image/landing/PnS_Service_1.webp?v=1762739366900"
               aria-label="필립앤소피 프로그램 목업 영상"
             />
           </div>
         </div>
 
         <Image
-          src="/image/landing/PnS_Service_2.webp?v=4.1"
+          src="/image/landing/PnS_Service_2.webp?v=1762739366900"
           alt="필립앤소피 프로그램 상세 안내"
           width={1170}
           height={5151}
@@ -74,7 +74,7 @@ export default function ServicePageClient() {
         />
 
         <Image
-          src="/image/landing/PnS_Service_3.webp?v=4.0"
+          src="/image/landing/PnS_Service_3.webp?v=1762739366900"
           alt="필립앤소피 프로그램 추가 정보"
           width={1170}
           height={4797}
@@ -95,7 +95,7 @@ export default function ServicePageClient() {
               }
             }}
           >
-            <span className="cta-text">필립앤소피 3기 참여하기</span>
+            <span className="cta-text">필립앤소피 4기 참여하기</span>
             <div className="cta-arrow">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

@@ -37,7 +37,7 @@ export default function MembershipPageClient() {
 
       <div className="container">
         <Image
-          src="/image/landing/PnS_Membership_1.webp?v=4.0"
+          src="/image/landing/PnS_Membership_1.webp?v=1762739366900"
           alt="필립앤소피 멤버십 소개"
           width={1170}
           height={4131}
@@ -46,7 +46,7 @@ export default function MembershipPageClient() {
         />
 
         <Image
-          src="/image/landing/PnS_Membership_2.webp?v=4.1"
+          src="/image/landing/PnS_Membership_2.webp?v=1762739366900"
           alt="필립앤소피 멤버십 상세 안내"
           width={1170}
           height={3969}
@@ -67,7 +67,7 @@ export default function MembershipPageClient() {
               }
             }}
           >
-            <span className="cta-text">필립앤소피 3기 참여하기</span>
+            <span className="cta-text">필립앤소피 4기 참여하기</span>
             <div className="cta-arrow">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
