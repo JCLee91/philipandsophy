@@ -37,12 +37,8 @@ export function initRecaptcha(
 
   return new RecaptchaVerifier(auth, containerId, {
     size,
-    callback: () => {
-
-    },
-    'expired-callback': () => {
-
-    },
+    callback: () => {},
+    'expired-callback': () => {},
   });
 }
 
@@ -58,22 +54,9 @@ export async function sendSmsVerification(
   recaptchaVerifier: RecaptchaVerifier
 ): Promise<ConfirmationResult> {
   const auth = getFirebaseAuth();
-
-  // 기존 유틸리티 함수로 E.164 변환 (DRY)
   const e164Number = phoneFormatUtils.toE164(phoneNumber);
 
-  try {
-    const confirmationResult = await signInWithPhoneNumber(
-      auth,
-      e164Number,
-      recaptchaVerifier
-    );
-
-    return confirmationResult;
-  } catch (error: any) {
-
-    throw new Error(AUTH_ERROR_MESSAGES.SMS_SEND_FAILED);
-  }
+  return await signInWithPhoneNumber(auth, e164Number, recaptchaVerifier);
 }
 
 /**

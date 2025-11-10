@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAuth, Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { firebaseConfig } from './config';
 import { logger } from '@/lib/logger';
 
@@ -37,6 +38,14 @@ export function initializeFirebase() {
   try {
     if (!getApps().length) {
       app = initializeApp(firebaseConfig);
+
+      // Initialize App Check with reCAPTCHA Enterprise
+      if (typeof window !== 'undefined') {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaEnterpriseProvider('6Lf5vQcsAAAAAP4vRkf38AJGwZO-ToNDpgAi0KzM'),
+          isTokenAutoRefreshEnabled: true
+        });
+      }
     } else {
       app = getApps()[0];
     }
