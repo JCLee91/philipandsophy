@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, Suspense } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
+import { useSearchParams } from 'next/navigation';
 import { initializeFirebase, getFirebaseAuth } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
 import { Participant } from '@/types/database';
@@ -37,32 +38,11 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [allUserParticipants, setAllUserParticipants] = useState<Participant[]>([]);
-  const [urlCohortId, setUrlCohortId] = useState<string | null>(null);
 
-  // URL cohortId 감지 (window.location 사용)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const updateCohortId = () => {
-      const params = new URLSearchParams(window.location.search);
-      setUrlCohortId(params.get('cohort'));
-    };
-
-    updateCohortId();
-
-    // URL 변경 감지
-    window.addEventListener('popstate', updateCohortId);
-    const originalPushState = window.history.pushState;
-    window.history.pushState = function(...args) {
-      originalPushState.apply(this, args);
-      updateCohortId();
-    };
-
-    return () => {
-      window.removeEventListener('popstate', updateCohortId);
-      window.history.pushState = originalPushState;
-    };
-  }, []);
+  // ✅ FIX: useSearchParams로 URL cohort 파라미터 감지
+  // pushState, replaceState, popstate 모두 자동 감지됨
+  const searchParams = useSearchParams();
+  const urlCohortId = searchParams.get('cohort');
 
   useEffect(() => {
     let mounted = true;
@@ -216,7 +196,11 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
 // 외부에서 사용하는 Provider
 export function AuthProvider({ children }: { children: ReactNode }) {
-  return <FirebaseAuthProvider>{children}</FirebaseAuthProvider>;
+  return (
+    <Suspense fallback={null}>
+      <FirebaseAuthProvider>{children}</FirebaseAuthProvider>
+    </Suspense>
+  );
 }
 
 export function useAuth() {

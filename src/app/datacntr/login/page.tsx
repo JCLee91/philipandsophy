@@ -175,16 +175,26 @@ export default function DataCenterLoginPage() {
           const phoneMissingUid = participantByPhone.firebaseUid !== currentUid;
 
           if (shouldSwitchCohort || phoneMissingUid) {
-            if (shouldSwitchCohort && participantRecord && participantRecord.id !== participantByPhone.id) {
-              await unlinkFirebaseUid(participantRecord.id);
-            }
+            try {
+              // ✅ FIX: 순서 변경 - 새 문서에 link 먼저, 성공 시에만 이전 문서 unlink
+              // 이렇게 하면 link 실패 시 이전 UID는 보존됨 (롤백 불필요)
+              await linkFirebaseUid(participantByPhone.id, currentUid);
 
-            await linkFirebaseUid(participantByPhone.id, currentUid);
-            participantRecord = {
-              ...participantByPhone,
-              firebaseUid: currentUid,
-            };
-            didLinkFirebaseUid = true;
+              // 새 문서 link 성공 → 이전 문서 unlink
+              if (shouldSwitchCohort && participantRecord && participantRecord.id !== participantByPhone.id) {
+                await unlinkFirebaseUid(participantRecord.id);
+              }
+
+              participantRecord = {
+                ...participantByPhone,
+                firebaseUid: currentUid,
+              };
+              didLinkFirebaseUid = true;
+            } catch (error) {
+              logger.error('Failed to link Firebase UID', error);
+              // link 실패 시: participantRecord는 기존 값 유지 (롤백 불필요)
+              throw error; // 상위 catch로 전달
+            }
           }
         }
 
