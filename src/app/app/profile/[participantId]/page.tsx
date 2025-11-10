@@ -184,13 +184,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     }
     const dateString = cohort.programStartDate || cohort.startDate;
     if (!dateString) {
-      return null;
-    }
-
-    // ✅ FIX: Invalid Date 체크
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      logger.error('Invalid programStartDate in profile', {
+      logger.warn('No startDate in cohort', {
         cohortId: cohort.id,
         programStartDate: cohort.programStartDate,
         startDate: cohort.startDate,
@@ -198,14 +192,52 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
       return null;
     }
 
-    return date;
+    try {
+      // ✅ FIX: Invalid Date 체크 및 예외 처리
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        logger.error('Invalid programStartDate in profile', {
+          cohortId: cohort.id,
+          programStartDate: cohort.programStartDate,
+          startDate: cohort.startDate,
+          dateString,
+        });
+        return null;
+      }
+
+      return date;
+    } catch (error) {
+      logger.error('Error parsing startDate in profile', {
+        cohortId: cohort.id,
+        dateString,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
   }, [cohort]);
 
   const fourteenDays = useMemo(() => {
     if (!startDate) return [];
-    return Array.from({ length: 14 }, (_, i) =>
-      startOfDay(new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000))
-    );
+
+    try {
+      return Array.from({ length: 14 }, (_, i) => {
+        const dayDate = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+        // Invalid Date 체크
+        if (isNaN(dayDate.getTime())) {
+          logger.error('Invalid date in fourteenDays generation', {
+            dayIndex: i,
+            startDate: startDate.toISOString(),
+          });
+          return null;
+        }
+        return startOfDay(dayDate);
+      }).filter(Boolean) as Date[];
+    } catch (error) {
+      logger.error('Error generating fourteenDays', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return [];
+    }
   }, [startDate]);
 
   // 모든 질문과 답변 수집 (중복 제거)
@@ -334,14 +366,41 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 각 날짜에 대한 제출물 찾기 (dayNumber 추가)
   // ✅ 새벽 2시 정책: submissionDate 필드 사용 (submittedAt 시각이 아님)
   const dailySubmissions = fourteenDays.map((date, index) => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    const submission = submissions.find((sub) => sub.submissionDate === dateString);
-    return {
-      date,
-      submission,
-      hasSubmission: !!submission,
-      dayNumber: index + 1, // 1~14
-    };
+    try {
+      // Invalid Date 체크
+      if (!date || isNaN(date.getTime())) {
+        logger.error('Invalid date in dailySubmissions', {
+          index,
+          date,
+        });
+        return {
+          date: new Date(), // Fallback to current date
+          submission: undefined,
+          hasSubmission: false,
+          dayNumber: index + 1,
+        };
+      }
+
+      const dateString = format(date, 'yyyy-MM-dd');
+      const submission = submissions.find((sub) => sub.submissionDate === dateString);
+      return {
+        date,
+        submission,
+        hasSubmission: !!submission,
+        dayNumber: index + 1, // 1~14
+      };
+    } catch (error) {
+      logger.error('Error processing dailySubmission', {
+        index,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        date: new Date(), // Fallback to current date
+        submission: undefined,
+        hasSubmission: false,
+        dayNumber: index + 1,
+      };
+    }
   });
 
   // 최근 제출물 (가장 최근 1개) - submissions는 desc 정렬이므로 첫 번째 항목이 최신
