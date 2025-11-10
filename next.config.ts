@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const META_CAPI_ENDPOINT = 'https://capig.datah04.com';
+const CDN_JSDELIVR_ENDPOINT = 'https://cdn.jsdelivr.net';
+const GSTATIC_ENDPOINT = 'https://www.gstatic.com';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -74,7 +76,7 @@ const nextConfig: NextConfig = {
               style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
               img-src 'self' data: blob: https: http:;
               font-src 'self' data: https://cdn.jsdelivr.net;
-              connect-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.cloudfunctions.net wss://*.firebaseio.com https://openapi.naver.com https://*.run.app https://www.google.com https://recaptchaenterprise.googleapis.com https://www.google-analytics.com ${META_CAPI_ENDPOINT};
+              connect-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.cloudfunctions.net wss://*.firebaseio.com https://openapi.naver.com https://*.run.app https://www.google.com https://recaptchaenterprise.googleapis.com https://www.google-analytics.com ${GSTATIC_ENDPOINT} ${CDN_JSDELIVR_ENDPOINT} ${META_CAPI_ENDPOINT};
               frame-src 'self' https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com;
               frame-ancestors 'self' https://www.google.com;
             `.replace(/\s+/g, ' ').trim(),
