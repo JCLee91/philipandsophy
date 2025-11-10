@@ -193,6 +193,7 @@ export default function PhoneAuthCard() {
     setError('');
 
     try {
+      const cleanNumber = phoneNumber.replace(/-/g, '');
       // ✅ Firebase 공식 패턴: confirmationResult.confirm() 호출
       // 성공 시 Firebase가 자동으로 onAuthStateChanged 트리거
       const userCredential = await confirmSmsCode(
@@ -202,27 +203,36 @@ export default function PhoneAuthCard() {
 
       // 마지막 로그인 전화번호 저장
       try {
-        const cleanNumber = phoneNumber.replace(/-/g, '');
         localStorage.setItem(LAST_PHONE_KEY, cleanNumber);
       } catch (error) {
         // localStorage 에러는 무시
       }
 
       // ✅ Firebase UID 연결 (필요시)
-      const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid } = await import('@/lib/firebase');
+      const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid, unlinkFirebaseUid } = await import('@/lib/firebase');
+      const currentUid = userCredential.user.uid;
 
-      let participant = await getParticipantByFirebaseUid(userCredential.user.uid);
+      let participantByUid = await getParticipantByFirebaseUid(currentUid);
+      const participantByPhone = cleanNumber ? await getParticipantByPhoneNumber(cleanNumber) : null;
 
-      if (!participant) {
-        // firebaseUid가 없는 경우 → 전화번호로 조회 후 연결
-        const cleanNumber = phoneNumber.replace(/-/g, '');
-        participant = await getParticipantByPhoneNumber(cleanNumber);
+      if (participantByPhone) {
+        const shouldSwitchCohort = !participantByUid || participantByUid.id !== participantByPhone.id;
+        const phoneMissingUid = participantByPhone.firebaseUid !== currentUid;
 
-        if (participant && participant.firebaseUid !== userCredential.user.uid) {
-          await linkFirebaseUid(participant.id, userCredential.user.uid);
-          // ✅ UID 연결 완료 → AuthContext의 onAuthStateChanged가 자동으로 감지함
+        if (shouldSwitchCohort || phoneMissingUid) {
+          if (shouldSwitchCohort && participantByUid && participantByUid.id !== participantByPhone.id) {
+            await unlinkFirebaseUid(participantByUid.id);
+          }
+
+          await linkFirebaseUid(participantByPhone.id, currentUid);
+          participantByUid = {
+            ...participantByPhone,
+            firebaseUid: currentUid,
+          };
         }
       }
+
+      const participant = participantByUid ?? participantByPhone;
 
       if (!participant) {
         setError(AUTH_ERROR_MESSAGES.PARTICIPANT_NOT_FOUND);

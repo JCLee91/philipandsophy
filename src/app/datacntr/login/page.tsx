@@ -162,24 +162,29 @@ export default function DataCenterLoginPage() {
       );
 
       try {
-        const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid } = await import('@/lib/firebase');
+        const cleanNumber = phoneNumber.replace(/-/g, '');
+        const { getParticipantByFirebaseUid, getParticipantByPhoneNumber, linkFirebaseUid, unlinkFirebaseUid } = await import('@/lib/firebase');
         const currentUid = userCredential.user.uid;
 
         let participantRecord = await getParticipantByFirebaseUid(currentUid);
+        const participantByPhone = cleanNumber ? await getParticipantByPhoneNumber(cleanNumber) : null;
         let didLinkFirebaseUid = false;
 
-        if (!participantRecord) {
-          const cleanNumber = phoneNumber.replace(/-/g, '');
-          participantRecord = await getParticipantByPhoneNumber(cleanNumber);
+        if (participantByPhone) {
+          const shouldSwitchCohort = !participantRecord || participantRecord.id !== participantByPhone.id;
+          const phoneMissingUid = participantByPhone.firebaseUid !== currentUid;
 
-          if (participantRecord && participantRecord.firebaseUid !== currentUid) {
-            await linkFirebaseUid(participantRecord.id, currentUid);
-            didLinkFirebaseUid = true;
+          if (shouldSwitchCohort || phoneMissingUid) {
+            if (shouldSwitchCohort && participantRecord && participantRecord.id !== participantByPhone.id) {
+              await unlinkFirebaseUid(participantRecord.id);
+            }
 
+            await linkFirebaseUid(participantByPhone.id, currentUid);
             participantRecord = {
-              ...participantRecord,
+              ...participantByPhone,
               firebaseUid: currentUid,
             };
+            didLinkFirebaseUid = true;
           }
         }
 

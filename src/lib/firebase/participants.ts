@@ -258,6 +258,22 @@ export async function linkFirebaseUid(
 }
 
 /**
+ * 참가자의 Firebase UID 연결 해제
+ *
+ * 다중 코호트 참가자가 최신 기수로 이동할 때
+ * 이전 참가자 문서의 firebaseUid를 안전하게 비웁니다.
+ */
+export async function unlinkFirebaseUid(participantId: string): Promise<void> {
+  const db = getDb();
+  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, participantId);
+
+  await updateDoc(docRef, {
+    firebaseUid: null,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+/**
  * 기수별 참가자 조회
  *
  * 심플하고 직관적인 방식: 네트워크에서 직접 가져오기

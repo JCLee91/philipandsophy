@@ -48,6 +48,7 @@ export {
   // Firebase Auth 관련
   getParticipantByFirebaseUid,
   linkFirebaseUid,
+  unlinkFirebaseUid,
 } from './participants';
 
 // Submission operations
