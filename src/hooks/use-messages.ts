@@ -15,7 +15,6 @@ import {
 } from '@/lib/firebase';
 import { useEffect } from 'react';
 import type { DirectMessage } from '@/types/database';
-import { logger } from '@/lib/logger';
 
 /**
  * Query key factory for messages

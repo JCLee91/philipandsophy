@@ -18,6 +18,7 @@ import {
 import { getDb } from './client';
 import { Notice, COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
+import { isPublishedNotice } from './notice-utils';
 
 /**
  * Notice CRUD Operations
@@ -32,35 +33,17 @@ export async function createNotice(
   const db = getDb();
   const now = Timestamp.now();
 
-  const noticeData: {
-    cohortId: string;
-    author: string;
-    content: string;
-    isCustom: boolean;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    templateId?: string;
-    imageUrl?: string;
-    order?: number;
-  } = {
+  const noticeData = {
     cohortId: data.cohortId,
     author: data.author,
     content: data.content,
     isCustom: data.isCustom,
     createdAt: now,
     updatedAt: now,
+    ...(data.templateId && { templateId: data.templateId }),
+    ...(data.imageUrl && { imageUrl: data.imageUrl }),
+    ...(data.order !== undefined && { order: data.order }),
   };
-
-  // Optional 필드들
-  if (data.templateId) {
-    noticeData.templateId = data.templateId;
-  }
-  if (data.imageUrl) {
-    noticeData.imageUrl = data.imageUrl;
-  }
-  if (data.order !== undefined) {
-    noticeData.order = data.order;
-  }
 
   const docRef = await addDoc(collection(db, COLLECTIONS.NOTICES), noticeData);
 
@@ -108,11 +91,7 @@ export async function getNoticesByCohort(cohortId: string): Promise<Notice[]> {
 
   // Filter out draft notices client-side
   return querySnapshot.docs
-    .filter((doc) => {
-      const data = doc.data();
-      // Only include if status is undefined/null or 'published'
-      return !data.status || data.status === 'published';
-    })
+    .filter((doc) => isPublishedNotice(doc.data()))
     .map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -202,10 +181,7 @@ export const subscribeToNoticesByCohort = (
     (snapshot) => {
       // Filter out draft notices client-side
       const notices = snapshot.docs
-        .filter((doc) => {
-          const data = doc.data();
-          return !data.status || data.status === 'published';
-        })
+        .filter((doc) => isPublishedNotice(doc.data()))
         .map((doc) => ({
           id: doc.id,
           ...doc.data(),

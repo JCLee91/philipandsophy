@@ -3,6 +3,7 @@ import NoticeItem from '@/components/NoticeItem';
 import { Notice } from '@/types/database';
 import { formatDate, formatTime } from '@/lib/utils';
 import { getTimestampMillis } from '@/lib/firebase/timestamp-utils';
+import { isPublishedNotice } from '@/lib/firebase/notice-utils';
 
 interface NoticeTimelineProps {
   notices: Notice[];
@@ -34,8 +35,8 @@ export function NoticeTimeline({
     if (isAdmin) {
       return notices;
     }
-    // 일반 참가자: draft 제외, status 없으면 published로 간주
-    return notices.filter(notice => notice.status !== 'draft');
+    // 일반 참가자: draft 제외
+    return notices.filter(isPublishedNotice);
   }, [notices, isAdmin]);
 
   const grouped = useMemo(() => {
