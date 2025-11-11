@@ -689,8 +689,9 @@ function TodayLibraryContent() {
                     {/* 왼쪽: 남자 */}
                     <div className="flex flex-col gap-4">
                       {visibleMale.map((p, idx) => {
-                        const assignmentIndex = assignedProfileIds.indexOf(p.id);
-                        const cardIndex = assignmentIndex >= 0 ? assignmentIndex : idx;
+                        // 행 기반 인덱스: 왼쪽 열 → idx * 2
+                        const rowIndex = idx;
+                        const cardIndex = rowIndex * 2;
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -709,7 +710,9 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (남자) */}
                       {shouldShowLockedCards && Array.from({ length: maleLockedSlots }).map((_, idx) => {
-                        const cardIndex = unlockedCount + idx;
+                        // 잠긴 카드: 열린 카드 아래에 표시
+                        const rowIndex = visibleMale.length + idx;
+                        const cardIndex = rowIndex * 2;
                         return (
                           <div key={`locked-male-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
@@ -730,8 +733,9 @@ function TodayLibraryContent() {
                     {/* 오른쪽: 여자 */}
                     <div className="flex flex-col gap-4">
                       {visibleFemale.map((p, idx) => {
-                        const assignmentIndex = assignedProfileIds.indexOf(p.id);
-                        const cardIndex = assignmentIndex >= 0 ? assignmentIndex : visibleMale.length + idx;
+                        // 행 기반 인덱스: 오른쪽 열 → idx * 2 + 1
+                        const rowIndex = idx;
+                        const cardIndex = rowIndex * 2 + 1;
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -750,7 +754,9 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (여자) */}
                       {shouldShowLockedCards && Array.from({ length: femaleLockedSlots }).map((_, idx) => {
-                        const cardIndex = unlockedCount + maleLockedSlots + idx;
+                        // 잠긴 카드: 열린 카드 아래에 표시
+                        const rowIndex = visibleFemale.length + idx;
+                        const cardIndex = rowIndex * 2 + 1;
                         return (
                           <div key={`locked-female-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
