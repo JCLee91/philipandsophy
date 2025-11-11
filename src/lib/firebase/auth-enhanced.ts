@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { getFirebaseAuth } from './client';
 import { logger } from '@/lib/logger';
+import { withTimeout } from '@/lib/utils';
 import { phoneFormatUtils } from '@/constants/phone-format';
 
 /**
@@ -26,21 +27,7 @@ const SMS_SEND_TIMEOUT = 30000; // 30초
 const SMS_VERIFY_TIMEOUT = 30000; // 30초
 const AUTO_VERIFY_TIMEOUT = 5000; // 5초 (자동 인증 대기)
 
-/**
- * Promise with timeout wrapper
- */
-function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  timeoutMessage: string = '요청 시간이 초과되었습니다'
-): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
-    ),
-  ]);
-}
+// ❌ REMOVED: withTimeout 중복 제거 (utils.ts에서 import)
 
 /**
  * Initialize invisible reCAPTCHA

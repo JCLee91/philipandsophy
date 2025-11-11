@@ -65,18 +65,5 @@ export function getResizedImageUrl(originalUrl: string | undefined | null): stri
   }
 }
 
-/**
- * 이미지 URL이 리사이즈 버전인지 확인
- */
-export function isResizedImage(url: string | undefined | null): boolean {
-  if (!url) return false;
-  return url.includes('_1200x1200.');
-}
-
-/**
- * Next.js Image 컴포넌트용 loader
- * Firebase Storage 이미지를 리사이즈 버전으로 로드
- */
-export function firebaseImageLoader({ src }: { src: string }): string {
-  return getResizedImageUrl(src) || src;
-}
+// ❌ REMOVED: isResizedImage - 미사용 함수 제거
+// ❌ REMOVED: firebaseImageLoader - 미사용 함수 제거

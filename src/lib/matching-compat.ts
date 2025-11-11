@@ -80,35 +80,5 @@ export function detectMatchingVersion(
   return 'empty';
 }
 
-/**
- * 레거시 매칭 이유 확인
- *
- * v1.0 AI 매칭에만 존재하는 reasons 필드
- *
- * @param assignment 매칭 데이터
- * @returns reasons 객체 또는 null
- */
-export function getLegacyMatchingReasons(
-  assignment: DailyParticipantAssignment | undefined | null
-): { similar?: string; opposite?: string } | null {
-  if (!assignment || !assignment.reasons) {
-    return null;
-  }
-
-  return {
-    similar: assignment.reasons.similar,
-    opposite: assignment.reasons.opposite,
-  };
-}
-
-/**
- * 프로필북 개수 계산 (v2.0 기준)
- *
- * @param assignment 매칭 데이터
- * @returns 프로필북 개수
- */
-export function getProfileBookCount(
-  assignment: DailyParticipantAssignment | undefined | null
-): number {
-  return getAssignedProfiles(assignment).length;
-}
+// ❌ REMOVED: getLegacyMatchingReasons - v1.0 AI 매칭 레거시 제거
+// ❌ REMOVED: getProfileBookCount - 미사용 함수 제거 (wrapper 불필요)
