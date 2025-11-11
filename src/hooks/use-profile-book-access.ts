@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface ProfileBookAccessResult {
   /** 누적 인증 횟수 */
   cumulativeSubmissionCount: number;
-  /** 받을 수 있는 총 프로필북 개수 (2 × (누적인증 + 1)) */
+  /** 받을 수 있는 총 프로필북 개수 (2 × (누적인증 + 2)) */
   totalProfileBooks: number;
   /** 열람 가능한 프로필북 개수 (오늘 인증: 전체, 미인증: 2개) */
   unlockedProfileBooks: number;
@@ -29,7 +29,7 @@ export interface ProfileBookAccessResult {
  * 프로필북 접근 제어 훅 (v2.0 - 랜덤 매칭)
  *
  * 누적 인증 횟수에 따라 받을 수 있는 프로필북 개수를 계산합니다.
- * - 프로필북 개수: 2 × (누적인증 + 1)
+ * - 프로필북 개수: 2 × (누적인증 + 2)
  * - 오늘 인증 O → 전체 열람 가능
  * - 오늘 인증 X → 2개만 열람 가능 (남1+여1)
  *
@@ -69,8 +69,8 @@ export function useProfileBookAccess(): ProfileBookAccessResult {
     return uniqueDates.size;
   }, [submissions, participant?.participationCode, participant?.id]);
 
-  // 받을 수 있는 총 프로필북 개수: 2 × (누적인증 + 1)
-  const totalProfileBooks = 2 * (cumulativeSubmissionCount + 1);
+  // 받을 수 있는 총 프로필북 개수: 2 × (누적인증 + 2)
+  const totalProfileBooks = 2 * (cumulativeSubmissionCount + 2);
 
   // 열람 가능한 프로필북 개수
   const unlockedProfileBooks = useMemo(() => {

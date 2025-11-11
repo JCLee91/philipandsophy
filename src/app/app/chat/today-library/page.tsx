@@ -107,7 +107,7 @@ function TodayLibraryContent() {
   const detectedVersion = detectMatchingVersion(userAssignment);
 
   // v2.0 (랜덤 매칭) 여부 판단
-  const isRandomMatching = matchingVersion === 'random' || detectedVersion === 'v2';
+  const isRandomMatching = matchingVersion === 'random' || assignedProfileIds.length > 0;
 
   // v2.0 미인증 시: 성별 다양성 확보를 위한 스마트 샘플링
   // v2.0 인증 시: 전체 ID 다운로드
@@ -401,12 +401,19 @@ function TodayLibraryContent() {
 
     // v2.0 랜덤 매칭: 카드별 잠금 체크
     if (isRandomMatching && cardIndex !== undefined) {
+      const additionalProfilesToUnlock = Number.isFinite(profileBookAccess.unlockedProfileBooks)
+        ? Math.max(profileBookAccess.totalProfileBooks - profileBookAccess.unlockedProfileBooks, 0)
+        : 0;
+      const lockedDescription =
+        additionalProfilesToUnlock > 0
+          ? `오늘의 독서를 인증하면 추가로 ${additionalProfilesToUnlock}개의 프로필북을 볼 수 있어요. (총 ${profileBookAccess.totalProfileBooks}개)`
+          : '오늘의 독서를 인증하면 프로필을 확인할 수 있어요.';
       const isCardLocked = isProfileBookLocked(cardIndex, profileBookAccess);
 
       if (isCardLocked) {
         toast({
           title: '프로필 잠김 🔒',
-          description: `오늘의 독서를 인증하면 ${profileBookAccess.totalProfileBooks}개의 프로필북을 모두 열어볼 수 있어요`,
+          description: lockedDescription,
         });
         return;
       }

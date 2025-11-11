@@ -373,7 +373,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     return new Set(assignedProfileIds);
   }, [assignedProfileIds]);
   const matchingVersion = matchingLookup?.matching.matchingVersion;
-  const isRandomMatching = matchingVersion === 'random' || Boolean(viewerAssignment?.assigned?.length);
+  const isRandomMatching = matchingVersion === 'random' || assignedProfileIds.length > 0;
   const normalizedParticipantId = useMemo(() => {
     if (!participantId) return participantId;
     return participantId.replace(/^ghost-/, '');
