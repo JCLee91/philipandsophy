@@ -590,7 +590,7 @@ function Step3Content() {
             <UnifiedButton
               onClick={handleSubmit}
               className={existingSubmissionId ? 'w-full' : 'flex-1'}
-              disabled={uploading || isSaving || !dailyAnswer.trim()}
+              disabled={uploading || isSaving || !dailyAnswer.trim() || dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
             >
               {uploading ? uploadStep || '제출 중...' : existingSubmissionId ? '수정하기' : '제출하기'}
             </UnifiedButton>

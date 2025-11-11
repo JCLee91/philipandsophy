@@ -669,7 +669,7 @@ function Step2Content() {
             )}
             <UnifiedButton
               onClick={handleNext}
-              disabled={(!selectedBook && !manualTitle.trim()) || !review.trim() || isSaving || isProcessing}
+              disabled={(!selectedBook && !manualTitle.trim()) || !review.trim() || review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH || isSaving || isProcessing}
               loading={isProcessing}
               loadingText="저장 중..."
               className={existingSubmissionId ? 'w-full' : 'flex-1'}
