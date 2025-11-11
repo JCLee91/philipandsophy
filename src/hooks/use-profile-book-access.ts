@@ -33,14 +33,15 @@ export interface ProfileBookAccessResult {
  * - 오늘 인증 O → 전체 열람 가능
  * - 오늘 인증 X → 2개만 열람 가능 (남1+여1)
  *
+ * @param cohortId 기수 ID (해당 기수 내에서만 인증 횟수 카운트)
  * @returns 프로필북 접근 제어 정보
  *
  * @example
- * const { totalProfileBooks, unlockedProfileBooks, isVerifiedToday } = useProfileBookAccess();
+ * const { totalProfileBooks, unlockedProfileBooks, isVerifiedToday } = useProfileBookAccess('3');
  *
  * console.log(`총 ${totalProfileBooks}개 중 ${unlockedProfileBooks}개 열람 가능`);
  */
-export function useProfileBookAccess(): ProfileBookAccessResult {
+export function useProfileBookAccess(cohortId?: string): ProfileBookAccessResult {
   const { userId, isVerified, isSuperAdmin, isLocked } = useAccessControl();
   const { participant } = useAuth();
 
@@ -58,7 +59,8 @@ export function useProfileBookAccess(): ProfileBookAccessResult {
     const approvedSubmissions = submissions.filter(
       (s) => s.status === 'approved' &&
             s.submissionDate &&
-            s.participationCode === participationCode
+            s.participationCode === participationCode &&
+            (!cohortId || s.cohortId === cohortId) // cohortId로 필터링
     );
 
     // submissionDate 기준 중복 제거
@@ -67,7 +69,7 @@ export function useProfileBookAccess(): ProfileBookAccessResult {
     );
 
     return uniqueDates.size;
-  }, [submissions, participant?.participationCode, participant?.id]);
+  }, [submissions, participant?.participationCode, participant?.id, cohortId]);
 
   // 받을 수 있는 총 프로필북 개수: 2 × (누적인증 + 2)
   const totalProfileBooks = 2 * (cumulativeSubmissionCount + 2);

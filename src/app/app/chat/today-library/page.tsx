@@ -40,8 +40,8 @@ function TodayLibraryContent() {
   const currentUserId = participant?.id;
   const { isSuperAdmin, isLocked } = useAccessControl();
 
-  // v2.0: 프로필북 접근 제어 (누적 인증 기반)
-  const profileBookAccess = useProfileBookAccess();
+  // v2.0: 프로필북 접근 제어 (누적 인증 기반, 해당 기수만)
+  const profileBookAccess = useProfileBookAccess(cohortId || undefined);
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { toast } = useToast();
