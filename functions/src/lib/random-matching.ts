@@ -53,10 +53,10 @@ export interface RandomMatchingResult {
 
 /**
  * 프로필북 개수 계산
- * 공식: 2 × (누적인증 + 1)
+ * 공식: 2 × (누적인증 + 2)
  */
 function calculateProfileBookCount(submissionCount: number): number {
-  return 2 * (submissionCount + 1);
+  return 2 * (submissionCount + 2);
 }
 
 /**
