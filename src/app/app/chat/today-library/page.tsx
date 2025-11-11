@@ -422,17 +422,14 @@ function TodayLibraryContent() {
       console.log('[DEBUG] isCardLocked:', isCardLocked);
 
       if (isCardLocked) {
-        // 인증 후 받을 총 프로필북 개수
-        const nextTotalProfileBooks = 2 * (profileBookAccess.cumulativeSubmissionCount + 1 + 2);
-        // 추가로 볼 수 있는 개수
-        const additionalProfilesToUnlock = Math.max(
-          nextTotalProfileBooks - profileBookAccess.unlockedProfileBooks,
-          0
-        );
+        // 오늘 할당된 전체 프로필북 개수 (DB에서)
+        const totalAssigned = assignedProfileIds.length;
+        // 추가로 볼 수 있는 개수 (현재 2개 보이므로)
+        const additionalProfilesToUnlock = Math.max(totalAssigned - 2, 0);
 
         toast({
           title: '프로필 잠김 🔒',
-          description: `오늘의 독서를 인증하면 추가로 ${additionalProfilesToUnlock}개의 프로필북을 볼 수 있어요. (총 ${nextTotalProfileBooks}개)`,
+          description: `오늘의 독서를 인증하면 추가로 ${additionalProfilesToUnlock}개의 프로필북을 볼 수 있어요. (총 ${totalAssigned}개)`,
         });
         return;
       }
