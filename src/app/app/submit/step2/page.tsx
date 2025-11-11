@@ -57,7 +57,6 @@ function Step2Content() {
     setImageStorageUrl,
     setMetaInfo,
   } = useSubmissionFlowStore();
-  const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NaverBook[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -463,7 +462,7 @@ function Step2Content() {
 
         await saveDraft(participantId, participationCode, draftData);
       } catch (error) {
-        console.error('Draft save failed (continuing anyway):', error);
+        logger.error('[Step2] Draft save failed (continuing)', error);
         // 임시저장 실패는 무시하고 진행
       }
     }
@@ -472,7 +471,7 @@ function Step2Content() {
     try {
       router.push(`${appRoutes.submitStep3}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     } catch (error) {
-      console.error('Navigation failed:', error);
+      logger.error('[Step2] Navigation failed', error);
       toast({
         title: '다음 단계로 이동 실패',
         description: '잠시 후 다시 시도해주세요.',
@@ -522,7 +521,6 @@ function Step2Content() {
                     }}
                     placeholder="도서명을 검색하거나 직접 입력 후 엔터"
                     className="pl-10 h-12 text-base"
-                    disabled={isLoadingBookTitle}
                   />
                 </div>
 

@@ -21,6 +21,7 @@ import { appRoutes } from '@/lib/navigation';
 import type { DailyQuestion as DailyQuestionType } from '@/types/database';
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -389,28 +390,20 @@ function Step3Content() {
 
     try {
       // 단계 1: 책 정보 저장
-      try {
-        setUploadStep('책 정보 저장 중...');
-        await updateParticipantBookInfo(
-          participantId,
-          finalTitle,
-          selectedBook?.author || undefined,
-          selectedBook?.image || undefined
-        );
-      } catch (error) {
-        throw new Error(`책 정보 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
-      }
+      setUploadStep('책 정보 저장 중...');
+      await updateParticipantBookInfo(
+        participantId,
+        finalTitle,
+        selectedBook?.author || undefined,
+        selectedBook?.image || undefined
+      );
 
       // 단계 2: 이미지 업로드
       let bookImageUrl = imageStorageUrl;
       if (!bookImageUrl && imageFile) {
-        try {
-          setUploadStep('이미지 업로드 중...');
-          bookImageUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
-          setImageStorageUrl(bookImageUrl);
-        } catch (error) {
-          throw new Error(`이미지 업로드 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
-        }
+        setUploadStep('이미지 업로드 중...');
+        bookImageUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
+        setImageStorageUrl(bookImageUrl);
       }
 
       const submissionPayload = {
@@ -428,24 +421,20 @@ function Step3Content() {
       };
 
       // 단계 3: 제출물 저장
-      try {
-        setUploadStep('제출물 저장 중...');
+      setUploadStep('제출물 저장 중...');
 
-        if (isEditing && existingSubmissionId) {
-          await updateSubmission.mutateAsync({
-            id: existingSubmissionId,
-            data: submissionPayload,
-          });
-        } else {
-          await createSubmission.mutateAsync({
-            participantId,
-            participationCode,
-            ...submissionPayload,
-            submittedAt: Timestamp.now(),
-          });
-        }
-      } catch (error) {
-        throw new Error(`제출물 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      if (isEditing && existingSubmissionId) {
+        await updateSubmission.mutateAsync({
+          id: existingSubmissionId,
+          data: submissionPayload,
+        });
+      } else {
+        await createSubmission.mutateAsync({
+          participantId,
+          participationCode,
+          ...submissionPayload,
+          submittedAt: Timestamp.now(),
+        });
       }
 
       if (!isEditing) {
@@ -456,7 +445,7 @@ function Step3Content() {
             await deleteDraft(draft.id);
           }
         } catch (error) {
-          console.error('Draft deletion failed:', error);
+          logger.error('[Step3] Draft deletion failed', error);
         }
       }
 
