@@ -22,7 +22,7 @@ import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate, getMatchingAccessDates, getPreviousDayString, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
+import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { getAssignedProfiles, getLegacyMatchingReasons } from '@/lib/matching-compat';
 import { useParticipant } from '@/hooks/use-participants';
@@ -128,16 +128,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const { data: rawSubmissions = [], isLoading: submissionsLoading } = useParticipantSubmissionsRealtime(participantId);
   const { data: viewerSubmissions = [], isLoading: viewerSubmissionLoading } = useParticipantSubmissionsRealtime(currentUserId);
   const { unlockedProfileBooks } = useProfileBookAccess();
-  const viewerSubmissionDates = useMemo(
-    () => new Set(viewerSubmissions.map((submission) => submission.submissionDate)),
-    [viewerSubmissions]
-  );
-
-  // 제출일 기준 공개되는 프로필북 날짜 (제출 다음날 OR 오늘 인증 시 즉시)
-  const allowedMatchingDates = useMemo(
-    () => getMatchingAccessDates(viewerSubmissionDates),
-    [viewerSubmissionDates]
-  );
+  // ❌ REMOVED: allowedMatchingDates 제거 (2025-11-11)
+  // 랜덤 매칭 시스템에서는 인증 여부와 무관하게 모든 참가자가 매칭 접근 가능
 
   // 접근 제어
   const { isSelf: checkIsSelf, isSuperAdmin, isVerified: isVerifiedToday } = useAccessControl();
@@ -154,13 +146,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
       return null;
     }
 
-    const options =
-      isSuperAdmin || allowedMatchingDates.size === 0
-        ? { preferredDate: preferredMatchingDate }
-        : {
-            preferredDate: preferredMatchingDate,
-            allowedDates: allowedMatchingDates,
-          };
+    // 랜덤 매칭: allowedDates 제약 없음 (인증 여부와 무관하게 접근 가능)
+    const options = { preferredDate: preferredMatchingDate };
 
     return findLatestMatchingForParticipant(
       cohort.dailyFeaturedParticipants,
@@ -170,9 +157,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   }, [
     cohort?.dailyFeaturedParticipants,
     currentUserId,
-    isSuperAdmin,
     preferredMatchingDate,
-    allowedMatchingDates,
   ]);
 
   const matchingLookup = useMemo(() => {
@@ -192,8 +177,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     cohort?.dailyFeaturedParticipants,
     currentUserId,
     preferredMatchingDate,
-    isSuperAdmin,
-    allowedMatchingDates,
   ]);
 
   // 선택된 제출물의 날짜 라벨 (early return 이전에 선언)
@@ -239,11 +222,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     ? null  // 최신 제출물 모두 표시
     : effectiveMatchingDate; // ✅ 인증 기반 날짜까지 포함 (새벽 2시 마감 정책 적용)
 
-  const viewerHasAccessForDate = isSuperAdmin
-    ? true
-    : effectiveMatchingDate
-      ? allowedMatchingDates.has(effectiveMatchingDate)
-      : false;
+  // 랜덤 매칭: 매칭 날짜가 있으면 항상 접근 가능 (인증 여부 무관)
+  const viewerHasAccessForDate = isSuperAdmin || !!effectiveMatchingDate;
 
   // 접근 권한 체크 (submissions useMemo보다 먼저 선언)
   const isSelf = checkIsSelf(participantId);

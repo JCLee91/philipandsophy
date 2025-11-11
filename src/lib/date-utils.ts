@@ -218,47 +218,10 @@ export function filterSubmissionsByDate<T extends { id?: string; submittedAt: Ti
   });
 }
 
-/**
- * 제출 날짜 기준으로 접근 가능한 프로필북 공개 날짜집을 계산합니다.
- *
- * 새벽 2시 마감 정책:
- * - 오늘 인증 → 오늘 프로필북만 접근 가능 (제출일과 동일)
- * - 어제 인증 → 새벽 2시까지는 어제 프로필북, 새벽 2시 이후는 접근 불가
- * - 중요: 과거 프로필북은 접근 불가 (오늘 날짜만 반환)
- *
- * @param submissionDates - 제출 날짜 컬렉션 (Set 또는 Array)
- * @returns 공개일 집합 (오늘만 포함, 과거는 제외)
- *
- * @example
- * // 10월 29일 인증 → 10월 30일 새벽 1시: today="2025-10-29" → ["2025-10-29"]
- * // 10월 29일 인증 → 10월 30일 오후 1시: today="2025-10-30" → [] (AI 분석 중)
- * // 10월 30일 인증 → 10월 30일 오후 4시: today="2025-10-30" → ["2025-10-30"]
- */
-export function getMatchingAccessDates(submissionDates: Iterable<string>): Set<string> {
-  const today = getSubmissionDate(); // 새벽 2시 마감 정책 적용
-  const accessDates = new Set<string>();
-
-  for (const rawDate of submissionDates) {
-    if (!rawDate) continue;
-
-    const parsed = parseISO(rawDate);
-    if (!isValid(parsed)) {
-      continue;
-    }
-
-    const submissionDateString = format(parsed, 'yyyy-MM-dd');
-
-    // ✅ FIX: 오늘 제출한 경우만 접근 허용 (새벽 2시 기준)
-    // - 10월 29일 23:00 인증 → 10월 30일 01:00: today="2025-10-29" → 접근 O
-    // - 10월 29일 23:00 인증 → 10월 30일 02:00 이후: today="2025-10-30" → 접근 X (빈 Set 반환)
-    if (submissionDateString === today) {
-      accessDates.add(today);
-      break; // 오늘 날짜만 추가하고 종료
-    }
-  }
-
-  return accessDates;
-}
+// ❌ REMOVED: getMatchingAccessDates 함수 제거 (2025-11-11)
+// 랜덤 매칭 시스템에서는 인증 여부와 무관하게 모든 참가자가 매일 프로필북을 받음
+// 인증 여부는 받는 개수만 결정 (0회: 4개, 1회: 6개, 2회: 8개)
+// 예전 AI 매칭 시절의 "인증해야 프로필북 접근" 로직은 더 이상 불필요
 
 /**
  * 오늘이 프로그램 마지막 날인지 체크 (새벽 2시 마감 정책 적용)

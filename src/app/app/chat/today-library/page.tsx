@@ -22,7 +22,7 @@ import type { Participant } from '@/types/database';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { getAssignedProfiles, detectMatchingVersion } from '@/lib/matching-compat';
 import { appRoutes } from '@/lib/navigation';
-import { getSubmissionDate, getMatchingAccessDates, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
+import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 import { getResizedImageUrl } from '@/lib/image-utils';
 
@@ -55,11 +55,8 @@ function TodayLibraryContent() {
   const viewerHasSubmittedToday = viewerSubmissionDates.has(todayDate);
   const preferredMatchingDate = viewerHasSubmittedToday ? todayDate : undefined;
 
-  // 제출일 기준 공개되는 프로필북 날짜 (제출 다음날 OR 오늘 인증 시 즉시)
-  const allowedMatchingDates = useMemo(
-    () => getMatchingAccessDates(viewerSubmissionDates),
-    [viewerSubmissionDates]
-  );
+  // ❌ REMOVED: allowedMatchingDates 제거 (2025-11-11)
+  // 랜덤 매칭 시스템에서는 인증 여부와 무관하게 모든 참가자가 매칭 접근 가능
 
 
   const matchingLookupWithinAccess = useMemo(() => {
@@ -67,17 +64,13 @@ function TodayLibraryContent() {
       return null;
     }
 
+    // 랜덤 매칭: allowedDates 제약 없음 (인증 여부와 무관하게 접근 가능)
     return findLatestMatchingForParticipant(
       cohort.dailyFeaturedParticipants,
       currentUserId,
-      isSuperAdmin
-        ? { preferredDate: preferredMatchingDate }
-        : {
-            preferredDate: preferredMatchingDate,
-            allowedDates: allowedMatchingDates,
-          }
+      { preferredDate: preferredMatchingDate }
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, isSuperAdmin, preferredMatchingDate, allowedMatchingDates]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate]);
 
   const matchingLookup = useMemo(() => {
     if (matchingLookupWithinAccess) {
