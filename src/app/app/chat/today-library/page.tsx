@@ -109,6 +109,13 @@ function TodayLibraryContent() {
   // v2.0 (랜덤 매칭) 여부 판단
   const isRandomMatching = matchingVersion === 'random';
 
+  console.log('[DEBUG] 매칭 상태:', {
+    isRandomMatching,
+    matchingVersion,
+    assignedProfileIds,
+    assignedProfileIdsLength: assignedProfileIds.length,
+  });
+
   // v2.0 미인증 시: 성별 다양성 확보를 위한 스마트 샘플링
   // v2.0 인증 시: 전체 ID 다운로드
   // v1.0: similar + opposite (기존 로직)
@@ -401,7 +408,18 @@ function TodayLibraryContent() {
 
     // v2.0 랜덤 매칭: 카드 인덱스 기반 잠금 체크
     if (isRandomMatching && cardIndex !== undefined) {
+      console.log('[DEBUG] v2.0 랜덤 매칭 클릭:', {
+        participantId,
+        cardIndex,
+        isRandomMatching,
+        matchingVersion,
+        unlockedProfileBooks: profileBookAccess.unlockedProfileBooks,
+        totalProfileBooks: profileBookAccess.totalProfileBooks,
+        cumulativeSubmissionCount: profileBookAccess.cumulativeSubmissionCount,
+      });
+
       const isCardLocked = isProfileBookLocked(cardIndex, profileBookAccess);
+      console.log('[DEBUG] isCardLocked:', isCardLocked);
 
       if (isCardLocked) {
         // 인증 후 받을 총 프로필북 개수
@@ -420,6 +438,7 @@ function TodayLibraryContent() {
       }
 
       // 열린 카드: 프로필 페이지로 이동
+      console.log('[DEBUG] 프로필 페이지로 이동');
       const matchingDate = activeMatchingDate || getSubmissionDate();
       const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
       router.push(profileUrl);
@@ -692,6 +711,7 @@ function TodayLibraryContent() {
                       {visibleMale.map((p) => {
                         // DB 배열에서 실제 인덱스 찾기
                         const cardIndex = assignedProfileIds.indexOf(p.id);
+                        console.log('[DEBUG] 남성 카드 렌더링:', { participantId: p.id, cardIndex, name: p.name });
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -734,6 +754,7 @@ function TodayLibraryContent() {
                       {visibleFemale.map((p) => {
                         // DB 배열에서 실제 인덱스 찾기
                         const cardIndex = assignedProfileIds.indexOf(p.id);
+                        console.log('[DEBUG] 여성 카드 렌더링:', { participantId: p.id, cardIndex, name: p.name });
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
