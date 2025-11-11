@@ -13,9 +13,11 @@ import {
   orderBy,
   Timestamp,
   QueryConstraint,
+  onSnapshot,
 } from 'firebase/firestore';
 import { getDb } from './client';
 import { Notice, COLLECTIONS } from '@/types/database';
+import { logger } from '@/lib/logger';
 
 /**
  * Notice CRUD Operations
@@ -176,3 +178,44 @@ export async function searchNotices(
     ...doc.data(),
   })) as Notice[];
 }
+
+/**
+ * 기수별 공지 실시간 구독 (Slack/Discord 패턴)
+ *
+ * @param cohortId - 기수 ID
+ * @param callback - 공지 업데이트 콜백 함수
+ * @returns unsubscribe 함수
+ */
+export const subscribeToNoticesByCohort = (
+  cohortId: string,
+  callback: (notices: Notice[]) => void
+): (() => void) => {
+  const db = getDb();
+  const q = query(
+    collection(db, COLLECTIONS.NOTICES),
+    where('cohortId', '==', cohortId),
+    orderBy('createdAt', 'desc')
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      // Filter out draft notices client-side
+      const notices = snapshot.docs
+        .filter((doc) => {
+          const data = doc.data();
+          return !data.status || data.status === 'published';
+        })
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Notice[];
+
+      callback(notices);
+    },
+    (error) => {
+      logger.error('Notice subscription error', error);
+      callback([]); // Fallback to empty array on error
+    }
+  );
+};

@@ -188,7 +188,6 @@ export function ChatClientView({
   } = useNoticesByCohort(cohortId || undefined, {
     initialData: initialNotices,
     enabled: !!cohortId && !!participant,
-    refetchOnWindowFocus: false,
   });
 
   const { data: submissions = [] } = useSubmissionsByParticipant(currentUserId);

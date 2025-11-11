@@ -7,9 +7,11 @@ import {
   getNoticesByCohort,
   getAllNotices,
   updateNotice,
+  subscribeToNoticesByCohort,
 } from '@/lib/firebase';
 import { Notice } from '@/types/database';
 import { CACHE_TIMES } from '@/constants/cache';
+import { useEffect } from 'react';
 
 /**
  * React Query hooks for Notice operations
@@ -36,32 +38,60 @@ export function useNotices() {
 }
 
 /**
- * 기수별 공지 조회
+ * 기수별 공지 조회 (실시간 구독)
  *
- * staleTime을 1분으로 설정하여 새 공지를 빠르게 확인 가능
- * (글로벌 기본값 5분을 override)
+ * Slack/Discord 패턴: onSnapshot 실시간 구독
+ * - 새 공지 즉시 반영
+ * - staleTime: Infinity (실시간 구독이 업데이트)
+ * - refetchOnWindowFocus: false (중복 구독 방지)
  */
 type UseNoticesByCohortOptions = {
   initialData?: Notice[];
   enabled?: boolean;
-  refetchOnWindowFocus?: boolean;
 };
 
 export function useNoticesByCohort(
   cohortId: string | undefined,
   options?: UseNoticesByCohortOptions
 ) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  // Initial fetch
+  const query = useQuery({
     queryKey: NOTICE_KEYS.byCohort(cohortId || ''),
     queryFn: () => (cohortId ? getNoticesByCohort(cohortId) : []),
     enabled: options?.enabled ?? !!cohortId,
-    staleTime: CACHE_TIMES.SEMI_DYNAMIC, // 1분
-    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? true, // ✅ iOS PWA 앱 복귀 시 최신 공지 가져오기
+    // React Query 캐시 설정 (실시간 구독 최적화)
+    staleTime: Infinity, // 실시간 구독으로 자동 업데이트
+    refetchOnWindowFocus: false, // 실시간 구독 활성 (중복 구독 방지)
     refetchOnReconnect: false,
     refetchOnMount: false,
     initialData: options?.initialData ?? undefined,
-    placeholderData: (previousData) => previousData ?? options?.initialData, // 이전 데이터 유지 (빈 화면 방지)
+    placeholderData: (previousData) => previousData ?? options?.initialData,
   });
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!cohortId) return undefined;
+
+    // 이 effect가 여전히 활성 상태인지 추적 (경쟁 조건 방지)
+    let isActive = true;
+    const currentCohortId = cohortId;
+
+    const unsubscribe = subscribeToNoticesByCohort(currentCohortId, (notices) => {
+      // 이 구독이 여전히 활성 상태일 때만 업데이트
+      if (isActive) {
+        queryClient.setQueryData(NOTICE_KEYS.byCohort(currentCohortId), notices);
+      }
+    });
+
+    return () => {
+      isActive = false; // cleanup 시 비활성화
+      unsubscribe();
+    };
+  }, [cohortId, queryClient]);
+
+  return query;
 }
 
 /**

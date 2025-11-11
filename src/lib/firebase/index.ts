@@ -87,6 +87,7 @@ export {
   updateNotice,
   deleteNotice,
   searchNotices,
+  subscribeToNoticesByCohort,
 } from './notices';
 
 // Message operations
