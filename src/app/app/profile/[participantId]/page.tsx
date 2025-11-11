@@ -144,30 +144,34 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const { data: yesterdayVerifiedIds } = useYesterdayVerifiedParticipants(cohortId || undefined);
 
   const preferredMatchingDate = useMemo(() => {
-    if (!matchingDate) return undefined;
-    return allowedMatchingDates.has(matchingDate) ? matchingDate : undefined;
-  }, [matchingDate, allowedMatchingDates]);
+    return matchingDate ?? undefined;
+  }, [matchingDate]);
 
   const matchingLookupWithinAccess = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
       return null;
     }
 
-    if (isSuperAdmin) {
-      return findLatestMatchingForParticipant(cohort.dailyFeaturedParticipants, currentUserId, {
-        preferredDate: preferredMatchingDate,
-      });
-    }
+    const options =
+      isSuperAdmin || allowedMatchingDates.size === 0
+        ? { preferredDate: preferredMatchingDate }
+        : {
+            preferredDate: preferredMatchingDate,
+            allowedDates: allowedMatchingDates,
+          };
 
-    if (allowedMatchingDates.size === 0) {
-      return null;
-    }
-
-    return findLatestMatchingForParticipant(cohort.dailyFeaturedParticipants, currentUserId, {
-      preferredDate: preferredMatchingDate,
-      allowedDates: allowedMatchingDates,
-    });
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, isSuperAdmin, preferredMatchingDate, allowedMatchingDates]);
+    return findLatestMatchingForParticipant(
+      cohort.dailyFeaturedParticipants,
+      currentUserId,
+      options
+    );
+  }, [
+    cohort?.dailyFeaturedParticipants,
+    currentUserId,
+    isSuperAdmin,
+    preferredMatchingDate,
+    allowedMatchingDates,
+  ]);
 
   const matchingLookup = useMemo(() => {
     if (matchingLookupWithinAccess) {
@@ -175,11 +179,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     }
 
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
-      return null;
-    }
-
-    // 미인증자는 과거 매칭 접근 불가
-    if (!isSuperAdmin && allowedMatchingDates.size === 0) {
       return null;
     }
 
