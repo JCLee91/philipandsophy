@@ -159,8 +159,8 @@ function ensureGenderBalanceAtTop(
 async function regenerateMatchingWithNewFormula() {
   try {
     const cohortId = '3';
-    const targetDate = '2025-11-10';
-    const previousDate = '2025-11-09';
+    const targetDate = '2025-11-10'; // 재생성 대상
+    const verificationDate = '2025-11-10'; // 인증자 조회 날짜 (targetDate와 동일해야 함!)
 
     console.log(`🔄 ${targetDate} 매칭 데이터 재생성 시작\n`);
 
@@ -208,20 +208,20 @@ async function regenerateMatchingWithNewFormula() {
 
     console.log(`총 참가자: ${allParticipants.length}명\n`);
 
-    // 3. 어제(2025-11-09) 인증한 사람들 조회 (공급자)
+    // 3. 어제 인증한 사람들 조회 (공급자)
+    // ✅ scheduled function과 동일하게 status != "draft" 사용
     console.log('=== 3단계: 공급자(어제 인증자) 조회 ===\n');
 
     const submissionsSnapshot = await db
       .collection('reading_submissions')
-      .where('cohortId', '==', cohortId)
-      .where('submissionDate', '==', previousDate)
-      .where('status', '==', 'approved')
+      .where('submissionDate', '==', verificationDate)
+      .where('status', '!=', 'draft') // ✅ approved, pending, rejected 모두 포함
       .get();
 
     const providerIds = new Set(submissionsSnapshot.docs.map(doc => doc.data().participantId));
     const providers = allParticipants.filter(p => providerIds.has(p.id));
 
-    console.log(`어제(${previousDate}) 인증자: ${providers.length}명\n`);
+    console.log(`어제(${verificationDate}) 인증자: ${providers.length}명\n`);
 
     // 4. 각 참가자의 누적 인증 횟수 계산 (2025-11-09 기준)
     console.log('=== 4단계: 누적 인증 횟수 계산 ===\n');
