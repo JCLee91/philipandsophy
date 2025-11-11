@@ -401,12 +401,17 @@ function TodayLibraryContent() {
 
     // v2.0 랜덤 매칭: 카드별 잠금 체크
     if (isRandomMatching && cardIndex !== undefined) {
+      // 인증 후 받을 총 프로필북 개수 계산
+      const nextTotalProfileBooks = 2 * (profileBookAccess.cumulativeSubmissionCount + 1 + 2);
+
+      // 추가로 볼 수 있는 개수 = (인증 후 총 개수) - (현재 보이는 개수)
       const additionalProfilesToUnlock = Number.isFinite(profileBookAccess.unlockedProfileBooks)
-        ? Math.max(profileBookAccess.totalProfileBooks - profileBookAccess.unlockedProfileBooks, 0)
+        ? Math.max(nextTotalProfileBooks - profileBookAccess.unlockedProfileBooks, 0)
         : 0;
+
       const lockedDescription =
         additionalProfilesToUnlock > 0
-          ? `오늘의 독서를 인증하면 추가로 ${additionalProfilesToUnlock}개의 프로필북을 볼 수 있어요. (총 ${profileBookAccess.totalProfileBooks}개)`
+          ? `오늘의 독서를 인증하면 추가로 ${additionalProfilesToUnlock}개의 프로필북을 볼 수 있어요. (총 ${nextTotalProfileBooks}개)`
           : '오늘의 독서를 인증하면 프로필을 확인할 수 있어요.';
       const isCardLocked = isProfileBookLocked(cardIndex, profileBookAccess);
 
