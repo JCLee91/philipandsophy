@@ -56,7 +56,7 @@ export function useNoticesByCohort(
     queryFn: () => (cohortId ? getNoticesByCohort(cohortId) : []),
     enabled: options?.enabled ?? !!cohortId,
     staleTime: CACHE_TIMES.SEMI_DYNAMIC, // 1분
-    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
+    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? true, // ✅ iOS PWA 앱 복귀 시 최신 공지 가져오기
     refetchOnReconnect: false,
     refetchOnMount: false,
     initialData: options?.initialData ?? undefined,
