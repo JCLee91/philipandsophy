@@ -107,7 +107,7 @@ function TodayLibraryContent() {
   const detectedVersion = detectMatchingVersion(userAssignment);
 
   // v2.0 (랜덤 매칭) 여부 판단
-  const isRandomMatching = matchingVersion === 'random' || assignedProfileIds.length > 0;
+  const isRandomMatching = matchingVersion === 'random';
 
   // v2.0 미인증 시: 성별 다양성 확보를 위한 스마트 샘플링
   // v2.0 인증 시: 전체 ID 다운로드
@@ -389,7 +389,7 @@ function TodayLibraryContent() {
   const handleProfileClickWithAuth = (
     participantId: string,
     theme: 'similar' | 'opposite',
-    cardIndex?: number // v2.0: 카드 인덱스 (잠금 여부 판단용)
+    cardIndex?: number
   ) => {
     // 15일차 이후: 인증 체크 완전 스킵
     if (showAllProfilesWithoutAuth) {
@@ -399,31 +399,27 @@ function TodayLibraryContent() {
       return;
     }
 
-    // v2.0 랜덤 매칭: 카드별 잠금 체크
+    // v2.0 랜덤 매칭: 카드 인덱스 기반 잠금 체크
     if (isRandomMatching && cardIndex !== undefined) {
-      // 인증 후 받을 총 프로필북 개수 계산
-      const nextTotalProfileBooks = 2 * (profileBookAccess.cumulativeSubmissionCount + 1 + 2);
-
-      // 추가로 볼 수 있는 개수 = (인증 후 총 개수) - (현재 보이는 개수)
-      const additionalProfilesToUnlock = Number.isFinite(profileBookAccess.unlockedProfileBooks)
-        ? Math.max(nextTotalProfileBooks - profileBookAccess.unlockedProfileBooks, 0)
-        : 0;
-
-      const lockedDescription =
-        additionalProfilesToUnlock > 0
-          ? `오늘의 독서를 인증하면 추가로 ${additionalProfilesToUnlock}개의 프로필북을 볼 수 있어요. (총 ${nextTotalProfileBooks}개)`
-          : '오늘의 독서를 인증하면 프로필을 확인할 수 있어요.';
       const isCardLocked = isProfileBookLocked(cardIndex, profileBookAccess);
 
       if (isCardLocked) {
+        // 인증 후 받을 총 프로필북 개수
+        const nextTotalProfileBooks = 2 * (profileBookAccess.cumulativeSubmissionCount + 1 + 2);
+        // 추가로 볼 수 있는 개수
+        const additionalProfilesToUnlock = Math.max(
+          nextTotalProfileBooks - profileBookAccess.unlockedProfileBooks,
+          0
+        );
+
         toast({
           title: '프로필 잠김 🔒',
-          description: lockedDescription,
+          description: `오늘의 독서를 인증하면 추가로 ${additionalProfilesToUnlock}개의 프로필북을 볼 수 있어요. (총 ${nextTotalProfileBooks}개)`,
         });
         return;
       }
 
-      // 열린 카드: 접근 허용
+      // 열린 카드: 프로필 페이지로 이동
       const matchingDate = activeMatchingDate || getSubmissionDate();
       const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
       router.push(profileUrl);
@@ -693,10 +689,9 @@ function TodayLibraryContent() {
                   <div className="grid grid-cols-2 gap-6">
                     {/* 왼쪽: 남자 */}
                     <div className="flex flex-col gap-4">
-                      {visibleMale.map((p, idx) => {
-                        // 행 기반 인덱스: 왼쪽 열 → idx * 2
-                        const rowIndex = idx;
-                        const cardIndex = rowIndex * 2;
+                      {visibleMale.map((p) => {
+                        // DB 배열에서 실제 인덱스 찾기
+                        const cardIndex = assignedProfileIds.indexOf(p.id);
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -715,9 +710,8 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (남자) */}
                       {shouldShowLockedCards && Array.from({ length: maleLockedSlots }).map((_, idx) => {
-                        // 잠긴 카드: 열린 카드 아래에 표시
-                        const rowIndex = visibleMale.length + idx;
-                        const cardIndex = rowIndex * 2;
+                        // 잠긴 카드 인덱스: 열린 카드 바로 다음부터
+                        const cardIndex = unlockedCount + idx;
                         return (
                           <div key={`locked-male-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
@@ -737,10 +731,9 @@ function TodayLibraryContent() {
 
                     {/* 오른쪽: 여자 */}
                     <div className="flex flex-col gap-4">
-                      {visibleFemale.map((p, idx) => {
-                        // 행 기반 인덱스: 오른쪽 열 → idx * 2 + 1
-                        const rowIndex = idx;
-                        const cardIndex = rowIndex * 2 + 1;
+                      {visibleFemale.map((p) => {
+                        // DB 배열에서 실제 인덱스 찾기
+                        const cardIndex = assignedProfileIds.indexOf(p.id);
                         return (
                           <div key={p.id} className="flex flex-col">
                             <div className="flex justify-center">
@@ -759,9 +752,8 @@ function TodayLibraryContent() {
 
                       {/* 자물쇠 카드 (여자) */}
                       {shouldShowLockedCards && Array.from({ length: femaleLockedSlots }).map((_, idx) => {
-                        // 잠긴 카드: 열린 카드 아래에 표시
-                        const rowIndex = visibleFemale.length + idx;
-                        const cardIndex = rowIndex * 2 + 1;
+                        // 잠긴 카드 인덱스: 남자 잠긴 카드 다음부터
+                        const cardIndex = unlockedCount + maleLockedSlots + idx;
                         return (
                           <div key={`locked-female-${idx}`} className="flex flex-col">
                             <div className="flex justify-center">
