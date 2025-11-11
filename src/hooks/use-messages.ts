@@ -103,40 +103,7 @@ export const useMarkAsRead = () => {
   return useMutation({
     mutationFn: ({ conversationId, userId }: { conversationId: string; userId: string }) =>
       markConversationAsRead(conversationId, userId),
-    onMutate: async (variables) => {
-      // 낙관적 업데이트 전 진행 중인 쿼리 취소
-      await queryClient.cancelQueries({
-        queryKey: messageKeys.conversation(variables.conversationId),
-      });
-
-      // 이전 데이터 백업 (롤백용)
-      const previousMessages = queryClient.getQueryData<DirectMessage[]>(
-        messageKeys.conversation(variables.conversationId)
-      );
-
-      // 낙관적 업데이트
-      queryClient.setQueryData<DirectMessage[]>(
-        messageKeys.conversation(variables.conversationId),
-        (old) =>
-          old?.map((msg) =>
-            msg.receiverId === variables.userId ? { ...msg, isRead: true } : msg
-          )
-      );
-
-      return { previousMessages };
-    },
-    onError: (error, variables, context) => {
-      // 실패 시 이전 상태로 롤백
-      if (context?.previousMessages) {
-        queryClient.setQueryData(
-          messageKeys.conversation(variables.conversationId),
-          context.previousMessages
-        );
-      }
-
-    },
     onSuccess: (_, variables) => {
-
       // Invalidate unread count 캐시
       queryClient.invalidateQueries({
         queryKey: messageKeys.unread(variables.conversationId, variables.userId),
