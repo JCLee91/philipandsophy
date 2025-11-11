@@ -55,11 +55,6 @@ export function useParticipantsByCohortRealtime(cohortId: string | undefined) {
           ...doc.data(),
         })) as Participant[];
 
-        // 디버깅 로그 (development only)
-        if (process.env.NODE_ENV === 'development') {
-
-        }
-
         setParticipants(participantsList);
         setIsFromCache(fromCache);
         setIsLoading(false);
