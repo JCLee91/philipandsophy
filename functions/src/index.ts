@@ -895,7 +895,7 @@ export const onNoticeUpdated = onDocumentUpdated(
 
 
 // ✅ 새로운 랜덤 매칭 시스템 (v2.0)
-export { scheduledMatchingPreview } from "./scheduled-random-matching";
+export { scheduledRandomMatching } from "./scheduled-random-matching";
 
 /**
  * 5. 회원가입 전 도메인 검증 (Data Center용)

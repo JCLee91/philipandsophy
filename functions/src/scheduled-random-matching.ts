@@ -45,7 +45,7 @@ const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
  * 2. 랜덤 매칭 실행
  * 3. Firestore에 저장 (푸시 알림은 스케줄 실행 시 중단)
  */
-export const scheduledMatchingPreview = onSchedule(
+export const scheduledRandomMatching = onSchedule(
   {
     schedule: "0 2 * * *", // 매일 새벽 2시 (KST)
     timeZone: "Asia/Seoul",
