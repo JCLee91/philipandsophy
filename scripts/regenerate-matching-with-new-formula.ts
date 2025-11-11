@@ -212,41 +212,78 @@ async function regenerateMatchingWithNewFormula() {
 
     console.log(`총 참가자: ${allParticipants.length}명\n`);
 
-    // 3. verificationDate에 인증한 사람들 조회 (공급자)
-    // ✅ scheduled function과 동일하게 status != "draft" 사용
-    console.log('=== 3단계: 공급자(인증자) 조회 ===\n');
+    // 3. Cohort 날짜 범위 조회 (중복 참가자 대응)
+    console.log('=== 3단계: Cohort 날짜 범위 조회 ===\n');
 
-    const submissionsSnapshot = await db
-      .collection('reading_submissions')
-      .where('submissionDate', '==', verificationDate)
-      .where('status', '!=', 'draft') // ✅ approved, pending, rejected 모두 포함
-      .get();
+    const cohortStartDate = cohortData.startDate;
+    const cohortEndDate = cohortData.endDate;
 
-    const providerIds = new Set(submissionsSnapshot.docs.map(doc => doc.data().participantId));
-    const providers = allParticipants.filter(p => providerIds.has(p.id));
+    console.log(`기수 기간: ${cohortStartDate} ~ ${cohortEndDate}\n`);
 
-    console.log(`${verificationDate} 인증자: ${providers.length}명\n`);
+    // 4. 3기 참가자들의 participationCode 수집
+    const cohort3ParticipationCodes = new Set(
+      allParticipants.map(p => p.participationCode || p.id)
+    );
 
-    // 4. 각 참가자의 누적 인증 횟수 계산 (verificationDate 이전까지)
-    console.log('=== 4단계: 누적 인증 횟수 계산 ===\n');
+    // 5. 모든 인증 조회 (reading_submissions에 cohortId 필드 추가됨)
+    console.log('=== 4단계: 모든 인증 조회 ===\n');
 
     const allSubmissionsSnapshot = await db
       .collection('reading_submissions')
-      .where('cohortId', '==', cohortId)
-      .where('status', '==', 'approved')
       .get();
 
-    // 참가자별 누적 인증 횟수 (2025-11-09 이전 데이터만)
+    console.log(`전체 인증: ${allSubmissionsSnapshot.size}건`);
+
+    // 6. 3기 참가자의 기간 내 인증만 필터링
+    const cohort3Submissions = allSubmissionsSnapshot.docs.filter(doc => {
+      const data = doc.data();
+      return (
+        cohort3ParticipationCodes.has(data.participationCode) &&
+        data.submissionDate &&
+        data.submissionDate >= cohortStartDate &&
+        data.submissionDate <= cohortEndDate
+      );
+    });
+
+    console.log(`3기 기간 내 인증: ${cohort3Submissions.length}건\n`);
+
+    // 7. 어제 인증한 사람들 조회 (공급자)
+    console.log('=== 5단계: 공급자(어제 인증자) 조회 ===\n');
+
+    const yesterdayProviders = cohort3Submissions.filter(doc => {
+      const data = doc.data();
+      return (
+        data.submissionDate === verificationDate &&
+        data.status !== 'draft' // approved, pending, rejected 모두 포함
+      );
+    });
+
+    const providerCodes = new Set(
+      yesterdayProviders.map(doc => doc.data().participationCode)
+    );
+    const providers = allParticipants.filter(p =>
+      providerCodes.has(p.participationCode || p.id)
+    );
+
+    console.log(`어제(${verificationDate}) 인증자: ${providers.length}명\n`);
+
+    // 8. 각 참가자의 누적 인증 횟수 계산 (targetDate 이전, approved만)
+    console.log('=== 6단계: 누적 인증 횟수 계산 ===\n');
+
     const submissionCountMap = new Map<string, number>();
 
     allParticipants.forEach(p => {
       const participationCode = p.participationCode || p.id;
-      const submissions = allSubmissionsSnapshot.docs.filter(doc => {
+
+      // 해당 참가자의 어제(verificationDate)까지 approved 인증
+      // ✅ 오전 2시까지 제출은 어제 날짜이므로 <= 사용
+      const submissions = cohort3Submissions.filter(doc => {
         const data = doc.data();
         return (
           data.participationCode === participationCode &&
+          data.status === 'approved' &&
           data.submissionDate &&
-          data.submissionDate < verificationDate // verificationDate 이전
+          data.submissionDate <= verificationDate // 어제까지 포함!
         );
       });
 
@@ -266,8 +303,8 @@ async function regenerateMatchingWithNewFormula() {
       });
     console.log('');
 
-    // 5. 신규 공식으로 매칭 실행
-    console.log('=== 5단계: 신규 공식으로 매칭 실행 ===\n');
+    // 9. 신규 공식으로 매칭 실행
+    console.log('=== 7단계: 신규 공식으로 매칭 실행 ===\n');
     console.log('신규 공식: 2 × (submissionCount + 2)\n');
 
     const providersWithCount: ParticipantWithSubmissionCount[] = providers.map(p => ({
@@ -309,8 +346,8 @@ async function regenerateMatchingWithNewFormula() {
 
     console.log('');
 
-    // 6. 검증
-    console.log('=== 6단계: 할당 검증 ===\n');
+    // 10. 검증
+    console.log('=== 8단계: 할당 검증 ===\n');
 
     let errorCount = 0;
     const newCounts: number[] = [];
@@ -341,8 +378,8 @@ async function regenerateMatchingWithNewFormula() {
 
     console.log('✅ 검증 통과\n');
 
-    // 7. 할당 통계
-    console.log('=== 7단계: 새 할당 통계 ===\n');
+    // 11. 할당 통계
+    console.log('=== 9단계: 새 할당 통계 ===\n');
 
     const distribution = new Map<number, number>();
     newCounts.forEach(count => {
@@ -357,8 +394,8 @@ async function regenerateMatchingWithNewFormula() {
       });
     console.log('');
 
-    // 8. DB 업데이트
-    console.log('=== 8단계: DB 업데이트 ===\n');
+    // 12. DB 업데이트
+    console.log('=== 10단계: DB 업데이트 ===\n');
 
     await db.runTransaction(async (transaction) => {
       // dailyFeaturedParticipants 업데이트
@@ -387,8 +424,8 @@ async function regenerateMatchingWithNewFormula() {
 
     console.log('✅ DB 업데이트 완료\n');
 
-    // 9. 최종 요약
-    console.log('=== 9단계: 재생성 완료 ===\n');
+    // 13. 최종 요약
+    console.log('=== 11단계: 재생성 완료 ===\n');
 
     const oldCounts = Object.values(oldData.assignments || {}).map((a: any) =>
       (a.assigned || []).length

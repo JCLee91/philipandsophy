@@ -245,7 +245,11 @@ function Step1Content() {
         setImageStorageUrl(bookImageUrl);
       }
 
-      await saveDraft(participantId, participationCode, { bookImageUrl });
+      // 🆕 cohortId 추가 (중복 참가자 구분용)
+      await saveDraft(participantId, participationCode, {
+        bookImageUrl,
+        ...(cohortId && { cohortId }),
+      });
 
       // 이미지 업로드 완료되면 바로 다음 페이지로
       router.push(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);

@@ -215,6 +215,7 @@ export interface ReadingSubmission {
   id: string; // 문서 ID
   participantId: string; // 참가자 ID (Participant.id)
   participationCode: string; // 참여 코드
+  cohortId?: string; // 기수 ID (중복 참가자 구분용, 2025-11-11 추가)
   bookTitle?: string; // 책 제목 (임시저장 시 선택, 제출 시 필수)
   bookAuthor?: string; // 책 저자 (선택)
   bookCoverUrl?: string; // 책 표지 이미지 URL (네이버 API에서 가져온 표지, 선택)

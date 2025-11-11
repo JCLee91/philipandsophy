@@ -50,6 +50,7 @@ export async function createSubmission(
     submissionDate,
     createdAt: now,
     updatedAt: now,
+    // cohortId가 제공되지 않으면 undefined (기존 코드 호환성)
   });
 
   return docRef.id;
@@ -246,6 +247,7 @@ export async function saveDraft(
   participantId: string,
   participationCode: string,
   data: {
+    cohortId?: string; // 🆕 기수 ID (중복 참가자 구분용)
     bookImageUrl?: string; // 이미 업로드된 이미지 URL
     bookTitle?: string;
     bookAuthor?: string;
@@ -267,6 +269,7 @@ export async function saveDraft(
   const draftData = {
     participantId,
     participationCode,
+    cohortId: data.cohortId, // 🆕 cohortId 포함 (제공된 경우)
     ...data,
     submissionDate,
     status: 'draft' as const,

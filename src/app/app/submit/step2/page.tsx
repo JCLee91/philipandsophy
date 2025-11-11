@@ -359,6 +359,11 @@ function Step2Content() {
         draftData.review = review;
       }
 
+      // 🆕 cohortId 추가 (중복 참가자 구분용)
+      if (cohortId) {
+        (draftData as any).cohortId = cohortId;
+      }
+
       await saveDraft(participantId, participationCode, draftData);
 
       toast({
@@ -449,6 +454,11 @@ function Step2Content() {
         }
         if (review) {
           draftData.review = review;
+        }
+
+        // 🆕 cohortId 추가 (중복 참가자 구분용)
+        if (cohortId) {
+          (draftData as any).cohortId = cohortId;
         }
 
         await saveDraft(participantId, participationCode, draftData);

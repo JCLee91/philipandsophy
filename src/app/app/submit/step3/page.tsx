@@ -319,6 +319,11 @@ function Step3Content() {
         draftData.dailyAnswer = dailyAnswer;
       }
 
+      // 🆕 cohortId 추가 (중복 참가자 구분용)
+      if (participant?.cohortId) {
+        (draftData as any).cohortId = participant.cohortId;
+      }
+
       await saveDraft(participantId, participationCode, draftData);
 
       toast({
@@ -418,6 +423,8 @@ function Step3Content() {
         dailyQuestion: dailyQuestion?.question || '',
         dailyAnswer: dailyAnswer.trim(),
         status: 'approved' as const,
+        // 🆕 cohortId 추가 (중복 참가자 구분용, participant 우선)
+        ...(( participant?.cohortId || cohortId) && { cohortId: participant?.cohortId || cohortId }),
       };
 
       // 단계 3: 제출물 저장
