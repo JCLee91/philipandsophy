@@ -66,7 +66,7 @@ export function detectMatchingVersion(
     return 'empty';
   }
 
-  if (Array.isArray(assignment.assigned)) {
+  if (assignment.assigned && assignment.assigned.length > 0) {
     return 'v2';
   }
 

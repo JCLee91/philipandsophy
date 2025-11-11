@@ -374,7 +374,14 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   }, [assignedProfileIds]);
   const matchingVersion = matchingLookup?.matching.matchingVersion;
   const isRandomMatching = matchingVersion === 'random' || Boolean(viewerAssignment?.assigned?.length);
-  const assignmentIndex = useMemo(() => assignedProfileIds.indexOf(participantId), [assignedProfileIds, participantId]);
+  const normalizedParticipantId = useMemo(() => {
+    if (!participantId) return participantId;
+    return participantId.replace(/^ghost-/, '');
+  }, [participantId]);
+  const assignmentIndex = useMemo(() => {
+    if (!normalizedParticipantId) return -1;
+    return assignedProfileIds.indexOf(normalizedParticipantId);
+  }, [assignedProfileIds, normalizedParticipantId]);
   const previewLimit = useMemo(() => {
     if (
       unlockedProfileBooks === null ||
