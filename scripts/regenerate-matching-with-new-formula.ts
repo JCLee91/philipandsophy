@@ -284,22 +284,14 @@ async function regenerateMatchingWithNewFormula() {
       // 신규 공식: 2 × (submissionCount + 2)
       const profileBookCount = 2 * (submissionCount + 2);
 
-      // 후보 필터링 (본인 제외, 최근 3일 중복 제외 - 여기서는 단순화)
-      const primaryCandidates = filterCandidates(providersWithCount, id, []);
+      // 후보 필터링 (본인 제외, 공급자만 사용)
+      const candidates = filterCandidates(providersWithCount, id, []);
 
-      let candidates = primaryCandidates;
-
-      // Fallback: 공급자가 부족하면 전체 참가자로 확장
-      if (candidates.length < profileBookCount) {
-        const fallbackPool = dedupeParticipants([
-          ...candidates,
-          ...filterCandidates(viewersWithCount, id, []),
-        ]);
-        candidates = fallbackPool;
-      }
-
-      // 성별 균형 우선 랜덤 선택
-      const selected = selectWithGenderBalance(candidates, profileBookCount);
+      // 성별 균형 우선 랜덤 선택 (공급자가 부족하면 있는 만큼만 할당)
+      const selected = selectWithGenderBalance(
+        candidates,
+        Math.min(profileBookCount, candidates.length)
+      );
 
       // 미인증 사용자를 위한 맨 앞 2개 성별 균형 보장
       const reordered = ensureGenderBalanceAtTop(selected);
