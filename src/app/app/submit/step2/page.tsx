@@ -19,6 +19,7 @@ import { Search } from 'lucide-react';
 import { appRoutes } from '@/lib/navigation';
 import Image from 'next/image';
 import { SEARCH_CONFIG } from '@/constants/search';
+import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import { logger } from '@/lib/logger';
 
@@ -401,6 +402,15 @@ function Step2Content() {
       return;
     }
 
+    if (review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH) {
+      toast({
+        title: `최소 ${SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}자 이상 작성해주세요`,
+        description: `현재 ${review.trim().length}자 입력됨`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     // 자동 임시저장 (실패해도 다음 단계 진행)
@@ -633,8 +643,14 @@ function Step2Content() {
                 className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400"
                 disabled={!selectedBook && !manualTitle.trim()}
               />
-              <p className="text-xs text-muted-foreground text-right">
-                ({review.length}자)
+              <p className={`text-xs text-right transition-colors ${
+                review.length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+                  ? 'text-red-500 font-medium'
+                  : 'text-transparent'
+              }`}>
+                {review.length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+                  ? `${review.length}/${SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}자`
+                  : '　'}
               </p>
             </div>
           </div>

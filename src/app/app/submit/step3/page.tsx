@@ -19,6 +19,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { Textarea } from '@/components/ui/textarea';
 import { appRoutes } from '@/lib/navigation';
 import type { DailyQuestion as DailyQuestionType } from '@/types/database';
+import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 
 export const dynamic = 'force-dynamic';
@@ -367,6 +368,15 @@ function Step3Content() {
       return;
     }
 
+    if (dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH) {
+      toast({
+        title: `최소 ${SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}자 이상 작성해주세요`,
+        description: `현재 ${dailyAnswer.trim().length}자 입력됨`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const isEditing = Boolean(existingSubmissionId);
 
     setUploading(true);
@@ -542,8 +552,14 @@ function Step3Content() {
                 className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400"
                 disabled={uploading}
               />
-              <p className="text-xs text-muted-foreground text-right">
-                ({dailyAnswer.length}자)
+              <p className={`text-xs text-right transition-colors ${
+                dailyAnswer.length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+                  ? 'text-red-500 font-medium'
+                  : 'text-transparent'
+              }`}>
+                {dailyAnswer.length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+                  ? `${dailyAnswer.length}/${SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}자`
+                  : '　'}
               </p>
             </div>
 
