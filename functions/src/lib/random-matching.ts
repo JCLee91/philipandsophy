@@ -169,6 +169,41 @@ function selectWithGenderBalance(
 }
 
 /**
+ * 미인증 사용자를 위한 맨 앞 2개 성별 균형 보장
+ *
+ * 미인증 시 맨 앞 2개만 열리므로, 반드시 남1 여1로 배치
+ *
+ * @param selected 선택된 참가자 배열
+ * @returns 맨 앞 2개가 남1 여1로 재배치된 배열
+ */
+function ensureGenderBalanceAtTop(
+  selected: ParticipantWithSubmissionCount[]
+): ParticipantWithSubmissionCount[] {
+  if (selected.length < 2) {
+    return selected;
+  }
+
+  // 성별별 그룹화
+  const { male, female } = groupByGender(selected);
+
+  if (male.length === 0 || female.length === 0) {
+    // 한 쪽 성별이 없으면 그대로 반환
+    return selected;
+  }
+
+  // 맨 앞 2개: 남성 1명 + 여성 1명
+  const topTwo: ParticipantWithSubmissionCount[] = [male[0], female[0]];
+
+  // 나머지 참가자들 (맨 앞 2명 제외)
+  const remaining = selected.filter(
+    p => p.id !== male[0].id && p.id !== female[0].id
+  );
+
+  // 최종 배열: [남1, 여1, ...나머지]
+  return [...topTwo, ...remaining];
+}
+
+/**
  * 랜덤 매칭 실행
  *
  * @param input 매칭 입력 (공급자/수요자 분리)
@@ -207,9 +242,12 @@ export async function matchParticipantsRandomly(
     // 4. 성별 균형 우선 랜덤 선택
     const selected = selectWithGenderBalance(candidates, profileBookCount);
 
+    // 4-1. 미인증 사용자를 위한 맨 앞 2개 성별 균형 보장
+    const reordered = ensureGenderBalanceAtTop(selected);
+
     // 5. 할당
     assignments[id] = {
-      assigned: selected.map(p => p.id),
+      assigned: reordered.map(p => p.id),
     };
 
     // 6. 검증 로깅

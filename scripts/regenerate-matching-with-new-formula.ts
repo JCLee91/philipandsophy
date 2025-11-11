@@ -128,6 +128,34 @@ function dedupeParticipants(participants: ParticipantWithSubmissionCount[]): Par
   return deduped;
 }
 
+/**
+ * 미인증 사용자를 위한 맨 앞 2개 성별 균형 보장
+ */
+function ensureGenderBalanceAtTop(
+  selected: ParticipantWithSubmissionCount[]
+): ParticipantWithSubmissionCount[] {
+  if (selected.length < 2) {
+    return selected;
+  }
+
+  const { male, female } = groupByGender(selected);
+
+  if (male.length === 0 || female.length === 0) {
+    return selected;
+  }
+
+  // 맨 앞 2개: 남성 1명 + 여성 1명
+  const topTwo: ParticipantWithSubmissionCount[] = [male[0], female[0]];
+
+  // 나머지 참가자들 (맨 앞 2명 제외)
+  const remaining = selected.filter(
+    p => p.id !== male[0].id && p.id !== female[0].id
+  );
+
+  // 최종 배열: [남1, 여1, ...나머지]
+  return [...topTwo, ...remaining];
+}
+
 async function regenerateMatchingWithNewFormula() {
   try {
     const cohortId = '3';
@@ -273,8 +301,11 @@ async function regenerateMatchingWithNewFormula() {
       // 성별 균형 우선 랜덤 선택
       const selected = selectWithGenderBalance(candidates, profileBookCount);
 
+      // 미인증 사용자를 위한 맨 앞 2개 성별 균형 보장
+      const reordered = ensureGenderBalanceAtTop(selected);
+
       assignments[id] = {
-        assigned: selected.map(p => p.id),
+        assigned: reordered.map(p => p.id),
       };
 
       console.log(`${name}: ${selected.length}개 할당 (목표: ${profileBookCount}개, 누적: ${submissionCount}회)`);
