@@ -75,8 +75,10 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const participantId = decodeURIComponent(params.participantId);
   const cohortId = searchParams.get('cohort');
 
-  // 제출 날짜 cutoff (URL 파라미터: 스포일러 방지를 위해 이 날짜까지만 표시)
-  // today-library에서 노출 가능한 매칭 날짜를 matchingDate 파라미터로 전달함
+  // ⚠️ 용어 정의:
+  // matchingDate: 인증 기반 날짜 (이 날짜에 인증한 사람들의 프로필북)
+  // 프로필북 제공 날짜: matchingDate + 1일 (다음날 오전 2시부터 제공)
+  // 예: matchingDate="2025-11-10" → 11-10에 인증한 사람들 → 11-11 오전 2시부터 프로필북 제공
   const matchingDate = searchParams.get('matchingDate');
 
   // Firebase Auth 기반 인증
@@ -216,7 +218,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
       : null;
   }, [participantId, selectedSubmission]);
 
-  // 매칭 날짜 (접근 권한 체크용)
+  // 인증 기반 날짜 (접근 권한 체크용)
+  // effectiveMatchingDate = 인증 기반 날짜 (프로필북은 다음날 제공)
   const effectiveMatchingDate = matchingLookup?.date ?? preferredMatchingDate ?? null;
 
   // 14일차(마지막 날) 및 15일차 이후 체크
@@ -229,10 +232,12 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 프로필북 표시 규칙:
   // - 14일차 또는 15일차 이후: 최신 제출물 모두 표시 (cutoff 없음)
-  // - 평소: 매칭 날짜까지의 인증만 표시 (11-10 매칭 → 11-10까지 인증 포함)
+  // - 평소: 인증 기반 날짜까지의 인증만 표시
+  //   예: effectiveMatchingDate="11-10" → 11-10까지 인증 포함
+  //       (프로필북은 11-11 오전 2시부터 제공되지만, 11-10 인증까지만 표시)
   const submissionCutoffDate = (isFinalDayAccess || isAfterProgramWithoutAuth || isSuperAdmin)
     ? null  // 최신 제출물 모두 표시
-    : effectiveMatchingDate; // ✅ 매칭 날짜까지 포함 (새벽 2시 마감 정책 적용)
+    : effectiveMatchingDate; // ✅ 인증 기반 날짜까지 포함 (새벽 2시 마감 정책 적용)
 
   const viewerHasAccessForDate = isSuperAdmin
     ? true

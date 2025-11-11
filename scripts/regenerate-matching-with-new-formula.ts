@@ -159,10 +159,14 @@ function ensureGenderBalanceAtTop(
 async function regenerateMatchingWithNewFormula() {
   try {
     const cohortId = '3';
-    const targetDate = '2025-11-10'; // 재생성 대상
-    const verificationDate = '2025-11-10'; // 인증자 조회 날짜 (targetDate와 동일해야 함!)
 
-    console.log(`🔄 ${targetDate} 매칭 데이터 재생성 시작\n`);
+    // ⚠️ 용어 정의:
+    // - verificationDate: 인증 기반 날짜 (이 날짜에 인증한 사람들이 공급자가 됨)
+    // - 프로필북 접근 날짜: verificationDate + 1일 (다음날 오전 2시부터 제공)
+    // 예: 11-10에 인증 → 11-11 오전 2시부터 프로필북 제공
+    const verificationDate = '2025-11-10'; // 인증 기반 날짜
+
+    console.log(`🔄 ${verificationDate} 인증 기반 매칭 데이터 재생성 시작\n`);
 
     // 1. 기존 데이터 백업
     console.log('=== 1단계: 기존 데이터 백업 ===\n');
@@ -171,19 +175,19 @@ async function regenerateMatchingWithNewFormula() {
     const cohortDoc = await cohortRef.get();
     const cohortData = cohortDoc.data();
 
-    if (!cohortData?.dailyFeaturedParticipants?.[targetDate]) {
+    if (!cohortData?.dailyFeaturedParticipants?.[verificationDate]) {
       console.log('❌ 재생성할 데이터가 없습니다.');
       return;
     }
 
-    const oldData = cohortData.dailyFeaturedParticipants[targetDate];
+    const oldData = cohortData.dailyFeaturedParticipants[verificationDate];
     console.log('📦 백업 중...');
     console.log(`   기존 assignments: ${Object.keys(oldData.assignments || {}).length}명`);
 
     // matching_results_backup 컬렉션에 백업
-    await db.collection('matching_results_backup').doc(`${cohortId}-${targetDate}`).set({
+    await db.collection('matching_results_backup').doc(`${cohortId}-${verificationDate}`).set({
       cohortId,
-      date: targetDate,
+      verificationDate, // 인증 기반 날짜 (프로필북은 다음날 제공)
       backupTimestamp: FieldValue.serverTimestamp(),
       oldFormula: '2 × (n + 1)',
       data: oldData,
@@ -208,9 +212,9 @@ async function regenerateMatchingWithNewFormula() {
 
     console.log(`총 참가자: ${allParticipants.length}명\n`);
 
-    // 3. 어제 인증한 사람들 조회 (공급자)
+    // 3. verificationDate에 인증한 사람들 조회 (공급자)
     // ✅ scheduled function과 동일하게 status != "draft" 사용
-    console.log('=== 3단계: 공급자(어제 인증자) 조회 ===\n');
+    console.log('=== 3단계: 공급자(인증자) 조회 ===\n');
 
     const submissionsSnapshot = await db
       .collection('reading_submissions')
@@ -221,9 +225,9 @@ async function regenerateMatchingWithNewFormula() {
     const providerIds = new Set(submissionsSnapshot.docs.map(doc => doc.data().participantId));
     const providers = allParticipants.filter(p => providerIds.has(p.id));
 
-    console.log(`어제(${verificationDate}) 인증자: ${providers.length}명\n`);
+    console.log(`${verificationDate} 인증자: ${providers.length}명\n`);
 
-    // 4. 각 참가자의 누적 인증 횟수 계산 (2025-11-09 기준)
+    // 4. 각 참가자의 누적 인증 횟수 계산 (verificationDate 이전까지)
     console.log('=== 4단계: 누적 인증 횟수 계산 ===\n');
 
     const allSubmissionsSnapshot = await db
@@ -242,7 +246,7 @@ async function regenerateMatchingWithNewFormula() {
         return (
           data.participationCode === participationCode &&
           data.submissionDate &&
-          data.submissionDate < targetDate // 2025-11-10 이전
+          data.submissionDate < verificationDate // verificationDate 이전
         );
       });
 
@@ -358,20 +362,22 @@ async function regenerateMatchingWithNewFormula() {
 
     await db.runTransaction(async (transaction) => {
       // dailyFeaturedParticipants 업데이트
+      // Key는 인증 기반 날짜 사용 (프로필북은 verificationDate + 1일에 제공)
       transaction.update(cohortRef, {
-        [`dailyFeaturedParticipants.${targetDate}`]: {
+        [`dailyFeaturedParticipants.${verificationDate}`]: {
           assignments,
           matchingVersion: 'random',
           timestamp: FieldValue.serverTimestamp(),
           formula: '2 × (n + 2)', // 신규 공식 표시
+          verificationDate, // 인증 기반 날짜
         },
       });
 
       // matching_results 업데이트
-      const matchingResultRef = db.collection('matching_results').doc(`${cohortId}-${targetDate}`);
+      const matchingResultRef = db.collection('matching_results').doc(`${cohortId}-${verificationDate}`);
       transaction.set(matchingResultRef, {
         cohortId,
-        date: targetDate,
+        verificationDate, // 인증 기반 날짜 (프로필북은 다음날 제공)
         assignments,
         matchingVersion: 'random',
         timestamp: FieldValue.serverTimestamp(),
