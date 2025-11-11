@@ -24,13 +24,11 @@ export {
 
 // Cohort operations
 export {
-  createCohort,
   createCohortWithId,
   getCohortById,
   getAllCohorts,
   getActiveCohorts,
   updateCohort,
-  deleteCohort,
 } from './cohorts';
 
 // Participant operations
@@ -40,11 +38,8 @@ export {
   getParticipantByPhoneNumber,
   getAllParticipantsByPhoneNumber,
   getParticipantsByCohort,
-  getAllParticipants,
   updateParticipant,
   updateParticipantBookInfo,
-  deleteParticipant,
-  searchParticipants,
   // Firebase Auth 관련
   getParticipantByFirebaseUid,
   linkFirebaseUid,
@@ -56,12 +51,8 @@ export {
   createSubmission,
   getSubmissionById,
   getSubmissionsByParticipant,
-  getSubmissionsByCode,
-  getAllSubmissions,
-  getSubmissionsByStatus,
   updateSubmission,
   deleteSubmission,
-  searchSubmissions,
   subscribeTodayVerified,
   subscribeParticipantSubmissions,
   saveDraft,
@@ -70,12 +61,8 @@ export {
 
 // Storage operations
 export {
-  uploadFile,
   uploadFileWithProgress,
-  uploadMultipleFiles,
   uploadReadingImage,
-  deleteFile,
-  deleteMultipleFiles,
 } from './storage';
 
 // Notice operations
@@ -112,7 +99,6 @@ export {
   getDailyQuestionText,
   getAllDailyQuestions,
   createDailyQuestions,
-  copyDailyQuestions,
 } from './daily-questions';
 
 // Types

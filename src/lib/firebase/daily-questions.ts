@@ -178,35 +178,4 @@ export async function createDailyQuestions(
   }
 }
 
-/**
- * 다른 기수의 질문 복사
- *
- * @param sourceCohortId - 원본 기수 ID
- * @param targetCohortId - 대상 기수 ID
- */
-export async function copyDailyQuestions(
-  sourceCohortId: string,
-  targetCohortId: string
-): Promise<void> {
-  try {
-    // 1. 원본 질문 조회
-    const sourceQuestions = await getAllDailyQuestions(sourceCohortId);
-
-    if (sourceQuestions.length === 0) {
-      throw new Error('Source cohort has no daily questions');
-    }
-
-    // 2. 대상 기수에 생성
-    await createDailyQuestions(
-      targetCohortId,
-      sourceQuestions.map(q => ({
-        category: q.category,
-        question: q.question,
-      }))
-    );
-
-  } catch (error) {
-
-    throw error;
-  }
-}
+// ❌ REMOVED: copyDailyQuestions - 미사용 함수 제거

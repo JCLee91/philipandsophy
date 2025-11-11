@@ -15,21 +15,7 @@ import { STORAGE_PATHS, generateStorageFileName } from '@/constants/storage';
  * Firebase Storage Operations
  */
 
-/**
- * 파일 업로드 (간단한 버전)
- */
-export async function uploadFile(
-  file: File,
-  path: string
-): Promise<string> {
-  const storage = getStorageInstance();
-  const storageRef = ref(storage, path);
-
-  await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
-
-  return downloadURL;
-}
+// ❌ REMOVED: uploadFile - 미사용 함수 제거 (전용 함수 사용)
 
 /**
  * 파일 업로드 (진행률 추적 가능)
@@ -65,21 +51,7 @@ export function uploadFileWithProgress(
   });
 }
 
-/**
- * 다중 파일 업로드
- */
-export async function uploadMultipleFiles(
-  files: File[],
-  basePath: string
-): Promise<string[]> {
-  const uploadPromises = files.map((file, index) => {
-    const fileName = `${Date.now()}_${index}_${file.name}`;
-    const path = `${basePath}/${fileName}`;
-    return uploadFile(file, path);
-  });
-
-  return Promise.all(uploadPromises);
-}
+// ❌ REMOVED: uploadMultipleFiles - 미사용 함수 제거
 
 /**
  * 이미지 업로드 (독서 인증용)
@@ -112,7 +84,7 @@ export async function uploadNoticeImage(
   const fileName = generateStorageFileName(file.name);
   const path = STORAGE_PATHS.NOTICE(cohortId, fileName);
 
-  return uploadFile(file, path);
+  return uploadFileWithProgress(file, path);
 }
 
 /**
@@ -125,23 +97,8 @@ export async function uploadDMImage(
   const fileName = generateStorageFileName(file.name);
   const path = STORAGE_PATHS.DIRECT_MESSAGE(userId, fileName);
 
-  return uploadFile(file, path);
+  return uploadFileWithProgress(file, path);
 }
 
-/**
- * 파일 삭제
- */
-export async function deleteFile(fileUrl: string): Promise<void> {
-  const storage = getStorageInstance();
-  const fileRef = ref(storage, fileUrl);
-
-  await deleteObject(fileRef);
-}
-
-/**
- * 다중 파일 삭제
- */
-export async function deleteMultipleFiles(fileUrls: string[]): Promise<void> {
-  const deletePromises = fileUrls.map((url) => deleteFile(url));
-  await Promise.all(deletePromises);
-}
+// ❌ REMOVED: deleteFile - 미사용 함수 제거 (이미지 삭제 기능 미구현)
+// ❌ REMOVED: deleteMultipleFiles - 미사용 함수 제거

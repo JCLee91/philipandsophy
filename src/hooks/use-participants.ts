@@ -6,9 +6,7 @@ import {
   getParticipantById,
   getParticipantByPhoneNumber,
   getParticipantsByCohort,
-  getAllParticipants,
   updateParticipant,
-  deleteParticipant,
 } from '@/lib/firebase';
 import { Participant } from '@/types/database';
 
@@ -26,15 +24,7 @@ export const PARTICIPANT_KEYS = {
   byCohort: (cohortId: string) => [...PARTICIPANT_KEYS.all, 'cohort', cohortId] as const,
 };
 
-/**
- * 모든 참가자 조회
- */
-export function useParticipants() {
-  return useQuery({
-    queryKey: PARTICIPANT_KEYS.list(),
-    queryFn: getAllParticipants,
-  });
-}
+// ❌ REMOVED: useParticipants - 미사용 hook 제거
 
 /**
  * 참가자 ID로 조회
@@ -136,16 +126,4 @@ export function useUpdateParticipant() {
   });
 }
 
-/**
- * 참가자 삭제
- */
-export function useDeleteParticipant() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => deleteParticipant(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PARTICIPANT_KEYS.lists() });
-    },
-  });
-}
+// ❌ REMOVED: useDeleteParticipant - 미사용 hook 제거
