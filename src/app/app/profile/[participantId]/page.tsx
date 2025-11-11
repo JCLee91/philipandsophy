@@ -229,10 +229,10 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 프로필북 표시 규칙:
   // - 14일차 또는 15일차 이후: 최신 제출물 모두 표시 (cutoff 없음)
-  // - 평소: "어제 답변 → 오늘 공개" (10월 17일 매칭 → 10월 16일까지만)
+  // - 평소: 매칭 날짜까지의 인증만 표시 (11-10 매칭 → 11-10까지 인증 포함)
   const submissionCutoffDate = (isFinalDayAccess || isAfterProgramWithoutAuth || isSuperAdmin)
     ? null  // 최신 제출물 모두 표시
-    : effectiveMatchingDate ? getPreviousDayString(effectiveMatchingDate) : null;
+    : effectiveMatchingDate; // ✅ 매칭 날짜까지 포함 (새벽 2시 마감 정책 적용)
 
   const viewerHasAccessForDate = isSuperAdmin
     ? true
