@@ -2,9 +2,9 @@
  * 랜덤 프로필북 매칭 시스템
  *
  * AI 분석 대신 랜덤으로 프로필북을 전달하며, 다음 규칙을 따릅니다:
- * 1. 프로필북 개수: 2 × (누적인증 + 1)
+ * 1. 프로필북 개수: 2 × (누적인증 + 2)
  * 2. 성별 균형 우선 (남/여 비율 50:50 목표)
- * 3. 중복 방지: 최근 3일간 받은 사람 제외
+ * 3. 중복 방지: 어제만 받은 사람 제외 (1일)
  * 4. 본인 제외
  *
  * @version 2.0.0
@@ -97,11 +97,11 @@ function groupByGender(participants: ParticipantWithSubmissionCount[]): {
 }
 
 /**
- * 후보 필터링: 본인 제외 + 최근 3일 중복 제외
+ * 후보 필터링: 본인 제외 + 어제 중복 제외
  *
  * @param providers 프로필북 공급자 목록 (어제 인증한 사람들)
  * @param currentViewerId 현재 수요자 ID
- * @param recentlyAssignedIds 최근 3일간 받은 프로필북 ID
+ * @param recentlyAssignedIds 어제 받은 프로필북 ID
  */
 function filterCandidates(
   providers: ParticipantWithSubmissionCount[],

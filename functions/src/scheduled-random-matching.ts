@@ -134,8 +134,8 @@ export const scheduledRandomMatching = onSchedule(
 
       logger.info(`Loaded ${providers.length} providers, ${viewers.length} viewers`);
 
-      // 6. 최근 3일 매칭 이력 로드 (Helper 사용)
-      const recentMatchings = await loadRecentMatchings(db, cohortId, yesterdayStr, 3);
+      // 6. 최근 1일 매칭 이력 로드 (어제만 중복 방지)
+      const recentMatchings = await loadRecentMatchings(db, cohortId, yesterdayStr, 1);
 
       logger.info(`Recent matchings loaded for ${Object.keys(recentMatchings).length} viewers`);
 
