@@ -81,14 +81,14 @@ export function useProfileBookAccess(cohortId?: string): ProfileBookAccessResult
       return Infinity;
     }
 
-    // 오늘 인증 완료 → 전체 열람 가능
+    // 오늘 인증 완료 → 할당된 모든 프로필북 열람 가능
     if (isVerified) {
-      return totalProfileBooks;
+      return Infinity;
     }
 
     // 오늘 미인증 → 2개만 열람 가능
     return 2;
-  }, [isSuperAdmin, isVerified, totalProfileBooks]);
+  }, [isSuperAdmin, isVerified]);
 
   return {
     cumulativeSubmissionCount,
