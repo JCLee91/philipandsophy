@@ -66,17 +66,12 @@ export const getMessagesByConversation = async (
     orderBy('createdAt', 'asc')
   );
 
-  try {
-    const snapshot = await getDocs(q);
+  const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as DirectMessage[];
-  } catch (error) {
-
-    throw error;
-  }
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as DirectMessage[];
 };
 
 /**

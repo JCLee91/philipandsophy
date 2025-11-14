@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import { logger } from '@/lib/logger';
 
 /**
  * Serialized Timestamp from Server Component
@@ -102,7 +103,7 @@ export function getTimestampDate(value: any): Date | null {
 
     return null;
   } catch (error) {
-    console.warn('Failed to parse timestamp:', { value, error });
+    logger.warn('Failed to parse timestamp', { value, error });
     return null;
   }
 }

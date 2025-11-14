@@ -59,7 +59,8 @@ export default function MessageGroup({
 
   // 마지막 메시지의 시간
   const lastMessage = messages[messages.length - 1];
-  const timestamp = formatMessageTime(getTimestampDate(lastMessage.createdAt));
+  const lastMessageDate = getTimestampDate(lastMessage.createdAt);
+  const timestamp = lastMessageDate ? formatMessageTime(lastMessageDate) : '';
 
   return (
     <div className={`flex gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>

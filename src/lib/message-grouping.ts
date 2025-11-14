@@ -1,6 +1,7 @@
 import { DirectMessage } from '@/types/database';
 import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 
 /**
  * 메시지 그룹 타입
@@ -69,7 +70,13 @@ export function groupMessagesByDate(messages: DirectMessage[]): DateSection[] {
   let currentGroup: MessageGroup | null = null;
 
   messages.forEach((msg, index) => {
-    const msgDate = msg.createdAt.toDate();
+    const msgDate = getTimestampDate(msg.createdAt);
+
+    // createdAt이 유효하지 않으면 해당 메시지 스킵
+    if (!msgDate) {
+      return;
+    }
+
     const isLastMessage = index === messages.length - 1;
 
     // 1. 날짜 섹션 체크
@@ -92,10 +99,11 @@ export function groupMessagesByDate(messages: DirectMessage[]): DateSection[] {
 
     // 2. 메시지 그룹화
     const prevMsg = index > 0 ? messages[index - 1] : null;
+    const prevMsgDate = prevMsg ? getTimestampDate(prevMsg.createdAt) : null;
     const shouldStartNewGroup =
       !currentGroup ||
       currentGroup.senderId !== msg.senderId ||
-      (prevMsg && msgDate.getTime() - prevMsg.createdAt.toDate().getTime() > GROUPING_CONFIG.MAX_GROUP_INTERVAL);
+      (prevMsgDate && msgDate.getTime() - prevMsgDate.getTime() > GROUPING_CONFIG.MAX_GROUP_INTERVAL);
 
     if (shouldStartNewGroup) {
       // 이전 그룹 마무리
