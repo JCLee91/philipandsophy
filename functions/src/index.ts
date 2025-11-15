@@ -25,10 +25,8 @@ import {
   NOTIFICATION_ROUTES,
   NOTIFICATION_TYPES,
 } from "./constants/notifications";
-import {
-  matchParticipantsRandomly,
-  type ParticipantWithSubmissionCount,
-} from "./lib/random-matching";
+// v2.0 random matching deprecated - see lib/random-matching.deprecated.ts
+// v3.0 cluster matching now used - see lib/cluster-matching.ts
 
 // Global options for all functions
 setGlobalOptions({
@@ -885,7 +883,8 @@ export const onNoticeUpdated = onDocumentUpdated(
 
 
 // ✅ 새로운 랜덤 매칭 시스템 (v2.0)
-export { scheduledRandomMatching } from "./scheduled-random-matching";
+// v3.0: Cluster Matching (매일 새벽 2시 자동 실행)
+export { scheduledClusterMatching } from "./scheduled-cluster-matching";
 
 // Export custom notifications
 export { sendCustomNotification } from "./custom-notifications";
@@ -1099,12 +1098,13 @@ export const manualMatchingPreview = onRequest(
 );
 
 /**
- * Export Random Matching Functions
+ * Export Matching Functions
  *
- * v2.0: Random Matching (2025-11-07부터 사용)
- * - scheduledMatchingPreview: 매일 새벽 2시 자동 실행 (scheduled-random-matching.ts)
+ * v3.0: Cluster Matching (2025-11-15부터 사용)
+ * - scheduledClusterMatching: 매일 새벽 2시 자동 실행 (scheduled-cluster-matching.ts)
  * - manualMatchingPreview: 위에서 직접 정의됨 (2025-11-10 리팩토링)
  *
- * Note: manual-random-matching.ts는 쿼리 문제로 deprecated
+ * Deprecated:
+ * - v2.0: scheduledRandomMatching (scheduled-random-matching.deprecated.ts)
+ * - manual-random-matching.ts (쿼리 문제로 deprecated)
  */
-// Removed: export { manualRandomMatching as manualMatchingPreview } from "./manual-random-matching";

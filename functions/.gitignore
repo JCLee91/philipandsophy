@@ -1,5 +1,5 @@
-# Compiled JavaScript files
-lib/
+# Compiled JavaScript files (컴파일 결과물만 무시, src/lib은 포함)
+/lib/
 *.js
 *.js.map
 

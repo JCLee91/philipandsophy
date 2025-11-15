@@ -47,6 +47,10 @@ export interface DailyParticipantAssignment {
   /** 할당된 프로필북 ID 배열 (누적 인증 기반 개수) */
   assigned?: string[];
 
+  // v3.0: 클러스터 매칭 (2025-11-15 이후)
+  /** 소속 클러스터 ID (v3.0) */
+  clusterId?: string;
+
   // ============================================================
   // v1.0 레거시 필드 (과거 데이터 읽기 전용)
   // ============================================================
@@ -74,14 +78,36 @@ export interface DailyParticipantAssignment {
 }
 
 /**
+ * 클러스터 정보 (v3.0)
+ * AI가 하루 단위로 생성하는 독서 성향 그룹
+ */
+export interface Cluster {
+  /** 클러스터 ID */
+  id: string;
+  /** 클러스터 이름 (예: "오늘의 사색파") */
+  name: string;
+  /** 이모지 */
+  emoji: string;
+  /** 오늘의 주제/테마 (AI가 분석한 공통점) */
+  theme: string;
+  /** 클러스터 멤버 ID 배열 */
+  memberIds: string[];
+  /** AI 분석 근거 */
+  reasoning: string;
+}
+
+/**
  * 날짜별 프로필북 매칭 결과
  */
 export interface DailyMatchingEntry {
   /** 참가자별 매칭 배정 정보 */
   assignments: Record<string, DailyParticipantAssignment>;
 
-  /** 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭) */
-  matchingVersion?: 'ai' | 'random';
+  /** 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭, cluster: 클러스터 매칭) */
+  matchingVersion?: 'ai' | 'random' | 'cluster';
+
+  /** 클러스터 정보 (v3.0, matchingVersion === 'cluster'일 때만 존재) */
+  clusters?: Record<string, Cluster>;
 
   // ============================================================
   // v1.0 레거시 필드 (과거 데이터 읽기 전용)
