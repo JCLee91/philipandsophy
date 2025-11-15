@@ -12,8 +12,11 @@
  */
 
 import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
+
+// Vercel AI Gateway를 통해 AI 모델 접근
+// 환경 변수: AI_GATEWAY_API_KEY
+// 자동으로 https://ai-gateway.vercel.sh/v1/ai 사용
 
 // Firebase Functions 환경에서는 logger를 직접 사용
 const logger = {
@@ -172,7 +175,7 @@ export async function generateDailyClusters(
 
   try {
     const result = await generateObject({
-      model: openai('gpt-4o-mini'),
+      model: 'openai/gpt-4o-mini', // ✅ Vercel AI Gateway 자동 사용
       schema: z.object({
         clusters: z.array(ClusterSchema)
       }),
