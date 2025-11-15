@@ -137,9 +137,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 어제 인증한 참가자 목록 조회
   const { data: yesterdayVerifiedIds } = useYesterdayVerifiedParticipants(cohortId || undefined);
 
-  const preferredMatchingDate = useMemo(() => {
-    return matchingDate ?? undefined;
-  }, [matchingDate]);
+  // ✅ 불필요한 useMemo 제거 (단순 ?? 연산자)
+  const preferredMatchingDate = matchingDate ?? undefined;
 
   const matchingLookupWithinAccess = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
@@ -358,14 +357,10 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   }, [assignedProfileIds]);
   const matchingVersion = matchingLookup?.matching.matchingVersion;
   const isRandomMatching = matchingVersion === 'random' || assignedProfileIds.length > 0;
-  const normalizedParticipantId = useMemo(() => {
-    if (!participantId) return participantId;
-    return participantId.replace(/^ghost-/, '');
-  }, [participantId]);
-  const assignmentIndex = useMemo(() => {
-    if (!normalizedParticipantId) return -1;
-    return assignedProfileIds.indexOf(normalizedParticipantId);
-  }, [assignedProfileIds, normalizedParticipantId]);
+
+  // ✅ 불필요한 useMemo 제거 (단순 replace, indexOf 연산)
+  const normalizedParticipantId = participantId ? participantId.replace(/^ghost-/, '') : participantId;
+  const assignmentIndex = normalizedParticipantId ? assignedProfileIds.indexOf(normalizedParticipantId) : -1;
   const previewLimit = useMemo(() => {
     if (
       unlockedProfileBooks === null ||
