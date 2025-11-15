@@ -109,6 +109,16 @@ export const scheduledClusterMatching = onSchedule(
         }
       }
 
+      // 3-3. useClusterMatching 체크: v3.0 클러스터 매칭 사용 여부
+      const useClusterMatching = cohortData?.useClusterMatching === true;
+
+      if (!useClusterMatching) {
+        logger.info(`Cohort ${cohortId} not using cluster matching (v2.0), skipping`);
+        return;
+      }
+
+      logger.info(`✅ Cohort ${cohortId} uses cluster matching (v3.0)`);
+
       // 4. 어제 날짜 계산 (KST)
       const now = new Date();
       const kstNow = toZonedTime(now, 'Asia/Seoul');
@@ -187,10 +197,6 @@ export const scheduledClusterMatching = onSchedule(
         logger.error(`Validation errors: ${matchingResult.validation.errors.join(', ')}`);
       }
 
-      if (matchingResult.validation?.warnings.length) {
-        logger.warn(`Validation warnings: ${matchingResult.validation.warnings.join(', ')}`);
-      }
-
       // 9. Firestore에 저장 (Transaction)
       const matchingEntry = {
         clusters: matchingResult.clusters,
@@ -236,7 +242,6 @@ export const scheduledClusterMatching = onSchedule(
         confirmedAt: admin.firestore.Timestamp.now(),
         confirmedBy: "scheduled_cluster_matching",
         validationErrors: matchingResult.validation?.errors || [],
-        validationWarnings: matchingResult.validation?.warnings || [],
       };
 
       const confirmRef = db

@@ -74,7 +74,6 @@ export interface ClusterMatchingResult {
   validation?: {
     valid: boolean;
     errors: string[];
-    warnings: string[];
   };
 }
 
@@ -190,7 +189,7 @@ export async function generateDailyClusters(
 
 참가자 데이터:
 ${submissions.map(s => `
-[${s.participantId}] ${s.participantName} (${s.gender || 'unknown'})
+[${s.participantId}] ${s.participantName}
 - 오늘의 감상평: ${s.review}
 - 오늘의 질문: ${s.dailyQuestion}
 - 오늘의 답변: ${s.dailyAnswer}
@@ -220,7 +219,6 @@ ${submissions.map(s => `
 }
 
 ⚠️ 필수 제약:
-- 성별 균형: 가능한 각 클러스터 50:50 비율 유지 (강제 아님)
 - 모든 참가자 포함: 총합 ${participantCount}명 정확히 배정
 - 클러스터 크기: 최소 ${CLUSTER_CONFIG.MIN_SIZE}명, 최대 ${CLUSTER_CONFIG.MAX_SIZE}명
       `.trim()
@@ -318,11 +316,10 @@ export async function matchParticipantsWithClusters(
       return acc;
     }, {} as Record<string, Cluster>);
 
-    // 5. 검증
+    // 5. 검증 (필수 항목만)
     const errors: string[] = [];
-    const warnings: string[] = [];
 
-    // 5-1. 모든 참가자가 할당받았는지 확인
+    // 모든 참가자가 할당받았는지 확인
     const assignedIds = new Set(Object.keys(assignments));
     const allMemberIds = new Set(
       clusters.flatMap(c => c.memberIds)
@@ -334,31 +331,15 @@ export async function matchParticipantsWithClusters(
       );
     }
 
-    // 5-2. 클러스터 크기 검증
-    for (const cluster of clusters) {
-      const size = cluster.memberIds.length;
-      if (size < CLUSTER_CONFIG.MIN_SIZE) {
-        warnings.push(
-          `${cluster.name}: 최소 크기 미달 (${size}명 < ${CLUSTER_CONFIG.MIN_SIZE}명)`
-        );
-      }
-      if (size > CLUSTER_CONFIG.MAX_SIZE) {
-        warnings.push(
-          `${cluster.name}: 최대 크기 초과 (${size}명 > ${CLUSTER_CONFIG.MAX_SIZE}명)`
-        );
-      }
-    }
-
     const validation = {
       valid: errors.length === 0,
-      errors,
-      warnings
+      errors
     };
 
     logger.info(
       `[Cluster Matching v3.0] 완료: ` +
-      `${clusters.length}개 클러스터, ${Object.keys(assignments).length}명 할당, ` +
-      `${errors.length}개 에러, ${warnings.length}개 경고`
+      `${clusters.length}개 클러스터, ${Object.keys(assignments).length}명 할당` +
+      (errors.length > 0 ? `, ${errors.length}개 에러` : '')
     );
 
     return {
