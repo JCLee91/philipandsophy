@@ -24,7 +24,7 @@ import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
 import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
-import { getAssignedProfiles, getLegacyMatchingReasons } from '@/lib/matching-compat';
+import { getAssignedProfiles } from '@/lib/matching-compat';
 import { useParticipant } from '@/hooks/use-participants';
 import { useProfileBookAccess } from '@/hooks/use-profile-book-access';
 import { logger } from '@/lib/logger';
@@ -386,41 +386,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
   const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
 
-  // 매칭 이유 추출 (v1.0 레거시만 해당)
-  const matchingReason = useMemo(() => {
-    if (!viewerAssignment || !isFeatured) return null;
-
-    // v1.0 (AI 매칭): reasons 필드 존재
-    const legacyReasons = getLegacyMatchingReasons(viewerAssignment);
-    if (!legacyReasons) {
-      // v2.0 (랜덤 매칭): 매칭 이유 없음
-      return null;
-    }
-
-    const isSimilar = viewerAssignment.similar?.includes(participantId);
-    const isOpposite = viewerAssignment.opposite?.includes(participantId);
-
-    // Theme은 매칭 타입에서 직접 유도
-    if (isSimilar && legacyReasons.similar) {
-      return {
-        text: legacyReasons.similar,
-        theme: 'similar' as ProfileTheme
-      };
-    }
-    if (isOpposite && legacyReasons.opposite) {
-      return {
-        text: legacyReasons.opposite,
-        theme: 'opposite' as ProfileTheme
-      };
-    }
-
-    // 경고 로깅: 데이터 불일치 감지
-    if (isSimilar || isOpposite) {
-
-    }
-
-    return null;
-  }, [viewerAssignment, isFeatured, participantId]);
+  // ❌ REMOVED: matchingReason - v1.0 AI 매칭 레거시 (UI에서 사용 안 함)
 
   // 최종 접근 권한:
   // - 본인 OR 슈퍼관리자: 항상 가능
@@ -571,14 +537,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   )}
                 </div>
 
-                {/* 매칭 이유 배너 - 논의 중인 기능으로 일시적으로 비활성화 */}
-                {/* {!isSelf && matchingReason && (
-                  <MatchingReasonBanner
-                    reason={matchingReason.text}
-                    theme={matchingReason.theme}
-                    className="w-full mb-8"
-                  />
-                )} */}
+                {/* ❌ REMOVED: MatchingReasonBanner - v1.0 AI 매칭 레거시 */}
 
                 {/* 최근 본 도서 */}
                 {latestSubmission && (

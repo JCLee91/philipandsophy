@@ -80,5 +80,5 @@ export function detectMatchingVersion(
   return 'empty';
 }
 
-// ❌ REMOVED: getLegacyMatchingReasons - v1.0 AI 매칭 레거시 제거
-// ❌ REMOVED: getProfileBookCount - 미사용 함수 제거 (wrapper 불필요)
+// ❌ REMOVED: getLegacyMatchingReasons - Dead code (UI에서 사용 안 함)
+// ❌ REMOVED: getProfileBookCount - Dead code (직접 getAssignedProfiles().length 사용)
