@@ -13,6 +13,7 @@ export default function GlassNavigation() {
     { label: '홈', href: '/' },
     { label: '프로그램', href: '/service' },
     { label: '멤버십', href: '/membership' },
+    { label: '파티 후기', href: '/party-reviews' },
   ];
 
   const isActive = (href: string) => {
