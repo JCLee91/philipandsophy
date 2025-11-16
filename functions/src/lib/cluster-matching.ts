@@ -4,7 +4,7 @@
  * 매일 어제 인증한 참가자들을 AI로 클러스터링하여 매칭
  * - 책 제목/장르 무시 (며칠간 같은 책을 읽기 때문)
  * - 오직 "오늘의 감상평 + 오늘의 답변"만 분석
- * - 클러스터 크기: 5-7명 (프로필북 4-6개 보임)
+ * - 클러스터 크기: 1-7명 (1-4명은 1개 클러스터, 5명 이상은 여러 클러스터)
  * - 클러스터 내 전원 매칭 (본인 제외)
  *
  * @version 3.0.0
@@ -97,13 +97,15 @@ const CLUSTER_CONFIG = {
  *
  * @param providerCount 어제 인증한 참가자 수
  * @returns 클러스터 개수
- * @throws Error 5명 미만인 경우만
  *
  * @example
+ * calculateOptimalClusterCount(1)  // 1개 (1명 - 강제)
+ * calculateOptimalClusterCount(3)  // 1개 (3명 - 강제)
+ * calculateOptimalClusterCount(4)  // 1개 (4명 - 강제)
  * calculateOptimalClusterCount(5)  // 1개 (5명)
  * calculateOptimalClusterCount(7)  // 1개 (7명)
- * calculateOptimalClusterCount(8)  // 2개 (4명씩 - 최선)
- * calculateOptimalClusterCount(9)  // 2개 (4명+5명 - 최선)
+ * calculateOptimalClusterCount(8)  // 2개 (4명씩 - 특수)
+ * calculateOptimalClusterCount(9)  // 2개 (4명+5명 - 특수)
  * calculateOptimalClusterCount(10) // 2개 (5명씩)
  * calculateOptimalClusterCount(20) // 3개 (6~7명씩)
  * calculateOptimalClusterCount(30) // 5개 (6명씩)
@@ -111,11 +113,10 @@ const CLUSTER_CONFIG = {
 function calculateOptimalClusterCount(providerCount: number): number {
   const { MIN_SIZE, MAX_SIZE, TARGET_SIZE } = CLUSTER_CONFIG;
 
-  // 1. 최소 인원 미달 (4명 이하는 불가)
-  if (providerCount < MIN_SIZE) {
-    throw new Error(
-      `클러스터링 불가: 최소 ${MIN_SIZE}명 필요 (현재 ${providerCount}명)`
-    );
+  // 1. 1~4명: 1개 클러스터로 강제 처리
+  if (providerCount <= 4) {
+    logger.warn(`[Cluster Config] ${providerCount}명은 적지만 1개 클러스터로 처리`);
+    return 1;
   }
 
   // 2. 8-9명 특수 케이스 (최선의 방법으로 처리)
@@ -296,7 +297,7 @@ ${strategy.mode === 'autonomous' ? `
 
 ⚠️ 필수 제약:
 - 모든 참가자 포함: 총합 ${participantCount}명 정확히 배정
-- 클러스터 크기: 최소 ${CLUSTER_CONFIG.MIN_SIZE}명, 최대 ${CLUSTER_CONFIG.MAX_SIZE}명
+- 클러스터 크기: 최소 1명, 최대 ${CLUSTER_CONFIG.MAX_SIZE}명
       `.trim()
     });
 
@@ -341,8 +342,8 @@ ${strategy.mode === 'autonomous' ? `
       errors.push(`존재하지 않는 ID: ${invalidIds.join(', ')}`);
     }
 
-    // 6. 클러스터 크기 검증 (4-7명, 8-9명 케이스 허용)
-    const ALLOWED_MIN_SIZE = 4; // 8-9명 케이스를 위해 4명도 허용
+    // 6. 클러스터 크기 검증 (1-7명 허용)
+    const ALLOWED_MIN_SIZE = 1; // 1~4명도 1개 클러스터로 처리
     const invalidSizeClusters = clusters.filter(
       c => c.memberIds.length < ALLOWED_MIN_SIZE ||
            c.memberIds.length > CLUSTER_CONFIG.MAX_SIZE
