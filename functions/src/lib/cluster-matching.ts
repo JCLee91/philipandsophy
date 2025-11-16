@@ -93,30 +93,51 @@ const CLUSTER_CONFIG = {
 // ============================================================
 
 /**
- * 최적 클러스터 개수 계산
+ * 최적 클러스터 개수 계산 (5-7명 범위 보장)
  *
  * @param providerCount 어제 인증한 참가자 수
  * @returns 클러스터 개수
  *
  * @example
+ * calculateOptimalClusterCount(8)  // 2개 (4명씩 - MIN_SIZE 5명 미만이지만 최선)
  * calculateOptimalClusterCount(10) // 2개 (5명씩)
  * calculateOptimalClusterCount(20) // 3개 (6~7명)
  * calculateOptimalClusterCount(30) // 5개 (6명씩)
  */
 function calculateOptimalClusterCount(providerCount: number): number {
-  const { MIN_SIZE, TARGET_SIZE } = CLUSTER_CONFIG;
+  const { MIN_SIZE, MAX_SIZE, TARGET_SIZE } = CLUSTER_CONFIG;
 
+  // 1. 최소 인원 미달
   if (providerCount < MIN_SIZE) {
     throw new Error(
       `클러스터링 불가: 최소 ${MIN_SIZE}명 필요 (현재 ${providerCount}명)`
     );
   }
 
-  const clusterCount = Math.max(1, Math.round(providerCount / TARGET_SIZE));
+  // 2. 5-7명 범위로 나눌 수 없는 인원 (8-9명)
+  if (providerCount > MAX_SIZE && providerCount < MIN_SIZE * 2) {
+    throw new Error(
+      `클러스터링 불가: ${providerCount}명은 ${MIN_SIZE}-${MAX_SIZE}명 범위로 나눌 수 없음 ` +
+      `(${MIN_SIZE}-${MAX_SIZE}명 또는 ${MIN_SIZE * 2}명 이상 필요)`
+    );
+  }
+
+  // 3. 최소 필요 클러스터 수 (MAX_SIZE 초과 방지)
+  const minClusters = Math.ceil(providerCount / MAX_SIZE);
+
+  // 4. 최대 가능 클러스터 수 (MIN_SIZE 미만 방지)
+  const maxClusters = Math.floor(providerCount / MIN_SIZE);
+
+  // 5. 목표 클러스터 수 (TARGET_SIZE 기준)
+  const targetClusters = Math.round(providerCount / TARGET_SIZE);
+
+  // 6. 범위 내로 제한
+  const clusterCount = Math.max(minClusters, Math.min(maxClusters, targetClusters));
 
   logger.info(
     `[Cluster Config] ${providerCount}명 → ${clusterCount}개 클러스터 ` +
-    `(평균 ${Math.round(providerCount / clusterCount)}명/클러스터)`
+    `(${Math.floor(providerCount / clusterCount)}~${Math.ceil(providerCount / clusterCount)}명/클러스터, ` +
+    `범위: min=${minClusters}, max=${maxClusters}, target=${targetClusters})`
   );
 
   return clusterCount;
@@ -275,13 +296,72 @@ ${strategy.mode === 'autonomous' ? `
 
     const clusters = result.object.clusters;
 
-    // 검증
-    const totalMembers = clusters.reduce((sum, c) => sum + c.memberIds.length, 0);
-    if (totalMembers !== participantCount) {
-      logger.error(
-        `[AI Clustering] 검증 실패: 참가자 ${participantCount}명 중 ${totalMembers}명만 배정됨`
+    // ============================================================
+    // 종합 검증
+    // ============================================================
+
+    const errors: string[] = [];
+
+    // 1. 제출된 참가자 ID 집합
+    const submittedIds = new Set(submissions.map(s => s.participantId));
+
+    // 2. 클러스터에 배정된 모든 ID 수집 (중복 체크)
+    const assignedIds = new Set<string>();
+    const duplicateIds = new Set<string>();
+
+    for (const cluster of clusters) {
+      for (const memberId of cluster.memberIds) {
+        if (assignedIds.has(memberId)) {
+          duplicateIds.add(memberId);
+        }
+        assignedIds.add(memberId);
+      }
+    }
+
+    // 3. 중복 ID 체크
+    if (duplicateIds.size > 0) {
+      errors.push(`중복 배정된 ID: ${Array.from(duplicateIds).join(', ')}`);
+    }
+
+    // 4. 누락된 ID 체크
+    const missingIds = [...submittedIds].filter(id => !assignedIds.has(id));
+    if (missingIds.length > 0) {
+      errors.push(`누락된 참가자 ID: ${missingIds.join(', ')}`);
+    }
+
+    // 5. 존재하지 않는 ID 체크
+    const invalidIds = [...assignedIds].filter(id => !submittedIds.has(id));
+    if (invalidIds.length > 0) {
+      errors.push(`존재하지 않는 ID: ${invalidIds.join(', ')}`);
+    }
+
+    // 6. 클러스터 크기 검증 (5-7명)
+    const invalidSizeClusters = clusters.filter(
+      c => c.memberIds.length < CLUSTER_CONFIG.MIN_SIZE ||
+           c.memberIds.length > CLUSTER_CONFIG.MAX_SIZE
+    );
+    if (invalidSizeClusters.length > 0) {
+      errors.push(
+        `크기 제약 위반 클러스터: ${invalidSizeClusters.map(c =>
+          `${c.id}(${c.memberIds.length}명)`
+        ).join(', ')} (허용 범위: ${CLUSTER_CONFIG.MIN_SIZE}-${CLUSTER_CONFIG.MAX_SIZE}명)`
       );
-      throw new Error('AI 클러스터링 검증 실패: 참가자 수 불일치');
+    }
+
+    // 7. 클러스터 개수 검증 (목표 ±1 허용)
+    if (Math.abs(clusters.length - targetClusterCount) > 1) {
+      errors.push(
+        `클러스터 개수 불일치: 목표 ${targetClusterCount}개, 실제 ${clusters.length}개`
+      );
+    }
+
+    // 8. 검증 실패 시 에러
+    if (errors.length > 0) {
+      logger.error(
+        `[AI Clustering] 검증 실패:\n` +
+        errors.map((e, i) => `  ${i + 1}. ${e}`).join('\n')
+      );
+      throw new Error(`AI 클러스터링 검증 실패: ${errors.length}개 오류 발견`);
     }
 
     logger.info(
