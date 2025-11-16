@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: '파티 후기 | 필립앤소피 독서소셜클럽',
   description: '필립앤소피 독서 프로그램 참여자들의 실제 후기. 나와 잘 맞는 사람들과 자연스럽게 만나고 깊이있는 대화를 나눈 경험담을 확인하세요.',
   keywords: ['독서모임 후기', '소셜클럽 후기', '필립앤소피 후기', '독서 프로그램 후기', '서울 소셜클럽', '네트워킹 후기'],
+  themeColor: '#000000',
   alternates: {
     canonical: 'https://www.philipandsophy.kr/party-reviews',
   },
