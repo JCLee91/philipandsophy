@@ -176,6 +176,8 @@ export const scheduledClusterMatching = onSchedule(
           participantId: data.participantId,
           participantName: participant?.name || 'Unknown',
           gender: participant?.gender,
+          bookTitle: data.bookTitle || '제목 없음',
+          bookAuthor: data.bookAuthor,
           review: data.review || '',
           dailyQuestion: data.dailyQuestion || '',
           dailyAnswer: data.dailyAnswer || ''
@@ -185,7 +187,7 @@ export const scheduledClusterMatching = onSchedule(
       // 8. 클러스터 매칭 실행
       logger.info(`Starting cluster matching: ${dailySubmissions.length} participants`);
 
-      const matchingResult = await matchParticipantsWithClusters(dailySubmissions);
+      const matchingResult = await matchParticipantsWithClusters(dailySubmissions, yesterdayStr);
 
       logger.info(
         `Cluster matching completed: ` +
