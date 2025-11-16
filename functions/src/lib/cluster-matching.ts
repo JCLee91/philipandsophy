@@ -93,33 +93,39 @@ const CLUSTER_CONFIG = {
 // ============================================================
 
 /**
- * 최적 클러스터 개수 계산 (5-7명 범위 보장)
+ * 최적 클러스터 개수 계산 (유연한 매칭)
  *
  * @param providerCount 어제 인증한 참가자 수
  * @returns 클러스터 개수
+ * @throws Error 5명 미만인 경우만
  *
  * @example
- * calculateOptimalClusterCount(8)  // 2개 (4명씩 - MIN_SIZE 5명 미만이지만 최선)
+ * calculateOptimalClusterCount(5)  // 1개 (5명)
+ * calculateOptimalClusterCount(7)  // 1개 (7명)
+ * calculateOptimalClusterCount(8)  // 2개 (4명씩 - 최선)
+ * calculateOptimalClusterCount(9)  // 2개 (4명+5명 - 최선)
  * calculateOptimalClusterCount(10) // 2개 (5명씩)
- * calculateOptimalClusterCount(20) // 3개 (6~7명)
+ * calculateOptimalClusterCount(20) // 3개 (6~7명씩)
  * calculateOptimalClusterCount(30) // 5개 (6명씩)
  */
 function calculateOptimalClusterCount(providerCount: number): number {
   const { MIN_SIZE, MAX_SIZE, TARGET_SIZE } = CLUSTER_CONFIG;
 
-  // 1. 최소 인원 미달
+  // 1. 최소 인원 미달 (4명 이하는 불가)
   if (providerCount < MIN_SIZE) {
     throw new Error(
       `클러스터링 불가: 최소 ${MIN_SIZE}명 필요 (현재 ${providerCount}명)`
     );
   }
 
-  // 2. 5-7명 범위로 나눌 수 없는 인원 (8-9명)
-  if (providerCount > MAX_SIZE && providerCount < MIN_SIZE * 2) {
-    throw new Error(
-      `클러스터링 불가: ${providerCount}명은 ${MIN_SIZE}-${MAX_SIZE}명 범위로 나눌 수 없음 ` +
-      `(${MIN_SIZE}-${MAX_SIZE}명 또는 ${MIN_SIZE * 2}명 이상 필요)`
-    );
+  // 2. 8-9명 특수 케이스 (최선의 방법으로 처리)
+  if (providerCount === 8) {
+    logger.warn(`[Cluster Config] 8명은 이상적이지 않지만 4명씩 2개로 처리`);
+    return 2; // 4명씩 2개 클러스터
+  }
+  if (providerCount === 9) {
+    logger.warn(`[Cluster Config] 9명은 이상적이지 않지만 4명+5명 2개로 처리`);
+    return 2; // 4명 + 5명
   }
 
   // 3. 최소 필요 클러스터 수 (MAX_SIZE 초과 방지)
@@ -335,16 +341,17 @@ ${strategy.mode === 'autonomous' ? `
       errors.push(`존재하지 않는 ID: ${invalidIds.join(', ')}`);
     }
 
-    // 6. 클러스터 크기 검증 (5-7명)
+    // 6. 클러스터 크기 검증 (4-7명, 8-9명 케이스 허용)
+    const ALLOWED_MIN_SIZE = 4; // 8-9명 케이스를 위해 4명도 허용
     const invalidSizeClusters = clusters.filter(
-      c => c.memberIds.length < CLUSTER_CONFIG.MIN_SIZE ||
+      c => c.memberIds.length < ALLOWED_MIN_SIZE ||
            c.memberIds.length > CLUSTER_CONFIG.MAX_SIZE
     );
     if (invalidSizeClusters.length > 0) {
       errors.push(
         `크기 제약 위반 클러스터: ${invalidSizeClusters.map(c =>
           `${c.id}(${c.memberIds.length}명)`
-        ).join(', ')} (허용 범위: ${CLUSTER_CONFIG.MIN_SIZE}-${CLUSTER_CONFIG.MAX_SIZE}명)`
+        ).join(', ')} (허용 범위: ${ALLOWED_MIN_SIZE}-${CLUSTER_CONFIG.MAX_SIZE}명)`
       );
     }
 
