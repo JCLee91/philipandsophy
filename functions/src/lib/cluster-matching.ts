@@ -71,10 +71,6 @@ export interface ClusterMatchingResult {
     assigned: string[];
     clusterId: string;
   }>;
-  validation?: {
-    valid: boolean;
-    errors: string[];
-  };
 }
 
 // ============================================================
@@ -102,38 +98,23 @@ const CLUSTER_CONFIG = {
  *
  * @example
  * calculateOptimalClusterCount(10) // 2개 (5명씩)
- * calculateOptimalClusterCount(20) // 3~4개
- * calculateOptimalClusterCount(25) // 4개 (6~7명)
+ * calculateOptimalClusterCount(20) // 3개 (6~7명)
  * calculateOptimalClusterCount(30) // 5개 (6명씩)
  */
 function calculateOptimalClusterCount(providerCount: number): number {
-  const { MIN_SIZE, MAX_SIZE, TARGET_SIZE } = CLUSTER_CONFIG;
+  const { MIN_SIZE, TARGET_SIZE } = CLUSTER_CONFIG;
 
-  // 인원이 너무 적으면 클러스터링 불가
   if (providerCount < MIN_SIZE) {
     throw new Error(
       `클러스터링 불가: 최소 ${MIN_SIZE}명 필요 (현재 ${providerCount}명)`
     );
   }
 
-  // 최대 클러스터 개수 (최소 크기 기준)
-  const maxClusters = Math.floor(providerCount / MIN_SIZE);
-
-  // 최소 클러스터 개수 (최대 크기 기준)
-  const minClusters = Math.ceil(providerCount / MAX_SIZE);
-
-  // 목표 크기 기준 계산
-  const targetClusters = Math.round(providerCount / TARGET_SIZE);
-
-  // 범위 내에서 목표값 선택
-  const clusterCount = Math.max(
-    minClusters,
-    Math.min(maxClusters, targetClusters)
-  );
+  const clusterCount = Math.max(1, Math.round(providerCount / TARGET_SIZE));
 
   logger.info(
     `[Cluster Config] ${providerCount}명 → ${clusterCount}개 클러스터 ` +
-    `(${Math.floor(providerCount / clusterCount)}~${Math.ceil(providerCount / clusterCount)}명/클러스터)`
+    `(평균 ${Math.round(providerCount / clusterCount)}명/클러스터)`
   );
 
   return clusterCount;
@@ -316,36 +297,14 @@ export async function matchParticipantsWithClusters(
       return acc;
     }, {} as Record<string, Cluster>);
 
-    // 5. 검증 (필수 항목만)
-    const errors: string[] = [];
-
-    // 모든 참가자가 할당받았는지 확인
-    const assignedIds = new Set(Object.keys(assignments));
-    const allMemberIds = new Set(
-      clusters.flatMap(c => c.memberIds)
-    );
-
-    if (assignedIds.size !== allMemberIds.size) {
-      errors.push(
-        `할당 누락: ${allMemberIds.size}명 중 ${assignedIds.size}명만 할당됨`
-      );
-    }
-
-    const validation = {
-      valid: errors.length === 0,
-      errors
-    };
-
     logger.info(
       `[Cluster Matching v3.0] 완료: ` +
-      `${clusters.length}개 클러스터, ${Object.keys(assignments).length}명 할당` +
-      (errors.length > 0 ? `, ${errors.length}개 에러` : '')
+      `${clusters.length}개 클러스터, ${Object.keys(assignments).length}명 할당`
     );
 
     return {
       clusters: clustersRecord,
-      assignments,
-      validation
+      assignments
     };
   } catch (error) {
     logger.error('[Cluster Matching v3.0] 실패:', error);

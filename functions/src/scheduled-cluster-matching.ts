@@ -149,8 +149,8 @@ export const scheduledClusterMatching = onSchedule(
 
       const participantsMap = new Map<string, { name: string; gender?: string }>();
 
-      // Firestore 'in' 쿼리 제한: 최대 10개씩 배치
-      const BATCH_SIZE = 10;
+      // Firestore 'in' 쿼리 제한: 최대 30개씩 배치
+      const BATCH_SIZE = 30;
       for (let i = 0; i < participantIds.length; i += BATCH_SIZE) {
         const batch = participantIds.slice(i, i + BATCH_SIZE);
         const participantsSnapshot = await db
@@ -193,10 +193,6 @@ export const scheduledClusterMatching = onSchedule(
         `${Object.keys(matchingResult.assignments).length}명 할당`
       );
 
-      if (matchingResult.validation?.errors.length) {
-        logger.error(`Validation errors: ${matchingResult.validation.errors.join(', ')}`);
-      }
-
       // 9. Firestore에 저장 (Transaction)
       const matchingEntry = {
         clusters: matchingResult.clusters,
@@ -215,12 +211,6 @@ export const scheduledClusterMatching = onSchedule(
 
         const data = doc.data();
         const dailyFeaturedParticipants = data?.dailyFeaturedParticipants || {};
-
-        // Race condition 방지
-        if (dailyFeaturedParticipants[yesterdayStr]?.assignments) {
-          logger.warn(`Matching for ${yesterdayStr} already exists, skipping`);
-          return;
-        }
 
         dailyFeaturedParticipants[yesterdayStr] = matchingEntry;
 
@@ -241,7 +231,6 @@ export const scheduledClusterMatching = onSchedule(
         clusterCount: Object.keys(matchingResult.clusters).length,
         confirmedAt: admin.firestore.Timestamp.now(),
         confirmedBy: "scheduled_cluster_matching",
-        validationErrors: matchingResult.validation?.errors || [],
       };
 
       const confirmRef = db

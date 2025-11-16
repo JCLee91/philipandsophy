@@ -5,7 +5,7 @@ import type { DailyMatchingEntry, DailyParticipantAssignment } from '@/types/dat
  */
 export interface NormalizedMatching {
   assignments: Record<string, DailyParticipantAssignment>;
-  matchingVersion?: 'ai' | 'random'; // 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭)
+  matchingVersion?: 'ai' | 'random' | 'cluster'; // 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭, cluster: 클러스터 매칭)
 }
 
 export interface MatchingLookupResult {
