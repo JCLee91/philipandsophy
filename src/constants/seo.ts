@@ -60,3 +60,20 @@ export const SERVICE_SCHEMA = {
     "audienceType": "25-40세 직장인 및 전문직"
   }
 } as const;
+
+/**
+ * 파티 후기 스키마
+ */
+export const PARTY_REVIEWS_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Review",
+  "itemReviewed": {
+    "@type": "Event",
+    "name": "필립앤소피 독서 파티",
+    "organizer": {
+      "@type": "Organization",
+      "name": "Philip & Sophy"
+    }
+  },
+  "description": "필립앤소피 독서소셜클럽 참여자들의 실제 후기와 경험담"
+} as const;

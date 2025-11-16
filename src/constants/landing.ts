@@ -53,4 +53,5 @@ export const ANALYTICS_EVENTS = {
   HOME: '사전신청폼',
   MEMBERSHIP: '멤버십_신청',
   SERVICE: '프로그램_신청',
+  PARTY_REVIEWS: '파티후기_신청',
 } as const;

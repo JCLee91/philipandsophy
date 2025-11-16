@@ -37,7 +37,7 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v9'; // Increment version to force update (v9: Badge API added)
+const CACHE_NAME = 'philipandsophy-v10'; // Increment version to force update (v10: Skip external image domains)
 
 // ✅ 앱 셸 프리캐시 (초기 로딩 필수 리소스)
 const urlsToCache = [
@@ -109,6 +109,15 @@ self.addEventListener('fetch', (event) => {
   // Skip non-HTTP(S) requests (chrome-extension, etc.)
   if (!url.protocol.startsWith('http')) {
     return;
+  }
+
+  // Skip external image domains (Naver book covers)
+  const externalImageDomains = [
+    'shopping-phinf.pstatic.net',
+    'bookthumb-phinf.pstatic.net',
+  ];
+  if (externalImageDomains.some(domain => url.hostname.includes(domain))) {
+    return; // Let browser handle it directly
   }
 
   // Never cache API requests (always fetch fresh data)
