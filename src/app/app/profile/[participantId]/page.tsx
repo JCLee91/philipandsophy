@@ -426,13 +426,13 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // - 본인 OR 슈퍼관리자: 항상 가능
   // - 14일차 + 인증 완료: 모든 프로필 접근 가능
   // - 15일차 이후: 인증 없이도 모든 프로필 접근 가능
-  // - 새 규칙: profileUnlockDate 이상 + 오늘 인증 + 어제 인증한 사람 → 접근 가능
+  // - 새 규칙: profileUnlockDate 이상 + 어제 인증한 사람 → 접근 가능 (미인증도 허용)
   // - 기존: 매칭된 4명만 (인증 완료 + 추천 멤버)
   const hasAccess = isSelf ||
     isSuperAdmin ||
     (isAfterProgramWithoutAuth) ||  // 15일차 이후 (인증 불필요)
     (isFinalDayAccess && isVerifiedToday) ||  // 14일차 (인증 필요)
-    (isUnlockDayOrAfter && isVerifiedToday && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상
+    (isUnlockDayOrAfter && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상 (미인증도 허용)
     (isVerifiedToday && viewerHasAccessForDate && isFeatured) ||  // 기존: 매칭된 4명만
     canPreviewAccess;  // 랜덤 매칭 미인증자: 제한된 미리 보기 허용
 

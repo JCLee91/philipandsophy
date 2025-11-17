@@ -134,8 +134,8 @@ function TodayLibraryContent() {
 
   // 새로운 규칙:
   // 1. 슈퍼관리자 OR 마지막 날 → 전체 공개
-  // 2. profileUnlockDate 이상 + 오늘 인증 + 어제 인증자 존재 → 어제 인증자 전체 공개
-  const showAllProfiles = isSuperAdmin || isFinalDay || (isUnlockDayOrAfter && !isLocked && yesterdayVerifiedIds && yesterdayVerifiedIds.size > 0);
+  // 2. profileUnlockDate 이상 + 어제 인증자 존재 → 어제 인증자 전체 공개 (인증 여부는 렌더링 단계에서 처리)
+  const showAllProfiles = isSuperAdmin || isFinalDay || (isUnlockDayOrAfter && yesterdayVerifiedIds && yesterdayVerifiedIds.size > 0);
 
   // 추천 참가자들의 정보 가져오기
   // 마지막 날이면 전체 참가자 쿼리, 아니면 매칭된 4명만
@@ -377,6 +377,14 @@ function TodayLibraryContent() {
   const visibleFemale = femaleParticipants.filter((p) => unlockedIdsSet.has(p.id));
   const maleLockedSlots = shouldShowLockedCards ? Math.max(maleParticipants.length - visibleMale.length, 0) : 0;
   const femaleLockedSlots = shouldShowLockedCards ? Math.max(femaleParticipants.length - visibleFemale.length, 0) : 0;
+
+  // 전체 공개 모드에서도 미인증 시 2명(1남+1여)만 표시
+  const visibleMaleInAllMode = showAllProfiles && isLocked && !isSuperAdmin
+    ? maleParticipants.slice(0, 1)
+    : maleParticipants;
+  const visibleFemaleInAllMode = showAllProfiles && isLocked && !isSuperAdmin
+    ? femaleParticipants.slice(0, 1)
+    : femaleParticipants;
 
   // v2.0: 프로필북 클릭 핸들러 (카드별 잠금 상태 확인)
   const handleProfileClickWithAuth = (
@@ -636,11 +644,11 @@ function TodayLibraryContent() {
 
                 {/* Step 3-2, 3-3: 프로필 카드 레이아웃 */}
                 {showAllProfiles ? (
-                  /* 전체 공개: 성별 2열 레이아웃 (마지막 날) */
+                  /* 전체 공개: 성별 2열 레이아웃 (미인증 시 각 1명씩만) */
                   <div className="grid grid-cols-2 gap-6">
                     {/* 왼쪽: 남자 */}
                     <div className="flex flex-col gap-4">
-                      {maleParticipants.map((p, index) => (
+                      {visibleMaleInAllMode.map((p, index) => (
                         <div key={p.id} className="flex flex-col">
                           <div className="flex justify-center">
                             <BookmarkCard
@@ -651,14 +659,14 @@ function TodayLibraryContent() {
                               onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
                             />
                           </div>
-                          {index < maleParticipants.length - 1 && <BlurDivider />}
+                          {index < visibleMaleInAllMode.length - 1 && <BlurDivider />}
                         </div>
                       ))}
                     </div>
 
                     {/* 오른쪽: 여자 */}
                     <div className="flex flex-col gap-4">
-                      {femaleParticipants.map((p, index) => (
+                      {visibleFemaleInAllMode.map((p, index) => (
                         <div key={p.id} className="flex flex-col">
                           <div className="flex justify-center">
                             <BookmarkCard
@@ -669,7 +677,7 @@ function TodayLibraryContent() {
                               onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
                             />
                           </div>
-                          {index < femaleParticipants.length - 1 && <BlurDivider />}
+                          {index < visibleFemaleInAllMode.length - 1 && <BlurDivider />}
                         </div>
                       ))}
                     </div>
