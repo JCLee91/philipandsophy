@@ -29,7 +29,7 @@ export default function MembershipPageClient() {
 
       <div className="container">
         <Image
-          src={getImageUrl('/image/landing/PnS_Membership_1.webp')}
+          src={getImageUrl('/image/landing/PnS_Membership_1.webp?v=1.2')}
           alt="필립앤소피 멤버십 소개"
           width={1170}
           height={4131}
@@ -38,10 +38,10 @@ export default function MembershipPageClient() {
         />
 
         <Image
-          src={getImageUrl('/image/landing/PnS_Membership_2.webp')}
+          src={getImageUrl('/image/landing/PnS_Membership_2.webp?v=1.2')}
           alt="필립앤소피 멤버십 상세 안내"
           width={1170}
-          height={3969}
+          height={4131}
           className="main-image"
         />
 
