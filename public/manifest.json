@@ -8,7 +8,7 @@
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "orientation": "portrait",
-  "scope": "/",
+  "scope": "/app",
   "icons": [
     {
       "src": "/image/app-icon-192.png",
