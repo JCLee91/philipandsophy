@@ -41,7 +41,7 @@ export default function MembershipPageClient() {
           src={getImageUrl('/image/landing/PnS_Membership_2.webp?v=1.2')}
           alt="필립앤소피 멤버십 상세 안내"
           width={1170}
-          height={4131}
+          height={4204}
           className="main-image"
         />
 
