@@ -259,6 +259,7 @@ export async function generateDailyClusters(
 
   try {
     const result = await generateObject({
+      // @ts-ignore: AI SDK 5 supports string models for Vercel AI Gateway
       model: 'anthropic/claude-haiku-4.5', // ✅ Vercel AI Gateway 자동 라우팅
       schema: z.object({
         clusters: z.array(ClusterSchema)
