@@ -10,7 +10,9 @@ import { toZonedTime } from 'date-fns-tz';
 // @ts-ignore
 import { matchParticipantsWithClusters, DailySubmission } from '../functions/src/lib/cluster-matching';
 
+// Load both root and functions environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), 'functions', '.env') });
 
 const app = initializeApp({
     credential: applicationDefault(),

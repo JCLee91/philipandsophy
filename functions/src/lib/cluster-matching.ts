@@ -14,20 +14,16 @@
  */
 
 import { generateObject } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-// Vercel AI Gateway 설정
-// AI_GATEWAY_API_KEY가 있으면 Gateway를 사용하고, 없으면 기본 OpenAI API 사용
-const openai = createOpenAI({
-  apiKey: process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY,
-  baseURL: process.env.AI_GATEWAY_API_KEY ? 'https://ai-gateway.vercel.sh/v1' : undefined,
-  name: 'openai',
-});
-
-// Vercel AI Gateway를 통해 AI 모델 접근
-// 환경 변수: AI_GATEWAY_API_KEY
-// 자동으로 https://ai-gateway.vercel.sh/v1/ai 사용
+// Vercel AI Gateway 자동 연결
+// AI SDK 5는 AI_GATEWAY_API_KEY 환경 변수가 설정되어 있으면
+// 자동으로 https://ai-gateway.vercel.sh/v1 을 통해 요청을 라우팅합니다.
+// 
+// 사용법: model을 'provider/model' 형식의 문자열로 지정
+// 예: 'openai/gpt-4o-mini', 'anthropic/claude-sonnet-4'
+// 
+// 더 이상 createOpenAI()나 baseURL 설정이 필요하지 않습니다.
 
 // Firebase Functions 환경에서는 logger를 직접 사용
 const logger = {
@@ -262,9 +258,12 @@ export async function generateDailyClusters(
     `[모드] ${isSmallGroup ? '소규모 그룹 - 공통점 추출' : isEdgeCase ? '엣지 케이스 - 2개(4~5명)' : '다중 클러스터 - 그룹 나누기'}`
   );
 
+  // Debug: Check if API key is loaded
+  console.log('🔍 Debug - API Key loaded:', process.env.AI_GATEWAY_API_KEY ? 'YES (Gateway)' : process.env.OPENAI_API_KEY ? 'YES (OpenAI)' : 'NO');
+
   try {
     const result = await generateObject({
-      model: openai('gpt-4o-mini'), // ✅ Explicitly use the configured provider
+      model: 'openai/gpt-4o-mini', // ✅ AI SDK 5 자동으로 Vercel AI Gateway 사용
       schema: z.object({
         clusters: z.array(ClusterSchema)
       }),
