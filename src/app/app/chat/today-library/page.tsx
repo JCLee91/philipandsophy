@@ -14,6 +14,7 @@
  */
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
 import HeaderNavigation from '@/components/HeaderNavigation';
@@ -34,6 +35,7 @@ import type { Participant, Cluster, ReadingSubmission } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { Lock } from 'lucide-react';
 
 // ✅ Disable static generation
 export const dynamic = 'force-dynamic';
@@ -151,14 +153,11 @@ function TodayLibraryV3Content() {
   // 비인증 시 표시할 프로필 개수
   const unlockedProfileCount = isFirstTimeUser ? 0 : isLocked ? 1 : clusterMatching?.assignedIds.length || 0;
 
-  // 표시할 프로필 IDs
+  // 표시할 프로필 IDs - 모든 클러스터 멤버 표시
   const visibleProfileIds = useMemo(() => {
     if (!clusterMatching) return [];
-    if (isLocked && !isSuperAdmin) {
-      return clusterMatching.assignedIds.slice(0, unlockedProfileCount);
-    }
     return clusterMatching.assignedIds;
-  }, [clusterMatching, isLocked, isSuperAdmin, unlockedProfileCount]);
+  }, [clusterMatching]);
 
   // 클러스터 멤버 정보 + 인증 데이터 가져오기
   const { data: clusterMembers = [], isLoading: membersLoading } = useQuery<Participant[]>({
@@ -431,86 +430,100 @@ function TodayLibraryV3Content() {
   // 3단계: 온라인 독서모임 테이블
   // ========================================
 
+  // ========================================
+  // 3단계: 온라인 독서모임 테이블
+  // ========================================
+
   const { cluster, assignedIds } = clusterMatching;
   const totalCount = assignedIds.length;
   const lockedCount = Math.max(totalCount - unlockedProfileCount, 0);
 
   return (
     <PageTransition>
-      <div className="app-shell flex flex-col overflow-hidden">
+      <div className="app-shell flex flex-col overflow-hidden bg-[#F7F8FA]">
         <HeaderNavigation title="오늘의 서재" />
 
-        <main className="app-main-content flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-md px-6 w-full pt-6 pb-24">
-            <div className="flex flex-col gap-8">
-              {/* 1. 클러스터 헤더 */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-4xl">{cluster.emoji}</span>
-                  <div className="flex-1">
-                    <h1 className="font-bold text-xl text-gray-900">{cluster.name}</h1>
-                    <p className="text-sm text-gray-600 mt-1">{cluster.theme}</p>
-                  </div>
+        <main className="app-main-content flex-1 overflow-y-auto">
+          {/* 1. 클러스터 헤더 (배경색 위) */}
+          <div className="px-6 pb-8 pt-6 text-center">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm">
+              <span className="text-4xl">{cluster.emoji}</span>
+            </div>
+            <h1 className="text-[24px] font-bold text-[#31363e] mb-2">
+              {cluster.name}
+            </h1>
+            <p className="text-[14px] text-[#8f98a3] leading-relaxed px-4 mb-4">
+              {cluster.theme}
+            </p>
+
+            {/* 클러스터 멤버 프로필 이미지 */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              {clusterMembers.map(member => (
+                <div key={member.id} className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-white shadow-sm bg-white">
+                  <Image
+                    src={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage || '/image/default-profile.svg'}
+                    alt={member.name}
+                    fill
+                    className="object-cover"
+                    sizes="40px"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. 흰색 카드 컨테이너 (프로필북 스타일) */}
+          <div className="bg-white rounded-t-[32px] min-h-full px-6 pt-8 pb-24 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+
+            {/* 감상평 섹션 */}
+            <section className="mb-10">
+              <h2 className="text-[20px] font-bold text-[#31363e] mb-4">오늘의 감상평</h2>
+              <div className="flex flex-col gap-4">
+                {clusterMembersWithSubmissions.map(member => (
+                  <ReviewPreviewCard
+                    key={member.id}
+                    participantId={member.id}
+                    participantName={member.name}
+                    profileImage={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage}
+                    bookCoverUrl={member.bookCoverUrl}
+                    bookTitle={member.submission?.bookTitle || ''}
+                    bookAuthor={member.submission?.bookAuthor}
+                    review={member.review || '감상평이 아직 작성되지 않았습니다.'}
+                    onClick={() => handleReviewClick(member.id)}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* 가치관 질문 섹션 */}
+            {dailyQuestion && (
+              <section className="mb-10">
+                <h2 className="text-[20px] font-bold text-[#31363e] mb-4">오늘의 가치관 질문</h2>
+
+                {/* 질문 박스 */}
+                <div className="mb-6 rounded-xl bg-[#F0F4FF] p-5 text-center">
+                  <p className="text-[16px] font-medium leading-relaxed text-[#31363e]">
+                    "{dailyQuestion}"
+                  </p>
                 </div>
 
-                {isLocked && !isSuperAdmin && (
-                  <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-amber-900">
-                      🔒 오늘 인증하면 {totalCount}명의 감상평과 답변을 모두 볼 수 있어요
-                    </p>
-                  </div>
-                )}
-              </section>
-
-              {/* 2. 감상평 섹션 */}
-              <section className="space-y-4">
-                <h2 className="font-bold text-lg text-gray-900">오늘의 감상평</h2>
-                <div className="space-y-3">
+                <div className="flex flex-col">
                   {clusterMembersWithSubmissions.map(member => (
-                    <ReviewPreviewCard
+                    <ValueAnswerAccordion
                       key={member.id}
                       participantId={member.id}
                       participantName={member.name}
                       profileImage={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage}
-                      bookCoverUrl={member.bookCoverUrl}
-                      bookTitle={member.submission?.bookTitle || ''}
-                      review={member.review || '감상평이 아직 작성되지 않았습니다.'}
-                      onReviewClick={() => handleReviewClick(member.id)}
+                      question={dailyQuestion}
+                      answer={member.dailyAnswer || '답변이 아직 작성되지 않았습니다.'}
+                      isExpanded={expandedAnswers.has(member.id)}
+                      onToggle={() => toggleAnswer(member.id)}
                       onProfileClick={() => handleProfileClick(member.id)}
                     />
                   ))}
                 </div>
               </section>
-
-              {/* 3. 가치관 질문 섹션 */}
-              {dailyQuestion && (
-                <section className="space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="font-bold text-lg text-gray-900">오늘의 가치관 질문</h2>
-                    <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-900 font-medium">
-                        {dailyQuestion}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {clusterMembersWithSubmissions.map(member => (
-                      <ValueAnswerAccordion
-                        key={member.id}
-                        participantId={member.id}
-                        participantName={member.name}
-                        profileImage={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage}
-                        answer={member.dailyAnswer || '답변이 아직 작성되지 않았습니다.'}
-                        isExpanded={expandedAnswers.has(member.id)}
-                        onToggle={() => toggleAnswer(member.id)}
-                        onProfileClick={() => handleProfileClick(member.id)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
+            )}
           </div>
         </main>
 

@@ -1,13 +1,14 @@
-'use client';
-
+import { useState } from 'react';
 import Image from 'next/image';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { getResizedImageUrl } from '@/lib/image-utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ValueAnswerAccordionProps {
     participantId: string;
     participantName: string;
     profileImage?: string;
+    question: string;
     answer: string;
     isExpanded: boolean;
     onToggle: () => void;
@@ -17,93 +18,76 @@ interface ValueAnswerAccordionProps {
 export default function ValueAnswerAccordion({
     participantName,
     profileImage,
+    question,
     answer,
     isExpanded,
     onToggle,
     onProfileClick,
 }: ValueAnswerAccordionProps) {
-    const previewLength = 60;
-    const truncatedAnswer = answer.length > previewLength
-        ? answer.slice(0, previewLength) + '...'
-        : answer;
-
     return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-            {/* Header - Always visible */}
-            <div className="flex items-center gap-3 p-4">
-                {/* Avatar */}
-                <div className="relative size-10 rounded-full overflow-hidden flex-shrink-0">
-                    <Image
-                        src={profileImage || '/image/default-profile.svg'}
-                        alt={participantName}
-                        fill
-                        className="object-cover"
-                        sizes="40px"
-                    />
-                </div>
-
-                {/* Name and Preview */}
+        <div className="border-b border-[#dddddd] py-2 last:border-b-0">
+            {/* 배경 박스 - 축소/확장 상태 모두 적용 */}
+            <div className="bg-[#F7F8FA] rounded-[12px] px-4 py-3 transition-all">
                 <button
-                    type="button"
                     onClick={onToggle}
-                    className="flex-1 text-left min-w-0"
+                    className="w-full flex items-center gap-3 text-left"
                 >
-                    <p className="text-sm font-semibold text-gray-900 mb-1">
-                        {participantName}
-                    </p>
-                    {!isExpanded && (
-                        <p className="text-sm text-gray-600">
-                            {truncatedAnswer}
-                        </p>
-                    )}
-                </button>
-
-                {/* Toggle Button */}
-                <button
-                    type="button"
-                    onClick={onToggle}
-                    className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
-                    aria-label={isExpanded ? '답변 접기' : '답변 펼치기'}
-                >
-                    <motion.div
-                        initial={false}
-                        animate={{ rotate: isExpanded ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        <ChevronDown className="size-5" />
-                    </motion.div>
-                </button>
-
-                {/* Profile Button */}
-                <button
-                    type="button"
-                    onClick={onProfileClick}
-                    className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
-                    aria-label={`${participantName}님의 프로필 보기`}
-                >
-                    <ChevronRight className="size-5" />
-                </button>
-            </div>
-
-            {/* Expandable Content */}
-            <AnimatePresence initial={false}>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
-                    >
-                        <div className="px-4 pb-4 pt-0">
-                            <div className="pl-[52px] pr-[48px]">
-                                <p className="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">
-                                    {answer}
-                                </p>
-                            </div>
+                    {/* 프로필 이미지 + 이름 (세로 정렬) */}
+                    <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <div
+                            className="relative h-6 w-6 overflow-hidden rounded-full border border-gray-100 bg-white cursor-pointer"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onProfileClick();
+                            }}
+                        >
+                            <Image
+                                src={getResizedImageUrl(profileImage) || profileImage || '/image/default-profile.svg'}
+                                alt={participantName}
+                                fill
+                                className="object-cover"
+                                sizes="24px"
+                            />
                         </div>
-                    </motion.div>
+                        <span
+                            className="text-[10px] font-bold text-[#8f98a3] cursor-pointer hover:underline text-center line-clamp-1 w-12"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onProfileClick();
+                            }}
+                        >
+                            {participantName}
+                        </span>
+                    </div>
+
+                    {/* 답변 - 축소 시 한 줄, 확장 시 전체 (중복 없이) */}
+                    <div className="flex-1 min-w-0">
+                        <p className={`text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap ${!isExpanded ? 'line-clamp-1' : ''}`}>
+                            {answer}
+                        </p>
+                    </div>
+
+                    {/* 화살표 */}
+                    <div className={`flex-shrink-0 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                        <ChevronDown className="h-5 w-5 text-gray-400" />
+                    </div>
+                </button>
+
+                {/* 확장 시 프로필북 가기 버튼 */}
+                {isExpanded && (
+                    <div className="mt-3 flex justify-end border-t border-gray-200 pt-3">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onProfileClick();
+                            }}
+                            className="text-[12px] font-medium text-[#8f98a3] hover:text-[#31363e] transition-colors flex items-center gap-1"
+                        >
+                            프로필북 보기 <ChevronRight className="h-3 w-3" />
+                        </button>
+                    </div>
                 )}
-            </AnimatePresence>
+            </div>
         </div>
     );
 }

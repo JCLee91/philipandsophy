@@ -1,7 +1,5 @@
-'use client';
-
 import Image from 'next/image';
-import { ChevronRight } from 'lucide-react';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 interface ReviewPreviewCardProps {
     participantId: string;
@@ -9,84 +7,69 @@ interface ReviewPreviewCardProps {
     profileImage?: string;
     bookCoverUrl?: string;
     bookTitle: string;
+    bookAuthor?: string;
     review: string;
     maxLines?: number;
-    onReviewClick: () => void;
-    onProfileClick: () => void;
+    onClick: () => void;
 }
 
 export default function ReviewPreviewCard({
+    participantId,
     participantName,
     profileImage,
     bookCoverUrl,
     bookTitle,
+    bookAuthor,
     review,
-    maxLines = 3,
-    onReviewClick,
-    onProfileClick,
+    onClick,
 }: ReviewPreviewCardProps) {
     return (
-        <div className="relative flex items-start gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
-            {/* Avatar */}
-            <div className="relative size-10 rounded-full overflow-hidden flex-shrink-0">
-                <Image
-                    src={profileImage || '/image/default-profile.svg'}
-                    alt={participantName}
-                    fill
-                    className="object-cover"
-                    sizes="40px"
-                />
-            </div>
-
-            {/* Book Cover */}
-            <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100">
-                {bookCoverUrl ? (
+        <div
+            onClick={onClick}
+            className="flex items-center gap-3 px-4 py-3 bg-amber-50 rounded-t-[4px] border-b-[2px] border-solid border-[#E5E7EB] cursor-pointer transition-all active:scale-[0.98]"
+        >
+            {/* 프로필 이미지 + 이름 (세로 정렬) */}
+            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                <div className="relative h-10 w-10 overflow-hidden rounded-full border border-gray-100 bg-white">
                     <Image
-                        src={bookCoverUrl}
-                        alt={bookTitle}
+                        src={getResizedImageUrl(profileImage) || profileImage || '/image/default-profile.svg'}
+                        alt={participantName}
                         fill
                         className="object-cover"
-                        sizes="48px"
+                        sizes="40px"
                     />
-                ) : (
-                    <div className="size-full flex items-center justify-center text-xs text-gray-400">
-                        📕
-                    </div>
-                )}
+                </div>
+                <p className="text-[10px] font-bold text-[#8f98a3] text-center line-clamp-1 w-12">
+                    {participantName}
+                </p>
             </div>
 
-            {/* Review Content */}
-            <button
-                type="button"
-                onClick={onReviewClick}
-                className="flex-1 text-left min-w-0"
-            >
-                <p className="text-xs font-medium text-gray-700 mb-1">
-                    {participantName}의 감상평
-                </p>
-                <p
-                    className="text-sm text-gray-900 leading-relaxed"
-                    style={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: maxLines,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                    }}
-                >
+            {/* 책 표지 + 책 이름 */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+                {bookCoverUrl && (
+                    <div className="relative w-[40px] h-[56px] bg-white rounded-[4px] overflow-hidden shadow-sm border border-gray-100">
+                        <Image
+                            src={getResizedImageUrl(bookCoverUrl) || bookCoverUrl}
+                            alt={bookTitle}
+                            fill
+                            className="object-cover"
+                            sizes="40px"
+                        />
+                    </div>
+                )}
+                <div className="flex flex-col justify-center">
+                    <p className="text-[13px] font-medium text-[#31363e] line-clamp-1 max-w-[120px]">
+                        {bookTitle}
+                    </p>
+                </div>
+            </div>
+
+            {/* 감상평 */}
+            <div className="flex-1 min-w-0 flex items-center">
+                <p className="text-[14px] text-[#575e68] line-clamp-1 leading-[1.4]">
                     {review}
                 </p>
-            </button>
-
-            {/* Profile Button */}
-            <button
-                type="button"
-                onClick={onProfileClick}
-                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
-                aria-label={`${participantName}님의 프로필 보기`}
-            >
-                <ChevronRight className="size-5" />
-            </button>
+            </div>
         </div>
     );
 }
