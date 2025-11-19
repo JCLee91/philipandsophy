@@ -18,10 +18,7 @@ import { subDays, format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { logger } from "./lib/logger";
 import { getSeoulDB } from "./lib/db-helper";
-import {
-  matchParticipantsWithClusters,
-  type DailySubmission,
-} from "./lib/cluster-matching";
+import { matchParticipantsWithClusters, DailySubmission } from './lib/cluster/index';
 
 // Environment parameters
 const cohortIdParam = defineString("DEFAULT_COHORT_ID", {

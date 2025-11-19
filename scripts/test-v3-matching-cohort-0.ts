@@ -8,7 +8,7 @@ import { toZonedTime } from 'date-fns-tz';
 
 // Import matching logic from functions
 // @ts-ignore
-import { matchParticipantsWithClusters, DailySubmission } from '../functions/src/lib/cluster-matching';
+import { matchParticipantsWithClusters } from '../functions/src/lib/cluster/index';
 
 // Load both root and functions environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
