@@ -14,14 +14,12 @@
  */
 
 import { generateObject } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-// Vercel AI Gateway 설정
-// AI_GATEWAY_API_KEY 환경 변수를 사용하면 자동으로 Gateway를 통해 라우팅됩니다.
-const openai = createOpenAI({
-  apiKey: process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY,
-});
+// Vercel AI Gateway 사용
+// AI_GATEWAY_API_KEY 환경 변수가 설정되어 있으면
+// model을 'provider/model' 문자열로 지정하면 자동으로 Gateway를 통해 라우팅
+// 예: 'anthropic/claude-haiku-4.5', 'openai/gpt-4o-mini'
 
 // Firebase Functions 환경에서는 logger를 직접 사용
 const logger = {
@@ -261,7 +259,7 @@ export async function generateDailyClusters(
 
   try {
     const result = await generateObject({
-      model: openai('claude-haiku-4.5'), // ✅ Vercel AI Gateway를 통해 Claude Haiku 사용
+      model: 'anthropic/claude-haiku-4.5', // ✅ Vercel AI Gateway 자동 라우팅
       schema: z.object({
         clusters: z.array(ClusterSchema)
       }),
