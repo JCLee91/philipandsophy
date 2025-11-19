@@ -449,7 +449,7 @@ function TodayLibraryV3Content() {
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm">
               <span className="text-4xl">{cluster.emoji}</span>
             </div>
-            <h1 className="text-[24px] font-bold text-[#31363e] mb-2">
+            <h1 className="text-[28px] font-bold text-[#31363e] mb-2">
               {cluster.name}
             </h1>
             <p className="text-[14px] text-[#8f98a3] leading-relaxed px-4 mb-4">
@@ -478,7 +478,7 @@ function TodayLibraryV3Content() {
             {/* 감상평 섹션 */}
             <section className="mb-10">
               <h2 className="text-[20px] font-bold text-[#31363e] mb-4">오늘의 감상평</h2>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
                 {clusterMembersWithSubmissions.map(member => (
                   <ReviewPreviewCard
                     key={member.id}

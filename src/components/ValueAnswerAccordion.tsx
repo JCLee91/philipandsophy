@@ -25,9 +25,9 @@ export default function ValueAnswerAccordion({
     onProfileClick,
 }: ValueAnswerAccordionProps) {
     return (
-        <div className="border-b border-[#dddddd] py-2 last:border-b-0">
-            {/* 배경 박스 - 축소/확장 상태 모두 적용 */}
-            <div className="bg-[#F7F8FA] rounded-[12px] px-4 py-3 transition-all">
+        <div className="py-2 last:pb-0">
+            {/* 배경 박스 - 감상평 스타일과 통일 */}
+            <div className="bg-gray-50 rounded-[12px] border-b-[2px] border-solid border-gray-300 px-4 py-3 transition-all">
                 <button
                     onClick={onToggle}
                     className="w-full flex items-center gap-3 text-left"
@@ -50,7 +50,7 @@ export default function ValueAnswerAccordion({
                             />
                         </div>
                         <span
-                            className="text-[10px] font-bold text-[#8f98a3] cursor-pointer hover:underline text-center line-clamp-1 w-12"
+                            className="text-[11px] font-bold text-[#8f98a3] cursor-pointer hover:underline text-center line-clamp-1 w-12"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onProfileClick();
@@ -81,7 +81,7 @@ export default function ValueAnswerAccordion({
                                 e.stopPropagation();
                                 onProfileClick();
                             }}
-                            className="text-[12px] font-medium text-[#8f98a3] hover:text-[#31363e] transition-colors flex items-center gap-1"
+                            className="text-[13px] font-medium text-[#8f98a3] hover:text-[#31363e] transition-colors flex items-center gap-1"
                         >
                             프로필북 보기 <ChevronRight className="h-3 w-3" />
                         </button>

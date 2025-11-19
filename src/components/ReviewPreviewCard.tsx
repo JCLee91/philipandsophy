@@ -26,7 +26,7 @@ export default function ReviewPreviewCard({
     return (
         <div
             onClick={onClick}
-            className="flex items-center gap-3 px-4 py-3 bg-amber-50 rounded-t-[4px] border-b-[2px] border-solid border-[#E5E7EB] cursor-pointer transition-all active:scale-[0.98]"
+            className="flex items-center gap-3 px-4 py-3 bg-amber-50 rounded-[12px] border-b-[2px] border-solid border-amber-200 cursor-pointer transition-all active:scale-[0.98]"
         >
             {/* 프로필 이미지 + 이름 (세로 정렬) */}
             <div className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -39,7 +39,7 @@ export default function ReviewPreviewCard({
                         sizes="40px"
                     />
                 </div>
-                <p className="text-[10px] font-bold text-[#8f98a3] text-center line-clamp-1 w-12">
+                <p className="text-[11px] font-bold text-[#8f98a3] text-center line-clamp-1 w-12">
                     {participantName}
                 </p>
             </div>
@@ -58,7 +58,7 @@ export default function ReviewPreviewCard({
                     </div>
                 )}
                 <div className="flex flex-col justify-center">
-                    <p className="text-[13px] font-medium text-[#31363e] line-clamp-1 max-w-[120px]">
+                    <p className="text-[14px] font-medium text-[#31363e] line-clamp-1 max-w-[120px]">
                         {bookTitle}
                     </p>
                 </div>
