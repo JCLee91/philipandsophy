@@ -71,7 +71,7 @@ export default function ParticipantStatusChart({ data, isLoading }: ParticipantS
             outerRadius={90}
             paddingAngle={2}
             dataKey="value"
-            label={({ name, percentage }) => `${percentage}%`}
+            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
           >
             {chartData.map((entry, index) => (
               <Cell
@@ -80,8 +80,8 @@ export default function ParticipantStatusChart({ data, isLoading }: ParticipantS
                   entry.name.includes('활성')
                     ? COLORS.active
                     : entry.name.includes('보통')
-                    ? COLORS.moderate
-                    : COLORS.dormant
+                      ? COLORS.moderate
+                      : COLORS.dormant
                 }
               />
             ))}
