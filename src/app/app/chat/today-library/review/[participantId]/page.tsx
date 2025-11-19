@@ -196,10 +196,11 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     );
 }
 
-export default function ReviewDetailPage({ params }: { params: { participantId: string } }) {
+export default async function ReviewDetailPage({ params }: { params: Promise<{ participantId: string }> }) {
+    const resolvedParams = await params;
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <ReviewDetailContent params={params} />
+            <ReviewDetailContent params={resolvedParams} />
         </Suspense>
     );
 }
