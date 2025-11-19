@@ -317,7 +317,7 @@ function TodayLibraryContent() {
                       theme="blue"
                       isLocked={false}
                       isLoading={true}
-                      onCardClick={() => {}}
+                      onCardClick={() => { }}
                     />
                     <BlurDivider />
                     <BookmarkRow
@@ -325,7 +325,7 @@ function TodayLibraryContent() {
                       theme="yellow"
                       isLocked={false}
                       isLoading={true}
-                      onCardClick={() => {}}
+                      onCardClick={() => { }}
                     />
                   </div>
                 </div>
@@ -380,10 +380,10 @@ function TodayLibraryContent() {
   const femaleLockedSlots = shouldShowLockedCards ? Math.max(femaleParticipants.length - visibleFemale.length, 0) : 0;
 
   // 전체 공개 모드에서도 미인증 시 2명(1남+1여)만 표시
-  const visibleMaleInAllMode = showAllProfiles && isLocked && !isSuperAdmin
+  const visibleMaleInAllMode = showAllProfiles && isLocked && !isSuperAdmin && !showAllProfilesWithoutAuth
     ? maleParticipants.slice(0, 1)
     : maleParticipants;
-  const visibleFemaleInAllMode = showAllProfiles && isLocked && !isSuperAdmin
+  const visibleFemaleInAllMode = showAllProfiles && isLocked && !isSuperAdmin && !showAllProfilesWithoutAuth
     ? femaleParticipants.slice(0, 1)
     : femaleParticipants;
 
@@ -497,36 +497,36 @@ function TodayLibraryContent() {
               <div className="pb-6">
                 {/* Header Section */}
                 <div className="flex flex-col gap-12">
-                <div className="flex flex-col gap-3">
-                  <h1 className="font-bold text-heading-xl text-black">
-                    독서 인증을 하지 않으면
-                    <br />
-                    프로필 북을 열어볼 수 없어요
-                  </h1>
-                  <p className="font-medium text-body-base text-text-secondary">
-                    새벽 2시까지 독서를 인증하고
-                    <br />
-                    멤버들의 프로필 북을 읽어보세요
-                  </p>
-                </div>
+                  <div className="flex flex-col gap-3">
+                    <h1 className="font-bold text-heading-xl text-black">
+                      독서 인증을 하지 않으면
+                      <br />
+                      프로필 북을 열어볼 수 없어요
+                    </h1>
+                    <p className="font-medium text-body-base text-text-secondary">
+                      새벽 2시까지 독서를 인증하고
+                      <br />
+                      멤버들의 프로필 북을 읽어보세요
+                    </p>
+                  </div>
 
-                {/* Bookmark Cards Section */}
-                <div className="flex flex-col w-full">
-                  <BookmarkRow
-                    participants={lockedPlaceholders.similar}
-                    theme="blue"
-                    isLocked={true}
-                    onCardClick={handleProfileClickWithAuth}
-                  />
-                  <BlurDivider />
-                  <BookmarkRow
-                    participants={lockedPlaceholders.opposite}
-                    theme="yellow"
-                    isLocked={true}
-                    onCardClick={handleProfileClickWithAuth}
-                  />
-                  <BlurDivider />
-                </div>
+                  {/* Bookmark Cards Section */}
+                  <div className="flex flex-col w-full">
+                    <BookmarkRow
+                      participants={lockedPlaceholders.similar}
+                      theme="blue"
+                      isLocked={true}
+                      onCardClick={handleProfileClickWithAuth}
+                    />
+                    <BlurDivider />
+                    <BookmarkRow
+                      participants={lockedPlaceholders.opposite}
+                      theme="yellow"
+                      isLocked={true}
+                      onCardClick={handleProfileClickWithAuth}
+                    />
+                    <BlurDivider />
+                  </div>
                 </div>
               </div>
             </div>
@@ -622,42 +622,134 @@ function TodayLibraryContent() {
             <div className="flex flex-col gap-6">
               {/* Header Section */}
               <div className="flex flex-col gap-3">
-                  <h1 className="font-bold text-heading-xl text-black">
-                    {isFinalDay || showAllProfilesWithoutAuth
-                      ? <>오늘의 서재가<br />전면 개방됐어요</>
+                <h1 className="font-bold text-heading-xl text-black">
+                  {isFinalDay || showAllProfilesWithoutAuth
+                    ? <>오늘의 서재가<br />전면 개방됐어요</>
+                    : isRandomMatching && isLocked
+                      ? <>프로필 북을<br />조금 열어봤어요</>
+                      : <>프로필 북을<br />확인해보세요</>
+                  }
+                </h1>
+                <p className="font-medium text-body-base text-text-secondary">
+                  {isFinalDay || showAllProfilesWithoutAuth
+                    ? '2주간의 여정을 마무리하며 모든 멤버의 프로필 북을 공개합니다'
+                    : isProfileUnlockMode && showAllProfiles
+                      ? '어제 인증한 모든 멤버의 프로필을 확인할 수 있어요'
                       : isRandomMatching && isLocked
-                        ? <>프로필 북을<br />조금 열어봤어요</>
-                        : <>프로필 북을<br />확인해보세요</>
-                    }
-                  </h1>
-                  <p className="font-medium text-body-base text-text-secondary">
-                    {isFinalDay || showAllProfilesWithoutAuth
-                      ? '2주간의 여정을 마무리하며 모든 멤버의 프로필 북을 공개합니다'
-                      : isProfileUnlockMode && showAllProfiles
-                        ? '어제 인증한 모든 멤버의 프로필을 확인할 수 있어요'
-                        : isRandomMatching && isLocked
-                          ? `오늘 인증하면 ${totalCount}개의 프로필북을 모두 열어볼 수 있어요`
-                          : '새벽 2시까지만 읽을 수 있어요'
-                    }
-                  </p>
+                        ? `오늘 인증하면 ${totalCount}개의 프로필북을 모두 열어볼 수 있어요`
+                        : '새벽 2시까지만 읽을 수 있어요'
+                  }
+                </p>
+              </div>
+
+              {/* 프로필북 개수 표시 (v2.0 랜덤 매칭) */}
+              {isRandomMatching && !showAllProfiles && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span className="font-semibold text-black">{totalCount}개의 프로필북</span>
+                  <span>•</span>
+                  <span>{unlockedCount}개 열람 가능</span>
                 </div>
+              )}
 
-                {/* 프로필북 개수 표시 (v2.0 랜덤 매칭) */}
-                {isRandomMatching && !showAllProfiles && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className="font-semibold text-black">{totalCount}개의 프로필북</span>
-                    <span>•</span>
-                    <span>{unlockedCount}개 열람 가능</span>
+              {/* Step 3-2, 3-3: 프로필 카드 레이아웃 */}
+              {showAllProfiles ? (
+                /* 전체 공개: 성별 2열 레이아웃 (미인증 시 각 1명씩만 + 나머지는 잠김) */
+                <div className="grid grid-cols-2 gap-6">
+                  {/* 왼쪽: 남자 */}
+                  <div className="flex flex-col gap-4">
+                    {visibleMaleInAllMode.map((p, index) => (
+                      <div key={p.id} className="flex flex-col">
+                        <div className="flex justify-center">
+                          <BookmarkCard
+                            profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                            name={p.name}
+                            theme="blue"
+                            isLocked={false}
+                            onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                          />
+                        </div>
+                        {(index < visibleMaleInAllMode.length - 1 || (isLocked && !isSuperAdmin && maleParticipants.length > visibleMaleInAllMode.length)) && <BlurDivider />}
+                      </div>
+                    ))}
+
+                    {/* 자물쇠 카드 (남자) - 전체 공개 모드 */}
+                    {isLocked && !isSuperAdmin && maleParticipants.length > visibleMaleInAllMode.length && (
+                      Array.from({ length: maleParticipants.length - visibleMaleInAllMode.length }).map((_, idx) => (
+                        <div key={`locked-male-all-${idx}`} className="flex flex-col">
+                          <div className="flex justify-center">
+                            <BookmarkCard
+                              profileImage=""
+                              name=""
+                              theme="blue"
+                              isLocked={true}
+                              onClick={() => {
+                                toast({
+                                  title: '프로필 잠김 🔒',
+                                  description: isFinalDay
+                                    ? '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요 (마지막 날 특별 이벤트!)'
+                                    : '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요',
+                                });
+                              }}
+                            />
+                          </div>
+                          {idx < (maleParticipants.length - visibleMaleInAllMode.length - 1) && <BlurDivider />}
+                        </div>
+                      ))
+                    )}
                   </div>
-                )}
 
-                {/* Step 3-2, 3-3: 프로필 카드 레이아웃 */}
-                {showAllProfiles ? (
-                  /* 전체 공개: 성별 2열 레이아웃 (미인증 시 각 1명씩만) */
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* 왼쪽: 남자 */}
-                    <div className="flex flex-col gap-4">
-                      {visibleMaleInAllMode.map((p, index) => (
+                  {/* 오른쪽: 여자 */}
+                  <div className="flex flex-col gap-4">
+                    {visibleFemaleInAllMode.map((p, index) => (
+                      <div key={p.id} className="flex flex-col">
+                        <div className="flex justify-center">
+                          <BookmarkCard
+                            profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
+                            name={p.name}
+                            theme="yellow"
+                            isLocked={false}
+                            onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                          />
+                        </div>
+                        {(index < visibleFemaleInAllMode.length - 1 || (isLocked && !isSuperAdmin && femaleParticipants.length > visibleFemaleInAllMode.length)) && <BlurDivider />}
+                      </div>
+                    ))}
+
+                    {/* 자물쇠 카드 (여자) - 전체 공개 모드 */}
+                    {isLocked && !isSuperAdmin && femaleParticipants.length > visibleFemaleInAllMode.length && (
+                      Array.from({ length: femaleParticipants.length - visibleFemaleInAllMode.length }).map((_, idx) => (
+                        <div key={`locked-female-all-${idx}`} className="flex flex-col">
+                          <div className="flex justify-center">
+                            <BookmarkCard
+                              profileImage=""
+                              name=""
+                              theme="yellow"
+                              isLocked={true}
+                              onClick={() => {
+                                toast({
+                                  title: '프로필 잠김 🔒',
+                                  description: isFinalDay
+                                    ? '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요 (마지막 날 특별 이벤트!)'
+                                    : '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요',
+                                });
+                              }}
+                            />
+                          </div>
+                          {idx < (femaleParticipants.length - visibleFemaleInAllMode.length - 1) && <BlurDivider />}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* 기본/랜덤 모드: 성별 2열 + (필요 시) 자물쇠 카드 */
+                <div className="grid grid-cols-2 gap-6">
+                  {/* 왼쪽: 남자 */}
+                  <div className="flex flex-col gap-4">
+                    {visibleMale.map((p) => {
+                      // DB 배열에서 실제 인덱스 찾기
+                      const cardIndex = assignedProfileIds.indexOf(p.id);
+                      return (
                         <div key={p.id} className="flex flex-col">
                           <div className="flex justify-center">
                             <BookmarkCard
@@ -665,17 +757,41 @@ function TodayLibraryContent() {
                               name={p.name}
                               theme="blue"
                               isLocked={false}
-                              onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                              onClick={() => handleProfileClickWithAuth(p.id, 'similar', cardIndex)}
                             />
                           </div>
-                          {index < visibleMaleInAllMode.length - 1 && <BlurDivider />}
+                          <BlurDivider />
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
 
-                    {/* 오른쪽: 여자 */}
-                    <div className="flex flex-col gap-4">
-                      {visibleFemaleInAllMode.map((p, index) => (
+                    {/* 자물쇠 카드 (남자) */}
+                    {shouldShowLockedCards && Array.from({ length: maleLockedSlots }).map((_, idx) => {
+                      // 잠긴 카드 인덱스: 열린 카드 바로 다음부터
+                      const cardIndex = unlockedCount + idx;
+                      return (
+                        <div key={`locked-male-${idx}`} className="flex flex-col">
+                          <div className="flex justify-center">
+                            <BookmarkCard
+                              profileImage=""
+                              name=""
+                              theme="blue"
+                              isLocked={true}
+                              onClick={() => handleProfileClickWithAuth('', 'similar', cardIndex)}
+                            />
+                          </div>
+                          <BlurDivider />
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 오른쪽: 여자 */}
+                  <div className="flex flex-col gap-4">
+                    {visibleFemale.map((p) => {
+                      // DB 배열에서 실제 인덱스 찾기
+                      const cardIndex = assignedProfileIds.indexOf(p.id);
+                      return (
                         <div key={p.id} className="flex flex-col">
                           <div className="flex justify-center">
                             <BookmarkCard
@@ -683,106 +799,39 @@ function TodayLibraryContent() {
                               name={p.name}
                               theme="yellow"
                               isLocked={false}
-                              onClick={() => handleProfileClickWithAuth(p.id, p.theme)}
+                              onClick={() => handleProfileClickWithAuth(p.id, 'opposite', cardIndex)}
                             />
                           </div>
-                          {index < visibleFemaleInAllMode.length - 1 && <BlurDivider />}
+                          <BlurDivider />
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
+
+                    {/* 자물쇠 카드 (여자) */}
+                    {shouldShowLockedCards && Array.from({ length: femaleLockedSlots }).map((_, idx) => {
+                      // 잠긴 카드 인덱스: 남자 잠긴 카드 다음부터
+                      const cardIndex = unlockedCount + maleLockedSlots + idx;
+                      return (
+                        <div key={`locked-female-${idx}`} className="flex flex-col">
+                          <div className="flex justify-center">
+                            <BookmarkCard
+                              profileImage=""
+                              name=""
+                              theme="yellow"
+                              isLocked={true}
+                              onClick={() => handleProfileClickWithAuth('', 'opposite', cardIndex)}
+                            />
+                          </div>
+                          <BlurDivider />
+                        </div>
+                      );
+                    })}
                   </div>
-                ) : (
-                  /* 기본/랜덤 모드: 성별 2열 + (필요 시) 자물쇠 카드 */
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* 왼쪽: 남자 */}
-                    <div className="flex flex-col gap-4">
-                      {visibleMale.map((p) => {
-                        // DB 배열에서 실제 인덱스 찾기
-                        const cardIndex = assignedProfileIds.indexOf(p.id);
-                        return (
-                          <div key={p.id} className="flex flex-col">
-                            <div className="flex justify-center">
-                              <BookmarkCard
-                                profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
-                                name={p.name}
-                                theme="blue"
-                                isLocked={false}
-                                onClick={() => handleProfileClickWithAuth(p.id, 'similar', cardIndex)}
-                              />
-                            </div>
-                            <BlurDivider />
-                          </div>
-                        );
-                      })}
+                </div>
+              )}
 
-                      {/* 자물쇠 카드 (남자) */}
-                      {shouldShowLockedCards && Array.from({ length: maleLockedSlots }).map((_, idx) => {
-                        // 잠긴 카드 인덱스: 열린 카드 바로 다음부터
-                        const cardIndex = unlockedCount + idx;
-                        return (
-                          <div key={`locked-male-${idx}`} className="flex flex-col">
-                            <div className="flex justify-center">
-                              <BookmarkCard
-                                profileImage=""
-                                name=""
-                                theme="blue"
-                                isLocked={true}
-                                onClick={() => handleProfileClickWithAuth('', 'similar', cardIndex)}
-                              />
-                            </div>
-                            <BlurDivider />
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* 오른쪽: 여자 */}
-                    <div className="flex flex-col gap-4">
-                      {visibleFemale.map((p) => {
-                        // DB 배열에서 실제 인덱스 찾기
-                        const cardIndex = assignedProfileIds.indexOf(p.id);
-                        console.log('[DEBUG] 여성 카드 렌더링:', { participantId: p.id, cardIndex, name: p.name });
-                        return (
-                          <div key={p.id} className="flex flex-col">
-                            <div className="flex justify-center">
-                              <BookmarkCard
-                                profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage || '/image/default-profile.svg'}
-                                name={p.name}
-                                theme="yellow"
-                                isLocked={false}
-                                onClick={() => handleProfileClickWithAuth(p.id, 'opposite', cardIndex)}
-                              />
-                            </div>
-                            <BlurDivider />
-                          </div>
-                        );
-                      })}
-
-                      {/* 자물쇠 카드 (여자) */}
-                      {shouldShowLockedCards && Array.from({ length: femaleLockedSlots }).map((_, idx) => {
-                        // 잠긴 카드 인덱스: 남자 잠긴 카드 다음부터
-                        const cardIndex = unlockedCount + maleLockedSlots + idx;
-                        return (
-                          <div key={`locked-female-${idx}`} className="flex flex-col">
-                            <div className="flex justify-center">
-                              <BookmarkCard
-                                profileImage=""
-                                name=""
-                                theme="yellow"
-                                isLocked={true}
-                                onClick={() => handleProfileClickWithAuth('', 'opposite', cardIndex)}
-                              />
-                            </div>
-                            <BlurDivider />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-              </div>
             </div>
+          </div>
         </main>
 
         <FooterActions>
