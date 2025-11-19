@@ -1,138 +1,103 @@
-
-import { initializeApp, applicationDefault } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
-import { subDays, format } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
-
-// Import matching logic from functions
-// @ts-ignore
+import * as admin from 'firebase-admin';
+import dotenv from 'dotenv';
+import path from 'path';
 import { matchParticipantsWithClusters } from '../functions/src/lib/cluster/index';
+import { DailySubmission } from '../functions/src/lib/cluster/types';
 
 // Load both root and functions environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-dotenv.config({ path: path.resolve(process.cwd(), 'functions', '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), 'functions/.env') });
 
-const app = initializeApp({
-    credential: applicationDefault(),
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-});
-
-const db = getFirestore(app, 'seoul');
-
-async function testMatchingCohort0() {
-    console.log('🧪 Testing v3 Cluster Matching on Cohort 0...');
-
-    // 1. Get "Yesterday" date
-    const now = new Date();
-    const kstNow = toZonedTime(now, 'Asia/Seoul');
-    const yesterday = subDays(kstNow, 1);
-    const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-
-    console.log(`📅 Target Date: ${yesterdayStr}`);
-
-    // 2. Fetch Submissions for Cohort 0
-    const submissionsSnapshot = await db
-        .collection('reading_submissions')
-        .where('cohortId', '==', '0')
-        .where('submissionDate', '==', yesterdayStr)
-        .where('status', '==', 'approved')
-        .get();
-
-    if (submissionsSnapshot.empty) {
-        console.log('❌ No submissions found for Cohort 0. Run setup script first.');
-        return;
-    }
-
-    console.log(`📚 Found ${submissionsSnapshot.size} submissions.`);
-
-    // 3. Fetch Participant Details
-    const participantIds = submissionsSnapshot.docs.map(doc => doc.data().participantId);
-    const participantsSnapshot = await db
-        .collection('participants')
-        .where('__name__', 'in', participantIds)
-        .get();
-
-    const participantsMap = new Map();
-    participantsSnapshot.docs.forEach(doc => {
-        participantsMap.set(doc.id, doc.data());
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+    admin.initializeApp({
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     });
+}
 
-    // 4. Prepare Data for Matching
-    const dailySubmissions: DailySubmission[] = submissionsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        const p = participantsMap.get(data.participantId);
-        return {
-            participantId: data.participantId,
-            participantName: p?.name || 'Unknown',
-            gender: p?.gender,
-            bookTitle: data.bookTitle || '',
-            bookAuthor: data.bookAuthor,
-            review: data.review || '',
-            dailyQuestion: data.dailyQuestion || '',
-            dailyAnswer: data.dailyAnswer || '',
-        };
-    });
+const db = admin.firestore();
 
-    // 5. Run Matching
-    console.log('🧠 Running AI Clustering...');
+/**
+ * Helper to create dummy submissions
+ */
+function createDummySubmissions(count: number): DailySubmission[] {
+    return Array.from({ length: count }, (_, i) => ({
+        participantId: `test-user-${String(i + 1).padStart(2, '0')}`,
+        participantName: `테스트유저${i + 1}`,
+        gender: i % 2 === 0 ? 'male' : 'female',
+        bookTitle: i % 3 === 0 ? '데미안' : i % 3 === 1 ? '코스모스' : '총 균 쇠',
+        bookAuthor: '저자',
+        review: `오늘의 감상평입니다. 삶의 의미와 존재에 대해 깊이 생각해보게 되었습니다. ${i}번째 참가자의 생각입니다.`,
+        dailyQuestion: '당신의 삶에서 가장 중요한 가치는 무엇인가요?',
+        dailyAnswer: `저는 주체적인 삶과 자유를 가장 중요하게 생각합니다. 스스로 선택하고 책임지는 삶이 진정한 삶이라고 믿습니다. (${i})`
+    }));
+}
+
+async function runScenario(name: string, count: number, dateStr: string) {
+    console.log(`\n============================================================`);
+    console.log(`🧪 Scenario: ${name} (${count} participants)`);
+    console.log(`============================================================`);
+
+    const submissions = createDummySubmissions(count);
+
     try {
-        const result = await matchParticipantsWithClusters(dailySubmissions, yesterdayStr);
+        const result = await matchParticipantsWithClusters(submissions, dateStr);
 
-        console.log('\n✨ Matching Completed Successfully!');
-        console.log(`   Clusters: ${Object.keys(result.clusters).length}`);
-        console.log(`   Assignments: ${Object.keys(result.assignments).length}`);
+        console.log(`✅ Matching Successful!`);
+        console.log(`   Clusters Created: ${Object.keys(result.clusters).length}`);
 
-        console.log('\n🔍 Cluster Details:');
-        Object.values(result.clusters).forEach((c: any) => {
+        Object.values(result.clusters).forEach(c => {
             console.log(`\n[${c.emoji} ${c.name}]`);
             console.log(`   Theme: ${c.theme}`);
-            console.log(`   Reasoning: ${c.reasoning}`);
-            console.log(`   Members: ${c.memberIds.join(', ')}`);
+            console.log(`   Members (${c.memberIds.length}): ${c.memberIds.join(', ')}`);
         });
 
-        console.log('\n🔍 Assignment Sample (First 3):');
-        Object.entries(result.assignments).slice(0, 3).forEach(([id, assign]: [string, any]) => {
-            console.log(`   ${id} -> Assigned to ${assign.assigned.length} people (Cluster: ${assign.clusterId})`);
-        });
+        // Validation Checks
+        if (count <= 7) {
+            if (Object.keys(result.clusters).length !== 1) console.error('❌ FAIL: Should be 1 cluster for small group');
+            else console.log('✅ PASS: Correctly created 1 cluster');
+        } else if (count === 8 || count === 9) {
+            if (Object.keys(result.clusters).length !== 2) console.error('❌ FAIL: Should be 2 clusters for edge case');
+            else console.log('✅ PASS: Correctly created 2 clusters');
+        } else {
+            // Multi-cluster check (approximate)
+            console.log(`ℹ️  Multi-cluster count: ${Object.keys(result.clusters).length} (Expected approx ${Math.round(count / 6)})`);
+        }
 
-        // 6. Save to Real Firestore (Cohort 0 ONLY)
-        console.log('\n💾 Saving result to Cohort 0 in Firestore...');
-
-        const cohortRef = db.collection('cohorts').doc('0');
-
-        // Create the entry format expected by the app
-        const matchingEntry = {
-            clusters: result.clusters,
-            assignments: result.assignments,
-            matchingVersion: 'cluster',
-            timestamp: new Date(),
-            formula: 'v3-cluster-test'
-        };
-
-        await db.runTransaction(async (transaction) => {
-            const doc = await transaction.get(cohortRef);
-            if (!doc.exists) throw new Error('Cohort 0 does not exist');
-
-            const data = doc.data();
-            const dailyFeaturedParticipants = data?.dailyFeaturedParticipants || {};
-
-            // Update for the target date
-            dailyFeaturedParticipants[yesterdayStr] = matchingEntry;
-
-            transaction.update(cohortRef, {
-                dailyFeaturedParticipants,
-                updatedAt: new Date()
-            });
-        });
-
-        console.log('✅ Successfully updated Cohort 0 dailyFeaturedParticipants.');
-        console.log('   You can now view this in the UI if you are in Cohort 0.');
-
+        return result;
     } catch (error) {
-        console.error('❌ Matching Failed:', error);
+        console.error(`❌ Scenario Failed:`, error);
+        throw error;
     }
 }
 
-testMatchingCohort0().catch(console.error);
+async function main() {
+    console.log('🚀 Starting Comprehensive V3 Matching Verification...');
+
+    // Date for strategy (Day 0 = Focused/Value)
+    const dateStr = '2025-11-19';
+
+    try {
+        // 1. Small Group Scenario (3 users) -> Should be 1 cluster
+        await runScenario('Small Group', 3, dateStr);
+
+        // 2. Edge Case Scenario (8 users) -> Should be 2 clusters (4+4)
+        await runScenario('Edge Case (8)', 8, dateStr);
+
+        // 3. Multi-Cluster Scenario (12 users) -> Should be ~2 clusters (6+6)
+        const finalResult = await runScenario('Multi Cluster (12)', 12, dateStr);
+
+        // Save the final result (12 users) to Firestore for UI verification
+        console.log(`\n💾 Saving "Multi Cluster" result to Cohort 0 in Firestore...`);
+        await db.collection('cohorts').doc('0').set({
+            dailyFeaturedParticipants: finalResult
+        }, { merge: true });
+        console.log('✅ Successfully updated Cohort 0 dailyFeaturedParticipants.');
+
+    } catch (error) {
+        console.error('💥 Verification Failed:', error);
+        process.exit(1);
+    }
+}
+
+main();

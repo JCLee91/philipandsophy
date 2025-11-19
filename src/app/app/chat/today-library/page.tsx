@@ -1,34 +1,36 @@
 'use client';
 
 /**
- * 오늘의 서재 v3.0 - 클러스터 매칭
+ * 오늘의 서재 v3.1 - 온라인 독서모임 테이블
  *
- * 매일 AI가 생성하는 클러스터 기반 매칭 시스템
- * - 오직 감상평 + 가치관 답변만 분석 (책 제목 무시)
- * - 클러스터 크기: 5-7명 (본인 포함)
- * - 클러스터 내 전원 매칭 (본인 제외 4-6개 프로필북)
+ * 클러스터 멤버들의 감상평과 가치관 답변을 직접 보여주는 독서모임 형식
+ * - 클러스터 테마 헤더
+ * - 감상평 미리보기 섹션 (클릭하여 전체 감상평 보기)
+ * - 가치관 질문 섹션
+ * - 가치관 답변 아코디언 리스트
  *
- * @version 3.0.0
- * @date 2025-11-15
+ * @version 3.1.0
+ * @date 2025-11-19
  */
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
-import BookmarkCard from '@/components/BookmarkCard';
 import HeaderNavigation from '@/components/HeaderNavigation';
 import FooterActions from '@/components/FooterActions';
-import BlurDivider from '@/components/BlurDivider';
 import UnifiedButton from '@/components/UnifiedButton';
+import ReviewPreviewCard from '@/components/ReviewPreviewCard';
+import ValueAnswerAccordion from '@/components/ValueAnswerAccordion';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
+import { useClusterSubmissions } from '@/hooks/use-cluster-submissions';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
-import type { Participant, Cluster } from '@/types/database';
+import type { Participant, Cluster, ReadingSubmission } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
@@ -36,8 +38,13 @@ import { getResizedImageUrl } from '@/lib/image-utils';
 // ✅ Disable static generation
 export const dynamic = 'force-dynamic';
 
-type ClusterParticipant = Participant & {
-  theme: 'similar' | 'opposite';
+type ClusterMemberWithSubmission = Participant & {
+  submission?: ReadingSubmission;
+  review: string;
+  dailyAnswer: string;
+  dailyQuestion: string;
+  bookCoverUrl?: string;
+  bookImageUrl?: string;
 };
 
 /**
@@ -46,7 +53,7 @@ type ClusterParticipant = Participant & {
 interface ClusterMatchingData {
   clusterId: string;
   cluster: Cluster;
-  assignedIds: string[]; // 본인 제외한 클러스터 멤버 IDs
+  assignedIds: string[];
   matchingDate: string;
 }
 
@@ -124,7 +131,7 @@ function TodayLibraryV3Content() {
   const viewerHasSubmittedToday = viewerSubmissionDates.has(todayDate);
   const preferredMatchingDate = viewerHasSubmittedToday ? todayDate : undefined;
 
-  // 누적 인증 횟수 (v3.0에서는 최초 인증자 판단용으로만 사용)
+  // 누적 인증 횟수
   const totalSubmissionCount = viewerSubmissions.length;
   const isFirstTimeUser = totalSubmissionCount === 0;
 
@@ -142,8 +149,6 @@ function TodayLibraryV3Content() {
   }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate]);
 
   // 비인증 시 표시할 프로필 개수
-  // - 최초 인증자: 0개 (메시지만 표시)
-  // - 기존 인증자: 1개 (궁금증 유발)
   const unlockedProfileCount = isFirstTimeUser ? 0 : isLocked ? 1 : clusterMatching?.assignedIds.length || 0;
 
   // 표시할 프로필 IDs
@@ -155,8 +160,8 @@ function TodayLibraryV3Content() {
     return clusterMatching.assignedIds;
   }, [clusterMatching, isLocked, isSuperAdmin, unlockedProfileCount]);
 
-  // 클러스터 멤버 정보 가져오기
-  const { data: clusterMembers = [], isLoading: membersLoading } = useQuery<ClusterParticipant[]>({
+  // 클러스터 멤버 정보 + 인증 데이터 가져오기
+  const { data: clusterMembers = [], isLoading: membersLoading } = useQuery<Participant[]>({
     queryKey: ['cluster-members-v3', clusterMatching?.clusterId, clusterMatching?.matchingDate],
     queryFn: async () => {
       if (!visibleProfileIds.length) return [];
@@ -176,7 +181,7 @@ function TodayLibraryV3Content() {
         })) as Participant[]);
       }
 
-      // 원형 이미지 처리 및 theme 추가
+      // 원형 이미지 처리
       return chunks.map(p => {
         const inferCircleUrl = (url?: string) => {
           if (!url) return undefined;
@@ -187,13 +192,11 @@ function TodayLibraryV3Content() {
         };
 
         const circleImage = p.profileImageCircle || inferCircleUrl(p.profileImage);
-        const derivedTheme = p.gender === 'female' ? 'opposite' : 'similar';
 
         return {
           ...p,
           profileImage: circleImage || p.profileImage,
           profileImageCircle: circleImage,
-          theme: derivedTheme
         };
       });
     },
@@ -201,6 +204,47 @@ function TodayLibraryV3Content() {
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
+
+  // 클러스터 멤버들의 인증 데이터 가져오기
+  const { data: submissionsMap = {}, isLoading: submissionsLoading } = useClusterSubmissions(
+    visibleProfileIds,
+    clusterMatching?.matchingDate || '',
+    !!clusterMatching?.matchingDate
+  );
+
+  // 멤버 + 인증 데이터 결합
+  const clusterMembersWithSubmissions = useMemo<ClusterMemberWithSubmission[]>(() => {
+    return clusterMembers.map(member => {
+      const submission = submissionsMap[member.id];
+      return {
+        ...member,
+        submission,
+        review: submission?.review || '',
+        dailyAnswer: submission?.dailyAnswer || '',
+        dailyQuestion: submission?.dailyQuestion || '',
+        bookCoverUrl: submission?.bookCoverUrl,
+        bookImageUrl: submission?.bookImageUrl,
+      };
+    });
+  }, [clusterMembers, submissionsMap]);
+
+  // 가치관 질문 (첫 번째 멤버의 질문 사용, 모두 같음)
+  const dailyQuestion = clusterMembersWithSubmissions[0]?.dailyQuestion || '';
+
+  // 답변 확장 상태 관리
+  const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
+
+  const toggleAnswer = (participantId: string) => {
+    setExpandedAnswers(prev => {
+      const next = new Set(prev);
+      if (next.has(participantId)) {
+        next.delete(participantId);
+      } else {
+        next.add(participantId);
+      }
+      return next;
+    });
+  };
 
   // 세션 검증
   useEffect(() => {
@@ -235,7 +279,7 @@ function TodayLibraryV3Content() {
   }, []);
 
   // 프로필 클릭 핸들러
-  const handleProfileClick = (participantId: string, theme: 'similar' | 'opposite') => {
+  const handleProfileClick = (participantId: string) => {
     if (isLocked && !isSuperAdmin) {
       const totalProfiles = clusterMatching?.assignedIds.length || 0;
       const lockedCount = totalProfiles - unlockedProfileCount;
@@ -255,12 +299,28 @@ function TodayLibraryV3Content() {
       return;
     }
 
-    const profileUrl = `${appRoutes.profile(participantId, cohortId!, theme)}&matchingDate=${encodeURIComponent(clusterMatching.matchingDate)}`;
+    const profileUrl = `${appRoutes.profile(participantId, cohortId!)}&matchingDate=${encodeURIComponent(clusterMatching.matchingDate)}`;
     router.push(profileUrl);
   };
 
+  // 리뷰 클릭 핸들러
+  const handleReviewClick = (participantId: string) => {
+    if (isLocked && !isSuperAdmin) {
+      const totalProfiles = clusterMatching?.assignedIds.length || 0;
+      const lockedCount = totalProfiles - unlockedProfileCount;
+
+      toast({
+        title: '감상평 잠김 🔒',
+        description: `오늘의 독서를 인증하면 추가로 ${lockedCount}개의 감상평을 볼 수 있어요`
+      });
+      return;
+    }
+
+    router.push(`/app/chat/today-library/review/${participantId}?date=${clusterMatching?.matchingDate}&cohort=${cohortId}`);
+  };
+
   // 로딩 상태
-  if (sessionLoading || cohortLoading || viewerSubmissionLoading || membersLoading) {
+  if (sessionLoading || cohortLoading || viewerSubmissionLoading || membersLoading || submissionsLoading) {
     return <LoadingSkeleton />;
   }
 
@@ -297,7 +357,7 @@ function TodayLibraryV3Content() {
                   </h3>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      프로필 북은 <strong className="text-gray-900">인증 다음날 오후 2시</strong>부터
+                      독서모임 테이블은 <strong className="text-gray-900">인증 다음날 오후 2시</strong>부터
                       <br />
                       열어볼 수 있어요
                     </p>
@@ -348,7 +408,7 @@ function TodayLibraryV3Content() {
                     아직 준비중이에요
                   </h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    매일 오후 2시에 새로운 프로필북이 도착합니다
+                    매일 오후 2시에 새로운 독서모임이 시작됩니다
                   </p>
                 </div>
 
@@ -368,16 +428,12 @@ function TodayLibraryV3Content() {
   }
 
   // ========================================
-  // 3단계: 클러스터 프로필북 표시
+  // 3단계: 온라인 독서모임 테이블
   // ========================================
 
   const { cluster, assignedIds } = clusterMatching;
   const totalCount = assignedIds.length;
   const lockedCount = Math.max(totalCount - unlockedProfileCount, 0);
-
-  // 성별로 분류
-  const maleMembers = clusterMembers.filter(p => !p.gender || p.gender === 'male');
-  const femaleMembers = clusterMembers.filter(p => p.gender === 'female');
 
   return (
     <PageTransition>
@@ -385,110 +441,75 @@ function TodayLibraryV3Content() {
         <HeaderNavigation title="오늘의 서재" />
 
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-md px-6 w-full pt-3 md:pt-2 pb-6">
-            <div className="flex flex-col gap-6">
-              {/* 클러스터 배지 */}
-              <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
-                <span className="text-2xl">{cluster.emoji}</span>
-                <div className="flex-1">
-                  <div className="font-bold text-sm text-gray-900">{cluster.name}</div>
-                  <div className="text-xs text-gray-600 mt-0.5">{cluster.theme}</div>
+          <div className="mx-auto max-w-md px-6 w-full pt-6 pb-24">
+            <div className="flex flex-col gap-8">
+              {/* 1. 클러스터 헤더 */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl">{cluster.emoji}</span>
+                  <div className="flex-1">
+                    <h1 className="font-bold text-xl text-gray-900">{cluster.name}</h1>
+                    <p className="text-sm text-gray-600 mt-1">{cluster.theme}</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* 헤더 */}
-              <div className="flex flex-col gap-3">
-                <h1 className="font-bold text-heading-xl text-black">
-                  {isLocked && !isSuperAdmin
-                    ? <>프로필 북을<br />조금 열어봤어요</>
-                    : <>오늘 당신과<br />연결된 사람들</>
-                  }
-                </h1>
-                <p className="font-medium text-body-base text-text-secondary">
-                  {isLocked && !isSuperAdmin
-                    ? `오늘 인증하면 ${totalCount}개의 프로필북을 모두 열어볼 수 있어요`
-                    : `비슷한 생각을 한 ${totalCount}명과 연결했어요`
-                  }
-                </p>
-              </div>
+                {isLocked && !isSuperAdmin && (
+                  <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-900">
+                      🔒 오늘 인증하면 {totalCount}명의 감상평과 답변을 모두 볼 수 있어요
+                    </p>
+                  </div>
+                )}
+              </section>
 
-              {/* 프로필북 개수 표시 */}
-              {isLocked && !isSuperAdmin && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="font-semibold text-black">{totalCount}개의 프로필북</span>
-                  <span>•</span>
-                  <span>{unlockedProfileCount}개 열람 가능</span>
+              {/* 2. 감상평 섹션 */}
+              <section className="space-y-4">
+                <h2 className="font-bold text-lg text-gray-900">오늘의 감상평</h2>
+                <div className="space-y-3">
+                  {clusterMembersWithSubmissions.map(member => (
+                    <ReviewPreviewCard
+                      key={member.id}
+                      participantId={member.id}
+                      participantName={member.name}
+                      profileImage={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage}
+                      bookCoverUrl={member.bookCoverUrl}
+                      bookTitle={member.submission?.bookTitle || ''}
+                      review={member.review || '감상평이 아직 작성되지 않았습니다.'}
+                      onReviewClick={() => handleReviewClick(member.id)}
+                      onProfileClick={() => handleProfileClick(member.id)}
+                    />
+                  ))}
                 </div>
+              </section>
+
+              {/* 3. 가치관 질문 섹션 */}
+              {dailyQuestion && (
+                <section className="space-y-4">
+                  <div className="space-y-2">
+                    <h2 className="font-bold text-lg text-gray-900">오늘의 가치관 질문</h2>
+                    <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-900 font-medium">
+                        {dailyQuestion}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {clusterMembersWithSubmissions.map(member => (
+                      <ValueAnswerAccordion
+                        key={member.id}
+                        participantId={member.id}
+                        participantName={member.name}
+                        profileImage={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage}
+                        answer={member.dailyAnswer || '답변이 아직 작성되지 않았습니다.'}
+                        isExpanded={expandedAnswers.has(member.id)}
+                        onToggle={() => toggleAnswer(member.id)}
+                        onProfileClick={() => handleProfileClick(member.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
               )}
-
-              {/* 프로필 카드 */}
-              <div className="grid grid-cols-2 gap-6">
-                {/* 왼쪽: 남자 */}
-                <div className="flex flex-col gap-4">
-                  {maleMembers.map((p, index) => (
-                    <div key={p.id} className="flex flex-col">
-                      <div className="flex justify-center">
-                        <BookmarkCard
-                          profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImage || '/image/default-profile.svg'}
-                          name={p.name}
-                          theme="blue"
-                          isLocked={false}
-                          onClick={() => handleProfileClick(p.id, 'similar')}
-                        />
-                      </div>
-                      {index < maleMembers.length - 1 && <BlurDivider />}
-                    </div>
-                  ))}
-
-                  {/* 자물쇠 카드 (남자) */}
-                  {isLocked && !isSuperAdmin && lockedCount > 0 && maleMembers.length === 0 && (
-                    <div className="flex flex-col">
-                      <div className="flex justify-center">
-                        <BookmarkCard
-                          profileImage=""
-                          name=""
-                          theme="blue"
-                          isLocked={true}
-                          onClick={() => handleProfileClick('', 'similar')}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 오른쪽: 여자 */}
-                <div className="flex flex-col gap-4">
-                  {femaleMembers.map((p, index) => (
-                    <div key={p.id} className="flex flex-col">
-                      <div className="flex justify-center">
-                        <BookmarkCard
-                          profileImage={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImage || '/image/default-profile.svg'}
-                          name={p.name}
-                          theme="yellow"
-                          isLocked={false}
-                          onClick={() => handleProfileClick(p.id, 'opposite')}
-                        />
-                      </div>
-                      {index < femaleMembers.length - 1 && <BlurDivider />}
-                    </div>
-                  ))}
-
-                  {/* 자물쇠 카드 (여자) */}
-                  {isLocked && !isSuperAdmin && lockedCount > 0 && femaleMembers.length === 0 && (
-                    <div className="flex flex-col">
-                      <div className="flex justify-center">
-                        <BookmarkCard
-                          profileImage=""
-                          name=""
-                          theme="yellow"
-                          isLocked={true}
-                          onClick={() => handleProfileClick('', 'opposite')}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </main>
@@ -513,26 +534,35 @@ function LoadingSkeleton() {
       <div className="app-shell flex flex-col overflow-hidden">
         <HeaderNavigation title="오늘의 서재" />
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
-          <div className="mx-auto max-w-md px-6 w-full pt-3 pb-6">
-            <div className="flex flex-col gap-6">
-              {/* 클러스터 배지 스켈레톤 */}
-              <div className="h-20 shimmer rounded-lg" />
-
-              {/* 헤더 스켈레톤 */}
-              <div className="flex flex-col gap-3">
-                <div className="h-8 w-48 shimmer rounded" />
-                <div className="h-6 w-40 shimmer rounded" />
+          <div className="mx-auto max-w-md px-6 w-full pt-6 pb-6">
+            <div className="flex flex-col gap-8">
+              {/* 클러스터 헤더 스켈레톤 */}
+              <div className="flex items-center gap-3">
+                <div className="size-12 shimmer rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-6 w-40 shimmer rounded" />
+                  <div className="h-4 w-60 shimmer rounded" />
+                </div>
               </div>
 
-              {/* 프로필 카드 스켈레톤 */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="flex flex-col gap-4">
-                  <div className="h-32 shimmer rounded-lg" />
-                  <div className="h-32 shimmer rounded-lg" />
+              {/* 감상평 스켈레톤 */}
+              <div className="space-y-4">
+                <div className="h-6 w-32 shimmer rounded" />
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-24 shimmer rounded-lg" />
+                  ))}
                 </div>
-                <div className="flex flex-col gap-4">
-                  <div className="h-32 shimmer rounded-lg" />
-                  <div className="h-32 shimmer rounded-lg" />
+              </div>
+
+              {/* 가치관 답변 스켈레톤 */}
+              <div className="space-y-4">
+                <div className="h-6 w-40 shimmer rounded" />
+                <div className="h-16 shimmer rounded-lg" />
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-20 shimmer rounded-lg" />
+                  ))}
                 </div>
               </div>
             </div>
