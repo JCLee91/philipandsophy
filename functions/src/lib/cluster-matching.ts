@@ -14,7 +14,16 @@
  */
 
 import { generateObject } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
+
+// Vercel AI Gateway 설정
+// AI_GATEWAY_API_KEY가 있으면 Gateway를 사용하고, 없으면 기본 OpenAI API 사용
+const openai = createOpenAI({
+  apiKey: process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY,
+  baseURL: process.env.AI_GATEWAY_API_KEY ? 'https://ai-gateway.vercel.sh/v1' : undefined,
+  name: 'openai',
+});
 
 // Vercel AI Gateway를 통해 AI 모델 접근
 // 환경 변수: AI_GATEWAY_API_KEY
@@ -255,7 +264,7 @@ export async function generateDailyClusters(
 
   try {
     const result = await generateObject({
-      model: 'openai/gpt-4o-mini', // ✅ Vercel AI Gateway 자동 사용
+      model: openai('gpt-4o-mini'), // ✅ Explicitly use the configured provider
       schema: z.object({
         clusters: z.array(ClusterSchema)
       }),
@@ -312,8 +321,8 @@ ${strategy.mode === 'autonomous' ? `
 - memberIds에 모든 participantId 포함
         `.trim()
         : isEdgeCase ?
-        // 🔹 엣지 케이스 (8/9명): 2개 클러스터로 4~5명씩
-        `
+          // 🔹 엣지 케이스 (8/9명): 2개 클러스터로 4~5명씩
+          `
 오늘 독서 인증을 한 ${participantCount}명을 정확히 2개 그룹으로 나눠주세요.
 각 그룹은 4~5명씩입니다.
 
@@ -363,9 +372,9 @@ ${strategy.mode === 'autonomous' ? `
 - 모든 참가자 포함: 총합 ${participantCount}명 정확히 배정
 - 각 클러스터는 4~5명 (${participantCount === 8 ? '4명+4명' : '4명+5명'})
         `.trim()
-        :
-        // 🔹 다중 클러스터 (10명 이상): 그룹 나누기 중심
-        `
+          :
+          // 🔹 다중 클러스터 (10명 이상): 그룹 나누기 중심
+          `
 오늘 독서 인증을 한 ${participantCount}명을 ${targetClusterCount}개 그룹으로 나눠주세요.
 각 그룹은 약 ${membersPerCluster}명씩입니다.
 
@@ -463,7 +472,7 @@ ${strategy.mode === 'autonomous' ? `
     const ALLOWED_MIN_SIZE = isEdgeCase ? 4 : 1;
     const invalidSizeClusters = clusters.filter(
       c => c.memberIds.length < ALLOWED_MIN_SIZE ||
-           c.memberIds.length > CLUSTER_CONFIG.MAX_SIZE
+        c.memberIds.length > CLUSTER_CONFIG.MAX_SIZE
     );
     if (invalidSizeClusters.length > 0) {
       errors.push(
