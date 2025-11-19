@@ -150,7 +150,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                 )}
                                 <div className="flex-1">
                                     <h2 className="font-bold text-lg text-gray-900">
-                                        {submission.bookTitle}
+                                        {submission.bookTitle || '제목 없음'}
                                     </h2>
                                     {submission.bookAuthor && (
                                         <p className="text-sm text-gray-600 mt-1">
@@ -166,7 +166,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                     감상평
                                 </h3>
                                 <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
-                                    {submission.review}
+                                    {submission.review || '작성된 감상평이 없습니다.'}
                                 </p>
                             </div>
                         </div>
