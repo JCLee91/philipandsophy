@@ -1,5 +1,10 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import AppClientProviders from '@/components/AppClientProviders';
+
+// 웹앱 전용: 흰색으로 오버라이드
+export const viewport: Viewport = {
+  themeColor: '#ffffff',
+};
 
 // Metadata는 서버 컴포넌트에서만 사용 가능
 export const metadata: Metadata = {

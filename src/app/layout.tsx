@@ -8,6 +8,7 @@ export const viewport: Viewport = {
   initialScale: 1.0,
   maximumScale: 1.0,
   userScalable: false,
+  themeColor: '#000000', // 전역 기본값: 검정 (랜딩페이지용)
   // viewportFit 제거: iOS PWA에서 safe area 안정성 확보
 };
 
@@ -43,6 +44,12 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: '필립앤소피',
+    startupImage: [
+      {
+        url: '/image/app-icon-512.png',
+        media: '(device-width: 375px) and (device-height: 812px)',
+      },
+    ],
   },
   openGraph: {
     type: 'website',

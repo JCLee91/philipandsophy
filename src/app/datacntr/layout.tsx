@@ -1,6 +1,11 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import DataCenterLayout from '@/components/datacntr/DataCenterLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
+
+// 데이터센터: 흰색으로 오버라이드
+export const viewport: Viewport = {
+  themeColor: '#ffffff',
+};
 
 export const metadata: Metadata = {
   title: 'Data Center | 필립앤소피',

@@ -131,11 +131,12 @@ function TodayLibraryContent() {
 
   // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
   const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
+  const isProfileUnlockMode = isUnlockDayOrAfter && !isFinalDay;
 
   // 새로운 규칙:
   // 1. 슈퍼관리자 OR 마지막 날 → 전체 공개
   // 2. profileUnlockDate 이상 + 어제 인증자 존재 → 어제 인증자 전체 공개 (인증 여부는 렌더링 단계에서 처리)
-  const showAllProfiles = isSuperAdmin || isFinalDay || (isUnlockDayOrAfter && yesterdayVerifiedIds && yesterdayVerifiedIds.size > 0);
+  const showAllProfiles = isSuperAdmin || isFinalDay || (isProfileUnlockMode && yesterdayVerifiedIds && yesterdayVerifiedIds.size > 0);
 
   // 추천 참가자들의 정보 가져오기
   // 마지막 날이면 전체 참가자 쿼리, 아니면 매칭된 4명만
@@ -424,8 +425,16 @@ function TodayLibraryContent() {
       return;
     }
 
-    // 14일차: 전체 공개지만 인증 필요
-    if (showAllProfiles && !showAllProfilesWithoutAuth) {
+    // profileUnlockMode: 렌더링된 프로필은 인증 없이도 볼 수 있음
+    if (isProfileUnlockMode) {
+      const matchingDate = getSubmissionDate();
+      const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
+      router.push(profileUrl);
+      return;
+    }
+
+    // 마지막 날: 전체 공개지만 인증 필요
+    if (isFinalDay && !showAllProfilesWithoutAuth) {
       if (isLocked) {
         toast({
           title: '프로필 잠김 🔒',
@@ -624,7 +633,7 @@ function TodayLibraryContent() {
                   <p className="font-medium text-body-base text-text-secondary">
                     {isFinalDay || showAllProfilesWithoutAuth
                       ? '2주간의 여정을 마무리하며 모든 멤버의 프로필 북을 공개합니다'
-                      : isUnlockDayOrAfter && showAllProfiles
+                      : isProfileUnlockMode && showAllProfiles
                         ? '어제 인증한 모든 멤버의 프로필을 확인할 수 있어요'
                         : isRandomMatching && isLocked
                           ? `오늘 인증하면 ${totalCount}개의 프로필북을 모두 열어볼 수 있어요`
@@ -777,13 +786,32 @@ function TodayLibraryContent() {
         </main>
 
         <FooterActions>
-          <UnifiedButton
-            variant="primary"
-            onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
-            className="w-full"
-          >
-            내 프로필 북 보기
-          </UnifiedButton>
+          {isLocked && !isSuperAdmin ? (
+            <div className="grid grid-cols-2 gap-2">
+              <UnifiedButton
+                variant="secondary"
+                onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
+                className="flex-1"
+              >
+                내 프로필 북 보기
+              </UnifiedButton>
+              <UnifiedButton
+                variant="primary"
+                onClick={() => router.push(appRoutes.submitStep1(cohortId!))}
+                className="flex-1"
+              >
+                독서 인증하기
+              </UnifiedButton>
+            </div>
+          ) : (
+            <UnifiedButton
+              variant="primary"
+              onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
+              className="w-full"
+            >
+              내 프로필 북 보기
+            </UnifiedButton>
+          )}
         </FooterActions>
       </div>
     </PageTransition>
