@@ -213,14 +213,21 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // ✅ FIX: getSubmissionDate() 기준으로 비교 (새벽 2시 마감 정책 적용)
   const isFinalDayAccess = matchingDate === getSubmissionDate() && isFinalDayOrAfter;
 
+  // 전체 오픈 기간 판별: profileUnlockDate 이상 + 오늘 인증 완료
+  // → 어떤 경로로 접근해도 어제까지의 모든 기록을 볼 수 있음 (스포일러 방지)
+  const shouldShowAll = isUnlockDayOrAfter && isVerifiedToday;
+
   // 프로필북 표시 규칙:
   // - 14일차 또는 15일차 이후: 최신 제출물 모두 표시 (cutoff 없음)
+  // - 전체 오픈 기간 + 인증: 어제까지 전체 공개 (스포일러 방지)
   // - 평소: 인증 기반 날짜까지의 인증만 표시
   //   예: effectiveMatchingDate="11-10" → 11-10까지 인증 포함
   //       (프로필북은 11-11 오전 2시부터 제공되지만, 11-10 인증까지만 표시)
   const submissionCutoffDate = (isFinalDayAccess || isAfterProgramWithoutAuth || isSuperAdmin)
     ? null  // 최신 제출물 모두 표시
-    : effectiveMatchingDate; // ✅ 인증 기반 날짜까지 포함 (새벽 2시 마감 정책 적용)
+    : shouldShowAll
+      ? getMatchingTargetDate()  // 전체 오픈 기간 + 인증: 어제까지 전체 공개 (스포일러 방지)
+      : effectiveMatchingDate; // ✅ 인증 기반 날짜까지 포함 (새벽 2시 마감 정책 적용)
 
   // 랜덤 매칭: 매칭 날짜가 있으면 항상 접근 가능 (인증 여부 무관)
   const viewerHasAccessForDate = isSuperAdmin || !!effectiveMatchingDate;
