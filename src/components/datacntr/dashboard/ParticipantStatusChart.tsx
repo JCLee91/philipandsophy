@@ -71,7 +71,7 @@ export default function ParticipantStatusChart({ data, isLoading }: ParticipantS
             outerRadius={90}
             paddingAngle={2}
             dataKey="value"
-            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+            label={({ percent }) => percent ? `${(percent * 100).toFixed(0)}%` : '0%'}
           >
             {chartData.map((entry, index) => (
               <Cell
