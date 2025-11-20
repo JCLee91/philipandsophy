@@ -106,6 +106,30 @@ export async function POST(request: NextRequest) {
     });
 
     // 2. 참가자 생성 (문서 ID: cohort{기수}-{이름(성제외)})
+    // 2-1. 자동 마이그레이션: 기존 참가자들의 UID 조회
+    const phoneNumbers = participants.map((p: any) => p.phone);
+    const phoneToUidMap = new Map<string, string>();
+
+    // Firestore 'in' 쿼리는 최대 30개까지만 지원하므로 청크로 나누어 조회
+    const CHUNK_SIZE = 30;
+    const chunks = [];
+    for (let i = 0; i < phoneNumbers.length; i += CHUNK_SIZE) {
+      chunks.push(phoneNumbers.slice(i, i + CHUNK_SIZE));
+    }
+
+    for (const chunk of chunks) {
+      const snapshot = await db.collection(COLLECTIONS.PARTICIPANTS)
+        .where('phoneNumber', 'in', chunk)
+        .get();
+
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.firebaseUid && data.phoneNumber) {
+          phoneToUidMap.set(data.phoneNumber, data.firebaseUid);
+        }
+      });
+    }
+
     const batch = db.batch();
     const participantIds: string[] = [];
 
@@ -138,6 +162,9 @@ export async function POST(request: NextRequest) {
       const participantRef = db.collection(COLLECTIONS.PARTICIPANTS).doc(participantId);
       participantIds.push(participantId);
 
+      // 기존 UID가 있으면 자동 연결 (마이그레이션)
+      const existingUid = phoneToUidMap.get(p.phone) || null;
+
       batch.set(participantRef, {
         cohortId,
         name: p.name,
@@ -145,7 +172,7 @@ export async function POST(request: NextRequest) {
         isAdministrator: p.role === 'admin',
         isSuperAdmin: false,
         isGhost: p.role === 'ghost',
-        firebaseUid: null, // 첫 로그인 시 자동 연결
+        firebaseUid: existingUid, // 자동 연결
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
@@ -156,8 +183,21 @@ export async function POST(request: NextRequest) {
     // 3. Daily Questions 처리 (Day 2~14만, 총 13개)
     if (questionsOption === 'copy') {
       try {
-        // 1기(cohortId='1') 질문 복사 (Day 2부터 시작, Day 1은 OT)
-        const sourceCohortId = '1';
+        // 가장 최근 기수 찾기 (현재 생성 중인 기수 제외)
+        const recentCohortsSnapshot = await db.collection(COLLECTIONS.COHORTS)
+          .orderBy('createdAt', 'desc')
+          .limit(2) // 현재 기수 포함될 수 있으므로 2개 조회
+          .get();
+
+        let sourceCohortId = '1'; // 기본값
+
+        // 생성된 기수(cohortId)가 아닌 가장 최신 기수 찾기
+        const latestCohort = recentCohortsSnapshot.docs.find(doc => doc.id !== cohortId);
+        if (latestCohort) {
+          sourceCohortId = latestCohort.id;
+        }
+
+        // 질문 복사 (Day 2부터 시작, Day 1은 OT)
         const sourceQuestionsSnapshot = await db
           .collection(`${COLLECTIONS.COHORTS}/${sourceCohortId}/daily_questions`)
           .where('dayNumber', '>=', 2)
@@ -191,8 +231,8 @@ export async function POST(request: NextRequest) {
 
         }
       } catch (error) {
-
         // 실패해도 코호트 생성은 성공으로 처리
+        logger.error('질문 복사 실패:', error);
       }
     }
 

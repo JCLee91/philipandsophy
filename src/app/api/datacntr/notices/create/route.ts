@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase/admin-init';
 import { requireAuthToken } from '@/lib/api-auth';
 import { APP_CONSTANTS } from '@/constants/app';
+import * as admin from 'firebase-admin';
 
 /**
  * POST /api/datacntr/notices/create
@@ -16,15 +17,17 @@ export async function POST(request: NextRequest) {
     // 2. FormData 파싱
     const formData = await request.formData();
     const cohortId = formData.get('cohortId') as string;
+    const title = formData.get('title') as string;
     const content = formData.get('content') as string;
-    const status = formData.get('status') as string;
+    const status = formData.get('status') as 'draft' | 'published' | 'scheduled';
+    const scheduledAtStr = formData.get('scheduledAt') as string;
     const imageFile = formData.get('image') as File | null;
-    const templateImageUrl = formData.get('templateImageUrl') as string | null; // ✅ 템플릿에서 가져온 이미지 URL
+    const templateImageUrl = formData.get('templateImageUrl') as string; // ✅ 템플릿에서 가져온 이미지 URL
 
     // 3. 필수 필드 검증
     if (!cohortId || !content) {
       return NextResponse.json(
-        { error: '기수와 내용은 필수 항목입니다' },
+        { error: '필수 항목이 누락되었습니다.' },
         { status: 400 }
       );
     }
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
     const { db, bucket } = getFirebaseAdmin();
 
     // 5. 이미지 처리
-    let imageUrl: string | undefined;
+    let imageUrl = templateImageUrl || undefined; // ✅ 템플릿에서 가져온 이미지 URL 사용
 
     // ✅ 새로 업로드한 이미지가 있으면 업로드 처리
     if (imageFile) {
@@ -57,30 +60,33 @@ export async function POST(request: NextRequest) {
         await file.makePublic();
         imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
       } catch (error) {
-
         return NextResponse.json(
           { error: '이미지 업로드에 실패했습니다' },
           { status: 500 }
         );
       }
-    } else if (templateImageUrl) {
-      // ✅ 템플릿에서 가져온 이미지 URL 사용
-      imageUrl = templateImageUrl;
     }
 
     // 6. 공지 생성
-    // ✅ status 기본값 처리 개선 (빈 문자열 ''도 'published'로 처리되는 문제 방지)
-    const finalStatus = status === 'draft' ? 'draft' : 'published';
-    const noticeData = {
+    const noticeData: any = {
       cohortId,
       author: APP_CONSTANTS.ADMIN_NAME, // 항상 "필립앤소피"로 고정
       content: content.trim(),
-      status: finalStatus, // draft or published
+      status: status || 'published',
       isCustom: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: admin.firestore.Timestamp.now(),
+      updatedAt: admin.firestore.Timestamp.now(),
       ...(imageUrl && { imageUrl }),
     };
+
+    if (title) {
+      noticeData.title = title.trim();
+    }
+
+    // 예약 발행 처리
+    if (status === 'scheduled' && scheduledAtStr) {
+      noticeData.scheduledAt = admin.firestore.Timestamp.fromDate(new Date(scheduledAtStr));
+    }
 
     const noticeRef = await db.collection('notices').add(noticeData);
 
@@ -89,7 +95,7 @@ export async function POST(request: NextRequest) {
       noticeId: noticeRef.id,
     });
   } catch (error) {
-
+    console.error('Error creating notice:', error);
     return NextResponse.json(
       { error: '공지 작성 중 오류가 발생했습니다' },
       { status: 500 }

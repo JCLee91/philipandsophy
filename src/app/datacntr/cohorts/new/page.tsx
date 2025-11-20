@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { Loader2, Upload, Download, Plus, X } from 'lucide-react';
 import FormSelect from '@/components/datacntr/form/FormSelect';
 import { phoneFormatUtils } from '@/constants/phone-format';
+import { useAllCohorts } from '@/hooks/use-cohorts';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,9 @@ export default function CohortCreatePage() {
   const { user, isAdministrator, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
 
+  // 코호트 목록 조회
+  const { data: cohorts } = useAllCohorts();
+
   // 기본 정보
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -41,6 +45,7 @@ export default function CohortCreatePage() {
 
   // Daily Questions 옵션
   const [questionsOption, setQuestionsOption] = useState<QuestionsOption>('later');
+  const [sourceCohortId, setSourceCohortId] = useState<string>('');
 
   // UI 상태
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -197,6 +202,15 @@ export default function CohortCreatePage() {
       return;
     }
 
+    if (questionsOption === 'copy' && !sourceCohortId) {
+      toast({
+        title: '기수 선택 필요',
+        description: '복사할 원본 기수를 선택해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -223,6 +237,7 @@ export default function CohortCreatePage() {
             };
           }),
           questionsOption,
+          sourceCohortId: questionsOption === 'copy' ? sourceCohortId : undefined,
         }),
       });
 
@@ -421,17 +436,34 @@ export default function CohortCreatePage() {
           <CardTitle>Daily Questions 설정</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name="questions"
-              value="copy"
-              checked={questionsOption === 'copy'}
-              onChange={(e) => setQuestionsOption(e.target.value as QuestionsOption)}
-              className="w-4 h-4"
-            />
-            <span>1기 질문 복사</span>
-          </label>
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer mb-2">
+              <input
+                type="radio"
+                name="questions"
+                value="copy"
+                checked={questionsOption === 'copy'}
+                onChange={(e) => setQuestionsOption(e.target.value as QuestionsOption)}
+                className="w-4 h-4"
+              />
+              <span>기존 기수 질문 복사</span>
+            </label>
+
+            {questionsOption === 'copy' && (
+              <div className="ml-7 w-1/2 min-w-[200px]">
+                <FormSelect
+                  value={sourceCohortId}
+                  onChange={setSourceCohortId}
+                  placeholder="복사할 기수 선택"
+                  options={cohorts?.map(c => ({
+                    value: c.id,
+                    label: c.name
+                  })) || []}
+                />
+              </div>
+            )}
+          </div>
+
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="radio"

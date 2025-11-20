@@ -62,6 +62,14 @@ export default function NoticeCard({
                   </span>
                 </>
               )}
+              {notice.status === 'scheduled' && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                    예약: {notice.scheduledAt ? formatTimestampKST(notice.scheduledAt, 'M/d HH:mm') : '시간미정'}
+                  </span>
+                </>
+              )}
               {notice.templateId && (
                 <>
                   <span className="text-gray-300">·</span>
@@ -133,6 +141,9 @@ export default function NoticeCard({
 
           {/* Content */}
           <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+            {notice.title && (
+              <span className="font-bold text-gray-900 block mb-1">[{notice.title}]</span>
+            )}
             {notice.content}
           </p>
 

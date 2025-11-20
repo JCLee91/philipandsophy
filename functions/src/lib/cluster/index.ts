@@ -13,7 +13,8 @@
  * @date 2025-11-19
  */
 
-import { generateObject, LanguageModel } from 'ai';
+// Lazy import for AI SDK to avoid initialization timeout in Firebase Functions deployment
+// import { generateObject, LanguageModel } from 'ai';
 import { z } from 'zod';
 import { Cluster, ClusterMatchingResult, ClusterSchema, DailySubmission } from './types';
 import { CLUSTER_CONFIG, generateClusterPrompt, getClusteringStrategy } from './prompt';
@@ -124,10 +125,13 @@ export async function generateDailyClusters(
             clusters: z.array(ClusterSchema)
         });
 
+        // ✅ Lazy import AI SDK to avoid Firebase Functions deployment timeout
+        const { generateObject } = await import('ai');
+
         const result = await generateObject({
             // @ts-ignore: AI SDK 5 supports string models for Vercel AI Gateway
-            model: 'anthropic/claude-haiku-4.5' as unknown as LanguageModel, // ✅ Vercel AI Gateway 자동 라우팅
-            schema,
+            model: 'anthropic/claude-haiku-4.5' as any, // ✅ Vercel AI Gateway 자동 라우팅
+            schema: schema as any,
             prompt
         });
 

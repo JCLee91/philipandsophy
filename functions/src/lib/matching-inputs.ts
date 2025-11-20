@@ -10,7 +10,7 @@
 
 import * as admin from "firebase-admin";
 import { logger } from "./logger";
-import type { ParticipantWithSubmissionCount } from "./random-matching";
+import type { ParticipantWithSubmissionCount } from "./random-matching.deprecated";
 
 interface SubmissionData {
   participantId: string;

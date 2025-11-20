@@ -21,7 +21,7 @@ import { getSeoulDB } from "./lib/db-helper";
 import {
   matchParticipantsRandomly,
   type ParticipantWithSubmissionCount,
-} from "./lib/random-matching";
+} from "./lib/random-matching.deprecated";
 import {
   loadProviders,
   loadRecentMatchings,
