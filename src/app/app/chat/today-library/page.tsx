@@ -17,13 +17,14 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
-import HeaderNavigation from '@/components/HeaderNavigation';
+import TopBar from '@/components/TopBar';
 import FooterActions from '@/components/FooterActions';
-import UnifiedButton from '@/components/UnifiedButton';
+import TodayLibraryFooter from '@/components/TodayLibraryFooter';
 import ReviewPreviewCard from '@/components/ReviewPreviewCard';
 import ValueAnswerAccordion from '@/components/ValueAnswerAccordion';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useToast } from '@/hooks/use-toast';
+import { useLockedToast } from '@/hooks/use-locked-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/use-access-control';
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
@@ -121,6 +122,7 @@ function TodayLibraryV3Content() {
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { toast } = useToast();
+  const { showLockedToast } = useLockedToast();
 
   const todayDate = getSubmissionDate();
   const { data: viewerSubmissions = [], isLoading: viewerSubmissionLoading } = useParticipantSubmissionsRealtime(currentUserId);
@@ -211,12 +213,15 @@ function TodayLibraryV3Content() {
     !!clusterMatching?.matchingDate
   );
 
-  // 멤버 + 인증 데이터 결합
+  // 멤버 + 인증 데이터 결합 (내 프로필을 맨 앞으로 정렬)
   const clusterMembersWithSubmissions = useMemo<ClusterMemberWithSubmission[]>(() => {
-    return clusterMembers.map(member => {
+    const members = clusterMembers.map(member => {
       const submission = submissionsMap[member.id];
+      const isMe = member.id === currentUserId;
+
       return {
         ...member,
+        name: isMe ? `${member.name} (나)` : member.name, // 이름에 (나) 표시
         submission,
         review: submission?.review || '',
         dailyAnswer: submission?.dailyAnswer || '',
@@ -225,15 +230,30 @@ function TodayLibraryV3Content() {
         bookImageUrl: submission?.bookImageUrl,
       };
     });
-  }, [clusterMembers, submissionsMap]);
+
+    // 내 프로필을 맨 앞으로, 나머지는 이름순(또는 기본순)
+    return members.sort((a, b) => {
+      if (a.id === currentUserId) return -1;
+      if (b.id === currentUserId) return 1;
+      return 0;
+    });
+  }, [clusterMembers, submissionsMap, currentUserId]);
 
   // 가치관 질문 (첫 번째 멤버의 질문 사용, 모두 같음)
-  const dailyQuestion = clusterMembersWithSubmissions[0]?.dailyQuestion || '';
+  // 첫 번째 멤버(나)가 인증을 안했을 수 있으므로, 전체 멤버 중 dailyQuestion이 있는 것을 찾음
+  const dailyQuestion = clusterMembersWithSubmissions.find(m => m.dailyQuestion)?.dailyQuestion || '';
 
   // 답변 확장 상태 관리
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
 
   const toggleAnswer = (participantId: string) => {
+    const isMe = participantId === currentUserId;
+
+    if (isLocked && !isSuperAdmin && !isMe) {
+      showLockedToast('answer');
+      return;
+    }
+
     setExpandedAnswers(prev => {
       const next = new Set(prev);
       if (next.has(participantId)) {
@@ -279,14 +299,10 @@ function TodayLibraryV3Content() {
 
   // 프로필 클릭 핸들러
   const handleProfileClick = (participantId: string) => {
-    if (isLocked && !isSuperAdmin) {
-      const totalProfiles = clusterMatching?.assignedIds.length || 0;
-      const lockedCount = totalProfiles - unlockedProfileCount;
+    const isMe = participantId === currentUserId;
 
-      toast({
-        title: '프로필 잠김 🔒',
-        description: `오늘의 독서를 인증하면 추가로 ${lockedCount}개의 프로필북을 볼 수 있어요`
-      });
+    if (isLocked && !isSuperAdmin && !isMe) {
+      showLockedToast('profile');
       return;
     }
 
@@ -304,13 +320,18 @@ function TodayLibraryV3Content() {
 
   // 리뷰 클릭 핸들러
   const handleReviewClick = (participantId: string) => {
-    if (isLocked && !isSuperAdmin) {
-      const totalProfiles = clusterMatching?.assignedIds.length || 0;
-      const lockedCount = totalProfiles - unlockedProfileCount;
+    const isMe = participantId === currentUserId;
 
+    if (isLocked && !isSuperAdmin && !isMe) {
+      showLockedToast('review');
+      return;
+    }
+
+    // 본인인데 미인증 상태라면 (리뷰가 없음)
+    if (isMe && isLocked && !isSuperAdmin) {
       toast({
-        title: '감상평 잠김 🔒',
-        description: `오늘의 독서를 인증하면 추가로 ${lockedCount}개의 감상평을 볼 수 있어요`
+        title: '작성된 감상평이 없습니다',
+        description: '오늘의 독서를 인증해주세요'
       });
       return;
     }
@@ -335,7 +356,7 @@ function TodayLibraryV3Content() {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
-          <HeaderNavigation title="오늘의 서재" />
+          <TopBar title="오늘의 서재" onBack={() => router.back()} align="left" />
 
           <main className="app-main-content flex flex-1 overflow-y-auto items-center justify-center bg-background">
             <div className="mx-auto max-w-md px-6">
@@ -389,7 +410,7 @@ function TodayLibraryV3Content() {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
-          <HeaderNavigation title="오늘의 서재" />
+          <TopBar title="오늘의 서재" onBack={() => router.back()} align="left" />
 
           <main className="app-main-content flex flex-1 overflow-y-auto items-center justify-center bg-background">
             <div className="mx-auto max-w-md px-6">
@@ -430,10 +451,6 @@ function TodayLibraryV3Content() {
   // 3단계: 온라인 독서모임 테이블
   // ========================================
 
-  // ========================================
-  // 3단계: 온라인 독서모임 테이블
-  // ========================================
-
   const { cluster, assignedIds } = clusterMatching;
   const totalCount = assignedIds.length;
   const lockedCount = Math.max(totalCount - unlockedProfileCount, 0);
@@ -441,25 +458,29 @@ function TodayLibraryV3Content() {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-[#F7F8FA]">
-        <HeaderNavigation title="오늘의 서재" />
+        <TopBar title="오늘의 서재" onBack={() => router.back()} align="left" />
 
         <main className="app-main-content flex-1 overflow-y-auto">
           {/* 1. 클러스터 헤더 (배경색 위) */}
           <div className="px-6 pb-8 pt-6 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm">
-              <span className="text-4xl">{cluster.emoji}</span>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm">
+              <span className="text-3xl">{cluster.emoji}</span>
             </div>
-            <h1 className="text-[28px] font-bold text-[#31363e] mb-2">
-              {cluster.name}
-            </h1>
-            <p className="text-[14px] text-[#8f98a3] leading-relaxed px-4 mb-4">
+            <h1 className="text-[24px] font-bold text-[#31363e] mb-2 break-keep leading-tight">
               {cluster.theme}
+            </h1>
+            <p className="text-[14px] text-[#8f98a3] leading-relaxed px-2 mb-4 break-keep">
+              {cluster.reasoning}
             </p>
 
             {/* 클러스터 멤버 프로필 이미지 */}
             <div className="flex items-center justify-center gap-2 mt-4">
               {clusterMembers.map(member => (
-                <div key={member.id} className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-white shadow-sm bg-white">
+                <div
+                  key={member.id}
+                  className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-white shadow-sm bg-white cursor-pointer"
+                  onClick={() => handleProfileClick(member.id)}
+                >
                   <Image
                     src={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage || '/image/default-profile.svg'}
                     alt={member.name}
@@ -473,7 +494,7 @@ function TodayLibraryV3Content() {
           </div>
 
           {/* 2. 흰색 카드 컨테이너 (프로필북 스타일) */}
-          <div className="bg-white rounded-t-[32px] min-h-full px-6 pt-8 pb-24 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+          <div className="bg-white rounded-t-[32px] min-h-full px-6 pt-8 pb-12 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
 
             {/* 감상평 섹션 */}
             <section className="mb-10">
@@ -490,6 +511,8 @@ function TodayLibraryV3Content() {
                     bookAuthor={member.submission?.bookAuthor}
                     review={member.review || '감상평이 아직 작성되지 않았습니다.'}
                     onClick={() => handleReviewClick(member.id)}
+                    onProfileClick={() => handleProfileClick(member.id)}
+                    isMe={member.id === currentUserId}
                   />
                 ))}
               </div>
@@ -497,7 +520,7 @@ function TodayLibraryV3Content() {
 
             {/* 가치관 질문 섹션 */}
             {dailyQuestion && (
-              <section className="mb-10">
+              <section className="mb-4">
                 <h2 className="text-[20px] font-bold text-[#31363e] mb-4">오늘의 가치관 질문</h2>
 
                 {/* 질문 박스 */}
@@ -507,7 +530,7 @@ function TodayLibraryV3Content() {
                   </p>
                 </div>
 
-                <div className="flex flex-col">
+                <div className="flex flex-col gap-3">
                   {clusterMembersWithSubmissions.map(member => (
                     <ValueAnswerAccordion
                       key={member.id}
@@ -519,6 +542,7 @@ function TodayLibraryV3Content() {
                       isExpanded={expandedAnswers.has(member.id)}
                       onToggle={() => toggleAnswer(member.id)}
                       onProfileClick={() => handleProfileClick(member.id)}
+                      isMe={member.id === currentUserId}
                     />
                   ))}
                 </div>
@@ -527,25 +551,22 @@ function TodayLibraryV3Content() {
           </div>
         </main>
 
-        <FooterActions>
-          <UnifiedButton
-            variant="primary"
-            onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
-            className="w-full"
-          >
-            내 프로필 북 보기
-          </UnifiedButton>
-        </FooterActions>
+        {/* CTA: 오늘 인증 안한 경우 */}
+        <TodayLibraryFooter
+          viewerHasSubmittedToday={viewerHasSubmittedToday}
+          cohortId={cohortId!}
+        />
       </div>
     </PageTransition>
   );
 }
 
 function LoadingSkeleton() {
+  const router = useRouter();
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden">
-        <HeaderNavigation title="오늘의 서재" />
+        <TopBar title="오늘의 서재" onBack={() => router.back()} align="left" />
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-6 w-full pt-6 pb-6">
             <div className="flex flex-col gap-8">

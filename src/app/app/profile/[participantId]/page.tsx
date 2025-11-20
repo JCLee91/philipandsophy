@@ -31,6 +31,7 @@ import { logger } from '@/lib/logger';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
+import TopBar from '@/components/TopBar';
 
 interface ProfileBookContentProps {
   params: { participantId: string };
@@ -473,25 +474,21 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     <PageTransition>
       <div className="app-shell flex flex-col overflow-y-auto" style={{ backgroundColor: colors.background }}>
         {/* 상단바 */}
-        <div className="flex items-center px-6 pb-4 safe-area-header" style={{ backgroundColor: colors.background }}>
-          <button
-            onClick={() => router.back()}
-            className="flex items-center justify-center w-6 h-6"
-          >
-            <Image
-              src="/icons/arrow-back.svg"
-              alt="뒤로가기"
-              width={24}
-              height={24}
-            />
-          </button>
-        </div>
+        <TopBar
+          onBack={() => router.back()}
+          align="left"
+          style={{ backgroundColor: colors.background, borderBottom: 'none' }}
+          position="sticky"
+        />
 
         {/* 메인 콘텐츠 */}
         <div className="relative flex-1">
           {/* 프로필 이미지 (컨테이너 위로 겹침) */}
           <div className="absolute left-1/2 transform -translate-x-1/2 top-[36px] z-10">
-            <div className="relative w-[80px] h-[80px]">
+            <div 
+              className="relative w-[80px] h-[80px] cursor-pointer transition-transform active:scale-95"
+              onClick={() => setProfileImageDialogOpen(true)}
+            >
               <Avatar className="w-full h-full border-[3px] border-[#31363e]">
                 <AvatarImage src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage} alt={participant.name} />
                 <AvatarFallback className="bg-gray-200 text-2xl font-bold text-gray-700">

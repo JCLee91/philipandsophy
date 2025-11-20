@@ -8,7 +8,7 @@ import { getParticipantById, saveDraft, uploadReadingImage } from '@/lib/firebas
 import { createFileFromUrl } from '@/lib/image-validation';
 import { searchNaverBooks, cleanBookData, type NaverBook } from '@/lib/naver-book-api';
 import { useToast } from '@/hooks/use-toast';
-import BackHeader from '@/components/BackHeader';
+import TopBar from '@/components/TopBar';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
@@ -489,13 +489,13 @@ function Step2Content() {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
-        <BackHeader onBack={handleBack} title="독서 인증하기" variant="left" />
+        <TopBar onBack={handleBack} title="독서 인증하기" align="left" />
         <div className="fixed top-14 left-0 right-0 z-[998]">
           <ProgressIndicator currentStep={2} />
         </div>
 
         <main
-          className="app-main-content flex-1 overflow-y-auto pt-[57px]"
+          className="app-main-content flex-1 overflow-y-auto pt-4"
           style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 32 : 32 }}
         >
           <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">

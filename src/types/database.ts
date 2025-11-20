@@ -214,6 +214,7 @@ export interface Participant {
   gender?: 'male' | 'female' | 'other'; // 성별
   profileImage?: string; // 프로필 이미지 URL (큰 이미지, 프로필 상세용)
   profileImageCircle?: string; // 원형 프로필 이미지 URL (작은 아바타용)
+  faceImage?: string; // 얼굴 확대 이미지 (프로필북 전용)
   profileBookUrl?: string; // 프로필북 URL
   isSuperAdmin?: boolean; // 슈퍼 관리자 (모든 프로필 열람, 리스트 미표시)
   isAdministrator?: boolean; // 일반 관리자 (공지사항 관리, 프로필 열람 제약 동일)

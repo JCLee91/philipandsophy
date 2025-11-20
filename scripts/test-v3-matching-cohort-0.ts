@@ -12,10 +12,13 @@ dotenv.config({ path: path.resolve(process.cwd(), 'functions/.env') });
 if (!admin.apps.length) {
     admin.initializeApp({
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        databaseURL: `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseio.com`
     });
 }
 
 const db = admin.firestore();
+// Use Seoul database
+db.settings({ databaseId: 'seoul' });
 
 /**
  * Helper to create dummy submissions
@@ -90,9 +93,15 @@ async function main() {
         // Save the final result (12 users) to Firestore for UI verification
         console.log(`\n💾 Saving "Multi Cluster" result to Cohort 0 in Firestore...`);
         await db.collection('cohorts').doc('0').set({
-            dailyFeaturedParticipants: finalResult
+            dailyFeaturedParticipants: {
+                [dateStr]: {
+                    matchingVersion: 'cluster',
+                    clusters: finalResult.clusters,
+                    assignments: finalResult.assignments
+                }
+            }
         }, { merge: true });
-        console.log('✅ Successfully updated Cohort 0 dailyFeaturedParticipants.');
+        console.log(`✅ Successfully updated Cohort 0 dailyFeaturedParticipants for ${dateStr}.`);
 
     } catch (error) {
         console.error('💥 Verification Failed:', error);

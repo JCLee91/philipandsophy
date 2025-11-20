@@ -8,7 +8,7 @@ import { validateImageFile, compressImageIfNeeded, createFileFromUrl } from '@/l
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { useToast } from '@/hooks/use-toast';
 import { saveDraft, uploadReadingImage } from '@/lib/firebase';
-import BackHeader from '@/components/BackHeader';
+import TopBar from '@/components/TopBar';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
@@ -266,7 +266,7 @@ function Step1Content() {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
-        <BackHeader onBack={() => router.back()} title="독서 인증하기" variant="left" />
+        <TopBar onBack={() => router.back()} title="독서 인증하기" align="left" />
         <div className="fixed top-14 left-0 right-0 z-[998]">
           <ProgressIndicator currentStep={1} />
         </div>

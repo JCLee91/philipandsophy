@@ -111,9 +111,6 @@ export async function generateDailyClusters(
         `[모드] ${isSmallGroup ? '소규모 그룹 - 공통점 추출' : isEdgeCase ? '엣지 케이스 - 2개(4~5명)' : '다중 클러스터 - 그룹 나누기'}`
     );
 
-    // Debug: Check if API key is loaded
-    console.log('🔍 Debug - API Key loaded:', process.env.AI_GATEWAY_API_KEY ? 'YES (Gateway)' : process.env.OPENAI_API_KEY ? 'YES (OpenAI)' : 'NO');
-
     try {
         const prompt = generateClusterPrompt(submissions, strategy, {
             participantCount,
@@ -176,8 +173,8 @@ export function matchWithinClusters(
         const { id: clusterId, memberIds } = cluster;
 
         for (const memberId of memberIds) {
-            // 같은 클러스터의 다른 모든 멤버 (본인 제외)
-            const assigned = memberIds.filter(id => id !== memberId);
+            // 같은 클러스터의 모든 멤버 (본인 포함)
+            const assigned = [...memberIds];
 
             assignments[memberId] = {
                 assigned,

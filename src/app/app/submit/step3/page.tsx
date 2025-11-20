@@ -11,7 +11,7 @@ import { getDailyQuestion } from '@/lib/firebase/daily-questions';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
 import { createFileFromUrl } from '@/lib/image-validation';
-import BackHeader from '@/components/BackHeader';
+import TopBar from '@/components/TopBar';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
@@ -480,12 +480,12 @@ function Step3Content() {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden bg-background">
-          <BackHeader onBack={handleBack} title="독서 인증하기" variant="left" />
+          <TopBar onBack={handleBack} title="독서 인증하기" align="left" />
           <div className="fixed top-14 left-0 right-0 z-[998]">
             <ProgressIndicator currentStep={3} />
           </div>
 
-          <main className="app-main-content flex-1 flex items-center justify-center">
+          <main className="app-main-content flex-1 flex items-center justify-center pt-4">
             <div className="text-center space-y-4 px-6">
               <div className="text-4xl">⚠️</div>
               <h3 className="text-lg font-bold text-gray-900">
@@ -514,13 +514,13 @@ function Step3Content() {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
-        <BackHeader onBack={handleBack} title="독서 인증하기" variant="left" />
+        <TopBar onBack={handleBack} title="독서 인증하기" align="left" />
         <div className="fixed top-14 left-0 right-0 z-[998]">
           <ProgressIndicator currentStep={3} />
         </div>
 
         <main
-          className="app-main-content flex-1 overflow-y-auto pt-[57px]"
+          className="app-main-content flex-1 overflow-y-auto pt-4"
           style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 32 : 32 }}
         >
           <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">

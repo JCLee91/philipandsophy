@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import PageTransition from '@/components/PageTransition';
-import BackHeader from '@/components/BackHeader';
+import TopBar from '@/components/TopBar';
 import UnifiedButton from '@/components/UnifiedButton';
 import Image from 'next/image';
 import { ReadingSubmission, Participant } from '@/types/database';
@@ -89,11 +89,11 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
         return (
             <PageTransition>
                 <div className="app-shell flex flex-col overflow-hidden">
-                    <BackHeader
+                    <TopBar
                         title="감상평"
                         onBack={() => router.back()}
                     />
-                    <main className="app-main-content flex-1 overflow-y-auto bg-background">
+                    <main className="flex-1 overflow-y-auto bg-background">
                         <div className="mx-auto max-w-md px-6 py-8">
                             <div className="space-y-4">
                                 <div className="h-64 shimmer rounded-lg" />
@@ -114,12 +114,12 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     return (
         <PageTransition>
             <div className="app-shell flex flex-col overflow-hidden">
-                <BackHeader
+                <TopBar
                     title={`${participant.name}님의 감상평`}
                     onBack={() => router.back()}
                 />
 
-                <main className="app-main-content flex-1 overflow-y-auto bg-background">
+                <main className="flex-1 overflow-y-auto bg-background">
                     <div className="mx-auto max-w-md px-6 py-6 pb-24">
                         <div className="space-y-6">
                             {/* Certification Photo */}

@@ -223,17 +223,17 @@ export default function DirectMessageDialog({
 
   const dialogDynamicStyle: CSSProperties = isKeyboardOpen
     ? {
-        top: '1rem',
-        transform: 'none',
-        height: `calc(100vh - 1rem - ${bottomSafeSpacing} - ${keyboardHeight}px)`,
-        maxHeight: `calc(100vh - 1rem - ${bottomSafeSpacing})`,
-        minHeight: '360px',
-      }
+      top: '1rem',
+      transform: 'none',
+      height: `calc(100vh - 1rem - ${bottomSafeSpacing} - ${keyboardHeight}px)`,
+      maxHeight: `calc(100vh - 1rem - ${bottomSafeSpacing})`,
+      minHeight: '360px',
+    }
     : {
-        top: '50%',
-        transform: 'translateY(-50%)',
-        height: '600px',
-      };
+      top: '50%',
+      transform: 'translateY(-50%)',
+      height: '600px',
+    };
 
   return (
     <>
@@ -247,14 +247,28 @@ export default function DirectMessageDialog({
 
       {/* Dialog */}
       <div
-        className="fixed inset-x-4 max-w-lg mx-auto transition-all duration-300"
+        className={`fixed z-[9999] bg-background transition-all duration-300 
+          inset-0 w-full h-full 
+          sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 
+          sm:w-full sm:max-w-lg sm:h-[600px] sm:rounded-xl sm:border sm:shadow-lg`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          zIndex: Z_INDEX.DM_DIALOG,
-          ...dialogDynamicStyle,
-        }}
+        style={
+          !isKeyboardOpen && typeof window !== 'undefined' && window.innerWidth >= 640
+            ? {} // Desktop: Use Tailwind classes
+            : isKeyboardOpen
+              ? {
+                // Mobile Keyboard Open: Adjust height manually if needed, or rely on fixed positioning
+                height: `calc(100vh - ${keyboardHeight}px)`,
+                top: 0,
+              }
+              : {
+                // Mobile Default: Full screen
+                height: '100%',
+                top: 0,
+              }
+        }
       >
-        <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
+        <div className="flex flex-col h-full w-full bg-background sm:rounded-xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between border-b px-5 py-4">
             <div className="flex items-center gap-3">
@@ -381,17 +395,16 @@ export default function DirectMessageDialog({
                 onClick={handleSend}
                 disabled={!canSendMessage}
                 loading={isUploading}
-                className={`h-10 w-10 p-0 shrink-0 transition-all duration-200 ${
-                  canSendMessage
-                    ? 'bg-black hover:bg-gray-800 text-white'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed hover:bg-gray-200'
-                }`}
+                className={`h-10 w-10 p-0 shrink-0 transition-all duration-200 ${canSendMessage
+                  ? 'bg-black hover:bg-gray-800 text-white'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed hover:bg-gray-200'
+                  }`}
                 icon={<Send className="h-4 w-4" />}
               />
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       <ImageViewerDialog
         open={!!selectedImage}

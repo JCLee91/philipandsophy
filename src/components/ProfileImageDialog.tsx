@@ -36,8 +36,10 @@ export default function ProfileImageDialog({
   }, []);
 
   // 이미지 프리로드 및 모달 표시 타이밍 제어
+  const imageUrl = participant?.faceImage || participant?.profileImage;
+
   useEffect(() => {
-    if (open && participant?.profileImage) {
+    if (open && imageUrl) {
       setImageLoaded(false);
       setShowDialog(false);
 
@@ -51,12 +53,12 @@ export default function ProfileImageDialog({
           }, 100);
         }
       };
-      img.src = participant.profileImage;
+      img.src = imageUrl;
     } else if (!open) {
       setShowDialog(false);
       setImageLoaded(false);
     }
-  }, [open, participant?.profileImage]);
+  }, [open, imageUrl]);
 
   // 안드로이드 back button 처리 (history API 활용)
   useEffect(() => {
@@ -147,10 +149,10 @@ export default function ProfileImageDialog({
         <DialogDescription className="sr-only">
           {participant.name}님의 프로필 이미지
         </DialogDescription>
-        {participant.profileImage && imageLoaded ? (
+        {imageUrl && imageLoaded ? (
           <div className="relative max-w-[90vw] max-h-[90vh]" style={{ aspectRatio: 'auto' }}>
             <Image
-              src={getResizedImageUrl(participant.profileImage) || participant.profileImage}
+              src={getResizedImageUrl(imageUrl) || imageUrl}
               alt={participant.name}
               width={1024}
               height={1024}

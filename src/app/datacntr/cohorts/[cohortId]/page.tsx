@@ -8,6 +8,7 @@ import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import DataTable, { Column } from '@/components/datacntr/table/DataTable';
 import type { Cohort } from '@/types/database';
 import { cohortParticipantSchema, type CohortParticipant } from '@/types/datacntr';
+import TopBar from '@/components/TopBar';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -159,37 +160,31 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* 헤더 */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <>
+      <TopBar
+        title={cohort?.name || ''}
+        onBack={() => router.push('/datacntr/cohorts')}
+        align="left"
+        rightAction={
           <button
-            onClick={() => router.push('/datacntr/cohorts')}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            onClick={() => router.push(`/datacntr/cohorts/${cohortId}/daily-questions`)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
           >
-            <ArrowLeft className="h-5 w-5" />
+            Daily Questions 관리
           </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{cohort?.name}</h1>
-            <p className="text-gray-600 mt-1">
-              {cohort?.startDate && cohort?.endDate && (
-                <>
-                  {formatISODateKST(cohort.startDate, 'yyyy년 M월 d일')} ~{' '}
-                  {formatISODateKST(cohort.endDate, 'yyyy년 M월 d일')}
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => router.push(`/datacntr/cohorts/${cohortId}/daily-questions`)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
-        >
-          Daily Questions 관리
-        </button>
-      </div>
+        }
+      />
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <p className="text-gray-600 mb-6">
+          {cohort?.startDate && cohort?.endDate && (
+            <>
+              {formatISODateKST(cohort.startDate, 'yyyy년 M월 d일')} ~{' '}
+              {formatISODateKST(cohort.endDate, 'yyyy년 M월 d일')}
+            </>
+          )}
+        </p>
 
-      {/* 프로필 공개 설정 */}
+        {/* 프로필 공개 설정 */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">프로필북 공개 설정</h2>
         <div className="space-y-3">
@@ -294,5 +289,6 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
       {/* 참가자 테이블 */}
       <DataTable<CohortParticipant> columns={columns} data={participants} isLoading={isLoading} emptyMessage="참가자가 없습니다" />
     </div>
+  </>
   );
 }
