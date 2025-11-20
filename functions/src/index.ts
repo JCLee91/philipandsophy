@@ -31,18 +31,11 @@ export { onNoticeUpdated } from "./triggers/on-notice-updated";
 
 export { publishScheduledNotices } from "./scheduled-notices";
 
-// ⚠️ TEMPORARILY DISABLED: Lazy loading issue with AI SDK during deployment
-// TODO: Re-enable after fixing deployment timeout
-// export { scheduledClusterMatching } from "./scheduled-cluster-matching";
+// ✅ AI SDK는 이미 lazy import로 구현되어 배포 타임아웃 해결됨
+export { scheduledClusterMatching } from "./scheduled-cluster-matching";
 
 // ============================================================
 // HTTP Functions
 // ============================================================
 
-// ⚠️ TEMPORARILY DISABLED: Heavy imports causing memory issues during deployment
-// TODO: Re-enable after optimizing or splitting into separate codebase
-// export { sendCustomNotification } from "./custom-notifications";
-
-// ⚠️ TEMPORARILY DISABLED: Heavy function causing deployment timeout
-// TODO: Move to separate entry point or optimize
-// export { manualMatchingPreview } from "./http/manual-matching-preview";
+export { sendCustomNotification } from "./custom-notifications";
