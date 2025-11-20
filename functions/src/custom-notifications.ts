@@ -58,21 +58,25 @@ async function getAllAdministrators(): Promise<admin.firestore.QuerySnapshot<adm
   } as admin.firestore.QuerySnapshot<admin.firestore.DocumentData>;
 }
 
-// ✅ Web Push VAPID 설정
-const publicVapidKey = process.env.WEBPUSH_VAPID_PUBLIC_KEY;
-const privateVapidKey = process.env.WEBPUSH_VAPID_PRIVATE_KEY;
+// ✅ Web Push VAPID lazy initialization
+let webPushInitialized = false;
+function initializeWebPush() {
+  if (webPushInitialized) return;
 
-if (publicVapidKey && privateVapidKey) {
-  webpush.setVapidDetails(
-    "mailto:admin@philipandsophy.com",
-    publicVapidKey,
-    privateVapidKey
-  );
-  logger.info("Web Push VAPID keys configured in custom notifications");
-} else {
-  logger.warn(
-    "Web Push VAPID keys are not configured in custom notifications. Web Push notifications will be skipped."
-  );
+  const publicVapidKey = process.env.WEBPUSH_VAPID_PUBLIC_KEY;
+  const privateVapidKey = process.env.WEBPUSH_VAPID_PRIVATE_KEY;
+
+  if (publicVapidKey && privateVapidKey) {
+    webpush.setVapidDetails(
+      "mailto:admin@philipandsophy.com",
+      publicVapidKey,
+      privateVapidKey
+    );
+    logger.info("Web Push VAPID keys configured");
+    webPushInitialized = true;
+  } else {
+    logger.warn("Web Push VAPID keys not configured. Web Push will be skipped.");
+  }
 }
 
 /**
@@ -88,6 +92,9 @@ async function sendPushNotificationMulticast(
   url: string,
   type: string
 ): Promise<number> {
+  // ✅ Initialize Web Push lazily (only when needed)
+  initializeWebPush();
+
   let totalSuccessCount = 0;
 
   // ✅ Send via FCM (Android/Desktop)
@@ -133,7 +140,7 @@ async function sendPushNotificationMulticast(
   // ✅ Send via Web Push (iOS Safari)
   const shouldSendWebPush = tokens.length === 0;
 
-  if (shouldSendWebPush && webPushSubscriptions.length > 0 && publicVapidKey && privateVapidKey) {
+  if (shouldSendWebPush && webPushSubscriptions.length > 0 && webPushInitialized) {
     logger.info("Sending via Web Push (FCM not available)", {
       participantId,
       subscriptionCount: webPushSubscriptions.length,
