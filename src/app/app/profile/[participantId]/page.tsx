@@ -22,7 +22,7 @@ import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
+import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified, getMatchingTargetDate } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { getAssignedProfiles, getLegacyMatchingReasons } from '@/lib/matching-compat';
 import { useParticipant } from '@/hooks/use-participants';
@@ -213,6 +213,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // ✅ FIX: getSubmissionDate() 기준으로 비교 (새벽 2시 마감 정책 적용)
   const isFinalDayAccess = matchingDate === getSubmissionDate() && isFinalDayOrAfter;
 
+  // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
+  const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
+
   // 전체 오픈 기간 판별: profileUnlockDate 이상 + 오늘 인증 완료
   // → 어떤 경로로 접근해도 어제까지의 모든 기록을 볼 수 있음 (스포일러 방지)
   const shouldShowAll = isUnlockDayOrAfter && isVerifiedToday;
@@ -389,9 +392,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 새로운 규칙: 어제 인증한 사람인지 체크
   const isYesterdayVerified = yesterdayVerifiedIds?.has(participantId) ?? false;
-
-  // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
-  const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
 
   // 매칭 이유 추출 (v1.0 레거시만 해당)
   const matchingReason = useMemo(() => {
