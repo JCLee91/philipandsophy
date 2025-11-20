@@ -22,7 +22,7 @@ import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
+  import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified, getMatchingTargetDate } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { getAssignedProfiles } from '@/lib/matching-compat';
 import { useParticipant } from '@/hooks/use-participants';
@@ -208,6 +208,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 14일차(마지막 날) 및 15일차 이후 체크
   const isFinalDayOrAfter = cohort ? canViewAllProfiles(cohort) : false;
   const isAfterProgramWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
+  
+  // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
+  const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
 
   // 14일차나 15일차 이후인지 확인 (특별 파라미터로 전달됨)
   // ✅ FIX: getSubmissionDate() 기준으로 비교 (새벽 2시 마감 정책 적용)
@@ -218,8 +221,13 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // - 평소: 인증 기반 날짜까지의 인증만 표시
   //   예: effectiveMatchingDate="11-10" → 11-10까지 인증 포함
   //       (프로필북은 11-11 오전 2시부터 제공되지만, 11-10 인증까지만 표시)
-  const submissionCutoffDate = (isFinalDayAccess || isAfterProgramWithoutAuth || isSuperAdmin)
-    ? null  // 최신 제출물 모두 표시
+  
+  // ✅ FIX: 전체 오픈 기간(마지막 날 or UnlockDate) + 오늘 인증 완료 시 모든 기록 표시
+  const shouldShowAll = isAfterProgramWithoutAuth || isSuperAdmin || 
+    ((isFinalDayOrAfter || isUnlockDayOrAfter) && isVerifiedToday);
+
+  const submissionCutoffDate = shouldShowAll
+    ? getMatchingTargetDate()  // ✅ 어제(마감된 날짜)까지만 표시 (오늘 인증 스포일러 방지)
     : effectiveMatchingDate; // ✅ 인증 기반 날짜까지 포함 (새벽 2시 마감 정책 적용)
 
   // 랜덤 매칭: 매칭 날짜가 있으면 항상 접근 가능 (인증 여부 무관)
@@ -378,9 +386,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 새로운 규칙: 어제 인증한 사람인지 체크
   const isYesterdayVerified = yesterdayVerifiedIds?.has(participantId) ?? false;
-
-  // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
-  const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
 
   // ❌ REMOVED: matchingReason - v1.0 AI 매칭 레거시 (UI에서 사용 안 함)
 
