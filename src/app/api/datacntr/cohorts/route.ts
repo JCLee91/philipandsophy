@@ -71,16 +71,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. 코호트 ID 생성: "3기" → "3"
-    const cohortNumber = name.replace(/[^0-9]/g, '');
+    // 1. 코호트 ID 생성: "4-1기" → "4-1", "3기" → "3"
+    // 숫자와 하이픈(-)만 남기고 제거
+    const cohortNumber = name.replace(/[^0-9-]/g, '');
     if (!cohortNumber) {
       return NextResponse.json(
-        { error: '기수명에 숫자가 포함되어야 합니다 (예: 3기)' },
+        { error: '기수명에 숫자나 하이픈이 포함되어야 합니다 (예: 4-1기)' },
         { status: 400 }
       );
     }
 
-    // 코호트 문서 ID를 숫자로 설정
+    // 코호트 문서 ID 설정
     const cohortId = cohortNumber;
 
     // 중복 체크
