@@ -3,14 +3,7 @@
  */
 
 import * as admin from "firebase-admin";
-
-/**
- * Helper: Get Seoul DB instance
- */
-function getSeoulDB() {
-  const { getFirestore } = require('firebase-admin/firestore');
-  return getFirestore(admin.app(), 'seoul');
-}
+import { getSeoulDB } from "./db-helper";
 
 /**
  * Truncate long text for notifications

@@ -12,16 +12,9 @@ import {
   PushTokenEntry,
   WebPushSubscriptionData,
 } from "./lib/helpers";
+import { getSeoulDB } from "./lib/db-helper";
 import * as webpush from "web-push";
 import { NOTIFICATION_CONFIG } from "./constants/notifications";
-
-/**
- * Helper: Get Seoul DB instance
- */
-function getSeoulDB() {
-  const { getFirestore } = require('firebase-admin/firestore');
-  return getFirestore(admin.app(), 'seoul');
-}
 
 /**
  * Get all administrators (super admins + general admins)
