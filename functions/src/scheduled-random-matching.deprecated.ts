@@ -18,10 +18,8 @@ import { subDays, format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { logger } from "./lib/logger";
 import { getSeoulDB } from "./lib/db-helper";
-import {
-  matchParticipantsRandomly,
-  type ParticipantWithSubmissionCount,
-} from "./lib/random-matching.deprecated";
+import { matchParticipantsRandomly } from "./lib/random-matching.deprecated";
+import type { ParticipantWithSubmissionCount } from "./lib/types";
 import {
   loadProviders,
   loadRecentMatchings,
