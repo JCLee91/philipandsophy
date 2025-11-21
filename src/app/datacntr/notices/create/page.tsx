@@ -406,47 +406,52 @@ export default function NoticeCreatePage() {
         </div>
 
         {/* 제출 버튼 */}
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-          >
-            취소
-          </button>
-          <div className="flex items-center gap-3">
-            {!isScheduled && ( // Only show "임시저장" button if not scheduled
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 -mx-4 px-4 py-4 sm:static sm:border-t-0 sm:mx-0 sm:px-0 sm:py-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* 취소 버튼 */}
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="w-full sm:w-auto order-last sm:order-first px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              취소
+            </button>
+
+            {/* 오른쪽 버튼 그룹 */}
+            <div className="flex items-center gap-3">
+              {!isScheduled && ( // Only show "임시저장" button if not scheduled
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit(e, true)}
+                  disabled={isSubmitting}
+                  className="flex-1 sm:flex-none px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isDrafting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      저장 중...
+                    </>
+                  ) : (
+                    '임시저장'
+                  )}
+                </button>
+              )}
               <button
-                type="button"
-                onClick={(e) => handleSubmit(e, true)}
+                type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className={`flex-1 sm:flex-none px-6 py-3 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${isScheduled ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
               >
-                {isDrafting ? (
+                {isPublishing ? ( // Use isPublishing for the main submit button
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    저장 중...
+                    {isScheduled ? '예약 중...' : '작성 중...'}
                   </>
                 ) : (
-                  '임시저장'
+                  isScheduled ? '예약하기' : '발행하기'
                 )}
               </button>
-            )}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`px-6 py-3 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${isScheduled ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-            >
-              {isPublishing ? ( // Use isPublishing for the main submit button
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {isScheduled ? '예약 중...' : '작성 중...'}
-                </>
-              ) : (
-                isScheduled ? '예약하기' : '발행하기'
-              )}
-            </button>
+            </div>
           </div>
         </div>
       </form>

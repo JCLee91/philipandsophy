@@ -59,8 +59,7 @@ export default function NoticeEditPage() {
           throw new Error('공지 조회 실패');
         }
 
-        const data = await response.json(); // Assuming response.json() returns { notice: NoticeData }
-        const notice: NoticeData = data.notice;
+        const notice: NoticeData = await response.json(); // API returns notice data directly
 
         setSelectedCohortId(notice.cohortId);
         setTitle(notice.title || '');

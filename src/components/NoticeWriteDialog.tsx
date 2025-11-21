@@ -125,31 +125,33 @@ export default function NoticeWriteDialog({
 
           {/* Footer */}
           <div
-            className={`${FOOTER_STYLES.DIALOG_FOOTER} flex-row items-center px-5 py-3 border-t bg-white ${!isKeyboardOpen ? 'pb-[calc(1rem+env(safe-area-inset-bottom))]' : ''
+            className={`${FOOTER_STYLES.DIALOG_FOOTER} border-t bg-white ${!isKeyboardOpen ? 'pb-[calc(1rem+env(safe-area-inset-bottom))]' : ''
               }`}
           >
-            <label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-              />
-              <div className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md hover:bg-muted transition-colors duration-normal cursor-pointer">
-                <Paperclip className="h-4 w-4" />
-                <span>이미지 첨부</span>
-              </div>
-            </label>
-            <UnifiedButton
-              onClick={handleSubmit}
-              disabled={!content.trim()}
-              loading={uploading}
-              loadingText="작성 중..."
-              size="sm"
-              className="ml-auto"
-            >
-              작성 완료
-            </UnifiedButton>
+            <div className="flex items-center gap-3 px-5 py-3">
+              <label className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <div className="flex items-center justify-center gap-2 h-10 px-4 py-2 text-sm font-medium border rounded-lg hover:bg-muted transition-colors duration-normal cursor-pointer">
+                  <Paperclip className="h-4 w-4" />
+                  <span>이미지 첨부</span>
+                </div>
+              </label>
+              <UnifiedButton
+                onClick={handleSubmit}
+                disabled={!content.trim()}
+                loading={uploading}
+                loadingText="작성 중..."
+                size="sm"
+                className="flex-1"
+              >
+                작성 완료
+              </UnifiedButton>
+            </div>
           </div>
         </div>
       </div>

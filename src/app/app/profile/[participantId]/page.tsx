@@ -628,7 +628,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               <p className="flex-1 text-[16px] font-medium leading-[1.4] text-[#575e68]">
                                 {question}
                               </p>
-                              <div className={`flex-shrink-0 transition-transform duration-300 ${
+                              <div className={`flex-shrink-0 transition-transform duration-300 ease-in-out ${
                                 isExpanded ? 'rotate-180' : ''
                               }`}>
                                 <img
@@ -640,13 +640,17 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               </div>
                             </button>
 
-                            {isExpanded && (
-                              <div className="mt-4 rounded-[12px] px-4 py-4 transition-all duration-300" style={{ backgroundColor: colors.accentLight }}>
+                            <div 
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                isExpanded ? 'max-h-[500px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'
+                              }`}
+                            >
+                              <div className="rounded-[12px] px-4 py-4" style={{ backgroundColor: colors.accentLight }}>
                                 <p className="text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap">
                                   {answer}
                                 </p>
                               </div>
-                            )}
+                            </div>
                           </div>
                         );
                       })}
