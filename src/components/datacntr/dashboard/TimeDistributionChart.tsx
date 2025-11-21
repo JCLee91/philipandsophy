@@ -1,6 +1,8 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock } from 'lucide-react';
 
 interface TimeDistributionData {
   timeRange: string;
@@ -16,18 +18,24 @@ interface TimeDistributionChartProps {
 export default function TimeDistributionChart({ data, isLoading }: TimeDistributionChartProps) {
   if (isLoading) {
     return (
-      <div className="border rounded-lg p-6 bg-white">
-        <div className="h-5 w-32 shimmer rounded mb-4" />
-        <div className="h-[200px] shimmer rounded" />
-      </div>
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+        </CardHeader>
+        <CardContent>
+          <div className="h-[200px] bg-muted animate-pulse rounded" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className="border rounded-lg p-6 bg-white">
-        <p className="text-center text-gray-500 text-sm py-8">인증 데이터가 없습니다</p>
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <p className="text-sm text-muted-foreground">인증 데이터가 없습니다</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -42,33 +50,41 @@ export default function TimeDistributionChart({ data, isLoading }: TimeDistribut
   const peakTime = sortedData.find((d) => d.percentage === maxPercentage);
 
   return (
-    <div className="border rounded-lg p-6 bg-white">
-      <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-600">시간대별 인증</h3>
-        {peakTime && (
-          <p className="text-xs text-gray-500 mt-1">
-            피크: {peakTime.timeRange}시 ({peakTime.percentage}%)
-          </p>
-        )}
-      </div>
-
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={sortedData}>
-          <XAxis
-            dataKey="timeRange"
-            tick={{ fontSize: 11, fill: '#6b7280' }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            tick={{ fontSize: 11, fill: '#6b7280' }}
-            axisLine={false}
-            tickLine={false}
-            width={30}
-          />
-          <Bar dataKey="percentage" fill="#000000" radius={[2, 2, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            시간대별 인증
+          </CardTitle>
+          {peakTime && (
+            <span className="text-xs text-muted-foreground">
+              피크: {peakTime.timeRange}시 ({peakTime.percentage}%)
+            </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[200px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={sortedData}>
+              <XAxis
+                dataKey="timeRange"
+                tick={{ fontSize: 11, fill: '#6b7280' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#6b7280' }}
+                axisLine={false}
+                tickLine={false}
+                width={30}
+              />
+              <Bar dataKey="percentage" fill="#000000" radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

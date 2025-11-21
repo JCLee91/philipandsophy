@@ -127,10 +127,10 @@ export async function generateDailyClusters(
 
         // ✅ Lazy import AI SDK to avoid Firebase Functions deployment timeout
         const { generateObject } = await import('ai');
-        const { anthropic } = await import('@ai-sdk/anthropic');
 
         const result = await generateObject({
-            model: anthropic('claude-3-5-haiku-latest'),
+            // @ts-ignore: AI SDK 5 supports string models for Vercel AI Gateway
+            model: 'anthropic/claude-haiku-4.5' as any, // ✅ Vercel AI Gateway 자동 라우팅
             schema: schema as any,
             prompt
         });

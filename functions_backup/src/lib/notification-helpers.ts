@@ -211,19 +211,6 @@ async function sendWebPushNotifications(
   await Promise.all(
     subscriptions.map(async (subscription) => {
       try {
-        // ✅ iOS PWA Filter: Only allow iPhone/iPad/iPod
-        const userAgent = subscription.userAgent || "";
-        const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-
-        if (!isIOS) {
-          logger.debug("Skipping Web Push for non-iOS device", {
-            participantId,
-            userAgent,
-            deviceId: subscription.deviceId,
-          });
-          return;
-        }
-
         const payload = JSON.stringify({
           title,
           body,
@@ -247,7 +234,7 @@ async function sendWebPushNotifications(
         );
 
         successCount++;
-        logger.info(`Web Push sent successfully (iOS PWA)`, {
+        logger.info(`Web Push sent successfully`, {
           participantId,
           deviceId: subscription.deviceId,
         });
