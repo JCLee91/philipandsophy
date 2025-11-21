@@ -641,7 +641,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                             </button>
 
                             <div
-                              className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[2000px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'
                                 }`}
                             >
                               <div className="rounded-[12px] px-4 py-4" style={{ backgroundColor: colors.accentLight }}>
