@@ -399,7 +399,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     isSuperAdmin ||
     (isAfterProgramWithoutAuth) ||  // 15일차 이후 (인증 불필요)
     (isFinalDayAccess && isVerifiedToday) ||  // 14일차 (인증 필요)
-    (searchParams.get('freeAccess') === 'true') || // ✅ FIX: 무료 공개 프로필 (인증 불필요) - 단순화
+    (isFinalDayAccess && searchParams.get('freeAccess') === 'true') || // ✅ FIX: 마지막 날 무료 공개 프로필 (인증 불필요)
     (isUnlockDayOrAfter && isVerifiedToday && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상
     (isVerifiedToday && viewerHasAccessForDate && isFeatured) ||  // 기존: 매칭된 4명만
     canPreviewAccess;  // 랜덤 매칭 미인증자: 제한된 미리 보기 허용
