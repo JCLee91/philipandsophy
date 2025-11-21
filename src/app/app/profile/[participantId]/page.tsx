@@ -22,7 +22,7 @@ import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-  import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified, getMatchingTargetDate } from '@/lib/date-utils';
+import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified, getMatchingTargetDate } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { getAssignedProfiles } from '@/lib/matching-compat';
 import { useParticipant } from '@/hooks/use-participants';
@@ -208,7 +208,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 14일차(마지막 날) 및 15일차 이후 체크
   const isFinalDayOrAfter = cohort ? canViewAllProfiles(cohort) : false;
   const isAfterProgramWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
-  
+
   // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
   const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
 
@@ -221,9 +221,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // - 평소: 인증 기반 날짜까지의 인증만 표시
   //   예: effectiveMatchingDate="11-10" → 11-10까지 인증 포함
   //       (프로필북은 11-11 오전 2시부터 제공되지만, 11-10 인증까지만 표시)
-  
+
   // ✅ FIX: 전체 오픈 기간(마지막 날 or UnlockDate) + 오늘 인증 완료 시 모든 기록 표시
-  const shouldShowAll = isAfterProgramWithoutAuth || isSuperAdmin || 
+  const shouldShowAll = isAfterProgramWithoutAuth || isSuperAdmin ||
     ((isFinalDayOrAfter || isUnlockDayOrAfter) && isVerifiedToday);
 
   const submissionCutoffDate = shouldShowAll
@@ -399,6 +399,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     isSuperAdmin ||
     (isAfterProgramWithoutAuth) ||  // 15일차 이후 (인증 불필요)
     (isFinalDayAccess && isVerifiedToday) ||  // 14일차 (인증 필요)
+    (isFinalDayAccess && searchParams.get('freeAccess') === 'true') || // ✅ FIX: 마지막 날 무료 공개 프로필 (인증 불필요)
     (isUnlockDayOrAfter && isVerifiedToday && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상
     (isVerifiedToday && viewerHasAccessForDate && isFeatured) ||  // 기존: 매칭된 4명만
     canPreviewAccess;  // 랜덤 매칭 미인증자: 제한된 미리 보기 허용
@@ -490,7 +491,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         <div className="relative flex-1">
           {/* 프로필 이미지 (컨테이너 위로 겹침) */}
           <div className="absolute left-1/2 transform -translate-x-1/2 top-[36px] z-10">
-            <div 
+            <div
               className="relative w-[80px] h-[80px] cursor-pointer transition-transform active:scale-95"
               onClick={() => setProfileImageDialogOpen(true)}
             >
@@ -628,9 +629,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               <p className="flex-1 text-[16px] font-medium leading-[1.4] text-[#575e68]">
                                 {question}
                               </p>
-                              <div className={`flex-shrink-0 transition-transform duration-300 ease-in-out ${
-                                isExpanded ? 'rotate-180' : ''
-                              }`}>
+                              <div className={`flex-shrink-0 transition-transform duration-300 ease-in-out ${isExpanded ? 'rotate-180' : ''
+                                }`}>
                                 <img
                                   src="/icons/chevron-down.svg"
                                   alt=""
@@ -640,10 +640,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               </div>
                             </button>
 
-                            <div 
-                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                isExpanded ? 'max-h-[500px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'
-                              }`}
+                            <div
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'
+                                }`}
                             >
                               <div className="rounded-[12px] px-4 py-4" style={{ backgroundColor: colors.accentLight }}>
                                 <p className="text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap">

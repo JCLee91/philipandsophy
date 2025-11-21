@@ -550,7 +550,13 @@ function TodayLibraryV2Content() {
       }
 
       const matchingDate = getSubmissionDate();
-      const profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
+      let profileUrl = `${appRoutes.profile(participantId, cohortId, theme)}&matchingDate=${encodeURIComponent(matchingDate)}`;
+
+      // ✅ FIX: 무료 공개 프로필인 경우 플래그 추가
+      if (isFreeProfile) {
+        profileUrl += '&freeAccess=true';
+      }
+
       router.push(profileUrl);
       return;
     }
