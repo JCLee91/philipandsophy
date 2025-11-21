@@ -280,9 +280,9 @@ function TodayLibraryV2Content() {
   const isProfileUnlockMode = isUnlockDayOrAfter && !isFinalDay;
 
   // 새로운 규칙:
-  // 1. 슈퍼관리자 OR 마지막 날 → 전체 공개
+  // 1. 슈퍼관리자 OR 마지막 날 OR 프로그램 종료 후 → 전체 공개
   // 2. profileUnlockDate 이상 + 어제 인증자 존재 → 어제 인증자 전체 공개 (인증 여부는 렌더링 단계에서 처리)
-  const showAllProfiles = isSuperAdmin || isFinalDay || (isProfileUnlockMode && yesterdayVerifiedIds && yesterdayVerifiedIds.size > 0);
+  const showAllProfiles = isSuperAdmin || isFinalDay || showAllProfilesWithoutAuth || (isProfileUnlockMode && yesterdayVerifiedIds && yesterdayVerifiedIds.size > 0);
 
   // 추천 참가자들의 정보 가져오기
   // 마지막 날이면 전체 참가자 쿼리, 아니면 매칭된 4명만
@@ -301,8 +301,8 @@ function TodayLibraryV2Content() {
 
       if (showAllProfiles) {
         // 어제 인증자 전체 또는 마지막 날 전체 참가자 로드
-        if (isFinalDay || isSuperAdmin) {
-          // 마지막 날 또는 슈퍼관리자: 전체 참가자
+        if (isFinalDay || isSuperAdmin || showAllProfilesWithoutAuth) {
+          // 마지막 날 또는 슈퍼관리자 또는 프로그램 종료 후: 전체 참가자
           const q = query(participantsRef, where('cohortId', '==', cohortId));
           const allSnapshot = await getDocs(q);
           participants = allSnapshot.docs
