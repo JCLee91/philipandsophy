@@ -537,7 +537,11 @@ function TodayLibraryV2Content() {
 
     // 마지막 날: 전체 공개지만 인증 필요
     if (isFinalDay && !showAllProfilesWithoutAuth) {
-      if (isLocked) {
+      // ✅ FIX: 화면에 노출된 2명(남1/여1)은 인증 없이도 접근 가능해야 함
+      const isFreeProfile = visibleMaleInAllMode.some(p => p.id === participantId) ||
+        visibleFemaleInAllMode.some(p => p.id === participantId);
+
+      if (isLocked && !isFreeProfile) {
         toast({
           title: '프로필 잠김 🔒',
           description: '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요 (마지막 날 특별 이벤트!)',
@@ -987,10 +991,9 @@ function AccordionContent({
       className="flex justify-between items-start gap-2 cursor-pointer"
       onClick={onToggle}
     >
-      <div 
-        className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-[500px]' : 'max-h-[1.6em]'
-        }`}
+      <div
+        className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px]' : 'max-h-[1.6em]'
+          }`}
       >
         <p className="text-[14px] text-[#333D4B] leading-[1.6] break-all whitespace-pre-wrap">
           {text || '(답변 없음)'}
