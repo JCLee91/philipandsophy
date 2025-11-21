@@ -25,6 +25,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingUnlockDay, setIsUpdatingUnlockDay] = useState(false);
   const [tempUnlockDate, setTempUnlockDate] = useState<string>('');
+  const [isUpdatingMatchingSystem, setIsUpdatingMatchingSystem] = useState(false);
 
   // Params 추출
   useEffect(() => {
@@ -106,6 +107,42 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
     }
   };
 
+  // 매칭 시스템 업데이트
+  const handleUpdateMatchingSystem = async (useClusterMatching: boolean) => {
+    if (!user || !cohortId) return;
+
+    const confirmMessage = useClusterMatching
+      ? 'v3 (클러스터 매칭) 시스템으로 변경하시겠습니까?\n변경 시 오늘의 서재 UI가 변경됩니다.'
+      : 'v2 (랜덤 매칭) 시스템으로 변경하시겠습니까?\n변경 시 오늘의 서재 UI가 기존 방식으로 변경됩니다.';
+
+    if (!window.confirm(confirmMessage)) return;
+
+    setIsUpdatingMatchingSystem(true);
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(`/api/datacntr/cohorts/${cohortId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ useClusterMatching }),
+      });
+
+      if (!response.ok) {
+        throw new Error('매칭 시스템 설정 업데이트 실패');
+      }
+
+      // 로컬 상태 업데이트
+      setCohort(prev => prev ? { ...prev, useClusterMatching } : null);
+    } catch (error) {
+      console.error('매칭 시스템 설정 업데이트 실패:', error);
+      alert('설정 업데이트에 실패했습니다.');
+    } finally {
+      setIsUpdatingMatchingSystem(false);
+    }
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -184,8 +221,55 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
           )}
         </p>
 
+        {/* 매칭 시스템 설정 */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">매칭 시스템 설정</h2>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">
+              이 기수에서 사용할 매칭 알고리즘과 UI 버전을 선택합니다.
+            </p>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="matchingSystem"
+                  checked={cohort?.useClusterMatching !== true}
+                  onChange={() => handleUpdateMatchingSystem(false)}
+                  disabled={isUpdatingMatchingSystem}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  v2 (랜덤 매칭 / 기존 UI)
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="matchingSystem"
+                  checked={cohort?.useClusterMatching === true}
+                  onChange={() => handleUpdateMatchingSystem(true)}
+                  disabled={isUpdatingMatchingSystem}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  v3 (클러스터 매칭 / 신규 UI)
+                </span>
+              </label>
+              {isUpdatingMatchingSystem && (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              )}
+            </div>
+            <p className="text-xs text-gray-500">
+              {cohort?.useClusterMatching === true
+                ? '현재 v3 (클러스터 매칭) 시스템이 적용되어 있습니다. AI가 매일 주제별 클러스터를 생성합니다.'
+                : '현재 v2 (랜덤 매칭) 시스템이 적용되어 있습니다. 성별 기반의 랜덤 매칭이 적용됩니다.'
+              }
+            </p>
+          </div>
+        </div>
+
         {/* 프로필 공개 설정 */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">프로필북 공개 설정</h2>
         <div className="space-y-3">
           <p className="text-sm text-gray-600">

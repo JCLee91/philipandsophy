@@ -37,6 +37,7 @@ export default function CohortCreatePage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [programStartDate, setProgramStartDate] = useState('');
+  const [useClusterMatching, setUseClusterMatching] = useState(true); // 기본값: v3 (클러스터)
 
   // 참가자 목록
   const [participants, setParticipants] = useState<ParticipantRow[]>([
@@ -228,6 +229,7 @@ export default function CohortCreatePage() {
           startDate,
           endDate,
           programStartDate,
+          useClusterMatching,
           participants: participants.map(p => {
             // 전화번호 정규화 (다양한 형식 지원: +82, 82, 082, 010-xxxx-xxxx 등)
             const normalized = phoneFormatUtils.normalize(p.phone);
@@ -329,6 +331,39 @@ export default function CohortCreatePage() {
             />
             <p className="text-sm text-gray-500 mt-1">
               ℹ️ 프로그램 시작일과 동일하게 설정하는 것을 권장합니다.
+            </p>
+          </div>
+
+          <div>
+            <Label>매칭 시스템</Label>
+            <div className="mt-2 flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="matchingSystem"
+                  checked={!useClusterMatching}
+                  onChange={() => setUseClusterMatching(false)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-700">
+                  v2 (랜덤 매칭 / 기존 UI)
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="matchingSystem"
+                  checked={useClusterMatching}
+                  onChange={() => setUseClusterMatching(true)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-700">
+                  v3 (클러스터 매칭 / 신규 UI)
+                </span>
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              새로운 기수에는 v3 (클러스터 매칭) 사용을 권장합니다.
             </p>
           </div>
         </CardContent>
