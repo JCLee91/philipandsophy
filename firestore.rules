@@ -20,15 +20,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.admin == true;
     }
 
-    // 현재 사용자가 관리자 Participant인지 확인
-    function isAdminParticipant() {
-      // firebaseUid로 participant 찾기 (모든 participants 순회)
-      return isSignedIn() &&
-             exists(/databases/$(database)/documents/participants/admin) &&
-             get(/databases/$(database)/documents/participants/admin).data.firebaseUid == request.auth.uid &&
-             get(/databases/$(database)/documents/participants/admin).data.isAdministrator == true;
-    }
-
     // pushTokens 배열 항목 검증
     function isValidPushTokens(tokens) {
       return tokens is list &&

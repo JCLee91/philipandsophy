@@ -8,6 +8,7 @@ import { useAllCohorts } from '@/hooks/use-cohorts';
 import { appRoutes } from '@/lib/navigation';
 import { logger } from '@/lib/logger';
 import PageTransition from '@/components/PageTransition';
+import TopBar from '@/components/TopBar';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -114,18 +115,14 @@ export default function CohortsPage() {
     <PageTransition>
       <div className="app-shell flex flex-col min-h-screen bg-background">
         {/* 헤더 */}
-        <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
-          <div className="max-w-md mx-auto px-6 py-4">
-            <h1 className="text-xl font-bold text-gray-900">기수 변경</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              {isAdmin ? '관리할 기수를 선택하세요' : '참가 중인 기수를 선택하세요'}
-            </p>
-          </div>
-        </header>
+        <TopBar title="기수 변경" align="left" />
 
         {/* 코호트 리스트 */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-md mx-auto px-6 py-6 space-y-3">
+            <p className="text-sm text-gray-600 mb-4">
+              {isAdmin ? '관리할 기수를 선택하세요' : '참가 중인 기수를 선택하세요'}
+            </p>
             {displayCohorts.map((cohort) => {
               const isSelected = selectedCohortId === cohort.id;
 

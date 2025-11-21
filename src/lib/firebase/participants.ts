@@ -297,23 +297,7 @@ export async function getParticipantsByCohort(
   })) as Participant[];
 }
 
-/**
- * 모든 참가자 조회
- */
-export async function getAllParticipants(): Promise<Participant[]> {
-  const db = getDb();
-  const q = query(
-    collection(db, COLLECTIONS.PARTICIPANTS),
-    orderBy('createdAt', 'desc')
-  );
-
-  const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Participant[];
-}
+// ❌ REMOVED: getAllParticipants - 미사용 함수 제거
 
 /**
  * 참가자 정보 업데이트
@@ -331,31 +315,8 @@ export async function updateParticipant(
   });
 }
 
-/**
- * 참가자 삭제
- */
-export async function deleteParticipant(id: string): Promise<void> {
-  const db = getDb();
-  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, id);
-  await deleteDoc(docRef);
-}
-
-/**
- * 참가자 검색 (커스텀 쿼리)
- */
-export async function searchParticipants(
-  constraints: QueryConstraint[]
-): Promise<Participant[]> {
-  const db = getDb();
-  const q = query(collection(db, COLLECTIONS.PARTICIPANTS), ...constraints);
-
-  const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Participant[];
-}
+// ❌ REMOVED: deleteParticipant - 미사용 함수 제거
+// ❌ REMOVED: searchParticipants - 미사용 함수 제거
 
 /**
  * 참가자의 책 정보 업데이트 (책 변경 감지 및 이력 관리)
@@ -478,13 +439,4 @@ export async function updateParticipantBookInfo(
   }
 }
 
-/**
- * @deprecated Use updateParticipantBookInfo instead
- * 하위 호환성을 위해 유지
- */
-export async function updateParticipantBookTitle(
-  participantId: string,
-  newBookTitle: string
-): Promise<void> {
-  return updateParticipantBookInfo(participantId, newBookTitle);
-}
+// ❌ REMOVED: updateParticipantBookTitle - deprecated 함수 제거 (미사용)

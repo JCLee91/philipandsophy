@@ -9,9 +9,7 @@ import {
   getAllCohorts,
   getActiveCohorts,
   getCohortById,
-  createCohort,
   updateCohort,
-  deleteCohort,
 } from '@/lib/firebase';
 import type { Cohort } from '@/types/database';
 
@@ -81,25 +79,7 @@ export const useCohort = (id?: string, options?: UseCohortOptions) => {
   });
 };
 
-/**
- * Create cohort
- */
-export const useCreateCohort = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: {
-      name: string;
-      startDate: string;
-      endDate: string;
-      isActive: boolean;
-    }) => createCohort(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: cohortKeys.all });
-      queryClient.invalidateQueries({ queryKey: cohortKeys.active });
-    },
-  });
-};
+// ❌ REMOVED: useCreateCohort - 미사용 hook 제거
 
 /**
  * Update cohort
@@ -123,17 +103,4 @@ export const useUpdateCohort = () => {
   });
 };
 
-/**
- * Delete cohort
- */
-export const useDeleteCohort = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => deleteCohort(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: cohortKeys.all });
-      queryClient.invalidateQueries({ queryKey: cohortKeys.active });
-    },
-  });
-};
+// ❌ REMOVED: useDeleteCohort - 미사용 hook 제거

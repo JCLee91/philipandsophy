@@ -18,7 +18,10 @@ export default function NoticeCreatePage() {
 
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<string>('');
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [templateImageUrl, setTemplateImageUrl] = useState<string>(''); // ✅ 템플릿에서 가져온 이미지 URL
@@ -146,7 +149,16 @@ export default function NoticeCreatePage() {
       return;
     }
 
+    if (isScheduled && !scheduledAt) {
+      alert('예약 발행 시간을 설정해주세요.');
+      return;
+    }
+
     if (!user) return;
+
+    // Note: The original instruction included a check for `currentStatus` which is not defined in this component.
+    // As this is a create page, `currentStatus` is not applicable.
+    // If this component were for editing, `currentStatus` would need to be passed as a prop or fetched.
 
     // 임시저장/발행에 따라 다른 로딩 상태 사용
     if (isDraft) {
@@ -159,8 +171,17 @@ export default function NoticeCreatePage() {
       const idToken = await user.getIdToken();
       const formData = new FormData();
       formData.append('cohortId', selectedCohortId);
+      if (title.trim()) {
+        formData.append('title', title.trim());
+      }
       formData.append('content', content.trim());
-      formData.append('status', isDraft ? 'draft' : 'published');
+
+      if (isScheduled && !isDraft) {
+        formData.append('status', 'scheduled');
+        formData.append('scheduledAt', new Date(scheduledAt).toISOString());
+      } else {
+        formData.append('status', isDraft ? 'draft' : 'published');
+      }
 
       // ✅ 새 이미지 파일이 있으면 업로드
       if (imageFile) {
@@ -184,7 +205,13 @@ export default function NoticeCreatePage() {
         throw new Error(error.error || '공지 작성 실패');
       }
 
-      alert(isDraft ? '공지가 임시저장되었습니다.' : '공지가 작성되었습니다.');
+      if (isDraft) {
+        alert('공지가 임시저장되었습니다.');
+      } else if (isScheduled) {
+        alert('공지가 예약되었습니다.');
+      } else {
+        alert('공지가 발행되었습니다.');
+      }
       router.push('/datacntr/notices');
     } catch (error) {
 
@@ -209,6 +236,8 @@ export default function NoticeCreatePage() {
 
   if (!user) return null;
 
+  const isSubmitting = isDrafting || isPublishing;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* 헤더 */}
@@ -226,7 +255,7 @@ export default function NoticeCreatePage() {
       </div>
 
       {/* 공지 작성 폼 */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
         {/* 기수 선택 */}
         <div className="bg-white rounded-lg p-6 border border-gray-200">
           <label className="block text-sm font-medium text-gray-900 mb-2">
@@ -245,6 +274,23 @@ export default function NoticeCreatePage() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* 푸시 알림 제목 (선택) */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            푸시 알림 제목 (선택)
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="푸시 알림에 표시될 제목을 입력하세요 (미입력 시 기본값 사용)"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <p className="text-sm text-gray-500 mt-2">
+            ℹ️ 채팅방에는 표시되지 않으며, 푸시 알림과 관리자 목록에서만 확인 가능합니다.
+          </p>
         </div>
 
         {/* 공지 내용 */}
@@ -309,6 +355,56 @@ export default function NoticeCreatePage() {
           )}
         </div>
 
+        {/* 예약 발행 설정 */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <label className="text-sm font-medium text-gray-900">
+              예약 발행 설정
+            </label>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isScheduled"
+                checked={isScheduled}
+                onChange={(e) => {
+                  setIsScheduled(e.target.checked);
+                  if (e.target.checked && !scheduledAt) {
+                    // 기본값: 현재 시간 + 1시간 (ISO String slice for input)
+                    const nextHour = new Date();
+                    nextHour.setHours(nextHour.getHours() + 1);
+                    nextHour.setMinutes(0);
+                    // 로컬 시간 포맷팅 (YYYY-MM-DDTHH:mm)
+                    const localIso = new Date(nextHour.getTime() - nextHour.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                    setScheduledAt(localIso);
+                  }
+                }}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isScheduled" className="ml-2 text-sm text-gray-700">
+                나중에 발행하기
+              </label>
+            </div>
+          </div>
+
+          {isScheduled && (
+            <div className="mt-2">
+              <label className="block text-sm text-gray-600 mb-1">
+                발행 예정 시간
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                min={new Date().toISOString().slice(0, 16)}
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                * 설정한 시간에 자동으로 발행되고 푸시 알림이 전송됩니다. (30분 단위 체크)
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* 제출 버튼 */}
         <div className="flex items-center justify-between">
           <button
@@ -319,33 +415,36 @@ export default function NoticeCreatePage() {
             취소
           </button>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={(e) => handleSubmit(e, true)}
-              disabled={isDrafting || isPublishing}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isDrafting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  저장 중...
-                </>
-              ) : (
-                '임시저장'
-              )}
-            </button>
+            {!isScheduled && ( // Only show "임시저장" button if not scheduled
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, true)}
+                disabled={isSubmitting}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isDrafting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  '임시저장'
+                )}
+              </button>
+            )}
             <button
               type="submit"
-              disabled={isDrafting || isPublishing}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={isSubmitting}
+              className={`px-6 py-3 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${isScheduled ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
             >
-              {isPublishing ? (
+              {isPublishing ? ( // Use isPublishing for the main submit button
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  작성 중...
+                  {isScheduled ? '예약 중...' : '작성 중...'}
                 </>
               ) : (
-                '공지 작성'
+                isScheduled ? '예약하기' : '발행하기'
               )}
             </button>
           </div>

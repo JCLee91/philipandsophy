@@ -8,7 +8,7 @@ import { getParticipantById, saveDraft, uploadReadingImage } from '@/lib/firebas
 import { createFileFromUrl } from '@/lib/image-validation';
 import { searchNaverBooks, cleanBookData, type NaverBook } from '@/lib/naver-book-api';
 import { useToast } from '@/hooks/use-toast';
-import BackHeader from '@/components/BackHeader';
+import TopBar from '@/components/TopBar';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
@@ -57,7 +57,6 @@ function Step2Content() {
     setImageStorageUrl,
     setMetaInfo,
   } = useSubmissionFlowStore();
-  const [isLoadingBookTitle, setIsLoadingBookTitle] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NaverBook[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -359,6 +358,11 @@ function Step2Content() {
         draftData.review = review;
       }
 
+      // 🆕 cohortId 추가 (중복 참가자 구분용)
+      if (cohortId) {
+        (draftData as any).cohortId = cohortId;
+      }
+
       await saveDraft(participantId, participationCode, draftData);
 
       toast({
@@ -451,9 +455,14 @@ function Step2Content() {
           draftData.review = review;
         }
 
+        // 🆕 cohortId 추가 (중복 참가자 구분용)
+        if (cohortId) {
+          (draftData as any).cohortId = cohortId;
+        }
+
         await saveDraft(participantId, participationCode, draftData);
       } catch (error) {
-        console.error('Draft save failed (continuing anyway):', error);
+        logger.error('[Step2] Draft save failed (continuing)', error);
         // 임시저장 실패는 무시하고 진행
       }
     }
@@ -462,7 +471,7 @@ function Step2Content() {
     try {
       router.push(`${appRoutes.submitStep3}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     } catch (error) {
-      console.error('Navigation failed:', error);
+      logger.error('[Step2] Navigation failed', error);
       toast({
         title: '다음 단계로 이동 실패',
         description: '잠시 후 다시 시도해주세요.',
@@ -480,13 +489,13 @@ function Step2Content() {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
-        <BackHeader onBack={handleBack} title="독서 인증하기" variant="left" />
+        <TopBar onBack={handleBack} title="독서 인증하기" align="left" />
         <div className="fixed top-14 left-0 right-0 z-[998]">
           <ProgressIndicator currentStep={2} />
         </div>
 
         <main
-          className="app-main-content flex-1 overflow-y-auto pt-[57px]"
+          className="app-main-content flex-1 overflow-y-auto pt-4"
           style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 32 : 32 }}
         >
           <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">
@@ -512,7 +521,6 @@ function Step2Content() {
                     }}
                     placeholder="도서명을 검색하거나 직접 입력 후 엔터"
                     className="pl-10 h-12 text-base"
-                    disabled={isLoadingBookTitle}
                   />
                 </div>
 

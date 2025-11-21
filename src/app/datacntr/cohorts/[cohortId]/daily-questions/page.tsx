@@ -14,6 +14,7 @@ import { format, addDays, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { Cohort, DailyQuestion } from '@/types/database';
 import FormSelect from '@/components/datacntr/form/FormSelect';
+import TopBar from '@/components/TopBar';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -241,31 +242,23 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
   if (!user || !isAdministrator) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* 헤더 */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {cohort?.name} - Daily Questions
-            </h1>
-            <p className="text-gray-600 mt-1">Day 2~14 질문 관리 (Day 1은 OT)</p>
-          </div>
-        </div>
-        <Button variant="outline" onClick={handleCopyFromCohort1}>
-          <Copy className="h-4 w-4 mr-2" />
-          1기 복사
-        </Button>
-      </div>
+    <>
+      <TopBar
+        title={`${cohort?.name || ''} - Daily Questions`}
+        onBack={() => router.back()}
+        align="left"
+        rightAction={
+          <Button variant="outline" onClick={handleCopyFromCohort1} size="sm">
+            <Copy className="h-4 w-4 mr-2" />
+            1기 복사
+          </Button>
+        }
+      />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <p className="text-gray-600 mb-6">Day 2~14 질문 관리 (Day 1은 OT)</p>
 
-      {/* 질문 폼 */}
-      <div className="space-y-4">
+        {/* 질문 폼 */}
+        <div className="space-y-4">
         {questions.map((q, index) => (
           <Card key={q.id}>
             <CardHeader>
@@ -324,5 +317,6 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
         </Button>
       </div>
     </div>
+  </>
   );
 }

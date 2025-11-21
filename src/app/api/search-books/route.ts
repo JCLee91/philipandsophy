@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { API_CACHE_DURATION } from '@/constants/api';
+import { stripHtmlTags, cleanBookData } from '@/lib/naver-book-api';
+import type { NaverBook } from '@/lib/naver-book-api';
 
 const NAVER_BOOK_API_URL = 'https://openapi.naver.com/v1/search/book.json';
 
-/**
- * 네이버 책 검색 API 응답 타입
- */
-interface NaverBook {
-  title: string;
-  link: string;
-  image: string;
-  author: string;
-  discount: string;
-  publisher: string;
-  pubdate: string;
-  isbn: string;
-  description: string;
-}
+// ❌ REMOVED: NaverBook 타입 중복 제거 (naver-book-api.ts에서 import)
+// ❌ REMOVED: stripHtmlTags, cleanBookData 중복 제거 (naver-book-api.ts에서 import)
 
 interface NaverBookSearchResponse {
   lastBuildDate: string;
@@ -25,26 +15,6 @@ interface NaverBookSearchResponse {
   start: number;
   display: number;
   items: NaverBook[];
-}
-
-/**
- * HTML 태그 제거 함수
- */
-function stripHtmlTags(html: string): string {
-  return html.replace(/<[^>]*>/g, '');
-}
-
-/**
- * 책 데이터 정리 함수
- */
-function cleanBookData(book: NaverBook): NaverBook {
-  return {
-    ...book,
-    title: stripHtmlTags(book.title),
-    author: stripHtmlTags(book.author),
-    publisher: stripHtmlTags(book.publisher),
-    description: stripHtmlTags(book.description),
-  };
 }
 
 /**

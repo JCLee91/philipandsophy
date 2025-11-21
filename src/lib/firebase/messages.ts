@@ -21,7 +21,6 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getDb } from './client';
-import { logger } from '@/lib/logger';
 import type { DirectMessage } from '@/types/database';
 import { COLLECTIONS } from '@/types/database';
 

@@ -369,13 +369,13 @@ export function ChatClientView({
       setIsNavigating(true);
 
       requestAnimationFrame(() => {
-      router.push(appRoutes.participants(cohortId));
-      setTimeout(() => setIsNavigating(false), AUTH_TIMING.NAVIGATION_COOLDOWN);
-    });
-    return;
-  }
+        router.push(appRoutes.participants(cohortId));
+        setTimeout(() => setIsNavigating(false), AUTH_TIMING.NAVIGATION_COOLDOWN);
+      });
+      return;
+    }
 
-  setParticipantsOpen(true);
+    setParticipantsOpen(true);
   }, [cohortId, isIosStandalone, isNavigating, router]);
 
   const handleNavigateMatching = useCallback(() => {
@@ -422,88 +422,88 @@ export function ChatClientView({
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden pt-14">
 
-        <ChatParticipantsSheet
-          participants={participants}
-          currentUserId={currentUserId || ''}
-          open={participantsOpen}
-          onOpenChange={setParticipantsOpen}
-          isAdmin={isAdminMode}
-          onDMClick={handleDMClick}
-          onProfileClick={(participant) => setSelectedParticipant(participant)}
-          onProfileBookClick={handleProfileBookClick}
-        />
-
-        <DirectMessageDialog
-          open={dmDialog.isOpen}
-          onOpenChange={dmDialog.setOpen}
-          currentUserId={currentUserId || ''}
-          currentUser={participant}
-          otherUser={dmDialog.target}
-        />
-
-        <ProfileImageDialog
-          participant={selectedParticipant}
-          open={!!selectedParticipant}
-          onClose={() => {
-            setSelectedParticipant(null);
-          }}
-        />
-
-        <main className="app-main-content relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
-          <NoticeTimeline
-            notices={noticesData}
-            isAdmin={isRealAdmin}
-            onEdit={handleEditNotice}
-            onRequestDelete={deleteDialog.openWithNotice}
-            latestNoticeId={latestNoticeId}
-            latestNoticeRef={latestNoticeRef}
+          <ChatParticipantsSheet
+            participants={participants}
+            currentUserId={currentUserId || ''}
+            open={participantsOpen}
+            onOpenChange={setParticipantsOpen}
+            isAdmin={isAdminMode}
+            onDMClick={handleDMClick}
+            onProfileClick={(participant) => setSelectedParticipant(participant)}
+            onProfileBookClick={handleProfileBookClick}
           />
-        </main>
 
-        <ChatFooterSection
-          isAdmin={isAdminMode}
-          isDay1={isDay1 ?? false}
-          isAfterDay14={isAfterDay14}
-          hasSubmittedToday={hasSubmittedToday}
-          cohortName={cohort?.name}
-          onRequestSubmission={handleOpenSubmissionFlow}
-          onNavigateMatching={handleNavigateMatching}
-          onNavigateTodayLibrary={handleNavigateTodayLibrary}
-        />
+          <DirectMessageDialog
+            open={dmDialog.isOpen}
+            onOpenChange={dmDialog.setOpen}
+            currentUserId={currentUserId || ''}
+            currentUser={participant}
+            otherUser={dmDialog.target}
+          />
 
-        <NoticeWriteDialog
-          open={writeDialog.isOpen}
-          onOpenChange={(open) => (open ? writeDialog.open() : writeDialog.close())}
-          content={writeDialog.content}
-          onContentChange={writeDialog.setContent}
-          onSubmit={handleCreateNotice}
-          uploading={noticeActions.isUploading}
-        />
+          <ProfileImageDialog
+            participant={selectedParticipant}
+            open={!!selectedParticipant}
+            onClose={() => {
+              setSelectedParticipant(null);
+            }}
+          />
 
-        <NoticeEditDialog
-          open={editDialog.isOpen}
-          onOpenChange={(open) => !open && editDialog.close()}
-          content={editDialog.content}
-          onContentChange={editDialog.setContent}
-          onSave={handleSaveEdit}
-          saving={noticeActions.isUpdating}
-        />
+          <main className="app-main-content relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
+            <NoticeTimeline
+              notices={noticesData}
+              isAdmin={isRealAdmin}
+              onEdit={handleEditNotice}
+              onRequestDelete={deleteDialog.openWithNotice}
+              latestNoticeId={latestNoticeId}
+              latestNoticeRef={latestNoticeRef}
+            />
+          </main>
 
-        <NoticeDeleteDialog
-          open={deleteDialog.isOpen}
-          onOpenChange={(open) => !open && deleteDialog.close()}
-          notice={deleteDialog.notice}
-          onConfirm={handleDeleteNotice}
-          deleting={noticeActions.isDeleting}
-        />
+          <ChatFooterSection
+            isAdmin={isAdminMode}
+            isDay1={isDay1 ?? false}
+            isAfterDay14={isAfterDay14}
+            hasSubmittedToday={hasSubmittedToday}
+            cohortName={cohort?.name}
+            onRequestSubmission={handleOpenSubmissionFlow}
+            onNavigateMatching={handleNavigateMatching}
+            onNavigateTodayLibrary={handleNavigateTodayLibrary}
+          />
 
-        <SettingsDialog
-          isOpen={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          userCohorts={userCohorts}
-        />
-      </div>
-    </PageTransition>
+          <NoticeWriteDialog
+            open={writeDialog.isOpen}
+            onOpenChange={(open) => (open ? writeDialog.open() : writeDialog.close())}
+            content={writeDialog.content}
+            onContentChange={writeDialog.setContent}
+            onSubmit={handleCreateNotice}
+            uploading={noticeActions.isUploading}
+          />
+
+          <NoticeEditDialog
+            open={editDialog.isOpen}
+            onOpenChange={(open) => !open && editDialog.close()}
+            content={editDialog.content}
+            onContentChange={editDialog.setContent}
+            onSave={handleSaveEdit}
+            saving={noticeActions.isUpdating}
+          />
+
+          <NoticeDeleteDialog
+            open={deleteDialog.isOpen}
+            onOpenChange={(open) => !open && deleteDialog.close()}
+            notice={deleteDialog.notice}
+            onConfirm={handleDeleteNotice}
+            deleting={noticeActions.isDeleting}
+          />
+
+          <SettingsDialog
+            isOpen={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            userCohorts={userCohorts}
+          />
+        </div>
+      </PageTransition>
     </>
   );
 }

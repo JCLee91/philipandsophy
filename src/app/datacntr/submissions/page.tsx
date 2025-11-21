@@ -1,26 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Calendar, User, BookOpen, BarChart3, MessageSquare } from 'lucide-react';
+import { Loader2, BarChart3, ChevronRight } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TimeDistributionChart from '@/components/datacntr/dashboard/TimeDistributionChart';
 import ParticipationPanel from '@/components/datacntr/dashboard/ParticipationPanel';
 import ReviewQualityPanel from '@/components/datacntr/dashboard/ReviewQualityPanel';
 import AllBooksPanel from '@/components/datacntr/dashboard/AllBooksPanel';
+import SubmissionDetailDialog from '@/components/datacntr/submissions/SubmissionDetailDialog';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
-import { getResizedImageUrl } from '@/lib/image-utils';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
+
 interface SubmissionWithParticipant extends ReadingSubmission {
   participantName: string;
   cohortName: string;
@@ -37,6 +45,10 @@ export default function SubmissionsPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAnalytics, setShowAnalytics] = useState(true);
+
+  // Detail Dialog State
+  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionWithParticipant | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // 로그인 체크
   useEffect(() => {
@@ -71,7 +83,7 @@ export default function SubmissionsPage() {
         setSubmissions(data);
         setFilteredSubmissions(data);
       } catch (error) {
-
+        console.error('Error fetching submissions:', error);
       } finally {
         setIsLoading(false);
       }
@@ -105,7 +117,7 @@ export default function SubmissionsPage() {
         const data = await response.json();
         setAnalytics(data);
       } catch (error) {
-
+        console.error('Error fetching analytics:', error);
       } finally {
         setAnalyticsLoading(false);
       }
@@ -124,7 +136,7 @@ export default function SubmissionsPage() {
     const filtered = submissions.filter(
       (s) =>
         s.participantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.bookTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.bookTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.cohortName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (s.dailyAnswer && s.dailyAnswer.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (s.review && s.review.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -132,6 +144,11 @@ export default function SubmissionsPage() {
 
     setFilteredSubmissions(filtered);
   }, [searchQuery, submissions]);
+
+  const handleRowClick = (submission: SubmissionWithParticipant) => {
+    setSelectedSubmission(submission);
+    setIsDialogOpen(true);
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -203,99 +220,77 @@ export default function SubmissionsPage() {
         />
       </div>
 
-      {/* 인증 카드 그리드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSubmissions.map((submission) => {
-          return (
-            <Card key={submission.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              {/* 인증 사진 */}
-              {submission.bookImageUrl && (
-                <div className="aspect-video bg-muted relative">
-                  <Image
-                    src={getResizedImageUrl(submission.bookImageUrl) || submission.bookImageUrl}
-                    alt={submission.bookTitle}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 400px"
-                    className="object-cover"
-                  />
-                </div>
-              )}
-
-              <CardHeader className="space-y-3">
-                {/* 참가자 정보 */}
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="font-normal">
-                    <User className="h-3 w-3 mr-1" />
-                    {submission.participantName}
-                  </Badge>
-                  <Badge variant="outline" className="font-normal">
+      {/* 리스트형 테이블 */}
+      <div className="rounded-md border bg-white shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-[100px]">날짜</TableHead>
+              <TableHead className="w-[100px]">기수</TableHead>
+              <TableHead className="w-[120px]">참가자</TableHead>
+              <TableHead className="w-[200px]">책 제목</TableHead>
+              <TableHead>리뷰 / 답변</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSubmissions.map((submission) => (
+              <TableRow
+                key={submission.id}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleRowClick(submission)}
+              >
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                  {formatTimestampKST(submission.submittedAt, 'MM.dd HH:mm')}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="font-normal text-xs">
                     {submission.cohortName}
                   </Badge>
-                </div>
-
-                {/* 책 정보 */}
-                <div className="flex items-start gap-2">
-                  <BookOpen className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
-                  <div>
-                    <CardTitle className="text-base leading-tight">
-                      {submission.bookTitle}
-                    </CardTitle>
-                    {submission.bookAuthor && (
-                      <CardDescription className="text-sm mt-1">
-                        {submission.bookAuthor}
-                      </CardDescription>
+                </TableCell>
+                <TableCell className="font-medium">
+                  {submission.participantName}
+                </TableCell>
+                <TableCell className="font-medium truncate max-w-[200px]" title={submission.bookTitle}>
+                  {submission.bookTitle}
+                </TableCell>
+                <TableCell className="max-w-[400px]">
+                  <div className="space-y-1">
+                    {submission.review && (
+                      <p className="text-sm text-muted-foreground truncate">
+                        {submission.review}
+                      </p>
+                    )}
+                    {submission.dailyQuestion && (
+                      <div className="flex items-center gap-1 text-xs text-primary/80">
+                        <span className="font-semibold shrink-0">Q.</span>
+                        <span className="truncate">{submission.dailyQuestion}</span>
+                      </div>
                     )}
                   </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-3">
-                {/* 리뷰 */}
-                <div className="pt-2 border-t">
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {submission.review}
-                  </p>
-                </div>
-
-                {/* 가치관 질문 & 답변 */}
-                {submission.dailyQuestion && submission.dailyAnswer && (
-                  <div className="pt-3 border-t">
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 space-y-1">
-                        <p className="text-xs font-semibold text-primary">
-                          {submission.dailyQuestion}
-                        </p>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {submission.dailyAnswer}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 날짜 */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
-                  <Calendar className="h-3 w-3" />
-                  <span>
-                    {formatTimestampKST(submission.submittedAt, 'yyyy년 M월 d일 HH:mm')}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </TableCell>
+                <TableCell>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredSubmissions.length === 0 && !isLoading && (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  {searchQuery ? '검색 결과가 없습니다' : '등록된 독서 인증이 없습니다'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      {filteredSubmissions.length === 0 && !isLoading && (
-        <Card className="p-12">
-          <CardContent className="text-center">
-            <p className="text-muted-foreground">
-              {searchQuery ? '검색 결과가 없습니다' : '등록된 독서 인증이 없습니다'}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* 상세 보기 다이얼로그 */}
+      <SubmissionDetailDialog
+        submission={selectedSubmission}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
     </div>
   );
 }

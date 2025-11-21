@@ -50,6 +50,7 @@ export async function createSubmission(
     submissionDate,
     createdAt: now,
     updatedAt: now,
+    // cohortId가 제공되지 않으면 undefined (기존 코드 호환성)
   });
 
   return docRef.id;
@@ -92,53 +93,11 @@ export async function getSubmissionsByParticipant(
   return mapToSubmissions(querySnapshot);
 }
 
-/**
- * 참여코드별 제출물 조회
- */
-export async function getSubmissionsByCode(
-  participationCode: string
-): Promise<ReadingSubmission[]> {
-  const db = getDb();
-  const q = query(
-    collection(db, COLLECTIONS.READING_SUBMISSIONS),
-    where('participationCode', '==', participationCode),
-    orderBy('submittedAt', 'desc')
-  );
+// ❌ REMOVED: getSubmissionsByCode - 미사용 함수 제거
 
-  const querySnapshot = await getDocs(q);
-  return mapToSubmissions(querySnapshot);
-}
+// ❌ REMOVED: getAllSubmissions - 미사용 함수 제거
 
-/**
- * 모든 제출물 조회
- */
-export async function getAllSubmissions(): Promise<ReadingSubmission[]> {
-  const db = getDb();
-  const q = query(
-    collection(db, COLLECTIONS.READING_SUBMISSIONS),
-    orderBy('submittedAt', 'desc')
-  );
-
-  const querySnapshot = await getDocs(q);
-  return mapToSubmissions(querySnapshot);
-}
-
-/**
- * 제출물 상태별 조회
- */
-export async function getSubmissionsByStatus(
-  status: 'pending' | 'approved' | 'rejected'
-): Promise<ReadingSubmission[]> {
-  const db = getDb();
-  const q = query(
-    collection(db, COLLECTIONS.READING_SUBMISSIONS),
-    where('status', '==', status),
-    orderBy('submittedAt', 'desc')
-  );
-
-  const querySnapshot = await getDocs(q);
-  return mapToSubmissions(querySnapshot);
-}
+// ❌ REMOVED: getSubmissionsByStatus - 미사용 함수 제거
 
 /**
  * 제출물 업데이트
@@ -150,19 +109,11 @@ export async function updateSubmission(
   const db = getDb();
   const docRef = doc(db, COLLECTIONS.READING_SUBMISSIONS, id);
 
-  try {
-    const updatePayload = {
-      ...data,
-      updatedAt: Timestamp.now(),
-    };
-
-    await updateDoc(docRef, updatePayload);
-
-    logger.info('✅ Submission updated successfully', { id });
-  } catch (error) {
-    logger.error('❌ Failed to update submission', { id, error });
-    throw error;
-  }
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: Timestamp.now(),
+  });
+  // Firebase throws on error - no need for try-catch
 }
 
 /**
@@ -174,18 +125,7 @@ export async function deleteSubmission(id: string): Promise<void> {
   await deleteDoc(docRef);
 }
 
-/**
- * 제출물 검색 (커스텀 쿼리)
- */
-export async function searchSubmissions(
-  constraints: QueryConstraint[]
-): Promise<ReadingSubmission[]> {
-  const db = getDb();
-  const q = query(collection(db, COLLECTIONS.READING_SUBMISSIONS), ...constraints);
-
-  const querySnapshot = await getDocs(q);
-  return mapToSubmissions(querySnapshot);
-}
+// ❌ REMOVED: searchSubmissions - 미사용 함수 제거
 
 /**
  * 참가자별 제출물 실시간 구독 (프로필북용)
@@ -307,6 +247,7 @@ export async function saveDraft(
   participantId: string,
   participationCode: string,
   data: {
+    cohortId?: string; // 🆕 기수 ID (중복 참가자 구분용)
     bookImageUrl?: string; // 이미 업로드된 이미지 URL
     bookTitle?: string;
     bookAuthor?: string;
@@ -328,6 +269,7 @@ export async function saveDraft(
   const draftData = {
     participantId,
     participationCode,
+    cohortId: data.cohortId, // 🆕 cohortId 포함 (제공된 경우)
     ...data,
     submissionDate,
     status: 'draft' as const,

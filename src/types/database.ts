@@ -47,6 +47,10 @@ export interface DailyParticipantAssignment {
   /** 할당된 프로필북 ID 배열 (누적 인증 기반 개수) */
   assigned?: string[];
 
+  // v3.0: 클러스터 매칭 (2025-11-15 이후)
+  /** 소속 클러스터 ID (v3.0) */
+  clusterId?: string;
+
   // ============================================================
   // v1.0 레거시 필드 (과거 데이터 읽기 전용)
   // ============================================================
@@ -74,14 +78,36 @@ export interface DailyParticipantAssignment {
 }
 
 /**
+ * 클러스터 정보 (v3.0)
+ * AI가 하루 단위로 생성하는 독서 성향 그룹
+ */
+export interface Cluster {
+  /** 클러스터 ID */
+  id: string;
+  /** 클러스터 이름 (예: "오늘의 사색파") */
+  name: string;
+  /** 이모지 */
+  emoji: string;
+  /** 오늘의 주제/테마 (AI가 분석한 공통점) */
+  theme: string;
+  /** 클러스터 멤버 ID 배열 */
+  memberIds: string[];
+  /** AI 분석 근거 */
+  reasoning: string;
+}
+
+/**
  * 날짜별 프로필북 매칭 결과
  */
 export interface DailyMatchingEntry {
   /** 참가자별 매칭 배정 정보 */
   assignments: Record<string, DailyParticipantAssignment>;
 
-  /** 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭) */
-  matchingVersion?: 'ai' | 'random';
+  /** 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭, cluster: 클러스터 매칭) */
+  matchingVersion?: 'ai' | 'random' | 'cluster';
+
+  /** 클러스터 정보 (v3.0, matchingVersion === 'cluster'일 때만 존재) */
+  clusters?: Record<string, Cluster>;
 
   // ============================================================
   // v1.0 레거시 필드 (과거 데이터 읽기 전용)
@@ -120,6 +146,7 @@ export interface Cohort {
   participantCount?: number; // 🆕 참가자 수 (계산 필드, optional)
   totalDays?: number; // 🆕 프로그램 총 일수 (계산 필드, optional)
   profileUnlockDate?: string | null; // 🆕 어제 인증자 전체 공개 시작 날짜 (null: 기본 2x2만, "2025-10-08": 해당 날짜부터 전체 공개, ISO 8601)
+  useClusterMatching?: boolean; // 🆕 클러스터 매칭 사용 여부 (true: v3.0 클러스터, false/undefined: v2.0 랜덤)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
@@ -187,6 +214,7 @@ export interface Participant {
   gender?: 'male' | 'female' | 'other'; // 성별
   profileImage?: string; // 프로필 이미지 URL (큰 이미지, 프로필 상세용)
   profileImageCircle?: string; // 원형 프로필 이미지 URL (작은 아바타용)
+  faceImage?: string; // 얼굴 확대 이미지 (프로필북 전용)
   profileBookUrl?: string; // 프로필북 URL
   isSuperAdmin?: boolean; // 슈퍼 관리자 (모든 프로필 열람, 리스트 미표시)
   isAdministrator?: boolean; // 일반 관리자 (공지사항 관리, 프로필 열람 제약 동일)
@@ -215,6 +243,7 @@ export interface ReadingSubmission {
   id: string; // 문서 ID
   participantId: string; // 참가자 ID (Participant.id)
   participationCode: string; // 참여 코드
+  cohortId?: string; // 기수 ID (중복 참가자 구분용, 2025-11-11 추가)
   bookTitle?: string; // 책 제목 (임시저장 시 선택, 제출 시 필수)
   bookAuthor?: string; // 책 저자 (선택)
   bookCoverUrl?: string; // 책 표지 이미지 URL (네이버 API에서 가져온 표지, 선택)
@@ -263,10 +292,12 @@ export interface Notice {
   cohortId: string; // 기수 ID
   author: string; // 작성자
   content: string; // 공지 내용
+  title?: string; // 푸시 알림 제목 (선택)
   imageUrl?: string; // 이미지 URL (선택)
   templateId?: string; // 템플릿 ID (템플릿에서 생성된 경우)
   isCustom: boolean; // 커스텀 공지 여부 (true: 직접 작성, false: 템플릿 복사)
-  status?: 'draft' | 'published'; // 공지 상태 (draft: 임시저장, published: 발행, 기본값: published)
+  status?: 'draft' | 'published' | 'scheduled'; // 공지 상태 (draft: 임시저장, published: 발행, scheduled: 예약)
+  scheduledAt?: Timestamp; // 예약 발행 시간 (선택)
   order?: number; // 정렬 순서 (템플릿에서 복사된 경우)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시

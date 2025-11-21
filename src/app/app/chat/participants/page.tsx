@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
-import BackHeader from '@/components/BackHeader';
+import TopBar from '@/components/TopBar';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import DirectMessageDialog from '@/components/chat/DM/DirectMessageDialog';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
@@ -234,8 +234,8 @@ function ParticipantsPageContent() {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
-        <BackHeader onBack={() => router.back()} title={`참가자 목록 (${sortedParticipants.length})`} />
-        <main className="flex-1 overflow-y-auto pt-14">
+        <TopBar onBack={() => router.back()} title={`참가자 목록 (${sortedParticipants.length})`} />
+        <main className="flex-1 overflow-y-auto">
           <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 py-4">
             {sortedParticipants.map((p) => {
               // 본인 식별: ID 또는 전화번호로 매칭 (1기→3기 재참여 대응)

@@ -56,10 +56,6 @@ export function useAccessControl(): AccessControlResult {
 
   const isSelf = (targetId: string) => userId === targetId;
 
-  // 🔍 디버깅: 인증 상태 확인
-  if (userId) {
-  }
-
   return {
     userId,
     isVerified,

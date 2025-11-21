@@ -3,6 +3,7 @@
 import { Users, PenSquare, Mail, Settings } from 'lucide-react';
 import { useTotalUnreadCount } from '@/hooks/use-messages';
 import { useAuth } from '@/contexts/AuthContext';
+import TopBar from '@/components/TopBar';
 
 interface HeaderProps {
   onParticipantsClick?: () => void;
@@ -25,27 +26,23 @@ export default function Header({
   const { data: unreadCount = 0 } = useTotalUnreadCount(participant?.id || '');
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[999] border-b bg-background safe-area-header isolate">
-      <div className="container flex h-14 items-center justify-center relative px-6">
-        {/* Left side - Settings icon */}
-        <div className="absolute left-6 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onSettingsClick}
-            className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
-            aria-label="설정"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Center - Title */}
-        <h1 className="text-lg font-bold text-foreground">
-          필립앤소피 {currentCohort?.name || ''}
-        </h1>
-
-        {/* Right side - Action icons */}
-        <div className="absolute right-6 flex items-center gap-2">
+    <TopBar
+      position="fixed"
+      className="z-[999]"
+      title={`필립앤소피 ${currentCohort?.name || ''}`}
+      align="center"
+      leftAction={
+        <button
+          type="button"
+          onClick={onSettingsClick}
+          className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+          aria-label="설정"
+        >
+          <Settings className="h-5 w-5" />
+        </button>
+      }
+      rightAction={
+        <>
           {isAdmin ? (
             <button
               type="button"
@@ -84,20 +81,8 @@ export default function Header({
               </span>
             )}
           </button>
-        </div>
-      </div>
-      <style jsx>{`
-        .safe-area-header {
-          padding-top: env(safe-area-inset-top);
-        }
-
-        /* iOS 11.2 이전 버전 호환성 */
-        @supports (padding-top: constant(safe-area-inset-top)) {
-          .safe-area-header {
-            padding-top: constant(safe-area-inset-top);
-          }
-        }
-      `}</style>
-    </header>
+        </>
+      }
+    />
   );
 }

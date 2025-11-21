@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     siteName: 'Philip & Sophy',
     images: [
       {
-        url: '/image/landing/PnS_Membership_1.webp',
+        url: '/image/landing/PnS_Membership_1.webp?v=20251121',
         width: 1170,
         height: 4131,
         alt: '필립앤소피 멤버십',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '필립앤소피 멤버십',
     description: '승인제 독서소셜클럽 - 생각이 통하는 인연을 만나는 프리미엄 멤버십',
-    images: ['/image/landing/PnS_Membership_1.webp'],
+    images: ['/image/landing/PnS_Membership_1.webp?v=20251121'],
   },
 };
 

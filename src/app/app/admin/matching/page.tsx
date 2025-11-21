@@ -16,7 +16,7 @@ import { useYesterdaySubmissionCount } from '@/hooks/use-yesterday-submission-co
 import { useTodaySubmissionCount } from '@/hooks/use-today-submission-count';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
-import HeaderNavigation from '@/components/HeaderNavigation';
+import TopBar from '@/components/TopBar';
 import ParticipantAssignmentTable from '@/components/admin/ParticipantAssignmentTable';
 import { useToast } from '@/hooks/use-toast';
 import { useParticipantsByCohortRealtime } from '@/hooks/use-participants-realtime';
@@ -722,8 +722,8 @@ function MatchingPageContent() {
     return (
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden">
-          <HeaderNavigation title="매칭 관리" />
-          <main className="app-main-content flex-1 flex items-center justify-center bg-background">
+          <TopBar title="매칭 관리" onBack={() => router.back()} align="left" />
+          <main className="flex-1 flex items-center justify-center bg-background">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </main>
         </div>
@@ -741,13 +741,13 @@ function MatchingPageContent() {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden">
-        <HeaderNavigation
+        <TopBar
           title="AI 매칭 관리"
-          showBackButton
-          onBackClick={() => router.push(`/app/chat?cohort=${cohortId}`)}
+          onBack={() => router.push(`/app/chat?cohort=${cohortId}`)}
+          align="left"
         />
 
-        <main className="app-main-content flex-1 overflow-y-auto bg-admin-bg-page">
+        <main className="flex-1 overflow-y-auto bg-admin-bg-page">
           <div className="mx-auto max-w-md px-6 py-6 space-y-4">
             {/* 1. 오늘의 인증 현황 */}
             <div className={CARD_STYLES.CONTAINER}>

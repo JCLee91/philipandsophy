@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { getDb } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
+import { filterParticipantsByCohort } from '@/lib/firestore-utils';
 
 /**
  * 오늘 제출 현황 실시간 카운트 Hook
@@ -64,7 +65,10 @@ export function useTodaySubmissionCount(cohortId?: string) {
         }
 
         // 🔒 비동기 필터링을 별도 함수로 분리 (메모리 누수 방지)
-        filterByCohort(db, participantIds, cohortId)
+        filterParticipantsByCohort(participantIds, cohortId, {
+          excludeSuperAdmin: true,
+          excludeGhost: true,
+        })
           .then((validCount) => {
             if (isMountedRef.current) {
               setCount(validCount);
@@ -73,7 +77,6 @@ export function useTodaySubmissionCount(cohortId?: string) {
           })
           .catch((err) => {
             if (isMountedRef.current) {
-
               setError(err as Error);
               setIsLoading(false);
             }
@@ -98,38 +101,4 @@ export function useTodaySubmissionCount(cohortId?: string) {
   return { count, isLoading, error };
 }
 
-/**
- * 코호트별 참가자 필터링 (비동기)
- * 🔒 슈퍼 관리자(isSuperAdmin=true) 제외, 일반 관리자(isAdministrator=true) 포함
- * onSnapshot 콜백 외부로 분리하여 메모리 누수 방지
- */
-async function filterByCohort(
-  db: ReturnType<typeof getDb>,
-  participantIds: Set<string>,
-  cohortId: string
-): Promise<number> {
-  const participantIdsArray = Array.from(participantIds);
-  const validParticipantIds = new Set<string>();
-
-  // Firestore 'in' 쿼리는 최대 10개까지만 가능하므로 배치 처리
-  for (let i = 0; i < participantIdsArray.length; i += 10) {
-    const batchIds = participantIdsArray.slice(i, i + 10);
-    const participantsQuery = query(
-      collection(db, 'participants'),
-      where('__name__', 'in', batchIds),
-      where('cohortId', '==', cohortId)
-    );
-
-    const participantsSnapshot = await getDocs(participantsQuery);
-    participantsSnapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      // 🔒 슈퍼 관리자와 고스트 참가자는 제외
-      // 일반 관리자(isAdministrator=true)는 매칭 대상이므로 포함
-      if (!data.isSuperAdmin && !data.isGhost) {
-        validParticipantIds.add(doc.id);
-      }
-    });
-  }
-
-  return validParticipantIds.size;
-}
+// ❌ REMOVED: filterByCohort 중복 함수 제거 (firestore-utils.ts로 통합)

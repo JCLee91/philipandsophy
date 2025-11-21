@@ -224,6 +224,22 @@ export function filterSubmissionsByDate<T extends { id?: string; submittedAt: Ti
 // 예전 AI 매칭 시절의 "인증해야 프로필북 접근" 로직은 더 이상 불필요
 
 /**
+ * 날짜 문자열을 안전하게 파싱
+ * @param dateString - ISO 날짜 문자열
+ * @param context - 로깅용 컨텍스트
+ * @returns Date 객체 또는 null
+ */
+function parseDateSafe(dateString: string | undefined, context: string): Date | null {
+  if (!dateString) return null;
+  const date = parseISO(dateString);
+  if (!isValid(date)) {
+    logger.warn(`Invalid date in ${context}`, { dateString });
+    return null;
+  }
+  return date;
+}
+
+/**
  * 오늘이 프로그램 마지막 날인지 체크 (새벽 2시 마감 정책 적용)
  *
  * @param cohort - 기수 정보
@@ -234,10 +250,9 @@ export function filterSubmissionsByDate<T extends { id?: string; submittedAt: Ti
  * // 10월 14일 오전 10시: today="2025-10-14" → endDate="2025-10-14"이면 true
  */
 export function isFinalDay(cohort: Cohort): boolean {
-  if (!cohort?.endDate) return false;
-
-  const today = getSubmissionDate(); // ✅ 새벽 2시 마감 정책 적용
-  return today === cohort.endDate;
+  const today = parseDateSafe(getSubmissionDate(), 'isFinalDay');
+  const endDate = parseDateSafe(cohort?.endDate, 'isFinalDay');
+  return today && endDate ? format(today, 'yyyy-MM-dd') === format(endDate, 'yyyy-MM-dd') : false;
 }
 
 /**
@@ -251,30 +266,9 @@ export function isFinalDay(cohort: Cohort): boolean {
  * // 10월 15일 오전 10시: today="2025-10-15" → endDate="2025-10-14"이면 true
  */
 export function isAfterProgram(cohort: Cohort): boolean {
-  if (!cohort?.endDate) return false;
-
-  try {
-    const today = parseISO(getSubmissionDate()); // ✅ 새벽 2시 마감 정책 적용
-    const endDate = parseISO(cohort.endDate);
-
-    // Invalid Date 체크
-    if (!isValid(today) || !isValid(endDate)) {
-      logger.error('Invalid date in isAfterProgram', {
-        cohortId: cohort.id,
-        endDate: cohort.endDate,
-        todayString: getSubmissionDate()
-      });
-      return false;
-    }
-
-    return isAfter(today, endDate);
-  } catch (error) {
-    logger.error('Error in isAfterProgram', {
-      cohortId: cohort.id,
-      error: error instanceof Error ? error.message : String(error)
-    });
-    return false;
-  }
+  const today = parseDateSafe(getSubmissionDate(), 'isAfterProgram');
+  const endDate = parseDateSafe(cohort?.endDate, 'isAfterProgram');
+  return today && endDate ? isAfter(today, endDate) : false;
 }
 
 /**
@@ -285,31 +279,9 @@ export function isAfterProgram(cohort: Cohort): boolean {
  * @returns true if 전체 공개 가능 (마지막 날 이후 계속)
  */
 export function canViewAllProfiles(cohort: Cohort): boolean {
-  if (!cohort?.endDate) return false;
-
-  try {
-    const today = parseISO(getSubmissionDate()); // ✅ 새벽 2시 마감 정책 적용
-    const endDate = parseISO(cohort.endDate);
-
-    // Invalid Date 체크
-    if (!isValid(today) || !isValid(endDate)) {
-      logger.error('Invalid date in canViewAllProfiles', {
-        cohortId: cohort.id,
-        endDate: cohort.endDate,
-        todayString: getSubmissionDate()
-      });
-      return false;
-    }
-
-    // 14일차 (마지막 날)부터 무제한 (새벽 2시부터)
-    return today >= endDate;
-  } catch (error) {
-    logger.error('Error in canViewAllProfiles', {
-      cohortId: cohort.id,
-      error: error instanceof Error ? error.message : String(error)
-    });
-    return false;
-  }
+  const today = parseDateSafe(getSubmissionDate(), 'canViewAllProfiles');
+  const endDate = parseDateSafe(cohort?.endDate, 'canViewAllProfiles');
+  return today && endDate ? today >= endDate : false;
 }
 
 /**
@@ -320,33 +292,12 @@ export function canViewAllProfiles(cohort: Cohort): boolean {
  * @returns true if 인증 없이 전체 공개 가능 (endDate + 1일 이후 계속)
  */
 export function canViewAllProfilesWithoutAuth(cohort: Cohort): boolean {
-  if (!cohort?.endDate) return false;
+  const today = parseDateSafe(getSubmissionDate(), 'canViewAllProfilesWithoutAuth');
+  const endDate = parseDateSafe(cohort?.endDate, 'canViewAllProfilesWithoutAuth');
+  if (!today || !endDate) return false;
 
-  try {
-    const today = parseISO(getSubmissionDate()); // ✅ 새벽 2시 마감 정책 적용
-    const endDate = parseISO(cohort.endDate);
-
-    // Invalid Date 체크
-    if (!isValid(today) || !isValid(endDate)) {
-      logger.error('Invalid date in canViewAllProfilesWithoutAuth', {
-        cohortId: cohort.id,
-        endDate: cohort.endDate,
-        todayString: getSubmissionDate()
-      });
-      return false;
-    }
-
-    // 15일차 (마지막 날 + 1일)부터 무제한 (새벽 2시부터)
-    const startDate = addDays(endDate, 1);
-
-    return today >= startDate;
-  } catch (error) {
-    logger.error('Error in canViewAllProfilesWithoutAuth', {
-      cohortId: cohort.id,
-      error: error instanceof Error ? error.message : String(error)
-    });
-    return false;
-  }
+  const startDate = addDays(endDate, 1);
+  return today >= startDate;
 }
 
 /**
@@ -363,28 +314,7 @@ export function canViewAllProfilesWithoutAuth(cohort: Cohort): boolean {
  * shouldShowAllYesterdayVerified(cohort); // false
  */
 export function shouldShowAllYesterdayVerified(cohort: Cohort): boolean {
-  if (!cohort?.profileUnlockDate) return false;
-
-  try {
-    const today = parseISO(getSubmissionDate()); // ✅ 새벽 2시 마감 정책 적용
-    const unlockDate = parseISO(cohort.profileUnlockDate);
-
-    if (!isValid(today) || !isValid(unlockDate)) {
-      logger.error('Invalid date in shouldShowAllYesterdayVerified', {
-        cohortId: cohort.id,
-        profileUnlockDate: cohort.profileUnlockDate,
-        todayString: getSubmissionDate()
-      });
-      return false;
-    }
-
-    // 오늘이 설정된 날짜 이상이면 true (새벽 2시부터)
-    return today >= unlockDate;
-  } catch (error) {
-    logger.error('Error in shouldShowAllYesterdayVerified', {
-      cohortId: cohort.id,
-      error: error instanceof Error ? error.message : String(error)
-    });
-    return false;
-  }
+  const today = parseDateSafe(getSubmissionDate(), 'shouldShowAllYesterdayVerified');
+  const unlockDate = parseDateSafe(cohort?.profileUnlockDate, 'shouldShowAllYesterdayVerified');
+  return today && unlockDate ? today >= unlockDate : false;
 }

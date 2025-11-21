@@ -22,15 +22,16 @@ import Image from 'next/image';
 import type { ReadingSubmission } from '@/types/database';
 import type { Timestamp } from 'firebase/firestore';
 import { PROFILE_THEMES, DEFAULT_THEME, type ProfileTheme } from '@/constants/profile-themes';
-import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified, getMatchingTargetDate } from '@/lib/date-utils';
+  import { filterSubmissionsByDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, getSubmissionDate, shouldShowAllYesterdayVerified, getMatchingTargetDate } from '@/lib/date-utils';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
-import { getAssignedProfiles, getLegacyMatchingReasons } from '@/lib/matching-compat';
+import { getAssignedProfiles } from '@/lib/matching-compat';
 import { useParticipant } from '@/hooks/use-participants';
 import { useProfileBookAccess } from '@/hooks/use-profile-book-access';
 import { logger } from '@/lib/logger';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
+import TopBar from '@/components/TopBar';
 
 interface ProfileBookContentProps {
   params: { participantId: string };
@@ -137,9 +138,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 어제 인증한 참가자 목록 조회
   const { data: yesterdayVerifiedIds } = useYesterdayVerifiedParticipants(cohortId || undefined);
 
-  const preferredMatchingDate = useMemo(() => {
-    return matchingDate ?? undefined;
-  }, [matchingDate]);
+  // ✅ 불필요한 useMemo 제거 (단순 ?? 연산자)
+  const preferredMatchingDate = matchingDate ?? undefined;
 
   const matchingLookupWithinAccess = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
@@ -208,29 +208,27 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 14일차(마지막 날) 및 15일차 이후 체크
   const isFinalDayOrAfter = cohort ? canViewAllProfiles(cohort) : false;
   const isAfterProgramWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
+  
+  // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
+  const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
 
   // 14일차나 15일차 이후인지 확인 (특별 파라미터로 전달됨)
   // ✅ FIX: getSubmissionDate() 기준으로 비교 (새벽 2시 마감 정책 적용)
   const isFinalDayAccess = matchingDate === getSubmissionDate() && isFinalDayOrAfter;
 
-  // profileUnlockDate 체크: 설정된 날짜 이상이면 어제 인증자 전체 공개 모드
-  const isUnlockDayOrAfter = cohort ? shouldShowAllYesterdayVerified(cohort) : false;
-
-  // 전체 오픈 기간 판별: profileUnlockDate 이상 + 오늘 인증 완료
-  // → 어떤 경로로 접근해도 어제까지의 모든 기록을 볼 수 있음 (스포일러 방지)
-  const shouldShowAll = isUnlockDayOrAfter && isVerifiedToday;
-
   // 프로필북 표시 규칙:
   // - 14일차 또는 15일차 이후: 최신 제출물 모두 표시 (cutoff 없음)
-  // - 전체 오픈 기간 + 인증: 어제까지 전체 공개 (스포일러 방지)
   // - 평소: 인증 기반 날짜까지의 인증만 표시
   //   예: effectiveMatchingDate="11-10" → 11-10까지 인증 포함
   //       (프로필북은 11-11 오전 2시부터 제공되지만, 11-10 인증까지만 표시)
-  const submissionCutoffDate = (isFinalDayAccess || isAfterProgramWithoutAuth || isSuperAdmin)
-    ? null  // 최신 제출물 모두 표시
-    : shouldShowAll
-      ? getMatchingTargetDate()  // 전체 오픈 기간 + 인증: 어제까지 전체 공개 (스포일러 방지)
-      : effectiveMatchingDate; // ✅ 인증 기반 날짜까지 포함 (새벽 2시 마감 정책 적용)
+  
+  // ✅ FIX: 전체 오픈 기간(마지막 날 or UnlockDate) + 오늘 인증 완료 시 모든 기록 표시
+  const shouldShowAll = isAfterProgramWithoutAuth || isSuperAdmin || 
+    ((isFinalDayOrAfter || isUnlockDayOrAfter) && isVerifiedToday);
+
+  const submissionCutoffDate = shouldShowAll
+    ? getMatchingTargetDate()  // ✅ 어제(마감된 날짜)까지만 표시 (오늘 인증 스포일러 방지)
+    : effectiveMatchingDate; // ✅ 인증 기반 날짜까지 포함 (새벽 2시 마감 정책 적용)
 
   // 랜덤 매칭: 매칭 날짜가 있으면 항상 접근 가능 (인증 여부 무관)
   const viewerHasAccessForDate = isSuperAdmin || !!effectiveMatchingDate;
@@ -368,14 +366,10 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   }, [assignedProfileIds]);
   const matchingVersion = matchingLookup?.matching.matchingVersion;
   const isRandomMatching = matchingVersion === 'random' || assignedProfileIds.length > 0;
-  const normalizedParticipantId = useMemo(() => {
-    if (!participantId) return participantId;
-    return participantId.replace(/^ghost-/, '');
-  }, [participantId]);
-  const assignmentIndex = useMemo(() => {
-    if (!normalizedParticipantId) return -1;
-    return assignedProfileIds.indexOf(normalizedParticipantId);
-  }, [assignedProfileIds, normalizedParticipantId]);
+
+  // ✅ 불필요한 useMemo 제거 (단순 replace, indexOf 연산)
+  const normalizedParticipantId = participantId ? participantId.replace(/^ghost-/, '') : participantId;
+  const assignmentIndex = normalizedParticipantId ? assignedProfileIds.indexOf(normalizedParticipantId) : -1;
   const previewLimit = useMemo(() => {
     if (
       unlockedProfileBooks === null ||
@@ -393,53 +387,19 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 새로운 규칙: 어제 인증한 사람인지 체크
   const isYesterdayVerified = yesterdayVerifiedIds?.has(participantId) ?? false;
 
-  // 매칭 이유 추출 (v1.0 레거시만 해당)
-  const matchingReason = useMemo(() => {
-    if (!viewerAssignment || !isFeatured) return null;
-
-    // v1.0 (AI 매칭): reasons 필드 존재
-    const legacyReasons = getLegacyMatchingReasons(viewerAssignment);
-    if (!legacyReasons) {
-      // v2.0 (랜덤 매칭): 매칭 이유 없음
-      return null;
-    }
-
-    const isSimilar = viewerAssignment.similar?.includes(participantId);
-    const isOpposite = viewerAssignment.opposite?.includes(participantId);
-
-    // Theme은 매칭 타입에서 직접 유도
-    if (isSimilar && legacyReasons.similar) {
-      return {
-        text: legacyReasons.similar,
-        theme: 'similar' as ProfileTheme
-      };
-    }
-    if (isOpposite && legacyReasons.opposite) {
-      return {
-        text: legacyReasons.opposite,
-        theme: 'opposite' as ProfileTheme
-      };
-    }
-
-    // 경고 로깅: 데이터 불일치 감지
-    if (isSimilar || isOpposite) {
-
-    }
-
-    return null;
-  }, [viewerAssignment, isFeatured, participantId]);
+  // ❌ REMOVED: matchingReason - v1.0 AI 매칭 레거시 (UI에서 사용 안 함)
 
   // 최종 접근 권한:
   // - 본인 OR 슈퍼관리자: 항상 가능
   // - 14일차 + 인증 완료: 모든 프로필 접근 가능
   // - 15일차 이후: 인증 없이도 모든 프로필 접근 가능
-  // - 새 규칙: profileUnlockDate 이상 + 어제 인증한 사람 → 접근 가능 (미인증도 허용)
+  // - 새 규칙: profileUnlockDate 이상 + 오늘 인증 + 어제 인증한 사람 → 접근 가능
   // - 기존: 매칭된 4명만 (인증 완료 + 추천 멤버)
   const hasAccess = isSelf ||
     isSuperAdmin ||
     (isAfterProgramWithoutAuth) ||  // 15일차 이후 (인증 불필요)
     (isFinalDayAccess && isVerifiedToday) ||  // 14일차 (인증 필요)
-    (isUnlockDayOrAfter && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상 (미인증도 허용)
+    (isUnlockDayOrAfter && isVerifiedToday && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상
     (isVerifiedToday && viewerHasAccessForDate && isFeatured) ||  // 기존: 매칭된 4명만
     canPreviewAccess;  // 랜덤 매칭 미인증자: 제한된 미리 보기 허용
 
@@ -519,25 +479,21 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     <PageTransition>
       <div className="app-shell flex flex-col overflow-y-auto" style={{ backgroundColor: colors.background }}>
         {/* 상단바 */}
-        <div className="flex items-center px-6 pb-4 safe-area-header" style={{ backgroundColor: colors.background }}>
-          <button
-            onClick={() => router.back()}
-            className="flex items-center justify-center w-6 h-6"
-          >
-            <Image
-              src="/icons/arrow-back.svg"
-              alt="뒤로가기"
-              width={24}
-              height={24}
-            />
-          </button>
-        </div>
+        <TopBar
+          onBack={() => router.back()}
+          align="left"
+          style={{ backgroundColor: colors.background, borderBottom: 'none' }}
+          position="sticky"
+        />
 
         {/* 메인 콘텐츠 */}
         <div className="relative flex-1">
           {/* 프로필 이미지 (컨테이너 위로 겹침) */}
           <div className="absolute left-1/2 transform -translate-x-1/2 top-[36px] z-10">
-            <div className="relative w-[80px] h-[80px]">
+            <div 
+              className="relative w-[80px] h-[80px] cursor-pointer transition-transform active:scale-95"
+              onClick={() => setProfileImageDialogOpen(true)}
+            >
               <Avatar className="w-full h-full border-[3px] border-[#31363e]">
                 <AvatarImage src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage} alt={participant.name} />
                 <AvatarFallback className="bg-gray-200 text-2xl font-bold text-gray-700">
@@ -578,14 +534,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   )}
                 </div>
 
-                {/* 매칭 이유 배너 - 논의 중인 기능으로 일시적으로 비활성화 */}
-                {/* {!isSelf && matchingReason && (
-                  <MatchingReasonBanner
-                    reason={matchingReason.text}
-                    theme={matchingReason.theme}
-                    className="w-full mb-8"
-                  />
-                )} */}
+                {/* ❌ REMOVED: MatchingReasonBanner - v1.0 AI 매칭 레거시 */}
 
                 {/* 최근 본 도서 */}
                 {latestSubmission && (

@@ -8,7 +8,7 @@ import { validateImageFile, compressImageIfNeeded, createFileFromUrl } from '@/l
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { useToast } from '@/hooks/use-toast';
 import { saveDraft, uploadReadingImage } from '@/lib/firebase';
-import BackHeader from '@/components/BackHeader';
+import TopBar from '@/components/TopBar';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
 import PageTransition from '@/components/PageTransition';
 import UnifiedButton from '@/components/UnifiedButton';
@@ -72,25 +72,21 @@ function Step1Content() {
     hasLoadedDraftRef.current = true;
     const loadDraft = async () => {
       setIsLoadingDraft(true);
-      try {
-        const { getDraftSubmission } = await import('@/lib/firebase/submissions');
-        const draft = await getDraftSubmission(participant.id, cohortId);
+      const { getDraftSubmission } = await import('@/lib/firebase/submissions');
+      const draft = await getDraftSubmission(participant.id, cohortId);
 
-        if (draft?.bookImageUrl) {
-          // URL에서 File 객체 생성 (다음 단계 진행 가능하도록)
-          const file = await createFileFromUrl(draft.bookImageUrl);
-          setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
-          setImageStorageUrl(draft.bookImageUrl);
-          toast({
-            title: '임시 저장된 내용을 불러왔습니다',
-            description: '이어서 작성하실 수 있습니다.',
-          });
-        }
-      } catch (error) {
-        // 에러 무시 (draft 없을 수 있음)
-      } finally {
-        setIsLoadingDraft(false);
+      if (draft?.bookImageUrl) {
+        // URL에서 File 객체 생성 (다음 단계 진행 가능하도록)
+        const file = await createFileFromUrl(draft.bookImageUrl);
+        setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
+        setImageStorageUrl(draft.bookImageUrl);
+        toast({
+          title: '임시 저장된 내용을 불러왔습니다',
+          description: '이어서 작성하실 수 있습니다.',
+        });
       }
+
+      setIsLoadingDraft(false);
     };
 
     loadDraft();
@@ -245,7 +241,11 @@ function Step1Content() {
         setImageStorageUrl(bookImageUrl);
       }
 
-      await saveDraft(participantId, participationCode, { bookImageUrl });
+      // 🆕 cohortId 추가 (중복 참가자 구분용)
+      await saveDraft(participantId, participationCode, {
+        bookImageUrl,
+        ...(cohortId && { cohortId }),
+      });
 
       // 이미지 업로드 완료되면 바로 다음 페이지로
       router.push(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
@@ -266,7 +266,7 @@ function Step1Content() {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
-        <BackHeader onBack={() => router.back()} title="독서 인증하기" variant="left" />
+        <TopBar onBack={() => router.back()} title="독서 인증하기" align="left" />
         <div className="fixed top-14 left-0 right-0 z-[998]">
           <ProgressIndicator currentStep={1} />
         </div>

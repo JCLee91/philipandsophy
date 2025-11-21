@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { Loader2, Upload, Download, Plus, X } from 'lucide-react';
 import FormSelect from '@/components/datacntr/form/FormSelect';
 import { phoneFormatUtils } from '@/constants/phone-format';
+import { useAllCohorts } from '@/hooks/use-cohorts';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -28,11 +29,15 @@ export default function CohortCreatePage() {
   const { user, isAdministrator, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
 
+  // 코호트 목록 조회
+  const { data: cohorts } = useAllCohorts();
+
   // 기본 정보
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [programStartDate, setProgramStartDate] = useState('');
+  const [useClusterMatching, setUseClusterMatching] = useState(true); // 기본값: v3 (클러스터)
 
   // 참가자 목록
   const [participants, setParticipants] = useState<ParticipantRow[]>([
@@ -41,6 +46,7 @@ export default function CohortCreatePage() {
 
   // Daily Questions 옵션
   const [questionsOption, setQuestionsOption] = useState<QuestionsOption>('later');
+  const [sourceCohortId, setSourceCohortId] = useState<string>('');
 
   // UI 상태
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -197,6 +203,15 @@ export default function CohortCreatePage() {
       return;
     }
 
+    if (questionsOption === 'copy' && !sourceCohortId) {
+      toast({
+        title: '기수 선택 필요',
+        description: '복사할 원본 기수를 선택해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -214,6 +229,7 @@ export default function CohortCreatePage() {
           startDate,
           endDate,
           programStartDate,
+          useClusterMatching,
           participants: participants.map(p => {
             // 전화번호 정규화 (다양한 형식 지원: +82, 82, 082, 010-xxxx-xxxx 등)
             const normalized = phoneFormatUtils.normalize(p.phone);
@@ -223,6 +239,7 @@ export default function CohortCreatePage() {
             };
           }),
           questionsOption,
+          sourceCohortId: questionsOption === 'copy' ? sourceCohortId : undefined,
         }),
       });
 
@@ -314,6 +331,39 @@ export default function CohortCreatePage() {
             />
             <p className="text-sm text-gray-500 mt-1">
               ℹ️ 프로그램 시작일과 동일하게 설정하는 것을 권장합니다.
+            </p>
+          </div>
+
+          <div>
+            <Label>매칭 시스템</Label>
+            <div className="mt-2 flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="matchingSystem"
+                  checked={!useClusterMatching}
+                  onChange={() => setUseClusterMatching(false)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-700">
+                  v2 (랜덤 매칭 / 기존 UI)
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="matchingSystem"
+                  checked={useClusterMatching}
+                  onChange={() => setUseClusterMatching(true)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-700">
+                  v3 (클러스터 매칭 / 신규 UI)
+                </span>
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              새로운 기수에는 v3 (클러스터 매칭) 사용을 권장합니다.
             </p>
           </div>
         </CardContent>
@@ -421,17 +471,34 @@ export default function CohortCreatePage() {
           <CardTitle>Daily Questions 설정</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name="questions"
-              value="copy"
-              checked={questionsOption === 'copy'}
-              onChange={(e) => setQuestionsOption(e.target.value as QuestionsOption)}
-              className="w-4 h-4"
-            />
-            <span>1기 질문 복사</span>
-          </label>
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer mb-2">
+              <input
+                type="radio"
+                name="questions"
+                value="copy"
+                checked={questionsOption === 'copy'}
+                onChange={(e) => setQuestionsOption(e.target.value as QuestionsOption)}
+                className="w-4 h-4"
+              />
+              <span>기존 기수 질문 복사</span>
+            </label>
+
+            {questionsOption === 'copy' && (
+              <div className="ml-7 w-1/2 min-w-[200px]">
+                <FormSelect
+                  value={sourceCohortId}
+                  onChange={setSourceCohortId}
+                  placeholder="복사할 기수 선택"
+                  options={cohorts?.map(c => ({
+                    value: c.id,
+                    label: c.name
+                  })) || []}
+                />
+              </div>
+            )}
+          </div>
+
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="radio"
