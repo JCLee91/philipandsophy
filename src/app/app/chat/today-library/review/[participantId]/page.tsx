@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
@@ -13,6 +13,10 @@ import { ReadingSubmission, Participant } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ProfileImageDialog from '@/components/ProfileImageDialog';
+import { getInitials } from '@/lib/utils';
+import { getResizedImageUrl } from '@/lib/image-utils';
 
 // ✅ Disable static generation
 export const dynamic = 'force-dynamic';
@@ -27,6 +31,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const { participant: currentUser } = useAuth();
+    const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
 
     const participantId = params.participantId;
     const submissionDate = searchParams.get('date');
@@ -50,14 +55,34 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
             );
             const submissionSnapshot = await getDocs(q);
 
-            if (submissionSnapshot.empty) {
-                throw new Error('Submission not found');
-            }
+            let submission: ReadingSubmission;
 
-            const submission = {
-                id: submissionSnapshot.docs[0].id,
-                ...submissionSnapshot.docs[0].data()
-            } as ReadingSubmission;
+            if (submissionSnapshot.empty) {
+                // throw new Error('Submission not found');
+                // 목업 확인을 위해 가짜 데이터 반환
+                submission = {
+                    id: 'mock-id',
+                    participantId,
+                    submissionDate,
+                    status: 'approved',
+                    bookTitle: '노르웨이의 숲',
+                    bookAuthor: '무라카미 하루키',
+                    bookCoverUrl: 'https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788937461097.jpg',
+                    bookImageUrl: 'https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788937461097.jpg', // 임시 이미지
+                    review: `이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다. 겉으로는 가볍고 유쾌하지만, 그녀의 농담에는 늘 외로움이 깃들어 있다. 와타나베에게 미도리는 단순한 연인이 아니라, 살아 있음을 일깨워주는 존재였다.
+
+미도리는 어쩌면 삶 그 자체 같다. 불완전하고, 예측할 수 없으며, 때로는 잔인할 만큼 솔직하다. 그녀는 상처를 숨기지 않고, 오히려 그것을 품은 채 웃는다. 그 모습이야말로 이 소설이 말하는 진짜 어른이 되는 과정일지도 모른다.
+
+책을 덮고 나면 이상하게도 마음이 먹먹해진다. 우리 모두에게는 언젠가 만났던 미도리가 있고, 그 사람 덕분에 다시 살아가기로 결심했던 순간이 있기 때문이다.`,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                } as unknown as ReadingSubmission;
+            } else {
+                submission = {
+                    id: submissionSnapshot.docs[0].id,
+                    ...submissionSnapshot.docs[0].data()
+                } as ReadingSubmission;
+            }
 
             // Fetch participant
             const participantDoc = await getDoc(doc(db, 'participants', participantId));
@@ -88,17 +113,19 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     if (isLoading) {
         return (
             <PageTransition>
-                <div className="app-shell flex flex-col overflow-hidden">
+                <div className="app-shell flex flex-col overflow-hidden bg-white">
                     <TopBar
-                        title="감상평"
+                        title="기록 로딩중..."
                         onBack={() => router.back()}
+                        align="center"
+                        className="bg-white border-b-0"
                     />
-                    <main className="flex-1 overflow-y-auto bg-background">
+                    <main className="flex-1 overflow-y-auto bg-white">
                         <div className="mx-auto max-w-md px-6 py-8">
                             <div className="space-y-4">
-                                <div className="h-64 shimmer rounded-lg" />
-                                <div className="h-20 shimmer rounded-lg" />
-                                <div className="h-40 shimmer rounded-lg" />
+                                <div className="h-20 w-20 rounded-full bg-gray-100 mx-auto" />
+                                <div className="h-6 w-32 rounded bg-gray-100 mx-auto" />
+                                <div className="h-40 rounded-lg bg-gray-100 mt-8" />
                             </div>
                         </div>
                     </main>
@@ -111,96 +138,157 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
     const { submission, participant } = data;
 
+    // --- Mock Data Injection for Verification ---
+    const mockJob = "은행원";
+    const mockBookDescription = "보통의 연인들을 위한 보통의 연애담. 알랭 드 보통의 최고의 소설 연애가 사랑이 되는 순간, 우연이 사랑이 되는 순간의 비밀 사랑은 무엇이고 연애란 또 무엇인가?";
+    const mockBookImageUrl = "https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788937461097.jpg";
+    const mockQuote = `터 시작하고 싶어, 하고 말했다.
+  미도리는 오래도록 수화기 저편에서 침묵을 지켰다. 마치 온 세상의 가느다란 빗줄기가 온 세상의 잔디밭 위에 내리는 듯한 그런 침묵이 이어졌다. 나는 그동안 창에 이마를 대고 눈을 감았다. 이윽고 미도리가 입을 열었다. "너, 지금 어디야?" 그녀는 조용한 목소리로 말했다.
+  나는 지금 어디에 있지?
+  나는 수화기를 든 채 고개를 들고 공중전화 부스 주변을 휙 둘러보았다. 나는 지금 어디에 있지? 그러나 거기가 어디`;
+
+    // Format Date: "10월 22일의 기록"
+    const formatDateTitle = (dateStr: string) => {
+        if (!dateStr) return '오늘의 기록';
+        const [year, month, day] = dateStr.split('-');
+        return `${parseInt(month)}월 ${parseInt(day)}일의 기록`;
+    };
+
+    const handleProfileClick = () => {
+        if (cohortId) {
+            router.push(appRoutes.profile(participantId, cohortId));
+        } else {
+            router.push(`/app/profile/${participantId}`);
+        }
+    };
+
     return (
         <PageTransition>
-            <div className="app-shell flex flex-col overflow-hidden">
+            <div className="app-shell flex flex-col overflow-hidden bg-white">
                 <TopBar
-                    title={`${participant.name}님의 감상평`}
+                    title={formatDateTitle(submissionDate || '')}
                     onBack={() => router.back()}
+                    align="left"
+                    className="bg-white border-b-0"
                 />
 
-                <main className="flex-1 overflow-y-auto bg-background">
-                    <div className="mx-auto max-w-md px-6 py-6 pb-24">
-                        <div className="space-y-6">
-                            {/* Certification Photo */}
-                            {submission.bookImageUrl && (
-                                <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-gray-100">
-                                    <Image
-                                        src={submission.bookImageUrl}
-                                        alt="독서 인증 사진"
-                                        fill
-                                        className="object-cover"
-                                        sizes="(max-width: 768px) 100vw, 448px"
-                                    />
-                                </div>
-                            )}
+                <main className="flex-1 overflow-y-auto bg-white">
+                    <div className="mx-auto max-w-md px-6 pb-24">
 
-                            {/* Book Info */}
-                            <div className="flex items-start gap-4">
+                        {/* 1. Profile Section (Top) */}
+                        <div className="flex flex-col items-center gap-3 pb-8 border-b border-[#F2F4F6]">
+                            <div
+                                className="w-[64px] h-[64px] cursor-pointer transition-transform active:scale-95"
+                                onClick={() => setProfileImageDialogOpen(true)}
+                            >
+                                <Avatar className="w-full h-full border-[2px] border-[#31363e]">
+                                    <AvatarImage
+                                        src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
+                                        alt={participant.name}
+                                    />
+                                    <AvatarFallback className="bg-gray-200 text-xl font-bold text-gray-700">
+                                        {getInitials(participant.name)}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                                <button
+                                    onClick={() => setProfileImageDialogOpen(true)}
+                                    className="flex items-center gap-1 transition-opacity hover:opacity-70"
+                                >
+                                    <span className="text-[18px] font-bold text-[#191F28]">{participant.name}</span>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 18L15 12L9 6" stroke="#191F28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </button>
+                                <span className="text-[13px] text-[#8B95A1]">{(participant as any).job || mockJob}</span>
+                            </div>
+                        </div>
+                        {/* 2. Book Info Section */}
+                        <section className="mb-10">
+                            <h2 className="text-[16px] font-bold text-[#191F28] mb-4">도서 정보</h2>
+
+                            {/* Book Card (Yellow Style) */}
+                            <div className="relative border-b-[2px] border-[#FFD362] rounded-t-[4px] px-3 py-3 min-h-[100px] bg-[#FFFDF3] mb-3">
+                                <div className="flex items-start gap-3 pr-[72px]">
+                                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                        <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] truncate tracking-[-0.14px]">
+                                            {submission.bookTitle || '제목 없음'}
+                                        </p>
+                                        <p className="text-[12px] leading-[1.4] text-[#8f98a3] tracking-[-0.12px]">
+                                            {submission.bookAuthor || '저자 미상'}
+                                        </p>
+                                    </div>
+                                </div>
+                                {/* Book Cover */}
                                 {submission.bookCoverUrl && (
-                                    <div className="relative w-16 h-24 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 w-[60px] h-[88px] bg-white rounded-[4px] overflow-hidden shadow-sm">
                                         <Image
                                             src={submission.bookCoverUrl}
-                                            alt={submission.bookTitle || '책 표지'}
+                                            alt="책 표지"
                                             fill
-                                            className="object-cover"
-                                            sizes="64px"
+                                            className="object-contain"
+                                            sizes="60px"
                                         />
                                     </div>
                                 )}
-                                <div className="flex-1">
-                                    <h2 className="font-bold text-lg text-gray-900">
-                                        {submission.bookTitle || '제목 없음'}
-                                    </h2>
-                                    {submission.bookAuthor && (
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            {submission.bookAuthor}
-                                        </p>
-                                    )}
-                                </div>
                             </div>
 
-                            {/* Review */}
-                            <div className="space-y-3">
-                                <h3 className="font-semibold text-base text-gray-900">
-                                    감상평
-                                </h3>
-                                <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                            {/* Book Description */}
+                            <p className="text-[14px] text-[#4E5968] leading-[1.6] break-keep">
+                                {submission.bookDescription || mockBookDescription}
+                            </p>
+                        </section>
+
+                        {/* 3. Review Section */}
+                        <section>
+                            <h2 className="text-[16px] font-bold text-[#191F28] mb-4">감상평</h2>
+
+                            {/* Certification Image (Gray Box) */}
+                            {submission.bookImageUrl && (
+                                <div className="bg-[#F2F4F6] rounded-[8px] overflow-hidden mb-6">
+                                    <div className="relative w-full aspect-[4/3]">
+                                        <Image
+                                            src={submission.bookImageUrl}
+                                            alt="인증 이미지"
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 100vw, 448px"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Review Text */}
+                            <div className="space-y-6">
+                                <p className="text-[15px] text-[#191F28] leading-[1.7] whitespace-pre-wrap">
                                     {submission.review || '작성된 감상평이 없습니다.'}
                                 </p>
                             </div>
-                        </div>
+                        </section>
+
                     </div>
                 </main>
 
-                {/* Footer with Profile Button */}
-                <div className="app-footer-actions border-t border-border bg-background p-4 pb-safe">
-                    <div className="mx-auto flex max-w-md flex-col gap-3">
-                        <UnifiedButton
-                            variant="primary"
-                            onClick={() => {
-                                if (cohortId) {
-                                    router.push(appRoutes.profile(participantId, cohortId));
-                                } else {
-                                    router.push(`/app/profile/${participantId}`);
-                                }
-                            }}
-                            className="w-full"
-                        >
-                            {participant.name}님의 프로필북 보기
-                        </UnifiedButton>
-                    </div>
-                </div>
+                {/* Profile Image Dialog */}
+                <ProfileImageDialog
+                    participant={participant}
+                    open={profileImageDialogOpen}
+                    onClose={() => setProfileImageDialogOpen(false)}
+                />
             </div>
         </PageTransition>
     );
 }
 
-export default async function ReviewDetailPage({ params }: { params: Promise<{ participantId: string }> }) {
-    const resolvedParams = await params;
+
+export default function ReviewDetailPage({ params }: { params: Promise<{ participantId: string }> }) {
+    const { use } = require('react');
+    const resolvedParams = use(params);
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <ReviewDetailContent params={resolvedParams} />
         </Suspense>
     );
 }
+
