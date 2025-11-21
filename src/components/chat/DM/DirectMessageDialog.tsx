@@ -346,7 +346,12 @@ export default function DirectMessageDialog({
           </div>
 
           {/* Footer Input */}
-          <div className={FOOTER_STYLES.INPUT_CONTAINER} ref={inputContainerRef}>
+          <div
+            className={`${FOOTER_STYLES.INPUT_CONTAINER} ${
+              !isKeyboardOpen ? 'pb-[calc(1rem+env(safe-area-inset-bottom))]' : ''
+            }`}
+            ref={inputContainerRef}
+          >
             {imagePreview && (
               <div
                 className={`${FOOTER_STYLES.IMAGE_PREVIEW_MARGIN} relative inline-block w-32 h-32 animate-in fade-in-0 duration-fast`}

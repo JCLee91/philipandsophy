@@ -13,10 +13,10 @@ export const LANDING_CONSTANTS = {
   IMAGE_VERSION: '1762739366900',
 
   /** 현재 모집 중인 기수 */
-  COHORT_NUMBER: 4,
+  COHORT_NUMBER: 5,
 
   /** 마감된 기수 */
-  CLOSED_COHORT_NUMBER: 3,
+  CLOSED_COHORT_NUMBER: 4,
 } as const;
 
 /**
