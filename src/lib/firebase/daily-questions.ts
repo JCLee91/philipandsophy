@@ -120,7 +120,7 @@ export async function getAllDailyQuestions(
  * Daily Questions 일괄 생성
  *
  * @param cohortId - 기수 ID
- * @param questions - 질문 배열 (14개)
+ * @param questions - 질문 배열 (13개, Day 2~14)
  */
 export async function createDailyQuestions(
   cohortId: string,
@@ -142,15 +142,16 @@ export async function createDailyQuestions(
       throw new Error('Neither programStartDate nor startDate set for cohort');
     }
 
-    if (questions.length !== 14) {
-      throw new Error('Must provide exactly 14 questions');
+    // Day 1은 OT이므로 질문이 없음. Day 2부터 14까지 총 13개의 질문이 있어야 함.
+    if (questions.length !== 13) {
+      throw new Error('Must provide exactly 13 questions (Day 2 to Day 14)');
     }
 
     // 각 Day별로 문서 생성
     const promises = questions.map(async (q, index) => {
-      const dayNumber = index + 1;
+      const dayNumber = index + 2; // Day 2부터 시작
       const date = format(
-        addDays(parseISO(programStart), index),
+        addDays(parseISO(programStart), dayNumber - 1),
         'yyyy-MM-dd'
       );
 

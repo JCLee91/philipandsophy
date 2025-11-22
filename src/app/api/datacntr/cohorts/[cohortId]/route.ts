@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { cohortId } = await params;
     const body = await request.json();
-    const { profileUnlockDate } = body;
+    const { profileUnlockDate, useClusterMatching } = body;
 
     // 입력 검증 (ISO 8601 날짜 형식)
     if (profileUnlockDate !== null && profileUnlockDate !== undefined) {
@@ -122,18 +122,28 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const db = getAdminDb();
 
-    // Firestore 업데이트
-    await db.collection(COLLECTIONS.COHORTS).doc(cohortId).update({
-      profileUnlockDate: profileUnlockDate ?? null,
+    // 업데이트할 데이터 구성
+    const updateData: any = {
       updatedAt: new Date(),
-    });
+    };
 
-    logger.info('코호트 프로필 공개 설정 업데이트', {
+    if (profileUnlockDate !== undefined) {
+      updateData.profileUnlockDate = profileUnlockDate ?? null;
+    }
+
+    if (useClusterMatching !== undefined) {
+      updateData.useClusterMatching = useClusterMatching;
+    }
+
+    // Firestore 업데이트
+    await db.collection(COLLECTIONS.COHORTS).doc(cohortId).update(updateData);
+
+    logger.info('코호트 설정 업데이트', {
       cohortId,
-      profileUnlockDate,
+      updateData,
     });
 
-    return NextResponse.json({ success: true, profileUnlockDate });
+    return NextResponse.json({ success: true, ...updateData });
   } catch (error) {
     logger.error('코호트 설정 업데이트 실패', error);
     return NextResponse.json(

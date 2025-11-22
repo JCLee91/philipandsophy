@@ -140,6 +140,25 @@
         "density": "SPARSE_ALL"
       },
       {
+        "collectionGroup": "notices",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "scheduledAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "density": "SPARSE_ALL"
+      },
+      {
         "collectionGroup": "participants",
         "queryScope": "COLLECTION",
         "fields": [
