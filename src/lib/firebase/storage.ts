@@ -28,7 +28,10 @@ export function uploadFileWithProgress(
   return new Promise((resolve, reject) => {
     const storage = getStorageInstance();
     const storageRef = ref(storage, path);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    const metadata = {
+      contentType: file.type,
+    };
+    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
     uploadTask.on(
       'state_changed',

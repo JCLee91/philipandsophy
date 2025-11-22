@@ -29,6 +29,7 @@ export function sanitizeParticipantForClient(participant: any): SanitizedPartici
     gender: participant.gender,
     profileImage: participant.profileImage,
     profileImageCircle: participant.profileImageCircle,
+    faceImage: participant.faceImage,
     occupation: participant.occupation,
     bio: participant.bio,
     currentBookTitle: participant.currentBookTitle,

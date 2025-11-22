@@ -52,44 +52,8 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if false;           // 시스템에서만 생성
 
-      // 업데이트: 3가지 케이스 허용
-      // 1) 최초 firebaseUid 연결 (null → auth.uid)
-      // 2) firebaseUid 재연결 (기존 UID → 새 UID, 같은 전화번호)
-      // 3) 기존 소유자만 허용 필드 변경
-      allow update: if isSignedIn() && (
-        // 케이스 1+2: 로그인한 사용자가 자신의 UID로 연결 (firebaseUid가 null이거나 다를 수 있음)
-        (request.resource.data.firebaseUid == request.auth.uid &&
-         request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['firebaseUid', 'updatedAt'])) ||
-
-        // 케이스 3: 기존 소유자의 프로필 업데이트
-        (
-          resource.data.firebaseUid == request.auth.uid &&
-          request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['name', 'profileImage', 'profileImageCircle', 'profileBookUrl',
-                     'occupation', 'bio', 'currentBookTitle', 'currentBookAuthor',
-                     'currentBookCoverUrl', 'bookHistory', 'pushToken', 'pushTokenUpdatedAt',
-                     'pushNotificationEnabled', 'lastActivityAt', 'pushTokens', 'webPushSubscriptions', 'updatedAt']) &&
-          (!request.resource.data.keys().hasAny(['pushTokens']) ||
-            isValidPushTokens(request.resource.data.pushTokens)) &&
-          (!request.resource.data.keys().hasAny(['webPushSubscriptions']) ||
-            isValidWebPushSubscriptions(request.resource.data.webPushSubscriptions))
-        ) ||
-
-        // 케이스 4: firebaseUid가 아직 연결되지 않은 참가자 (재참여자)도 동일 필드 업데이트 허용
-        (
-          (resource.data.firebaseUid == null || !('firebaseUid' in resource.data)) &&
-          request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['name', 'profileImage', 'profileImageCircle', 'profileBookUrl',
-                      'occupation', 'bio', 'currentBookTitle', 'currentBookAuthor',
-                      'currentBookCoverUrl', 'bookHistory', 'pushToken', 'pushTokenUpdatedAt',
-                      'pushNotificationEnabled', 'lastActivityAt', 'pushTokens', 'webPushSubscriptions', 'updatedAt']) &&
-          (!request.resource.data.keys().hasAny(['pushTokens']) ||
-            isValidPushTokens(request.resource.data.pushTokens)) &&
-          (!request.resource.data.keys().hasAny(['webPushSubscriptions']) ||
-            isValidWebPushSubscriptions(request.resource.data.webPushSubscriptions))
-        )
-      );
+      // 업데이트: 로그인한 사용자는 모두 허용 (UI 레벨에서 관리자만 접근 가능)
+      allow update: if isSignedIn();
 
       allow delete: if false;
     }

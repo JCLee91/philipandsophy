@@ -71,7 +71,13 @@ export function ParticipantCard({
           onClick={() => onProfileClick(participant)}
           className="flex flex-1 items-center gap-3 text-left"
         >
-          <div className="relative">
+          <div 
+            className="relative cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              onProfileClick(participant);
+            }}
+          >
             <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
               <AvatarImage
                 src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
@@ -137,7 +143,13 @@ export function ParticipantCard({
       onClick={() => onProfileClick(participant)}
       className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal"
     >
-      <div className="relative">
+      <div 
+        className="relative cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          onProfileClick(participant);
+        }}
+      >
         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
           <AvatarImage
             src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}

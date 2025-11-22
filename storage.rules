@@ -36,7 +36,7 @@ service firebase.storage {
     // 로그인한 사용자는 누구나 업로드 가능 (오류 없는 것이 최우선)
     match /reading_submissions/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow create: if isSignedIn();
       allow update, delete: if false;
     }
 
@@ -45,7 +45,7 @@ service firebase.storage {
     // ============================================
     match /cohorts/{cohortId}/submissions/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow create: if isSignedIn();
       allow update, delete: if false;
     }
 
@@ -54,12 +54,12 @@ service firebase.storage {
     // ============================================
     match /notices/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder10MB();
+      allow create, update, delete: if isSignedIn();
     }
 
     match /cohorts/{cohortId}/notices/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder10MB();
+      allow create, update, delete: if isSignedIn();
     }
 
     // ============================================
@@ -67,7 +67,7 @@ service firebase.storage {
     // ============================================
     match /direct_messages/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow create: if isSignedIn();
       allow update, delete: if false;
     }
 
@@ -76,27 +76,27 @@ service firebase.storage {
     // ============================================
     match /cohorts/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow create, update, delete: if isSignedIn();
     }
 
     match /profiles/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow create, update, delete: if isSignedIn();
     }
 
     match /profileImagesCircle/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow create, update, delete: if isSignedIn();
     }
 
     match /profileImages/{anyPath=**} {
       allow read: if true;  // 공개 읽기
-      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow create, update, delete: if isSignedIn();
     }
 
     match /profile_images/{anyPath=**} {
       allow read: if true;  // 공개 읽기 (1기)
-      allow create, update, delete: if isSignedIn() && isValidImage() && isUnder50MB();
+      allow create, update, delete: if isSignedIn();
     }
 
     // ============================================

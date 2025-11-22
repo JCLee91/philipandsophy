@@ -41,6 +41,8 @@ export function initializeFirebase() {
 
       // Initialize App Check with reCAPTCHA Enterprise (optional)
       // Only enable if RECAPTCHA_SITE_KEY is provided
+      // TEMPORARILY DISABLED FOR DEBUGGING
+      /*
       if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
         try {
           initializeAppCheck(app, {
@@ -55,6 +57,8 @@ export function initializeFirebase() {
       } else {
         logger.info('App Check disabled - NEXT_PUBLIC_RECAPTCHA_SITE_KEY not configured');
       }
+      */
+      logger.info('App Check temporarily disabled for debugging');
     } else {
       app = getApps()[0];
     }

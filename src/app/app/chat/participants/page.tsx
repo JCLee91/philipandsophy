@@ -7,147 +7,23 @@ import TopBar from '@/components/TopBar';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import DirectMessageDialog from '@/components/chat/DM/DirectMessageDialog';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { ParticipantCard } from '@/components/ParticipantCard';
 import UnifiedButton from '@/components/UnifiedButton';
-import { Check, MessageSquare, User, BookOpen, LogOut, MoreHorizontal } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useVerifiedToday } from '@/stores/verified-today';
-import { useUnreadCount } from '@/hooks/use-messages';
-import { getConversationId } from '@/lib/firebase/messages';
 import { appRoutes } from '@/lib/navigation';
 import { getInitials, getFirstName } from '@/lib/utils';
-import { logger } from '@/lib/logger';
 import { SYSTEM_IDS } from '@/constants/app';
 import type { Participant } from '@/types/database';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Check } from 'lucide-react';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
-
-function ParticipantRow({
-  participant,
-  currentUserId,
-  isAdmin,
-  verified,
-  onDMClick,
-  onProfileClick,
-  onProfileBookClick,
-  cohortId,
-  isOpen,
-  onOpenChange,
-}: {
-  participant: Participant;
-  currentUserId: string;
-  isAdmin: boolean;
-  verified: boolean;
-  onDMClick?: (participant: Participant) => void;
-  onProfileClick: (participant: Participant) => void;
-  onProfileBookClick: (participant: Participant) => void;
-  cohortId: string | null;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const initials = getInitials(participant.name);
-
-  // 항상 참가자 ID 기준으로 대화방 조회
-  const conversationId = isAdmin
-    ? getConversationId(participant.id)  // 관리자가 볼 때: 참가자 ID 사용
-    : getConversationId(currentUserId);   // 참가자가 볼 때: 자신의 ID 사용
-  const { data: unreadCount = 0 } = useUnreadCount(
-    conversationId,
-    isAdmin ? 'admin' : currentUserId
-  );
-
-  if (isAdmin && participant.id !== currentUserId) {
-    return (
-      <div className="flex w-full items-center gap-2 rounded-lg p-3">
-        <div className="flex flex-1 items-center gap-3">
-          <div className="relative">
-            <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-              <AvatarImage
-                src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
-                alt={participant.name}
-              />
-              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            {verified && (
-              <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md">
-                <Check className="h-3 w-3 text-white stroke-[3]" aria-label="오늘 독서 인증 완료" />
-              </div>
-            )}
-            {unreadCount > 0 && (
-              <div className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full bg-red-500 border-2 border-white">
-                <span className="text-xs font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
-              </div>
-            )}
-          </div>
-          <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
-        </div>
-        <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:bg-muted active:bg-muted/80"
-              aria-label="참가자 옵션"
-            >
-              <MoreHorizontal className="h-5 w-5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => onDMClick?.(participant)}>
-              <MessageSquare className="mr-2 h-4 w-4" />
-              DM 보내기
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onProfileClick(participant)}>
-              <User className="mr-2 h-4 w-4" />
-              프로필 카드
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onProfileBookClick(participant)}>
-              <BookOpen className="mr-2 h-4 w-4" />
-              프로필 북
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => onProfileClick(participant)}
-      className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal"
-    >
-      <div className="relative">
-        <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-          <AvatarImage
-            src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
-            alt={participant.name}
-          />
-          <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-        {verified && (
-          <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md">
-            <Check className="h-3 w-3 text-white stroke-[3]" aria-label="오늘 독서 인증 완료" />
-          </div>
-        )}
-      </div>
-      <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
-    </button>
-  );
-}
 
 function ParticipantsPageContent() {
   const router = useRouter();
@@ -168,7 +44,6 @@ function ParticipantsPageContent() {
   const [dmDialogOpen, setDmDialogOpen] = useState(false);
   const [dmTarget, setDmTarget] = useState<Participant | null>(null);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // 참가자 정렬: admin 계정 + 고스트 제외, 현재 사용자 최상단, 나머지는 원래 순서
   const sortedParticipants = useMemo(() => {
@@ -247,7 +122,13 @@ function ParticipantsPageContent() {
                 return (
                   <div key={p.id} className="rounded-lg border bg-white p-3 shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="relative">
+                      <div 
+                        className="relative cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedParticipant(p);
+                        }}
+                      >
                         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                           <AvatarImage
                             src={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage}
@@ -281,18 +162,14 @@ function ParticipantsPageContent() {
               }
 
               return (
-                <ParticipantRow
+                <ParticipantCard
                   key={p.id}
                   participant={p}
                   currentUserId={currentUserId}
                   isAdmin={isAdmin}
-                  verified={verified}
+                  showUnreadBadge={isAdmin}
                   onDMClick={handleDMClick}
                   onProfileClick={setSelectedParticipant}
-                  onProfileBookClick={handleProfileBookClick}
-                  cohortId={cohortId}
-                  isOpen={openDropdownId === p.id}
-                  onOpenChange={(open) => setOpenDropdownId(open ? p.id : null)}
                 />
               );
             })}

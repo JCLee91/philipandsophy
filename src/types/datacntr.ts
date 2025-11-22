@@ -67,10 +67,12 @@ export const sanitizedParticipantSchema = z.object({
   id: z.string(),
   name: z.string(),
   cohortId: z.string(),
+  participationCode: z.string().optional(),
   phoneNumber: z.string().default(''), // 기본값 처리로 ?? '' 불필요
   gender: z.enum(['male', 'female', 'other']).optional(),
   profileImage: z.string().optional(),
   profileImageCircle: z.string().optional(),
+  faceImage: z.string().optional(),
   occupation: z.string().optional(),
   bio: z.string().optional(),
   currentBookTitle: z.string().optional(),
