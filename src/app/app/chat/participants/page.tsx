@@ -7,6 +7,7 @@ import TopBar from '@/components/TopBar';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import DirectMessageDialog from '@/components/chat/DM/DirectMessageDialog';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
+import ImageViewerDialog from '@/components/ImageViewerDialog';
 import { ParticipantCard } from '@/components/ParticipantCard';
 import UnifiedButton from '@/components/UnifiedButton';
 import { LogOut } from 'lucide-react';
@@ -44,6 +45,8 @@ function ParticipantsPageContent() {
   const [dmDialogOpen, setDmDialogOpen] = useState(false);
   const [dmTarget, setDmTarget] = useState<Participant | null>(null);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string>('');
 
   // 참가자 정렬: admin 계정 + 고스트 제외, 현재 사용자 최상단, 나머지는 원래 순서
   const sortedParticipants = useMemo(() => {
@@ -75,6 +78,14 @@ function ParticipantsPageContent() {
   const handleDMClick = (participant: Participant) => {
     setDmTarget(participant);
     setDmDialogOpen(true);
+  };
+
+  const handleImageClick = (participant: Participant) => {
+    const imageUrl = participant.profileImageCircle || participant.profileImage;
+    if (imageUrl) {
+      setImageViewerUrl(imageUrl);
+      setImageViewerOpen(true);
+    }
   };
 
   // 무한 리다이렉트 방지: 리다이렉트 플래그 추적
@@ -126,13 +137,21 @@ function ParticipantsPageContent() {
                         className="relative cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedParticipant(p);
+                          handleImageClick(p);
                         }}
                       >
                         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                          {getResizedImageUrl(p.profileImageCircle || p.profileImage) !== (p.profileImageCircle || p.profileImage) && (
+                            <AvatarImage
+                              src={getResizedImageUrl(p.profileImageCircle || p.profileImage)}
+                              alt={p.name}
+                              className="object-cover"
+                            />
+                          )}
                           <AvatarImage
-                            src={getResizedImageUrl(p.profileImageCircle || p.profileImage) || p.profileImageCircle || p.profileImage}
+                            src={p.profileImageCircle || p.profileImage}
                             alt={p.name}
+                            className="object-cover"
                           />
                           <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
                             {initials}
@@ -170,6 +189,8 @@ function ParticipantsPageContent() {
                   showUnreadBadge={isAdmin}
                   onDMClick={handleDMClick}
                   onProfileClick={setSelectedParticipant}
+                  onProfileBookClick={handleProfileBookClick}
+                  onImageClick={handleImageClick}
                 />
               );
             })}
@@ -204,6 +225,12 @@ function ParticipantsPageContent() {
           participant={selectedParticipant}
           open={!!selectedParticipant}
           onClose={() => setSelectedParticipant(null)}
+        />
+
+        <ImageViewerDialog
+          open={imageViewerOpen}
+          onOpenChange={setImageViewerOpen}
+          imageUrl={imageViewerUrl}
         />
       </div>
     </PageTransition>

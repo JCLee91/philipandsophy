@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Check, MessageSquare, MoreHorizontal, User } from 'lucide-react';
+import { Check, MessageSquare, MoreHorizontal, User, Book } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
@@ -22,6 +22,8 @@ export interface ParticipantCardProps {
   showUnreadBadge?: boolean;
   onDMClick?: (participant: Participant) => void;
   onProfileClick: (participant: Participant) => void;
+  onProfileBookClick?: (participant: Participant) => void;
+  onImageClick?: (participant: Participant) => void;
 }
 
 /**
@@ -43,6 +45,8 @@ export function ParticipantCard({
   showUnreadBadge = false,
   onDMClick,
   onProfileClick,
+  onProfileBookClick,
+  onImageClick,
 }: ParticipantCardProps) {
   const initials = getInitials(participant.name);
 
@@ -75,13 +79,25 @@ export function ParticipantCard({
             className="relative cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              onProfileClick(participant);
+              if (onImageClick) {
+                onImageClick(participant);
+              } else {
+                onProfileClick(participant);
+              }
             }}
           >
             <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+              {getResizedImageUrl(participant.profileImageCircle || participant.profileImage) !== (participant.profileImageCircle || participant.profileImage) && (
+                <AvatarImage
+                  src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage)}
+                  alt={participant.name}
+                  className="object-cover"
+                />
+              )}
               <AvatarImage
-                src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
+                src={participant.profileImageCircle || participant.profileImage}
                 alt={participant.name}
+                className="object-cover"
               />
               <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
                 {initials}
@@ -130,30 +146,43 @@ export function ParticipantCard({
               <User className="mr-2 h-4 w-4" />
               프로필 보기
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onProfileBookClick?.(participant)}>
+              <Book className="mr-2 h-4 w-4" />
+              프로필북 보기
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     );
   }
 
-  // 일반 사용자 또는 자기 자신: 단순 버튼
+  // 일반 사용자 또는 자기 자신: 영역 분리 및 오른쪽 버튼 추가
   return (
-    <button
-      type="button"
-      onClick={() => onProfileClick(participant)}
-      className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal"
-    >
+    <div className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
+      {/* 1. 프로필 이미지 영역 (클릭 시 원본 이미지) */}
       <div 
         className="relative cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
-          onProfileClick(participant);
+          if (onImageClick) {
+            onImageClick(participant);
+          } else {
+            onProfileClick(participant);
+          }
         }}
       >
         <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+          {getResizedImageUrl(participant.profileImageCircle || participant.profileImage) !== (participant.profileImageCircle || participant.profileImage) && (
+            <AvatarImage
+              src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage)}
+              alt={participant.name}
+              className="object-cover"
+            />
+          )}
           <AvatarImage
-            src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
+            src={participant.profileImageCircle || participant.profileImage}
             alt={participant.name}
+            className="object-cover"
           />
           <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
             {initials}
@@ -171,7 +200,20 @@ export function ParticipantCard({
         )}
       </div>
 
-      <span className="text-sm font-medium text-foreground">{participant.name}</span>
-    </button>
+      {/* 2. 이름 영역 (단순 텍스트 표시) */}
+      <div className="flex-1 flex items-center h-full py-2">
+        <span className="text-sm font-medium text-foreground">{participant.name}</span>
+      </div>
+
+      {/* 3. 오른쪽 프로필 보기 버튼 (명시적 액션) */}
+      <button
+        type="button"
+        onClick={() => onProfileClick(participant)}
+        className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-black/5 text-muted-foreground transition-colors"
+        aria-label="프로필 보기"
+      >
+        <User className="h-5 w-5" />
+      </button>
+    </div>
   );
 }

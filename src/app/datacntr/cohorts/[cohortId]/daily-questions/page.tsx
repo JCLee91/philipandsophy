@@ -9,12 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
-import { Loader2, ArrowLeft, Save, Copy } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Copy, Plus } from 'lucide-react';
 import { format, addDays, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { Cohort, DailyQuestion } from '@/types/database';
 import FormSelect from '@/components/datacntr/form/FormSelect';
 import TopBar from '@/components/TopBar';
+import DailyQuestionsImportDialog from '@/components/datacntr/DailyQuestionsImportDialog';
+import CopyQuestionsDropdown from '@/components/datacntr/CopyQuestionsDropdown';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -85,32 +87,33 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
           { headers: { 'Authorization': `Bearer ${idToken}` } }
         );
 
+        let questionsData: DailyQuestion[] = [];
         if (questionsResponse.ok) {
-          const questionsData = await questionsResponse.json();
-          setQuestions(questionsData);
-        } else {
-          // 질문이 없으면 빈 템플릿 생성 (Day 2~14, 총 13개)
-          if (cohortData.cohort?.programStartDate) {
-            const emptyQuestions = Array.from({ length: 13 }, (_, i) => {
-              const dayNumber = i + 2; // Day 2부터 시작
-              const date = format(
-                addDays(parseISO(cohortData.cohort.programStartDate), dayNumber - 1),
-                'yyyy-MM-dd'
-              );
-              return {
-                id: dayNumber.toString(),
-                dayNumber,
-                date,
-                category: '__placeholder__',
-                question: '',
-                order: dayNumber,
-                createdAt: null as any,
-                updatedAt: null as any,
-              };
-            });
-            setQuestions(emptyQuestions);
-          }
+          questionsData = await questionsResponse.json();
         }
+
+        // 질문이 없으면 빈 템플릿 생성 (Day 2~14, 총 13개)
+        if (questionsData.length === 0 && cohortData.cohort?.programStartDate) {
+          questionsData = Array.from({ length: 13 }, (_, i) => {
+            const dayNumber = i + 2; // Day 2부터 시작
+            const date = format(
+              addDays(parseISO(cohortData.cohort.programStartDate), dayNumber - 1),
+              'yyyy-MM-dd'
+            );
+            return {
+              id: dayNumber.toString(),
+              dayNumber,
+              date,
+              category: '__placeholder__',
+              question: '',
+              order: dayNumber,
+              createdAt: null as any,
+              updatedAt: null as any,
+            };
+          });
+        }
+
+        setQuestions(questionsData);
       } catch (error) {
 
         toast({
@@ -133,17 +136,17 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
     setQuestions(updated);
   };
 
-  // 1기 질문 복사
-  const handleCopyFromCohort1 = async () => {
+  // 기수 질문 복사
+  const handleCopyFromCohort = async (sourceCohortId: string) => {
     try {
       if (!user) return;
 
       const idToken = await user.getIdToken();
-      const response = await fetch('/api/datacntr/cohorts/1/daily-questions', {
+      const response = await fetch(`/api/datacntr/cohorts/${sourceCohortId}/daily-questions`, {
         headers: { 'Authorization': `Bearer ${idToken}` },
       });
 
-      if (!response.ok) throw new Error('1기 질문 조회 실패');
+      if (!response.ok) throw new Error('질문 조회 실패');
 
       const sourceQuestions = await response.json();
 
@@ -152,8 +155,17 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
       }
 
       // Day 2부터 시작 (Day 1은 OT)
-      // 1기의 Day 2~14 질문만 가져오기
+      // Day 2~14 질문만 가져오기
       const filteredQuestions = sourceQuestions.filter((q: DailyQuestion) => q.dayNumber >= 2);
+
+      if (filteredQuestions.length === 0) {
+        toast({
+          title: '질문 없음',
+          description: '해당 기수에 복사할 질문이 없습니다.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       // 날짜 재계산
       const updated = filteredQuestions.map((q: DailyQuestion) => ({
@@ -163,12 +175,14 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
           addDays(parseISO(cohort.programStartDate), q.dayNumber - 1),
           'yyyy-MM-dd'
         ),
+        createdAt: null as any, // 초기화
+        updatedAt: null as any, // 초기화
       }));
 
       setQuestions(updated);
       toast({
         title: '복사 완료',
-        description: `1기의 질문 ${updated.length}개를 불러왔습니다.`,
+        description: `${updated.length}개의 질문을 불러왔습니다.`,
       });
     } catch (error) {
 
@@ -178,6 +192,54 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
         variant: 'destructive',
       });
     }
+  };
+
+  // 엑셀 가져오기
+  const handleImportQuestions = (importedItems: { category: string; question: string }[]) => {
+    if (!cohort?.programStartDate) {
+      toast({
+        title: '오류',
+        description: '프로그램 시작일이 설정되지 않았습니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const updatedQuestions = [...questions];
+    
+    importedItems.forEach((item, index) => {
+      if (index < updatedQuestions.length) {
+        // 기존 질문 업데이트
+        updatedQuestions[index] = {
+          ...updatedQuestions[index],
+          category: item.category,
+          question: item.question,
+        };
+      } else {
+        // 새 질문 추가
+        // Day number logic: start from Day 2 if list was empty, or increment from last
+        const lastQ = updatedQuestions[updatedQuestions.length - 1];
+        const nextDayNumber = lastQ ? lastQ.dayNumber + 1 : 2;
+        
+        const nextDate = format(
+          addDays(parseISO(cohort.programStartDate), nextDayNumber - 1),
+          'yyyy-MM-dd'
+        );
+
+        updatedQuestions.push({
+          id: nextDayNumber.toString(),
+          dayNumber: nextDayNumber,
+          date: nextDate,
+          category: item.category,
+          question: item.question,
+          order: nextDayNumber,
+          createdAt: null as any,
+          updatedAt: null as any,
+        });
+      }
+    });
+
+    setQuestions(updatedQuestions);
   };
 
   // 저장
@@ -231,6 +293,46 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
     }
   };
 
+  // 질문 추가
+  const handleAddQuestion = () => {
+    if (!cohort?.programStartDate) {
+      toast({
+        title: '오류',
+        description: '프로그램 시작일이 설정되지 않았습니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const lastQuestion = questions[questions.length - 1];
+    // If list is empty, start from Day 2 (Day 1 is OT).
+    // If existing questions, increment the last one's dayNumber.
+    const nextDayNumber = lastQuestion ? lastQuestion.dayNumber + 1 : 2;
+
+    const nextDate = format(
+      addDays(parseISO(cohort.programStartDate), nextDayNumber - 1),
+      'yyyy-MM-dd'
+    );
+
+    const newQuestion: DailyQuestion = {
+      id: nextDayNumber.toString(),
+      dayNumber: nextDayNumber,
+      date: nextDate,
+      category: '__placeholder__',
+      question: '',
+      order: nextDayNumber,
+      createdAt: null as any,
+      updatedAt: null as any,
+    };
+
+    setQuestions([...questions, newQuestion]);
+
+    toast({
+      title: '질문 추가됨',
+      description: `Day ${nextDayNumber} 질문이 추가되었습니다.`,
+    });
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -248,10 +350,10 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
         onBack={() => router.back()}
         align="left"
         rightAction={
-          <Button variant="outline" onClick={handleCopyFromCohort1} size="sm">
-            <Copy className="h-4 w-4 mr-2" />
-            1기 복사
-          </Button>
+          <div className="flex gap-2">
+            <DailyQuestionsImportDialog onImport={handleImportQuestions} />
+            <CopyQuestionsDropdown onCopy={handleCopyFromCohort} />
+          </div>
         }
       />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -298,7 +400,19 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+
+        <div className="mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-dashed h-12"
+            onClick={handleAddQuestion}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            질문 추가하기
+          </Button>
+        </div>
 
       {/* 하단 저장 버튼 */}
       <div className="mt-8 flex justify-end">
