@@ -406,9 +406,9 @@ function Step2Content() {
       return;
     }
 
-    if (review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH) {
+    if (review.trim().length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
       toast({
-        title: `최소 ${SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}자 이상 작성해주세요`,
+        title: `최소 ${SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH}자 이상 작성해주세요`,
         description: `현재 ${review.trim().length}자 입력됨`,
         variant: 'destructive',
       });
@@ -652,12 +652,12 @@ function Step2Content() {
                 disabled={!selectedBook && !manualTitle.trim()}
               />
               <p className={`text-xs text-right transition-colors ${
-                review.length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+                review.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH
                   ? 'text-red-500 font-medium'
                   : 'text-transparent'
               }`}>
-                {review.length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
-                  ? `${review.length}/${SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}자`
+                {review.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH
+                  ? `${review.length}/${SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH}자`
                   : '　'}
               </p>
             </div>
@@ -677,7 +677,7 @@ function Step2Content() {
             )}
             <UnifiedButton
               onClick={handleNext}
-              disabled={(!selectedBook && !manualTitle.trim()) || !review.trim() || review.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH || isSaving || isProcessing}
+              disabled={(!selectedBook && !manualTitle.trim()) || !review.trim() || review.trim().length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH || isSaving || isProcessing}
               loading={isProcessing}
               loadingText="저장 중..."
               className={existingSubmissionId ? 'w-full' : 'flex-1'}

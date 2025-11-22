@@ -374,9 +374,9 @@ function Step3Content() {
       return;
     }
 
-    if (dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH) {
+    if (dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH) {
       toast({
-        title: `최소 ${SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}자 이상 작성해주세요`,
+        title: `최소 ${SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자 이상 작성해주세요`,
         description: `현재 ${dailyAnswer.trim().length}자 입력됨`,
         variant: 'destructive',
       });
@@ -549,12 +549,12 @@ function Step3Content() {
                 disabled={uploading}
               />
               <p className={`text-xs text-right transition-colors ${
-                dailyAnswer.length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
+                dailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
                   ? 'text-red-500 font-medium'
                   : 'text-transparent'
               }`}>
-                {dailyAnswer.length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH
-                  ? `${dailyAnswer.length}/${SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}자`
+                {dailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
+                  ? `${dailyAnswer.length}/${SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자`
                   : '　'}
               </p>
             </div>
@@ -586,7 +586,7 @@ function Step3Content() {
             <UnifiedButton
               onClick={handleSubmit}
               className={existingSubmissionId ? 'w-full' : 'flex-1'}
-              disabled={uploading || isSaving || !dailyAnswer.trim() || dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_TEXT_LENGTH}
+              disabled={uploading || isSaving || !dailyAnswer.trim() || dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}
             >
               {uploading ? uploadStep || '제출 중...' : existingSubmissionId ? '수정하기' : '제출하기'}
             </UnifiedButton>

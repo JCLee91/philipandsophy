@@ -1,5 +1,7 @@
 export const SUBMISSION_VALIDATION = {
-  MIN_TEXT_LENGTH: 40,
+  MIN_TEXT_LENGTH: 40, // @deprecated - use specific lengths below
+  MIN_REVIEW_LENGTH: 50, // 독서 인증 (Review) 최소 길이
+  MIN_DAILY_ANSWER_LENGTH: 100, // 가치관 답변 (Daily Answer) 최소 길이
   MAX_TEXT_LENGTH: 1000,
   MIN_IMAGE_SIZE: 100 * 1024, // 100KB
   MAX_IMAGE_SIZE: 50 * 1024 * 1024, // 50MB (검증 제한)
