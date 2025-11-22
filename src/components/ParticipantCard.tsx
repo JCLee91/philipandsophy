@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Check, MessageSquare, MoreHorizontal, User, Book } from 'lucide-react';
-import { getInitials } from '@/lib/utils';
+import { getInitials, getFirstName } from '@/lib/utils';
 import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
@@ -124,7 +124,7 @@ export function ParticipantCard({
             )}
           </div>
 
-          <span className="text-sm font-medium text-foreground">{participant.name}</span>
+          <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
         </button>
 
         <DropdownMenu>
@@ -156,12 +156,12 @@ export function ParticipantCard({
     );
   }
 
-  // 일반 사용자 또는 자기 자신: 영역 분리 및 오른쪽 버튼 추가
+  // 일반 사용자 또는 자기 자신: 영역 분리 (좌: 이미지, 우: 프로필 카드)
   return (
     <div className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
-      {/* 1. 프로필 이미지 영역 (클릭 시 원본 이미지) */}
+        {/* 1. 프로필 이미지 영역 (클릭 시 원본 이미지) */}
       <div 
-        className="relative cursor-pointer"
+        className="relative cursor-pointer shrink-0"
         onClick={(e) => {
           e.stopPropagation();
           if (onImageClick) {
@@ -200,20 +200,13 @@ export function ParticipantCard({
         )}
       </div>
 
-      {/* 2. 이름 영역 (단순 텍스트 표시) */}
-      <div className="flex-1 flex items-center h-full py-2">
-        <span className="text-sm font-medium text-foreground">{participant.name}</span>
-      </div>
-
-      {/* 3. 오른쪽 프로필 보기 버튼 (명시적 액션) */}
-      <button
-        type="button"
+      {/* 2. 이름 영역 (클릭 시 프로필 카드) - flex-1로 나머지 공간 전체 차지 */}
+      <div 
+        className="flex-1 flex items-center cursor-pointer h-full py-2 pl-2"
         onClick={() => onProfileClick(participant)}
-        className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-black/5 text-muted-foreground transition-colors"
-        aria-label="프로필 보기"
       >
-        <User className="h-5 w-5" />
-      </button>
+        <span className="text-sm font-medium text-foreground">{getFirstName(participant.name)}</span>
+      </div>
     </div>
   );
 }

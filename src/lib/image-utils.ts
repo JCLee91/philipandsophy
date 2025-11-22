@@ -49,6 +49,12 @@ export function getResizedImageUrl(originalUrl: string | undefined | null): stri
     const pathWithoutExt = decodedPath.substring(0, lastDotIndex);
     const extension = decodedPath.substring(lastDotIndex);
 
+    // 이미 리사이즈된 이미지인지 확인 (_1200x1200 등의 패턴이 있는지)
+    // 만약 이미 리사이즈된 URL이라면 중복 리사이즈 방지 (또는 원본으로 복구 후 리사이즈해야 함)
+    if (pathWithoutExt.match(/_\d+x\d+$/)) {
+       return originalUrl; // 이미 리사이즈된 것 같으면 그대로 반환 (혹은 원본 복구 로직 필요 시 추가)
+    }
+
     // 리사이즈 파일명 생성
     const resizedPath = `${pathWithoutExt}_1200x1200${extension}`;
     const encodedResizedPath = encodeURIComponent(resizedPath);
@@ -62,6 +68,48 @@ export function getResizedImageUrl(originalUrl: string | undefined | null): stri
     // 리사이즈 URL 생성 실패 시 원본 반환 (graceful degradation)
     logger.warn('Failed to generate resized image URL', { error, url: originalUrl });
     return originalUrl;
+  }
+}
+
+/**
+ * 리사이즈된 이미지 URL을 원본 이미지 URL로 복원
+ * Firebase Storage의 _WxH 접미사를 제거
+ *
+ * @param resizedUrl - 리사이즈된 이미지 URL
+ * @returns 원본 이미지 URL
+ */
+export function getOriginalImageUrl(resizedUrl: string | undefined | null): string | undefined {
+  if (!resizedUrl) return undefined;
+
+  // Firebase Storage URL 형식이 아니면 그대로 반환
+  if (!resizedUrl.includes('firebasestorage.googleapis.com')) {
+    return resizedUrl;
+  }
+
+  try {
+    const url = new URL(resizedUrl);
+    const pathMatch = url.pathname.match(/\/v0\/b\/([^/]+)\/o\/(.+)/);
+    if (!pathMatch) return resizedUrl;
+
+    const bucket = pathMatch[1];
+    const encodedPath = pathMatch[2];
+    const decodedPath = decodeURIComponent(encodedPath);
+
+    // _WxH 패턴 제거 (예: _1200x1200, _200x200)
+    // 파일 확장자 앞의 패턴을 찾음
+    const originalPath = decodedPath.replace(/_\d+x\d+(\.[^.]+)$/, '$1');
+    
+    // 변경된 것이 없으면 그대로 반환
+    if (originalPath === decodedPath) return resizedUrl;
+
+    const encodedOriginalPath = encodeURIComponent(originalPath);
+    const searchParams = url.searchParams.toString();
+    const queryString = searchParams ? `?${searchParams}` : '';
+
+    return `${url.origin}/v0/b/${bucket}/o/${encodedOriginalPath}${queryString}`;
+  } catch (error) {
+    logger.warn('Failed to restore original image URL', { error, url: resizedUrl });
+    return resizedUrl;
   }
 }
 

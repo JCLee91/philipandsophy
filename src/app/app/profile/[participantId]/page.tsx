@@ -10,6 +10,7 @@ import PageTransition from '@/components/PageTransition';
 import HistoryWeekRow from '@/components/HistoryWeekRow';
 import ErrorState from '@/components/ErrorState';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
+import ImageViewerDialog from '@/components/ImageViewerDialog';
 // import MatchingReasonBanner from '@/components/MatchingReasonBanner'; // 논의 중인 기능
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
@@ -29,7 +30,7 @@ import { useParticipant } from '@/hooks/use-participants';
 import { useProfileBookAccess } from '@/hooks/use-profile-book-access';
 import { logger } from '@/lib/logger';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
-import { getResizedImageUrl } from '@/lib/image-utils';
+import { getResizedImageUrl, getOriginalImageUrl } from '@/lib/image-utils';
 import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 import TopBar from '@/components/TopBar';
 
@@ -94,6 +95,8 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const questionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string>('');
   const [detailImageAspectRatio, setDetailImageAspectRatio] = useState<number | null>(null);
 
   const toggleQuestion = (question: string) => {
@@ -430,6 +433,16 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 이름에서 성 제거 (예: "김철수" -> "철수")
   const firstName = participant.name.length > 2 ? participant.name.slice(1) : participant.name;
 
+  // 이미지 클릭 핸들러
+  const handleImageClick = () => {
+    // 원본 이미지는 오직 faceImage만 사용 (폴백 없음)
+    const imageUrl = participant.faceImage;
+    if (imageUrl) {
+      setImageViewerUrl(imageUrl);
+      setImageViewerOpen(true);
+    }
+  };
+
   // 코호트 번호 추출 (예: "1기" → 1, "2기" → 2)
   const cohortNumber = cohort?.name ? parseInt(cohort.name.match(/\d+/)?.[0] || '0', 10) : undefined;
 
@@ -493,10 +506,21 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           <div className="absolute left-1/2 transform -translate-x-1/2 top-[36px] z-10">
             <div
               className="relative w-[80px] h-[80px] cursor-pointer transition-transform active:scale-95"
-              onClick={() => setProfileImageDialogOpen(true)}
+              onClick={handleImageClick}
             >
               <Avatar className="w-full h-full border-[3px] border-[#31363e]">
-                <AvatarImage src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage} alt={participant.name} />
+                {getResizedImageUrl(participant.profileImageCircle || participant.profileImage) !== (participant.profileImageCircle || participant.profileImage) && (
+                  <AvatarImage
+                    src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage)}
+                    alt={participant.name}
+                    className="object-cover"
+                  />
+                )}
+                <AvatarImage
+                  src={participant.profileImageCircle || participant.profileImage}
+                  alt={participant.name}
+                  className="object-cover"
+                />
                 <AvatarFallback className="bg-gray-200 text-2xl font-bold text-gray-700">
                   {initials}
                 </AvatarFallback>
@@ -730,6 +754,13 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           participant={participant}
           open={profileImageDialogOpen}
           onClose={() => setProfileImageDialogOpen(false)}
+        />
+
+        {/* 이미지 확대 뷰어 (프로필 이미지 클릭 시) */}
+        <ImageViewerDialog
+          open={imageViewerOpen}
+          onOpenChange={setImageViewerOpen}
+          imageUrl={imageViewerUrl}
         />
 
         {/* Safe Area CSS */}

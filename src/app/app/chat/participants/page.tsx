@@ -19,7 +19,7 @@ import { appRoutes } from '@/lib/navigation';
 import { getInitials, getFirstName } from '@/lib/utils';
 import { SYSTEM_IDS } from '@/constants/app';
 import type { Participant } from '@/types/database';
-import { getResizedImageUrl } from '@/lib/image-utils';
+import { getResizedImageUrl, getOriginalImageUrl } from '@/lib/image-utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check } from 'lucide-react';
 
@@ -81,7 +81,8 @@ function ParticipantsPageContent() {
   };
 
   const handleImageClick = (participant: Participant) => {
-    const imageUrl = participant.profileImageCircle || participant.profileImage;
+    // 원본 이미지는 오직 faceImage만 사용 (폴백 없음)
+    const imageUrl = participant.faceImage;
     if (imageUrl) {
       setImageViewerUrl(imageUrl);
       setImageViewerOpen(true);
