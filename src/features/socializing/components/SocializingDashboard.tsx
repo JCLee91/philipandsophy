@@ -13,12 +13,14 @@ interface SocializingDashboardProps {
         dateVotes: Record<string, number>;
         locationVotes: Record<string, number>;
     };
+    onRefresh?: () => Promise<void>;
 }
 
 export default function SocializingDashboard({
     cohort,
     participant,
-    voteStats
+    voteStats,
+    onRefresh
 }: SocializingDashboardProps) {
 
     const phase = cohort.socializingPhase || 'idle';
@@ -27,7 +29,7 @@ export default function SocializingDashboard({
         return (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="text-center space-y-2 mb-8">
-                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+                    <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold">
                         Phase 1. 날짜 정하기
                     </span>
                     <h2 className="text-2xl font-bold text-gray-900">
@@ -44,6 +46,7 @@ export default function SocializingDashboard({
                     availableDates={cohort.socializingOptions?.dates || []}
                     currentVote={participant.socializingVotes?.date}
                     voteStats={voteStats.dateVotes}
+                    onRefresh={onRefresh}
                 />
             </div>
         );
@@ -53,7 +56,7 @@ export default function SocializingDashboard({
         return (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="text-center space-y-2 mb-8">
-                    <span className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                    <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold">
                         Phase 2. 장소 정하기
                     </span>
                     <h2 className="text-2xl font-bold text-gray-900">
@@ -70,25 +73,35 @@ export default function SocializingDashboard({
                     availableLocations={cohort.socializingOptions?.locations || []}
                     currentVote={participant.socializingVotes?.location}
                     voteStats={voteStats.locationVotes}
+                    onRefresh={onRefresh}
                 />
             </div>
         );
     }
 
     if (phase === 'confirmed') {
-        if (!participant.socializingResult) {
+        // If cohort has result, use it. Otherwise fallback to participant's result (legacy or specific assignment)
+        const result = cohort.socializingResult || participant.socializingResult;
+
+        if (!result) {
             return (
                 <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">모임 배정 중...</h2>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">모임 확정 정보를 불러오는 중...</h2>
                     <p className="text-gray-500">잠시만 기다려주세요.</p>
                 </div>
             );
         }
 
+        // Ensure cohortId is present in result object for ConfirmedCard
+        const confirmedResult = {
+            ...result,
+            cohortId: cohort.id
+        };
+
         return (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="text-center space-y-2 mb-8">
-                    <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+                    <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold">
                         Phase 3. 모임 확정
                     </span>
                     <h2 className="text-2xl font-bold text-gray-900">
@@ -96,7 +109,7 @@ export default function SocializingDashboard({
                     </h2>
                 </div>
 
-                <ConfirmedCard result={participant.socializingResult} />
+                <ConfirmedCard result={confirmedResult} />
             </div>
         );
     }

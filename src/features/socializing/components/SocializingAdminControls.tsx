@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 
 interface SocializingAdminControlsProps {
     cohort: Cohort;
+    onUpdate?: () => void;
 }
 
 const PHASES = ['idle', 'date_vote', 'location_vote', 'confirmed'] as const;
@@ -32,7 +33,7 @@ const PHASE_LABELS = {
 
 const LOCATION_PRESETS = ['강남', '홍대', '을지로', '성수', '이태원', '잠실'];
 
-export default function SocializingAdminControls({ cohort }: SocializingAdminControlsProps) {
+export default function SocializingAdminControls({ cohort, onUpdate }: SocializingAdminControlsProps) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
     const router = useRouter();
@@ -64,6 +65,7 @@ export default function SocializingAdminControls({ cohort }: SocializingAdminCon
             const res = await updateCohortPhase(cohort.id, 'date_vote', { dates: formattedDates });
             if (res.success) {
                 toast({ title: '날짜 투표 시작!' });
+                onUpdate?.();
                 router.refresh();
             }
             else toast({ title: '실패', description: res.error, variant: 'destructive' });
@@ -84,6 +86,7 @@ export default function SocializingAdminControls({ cohort }: SocializingAdminCon
             });
             if (res.success) {
                 toast({ title: '장소 투표 시작!' });
+                onUpdate?.();
                 router.refresh();
             }
             else toast({ title: '실패', description: res.error, variant: 'destructive' });
@@ -97,6 +100,7 @@ export default function SocializingAdminControls({ cohort }: SocializingAdminCon
             const res = await finalizeSocializing(cohort.id);
             if (res.success) {
                 toast({ title: '모임 확정 완료!', description: `${res.winningDate} @ ${res.winningLocation}` });
+                onUpdate?.();
                 router.refresh();
             }
             else toast({ title: '실패', description: res.error, variant: 'destructive' });
@@ -108,6 +112,7 @@ export default function SocializingAdminControls({ cohort }: SocializingAdminCon
         startTransition(async () => {
             await updateCohortPhase(cohort.id, 'idle');
             toast({ title: '초기화 완료' });
+            onUpdate?.();
             router.refresh();
         });
     };
@@ -124,6 +129,46 @@ export default function SocializingAdminControls({ cohort }: SocializingAdminCon
         const sorted = Object.entries(votes).sort((a, b) => b[1] - a[1]);
         if (sorted.length === 0) return '집계 중...';
         return `${sorted[0][0]} (${sorted[0][1]}표)`;
+    };
+
+    // Ranking Component
+    const VoteRanking = ({ votes, title }: { votes: Record<string, number>; title: string }) => {
+        const sorted = Object.entries(votes).sort((a, b) => b[1] - a[1]);
+        const total = sorted.reduce((acc, [, count]) => acc + count, 0);
+
+        if (sorted.length === 0) return null;
+
+        return (
+            <div className="space-y-3 mt-4 border rounded-lg p-4 bg-slate-50">
+                <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-gray-700">{title} 득표 현황</h4>
+                    <span className="text-xs text-gray-500">총 {total}표</span>
+                </div>
+                <div className="space-y-2">
+                    {sorted.map(([key, count], idx) => {
+                        const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+                        const isWinner = idx === 0 || count === sorted[0][1]; // 동점자 포함 1등 강조
+
+                        return (
+                            <div key={key} className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className={cn("font-medium", isWinner && "text-primary")}>
+                                        {idx + 1}. {key} {isWinner && <Trophy className="inline w-3 h-3 ml-1 text-amber-500" />}
+                                    </span>
+                                    <span className="text-gray-500">{count}표 ({percent}%)</span>
+                                </div>
+                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div 
+                                        className={cn("h-full rounded-full transition-all", isWinner ? "bg-primary" : "bg-gray-400")}
+                                        style={{ width: `${percent}%` }}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -247,6 +292,9 @@ export default function SocializingAdminControls({ cohort }: SocializingAdminCon
                             </div>
                         </div>
 
+                        {/* 전체 득표 현황 */}
+                        <VoteRanking votes={stats.dateVotes} title="날짜" />
+
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <label className="text-sm font-medium">다음 단계: 장소 투표</label>
@@ -291,6 +339,9 @@ export default function SocializingAdminControls({ cohort }: SocializingAdminCon
                                 <p className="text-lg font-bold text-primary">{getTopVote(stats.locationVotes)}</p>
                             </div>
                         </div>
+
+                        {/* 전체 득표 현황 */}
+                        <VoteRanking votes={stats.locationVotes} title="장소" />
 
                         <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                             <div className="space-y-1">

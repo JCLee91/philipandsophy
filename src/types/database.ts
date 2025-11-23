@@ -245,8 +245,8 @@ export interface Participant {
 
   // 🆕 소셜링 투표 정보
   socializingVotes?: {
-    date?: string; // 투표한 날짜
-    location?: string; // 투표한 장소
+    date?: string[]; // 투표한 날짜 (복수 선택 가능)
+    location?: string[]; // 투표한 장소 (복수 선택 가능)
   };
 
   // 🆕 소셜링 매칭 결과 (Phase 3)
@@ -371,7 +371,24 @@ export const COLLECTIONS = {
   MESSAGES: 'messages',
   CONVERSATIONS: 'conversations', // 대화방
   MATCHING_JOBS: 'matching_jobs',
+  MEETUP_MESSAGES: 'meetup_messages', // 소셜링 모임 채팅
 } as const;
+
+/**
+ * 소셜링 모임 채팅 메시지
+ * - cohorts/{cohortId}/meetup_messages/{messageId}
+ */
+export interface MeetupMessage {
+  id: string;
+  cohortId: string;
+  content: string;
+  authorId: string; // 작성자 ID
+  authorName: string; // 작성자 이름
+  authorProfileImage?: string | null; // 작성자 프로필 이미지 (선택)
+  createdAt: Timestamp;
+  type: 'text' | 'image' | 'system'; // 메시지 타입
+  imageUrl?: string | null; // 이미지 메시지인 경우
+}
 
 /**
  * AI 매칭 작업 상태 (비동기 처리용)

@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 import { COLLECTIONS } from '@/types/database';
 import type { Participant } from '@/types/database';
 
-export async function voteForDate(cohortId: string, date: string): Promise<{ success: boolean; error?: string }> {
+export async function voteForDate(cohortId: string, dates: string[]): Promise<{ success: boolean; error?: string }> {
     try {
         const cookieStore = await cookies();
         const participantId = cookieStore.get('pns-participant')?.value;
@@ -20,20 +20,20 @@ export async function voteForDate(cohortId: string, date: string): Promise<{ suc
 
         // Update participant's vote
         await db.collection(COLLECTIONS.PARTICIPANTS).doc(participantId).update({
-            'socializingVotes.date': date,
+            'socializingVotes.date': dates,
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        logger.info('User voted for date', { participantId, cohortId, date });
+        logger.info('User voted for dates', { participantId, cohortId, dates });
         return { success: true };
 
     } catch (error) {
-        logger.error('Failed to vote for date', error);
+        logger.error('Failed to vote for dates', error);
         return { success: false, error: '투표 중 오류가 발생했습니다.' };
     }
 }
 
-export async function voteForLocation(cohortId: string, location: string): Promise<{ success: boolean; error?: string }> {
+export async function voteForLocation(cohortId: string, locations: string[]): Promise<{ success: boolean; error?: string }> {
     try {
         const cookieStore = await cookies();
         const participantId = cookieStore.get('pns-participant')?.value;
@@ -46,15 +46,15 @@ export async function voteForLocation(cohortId: string, location: string): Promi
 
         // Update participant's vote
         await db.collection(COLLECTIONS.PARTICIPANTS).doc(participantId).update({
-            'socializingVotes.location': location,
+            'socializingVotes.location': locations,
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        logger.info('User voted for location', { participantId, cohortId, location });
+        logger.info('User voted for locations', { participantId, cohortId, locations });
         return { success: true };
 
     } catch (error) {
-        logger.error('Failed to vote for location', error);
+        logger.error('Failed to vote for locations', error);
         return { success: false, error: '투표 중 오류가 발생했습니다.' };
     }
 }
@@ -73,15 +73,20 @@ export async function getSocializingStats(cohortId: string): Promise<{ dateVotes
 
         snapshot.docs.forEach(doc => {
             const data = doc.data() as Participant;
-            const dVote = data.socializingVotes?.date;
-            const lVote = data.socializingVotes?.location;
+            const dVotes = data.socializingVotes?.date;
+            const lVotes = data.socializingVotes?.location;
 
-            if (dVote) {
-                dateVotes[dVote] = (dateVotes[dVote] || 0) + 1;
-            }
-            if (lVote) {
-                locationVotes[lVote] = (locationVotes[lVote] || 0) + 1;
-            }
+            // Handle both string (legacy) and array formats
+            const dVoteArray = Array.isArray(dVotes) ? dVotes : (dVotes ? [dVotes] : []);
+            const lVoteArray = Array.isArray(lVotes) ? lVotes : (lVotes ? [lVotes] : []);
+
+            dVoteArray.forEach(vote => {
+                if (vote) dateVotes[vote] = (dateVotes[vote] || 0) + 1;
+            });
+
+            lVoteArray.forEach(vote => {
+                if (vote) locationVotes[vote] = (locationVotes[vote] || 0) + 1;
+            });
         });
 
         return { dateVotes, locationVotes };

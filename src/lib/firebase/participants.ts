@@ -15,6 +15,7 @@ import {
   QueryConstraint,
   runTransaction,
   deleteField,
+  onSnapshot,
 } from 'firebase/firestore';
 import { getDb } from './client';
 import { logger } from '@/lib/logger';
@@ -433,3 +434,32 @@ export async function updateParticipantBookInfo(
 }
 
 // ❌ REMOVED: updateParticipantBookTitle - deprecated 함수 제거 (미사용)
+
+/**
+ * Subscribe to participants of a specific cohort
+ */
+export const subscribeToCohortParticipants = (
+  cohortId: string,
+  callback: (participants: Participant[]) => void
+) => {
+  const db = getDb();
+  const q = query(
+    collection(db, COLLECTIONS.PARTICIPANTS),
+    where('cohortId', '==', cohortId)
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const participants = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Participant[];
+      callback(participants);
+    },
+    (error) => {
+      console.error('Error subscribing to cohort participants:', error);
+      callback([]);
+    }
+  );
+};

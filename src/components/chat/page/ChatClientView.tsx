@@ -36,6 +36,16 @@ import ChatFooterSection from '@/components/chat/page/ChatFooterSection';
 import ChatParticipantsSheet from '@/components/chat/page/ChatParticipantsSheet';
 import { useAdminConversations } from '@/hooks/chat/useAdminConversations';
 
+import { MessageCircle, Send } from 'lucide-react';
+import UnifiedButton from '@/components/UnifiedButton';
+import ConfirmedCard from '@/features/socializing/components/ConfirmedCard';
+import { Input } from '@/components/ui/input';
+import { useMeetupChat } from '@/hooks/chat/useMeetupChat';
+import MeetupChatTimeline from '@/components/chat/Meetup/MeetupChatTimeline';
+import ChatInputBar from '@/components/chat/page/ChatInputBar';
+
+// ... existing imports ...
+
 type ChatClientViewProps = {
   initialCohortId?: string | null;
   initialCohort?: Cohort | null;
@@ -125,6 +135,17 @@ export function ChatClientView({
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined, {
     initialData: initialCohort ?? undefined,
   });
+
+  // 소셜링 채팅 Hook (isMeetup 상태일 때만 활성화)
+  const isMeetupMode = cohort?.socializingPhase === 'confirmed' || cohort?.type === 'meetup';
+  const { 
+      messages: meetupMessages, 
+      sendMessage: sendMeetupMessage, 
+      isSending: isMeetupSending 
+  } = useMeetupChat(
+      isMeetupMode ? cohortId || undefined : undefined, 
+      participant || undefined
+  );
 
   // 실제 관리자 권한 (participant.isAdministrator 기반) - 데이터 접근 권한
   const isRealAdmin = participant?.isAdministrator === true || participant?.isSuperAdmin === true;
@@ -250,7 +271,7 @@ export function ChatClientView({
   }, [noticesData]);
 
   const handleCreateNotice = useCallback(
-    async (imageFile: File | null) => {
+    async (imageFile: File | null, contentOverride?: string) => {
       if (!cohortId) {
         toast({
           title: '기수 정보가 없습니다.',
@@ -260,19 +281,31 @@ export function ChatClientView({
         return;
       }
 
+      // Use provided content or dialog content
+      const contentToUse = contentOverride ?? writeDialog.content;
+
       const success = await noticeActions.createNotice({
         cohortId,
-        content: writeDialog.content,
+        content: contentToUse,
         imageFile,
+        // 관리자 모드이면 '필립앤소피', 소셜링 모임이면 내 이름, 그 외에는 기본값(필립앤소피)
+        author: isAdminMode 
+          ? APP_CONSTANTS.ADMIN_NAME 
+          : (cohort?.type === 'meetup' || cohort?.socializingPhase === 'confirmed')
+            ? participant?.name 
+            : APP_CONSTANTS.ADMIN_NAME,
       });
 
       if (success) {
-        writeDialog.resetContent();
-        writeDialog.close();
+        // Only reset dialog if we used it
+        if (!contentOverride) {
+          writeDialog.resetContent();
+          writeDialog.close();
+        }
         scrollToBottom(undefined, { behavior: 'smooth', delay: AUTH_TIMING.SCROLL_DELAY });
       }
     },
-    [cohortId, noticeActions, toast, writeDialog]
+    [cohortId, noticeActions, toast, writeDialog, isAdminMode, cohort?.type, cohort?.socializingPhase, participant?.name]
   );
 
   const handleEditNotice = useCallback(
@@ -421,7 +454,7 @@ export function ChatClientView({
     <>
       <Header
         onParticipantsClick={handleParticipantsClick}
-        onWriteClick={isAdminMode || cohort?.type === 'meetup' ? writeDialog.open : undefined}
+        onWriteClick={isAdminMode || cohort?.type === 'meetup' || cohort?.socializingPhase === 'confirmed' ? writeDialog.open : undefined}
         onInquiryClick={() => router.push('/app/admin/inquiries')}
         onMessageAdminClick={handleMessageAdmin}
         onSettingsClick={() => setSettingsOpen(true)}
@@ -459,35 +492,56 @@ export function ChatClientView({
             }}
           />
 
+          {/* 모임 확정 카드 (채팅방 상단) */}
+          {cohort.socializingPhase === 'confirmed' && cohort.socializingResult && (
+            <div className="px-4 pt-4">
+              <ConfirmedCard result={{ ...cohort.socializingResult, cohortId: cohort.id }} />
+            </div>
+          )}
+
           <main className="app-main-content relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
-            <NoticeTimeline
-              notices={noticesData}
-              isAdmin={isRealAdmin}
-              onEdit={handleEditNotice}
-              onRequestDelete={deleteDialog.openWithNotice}
-              latestNoticeId={latestNoticeId}
-              latestNoticeRef={latestNoticeRef}
-            />
+            {isMeetupMode ? (
+              <div className="flex flex-col justify-end min-h-full">
+                 <MeetupChatTimeline messages={meetupMessages} currentUserId={currentUserId} />
+              </div>
+            ) : (
+              <NoticeTimeline
+                notices={noticesData}
+                isAdmin={isRealAdmin}
+                onEdit={handleEditNotice}
+                onRequestDelete={deleteDialog.openWithNotice}
+                latestNoticeId={latestNoticeId}
+                latestNoticeRef={latestNoticeRef}
+              />
+            )}
           </main>
 
-          <ChatFooterSection
-            isAdmin={isAdminMode}
-            isDay1={isDay1 ?? false}
-            isAfterDay14={isAfterDay14}
-            hasSubmittedToday={hasSubmittedToday}
-            cohortName={cohort?.name}
-            onRequestSubmission={handleOpenSubmissionFlow}
-            onNavigateMatching={handleNavigateMatching}
-            onNavigateTodayLibrary={handleNavigateTodayLibrary}
-          />
+          {isMeetupMode ? (
+            <ChatInputBar 
+              onSend={(text) => sendMeetupMessage(text)} 
+              isLoading={isMeetupSending} 
+            />
+          ) : (
+            <ChatFooterSection
+              isAdmin={isAdminMode}
+              isDay1={isDay1 ?? false}
+              isAfterDay14={isAfterDay14}
+              hasSubmittedToday={hasSubmittedToday}
+              cohortName={cohort?.name}
+              onRequestSubmission={handleOpenSubmissionFlow}
+              onNavigateMatching={handleNavigateMatching}
+              onNavigateTodayLibrary={handleNavigateTodayLibrary}
+            />
+          )}
 
           <NoticeWriteDialog
             open={writeDialog.isOpen}
             onOpenChange={(open) => (open ? writeDialog.open() : writeDialog.close())}
             content={writeDialog.content}
             onContentChange={writeDialog.setContent}
-            onSubmit={handleCreateNotice}
+            onSubmit={(file) => handleCreateNotice(file)}
             uploading={noticeActions.isUploading}
+            isMeetup={cohort?.type === 'meetup' || cohort?.socializingPhase === 'confirmed'}
           />
 
           <NoticeEditDialog

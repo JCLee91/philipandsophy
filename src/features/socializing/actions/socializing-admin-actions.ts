@@ -48,10 +48,26 @@ export async function finalizeSocializing(cohortId: string) {
         participantsSnapshot.docs.forEach(doc => {
             const p = doc.data() as Participant;
             if (p.socializingVotes?.date) {
-                dateVotes[p.socializingVotes.date] = (dateVotes[p.socializingVotes.date] || 0) + 1;
+                const dates = Array.isArray(p.socializingVotes.date) 
+                    ? p.socializingVotes.date 
+                    : [p.socializingVotes.date];
+                
+                dates.forEach(date => {
+                    if (date) {
+                        dateVotes[date] = (dateVotes[date] || 0) + 1;
+                    }
+                });
             }
             if (p.socializingVotes?.location) {
-                locationVotes[p.socializingVotes.location] = (locationVotes[p.socializingVotes.location] || 0) + 1;
+                const locations = Array.isArray(p.socializingVotes.location)
+                    ? p.socializingVotes.location
+                    : [p.socializingVotes.location];
+                
+                locations.forEach(location => {
+                    if (location) {
+                        locationVotes[location] = (locationVotes[location] || 0) + 1;
+                    }
+                });
             }
         });
 
@@ -63,51 +79,24 @@ export async function finalizeSocializing(cohortId: string) {
             return { success: false, error: '투표 데이터가 부족합니다.' };
         }
 
-        // 3. Create Meetup Cohort
-        const meetupName = `환급 모임 (${winningDate} ${winningLocation})`;
-        const newCohortRef = db.collection(COLLECTIONS.COHORTS).doc();
-        const newCohortId = newCohortRef.id;
-
-        const newCohortData: Cohort = {
-            id: newCohortId,
-            name: meetupName,
-            startDate: winningDate,
-            endDate: winningDate,
-            programStartDate: winningDate,
-            isActive: true,
-            createdAt: Timestamp.now() as any,
-            updatedAt: Timestamp.now() as any,
-            type: 'meetup',
-            location: winningLocation,
-            meetupDate: winningDate,
-        };
-
-        await newCohortRef.set(newCohortData);
-
-        // 4. Batch Process Participants
+        // 3. Update Cohort Phase to Confirmed and Save Result
         const batch = db.batch();
 
+        const cohortRef = db.collection(COLLECTIONS.COHORTS).doc(cohortId);
+        batch.update(cohortRef, {
+            socializingPhase: 'confirmed',
+            socializingResult: {
+                date: winningDate,
+                location: winningLocation,
+            },
+            updatedAt: FieldValue.serverTimestamp(),
+        });
+
+        // 4. Batch Process Participants (Optional: Update socializingResult for participants)
         participantsSnapshot.docs.forEach(doc => {
-            const p = doc.data() as Participant;
-
-            // A. Add to new cohort
-            const newParticipantRef = db.collection(COLLECTIONS.PARTICIPANTS).doc();
-            const newParticipantData: Participant = {
-                ...p,
-                id: newParticipantRef.id,
-                cohortId: newCohortId,
-                createdAt: Timestamp.now() as any,
-                updatedAt: Timestamp.now() as any,
-                // Clear socializing data for the new record
-                socializingVotes: undefined,
-                socializingResult: undefined,
-            };
-            batch.set(newParticipantRef, newParticipantData);
-
-            // B. Update original participant with result
             batch.update(doc.ref, {
                 socializingResult: {
-                    cohortId: newCohortId,
+                    cohortId: cohortId, // Same cohort
                     date: winningDate,
                     location: winningLocation,
                 },
@@ -115,15 +104,9 @@ export async function finalizeSocializing(cohortId: string) {
             });
         });
 
-        // 5. Update Cohort Phase to Confirmed
-        batch.update(db.collection(COLLECTIONS.COHORTS).doc(cohortId), {
-            socializingPhase: 'confirmed',
-            updatedAt: FieldValue.serverTimestamp(),
-        });
-
         await batch.commit();
 
-        logger.info('Finalized socializing', { cohortId, newCohortId, winningDate, winningLocation });
+        logger.info('Finalized socializing', { cohortId, winningDate, winningLocation });
         return { success: true, winningDate, winningLocation };
 
     } catch (error) {

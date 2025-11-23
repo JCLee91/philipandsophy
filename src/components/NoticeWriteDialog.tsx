@@ -17,6 +17,7 @@ interface NoticeWriteDialogProps {
   onContentChange: (content: string) => void;
   onSubmit: (imageFile: File | null) => Promise<void>;
   uploading: boolean;
+  isMeetup?: boolean;
 }
 
 export default function NoticeWriteDialog({
@@ -26,6 +27,7 @@ export default function NoticeWriteDialog({
   onContentChange,
   onSubmit,
   uploading,
+  isMeetup = false,
 }: NoticeWriteDialogProps) {
   const { imageFile, imagePreview, handleImageSelect, resetImage } = useImageUpload();
   const keyboardHeight = useKeyboardHeight();
@@ -79,8 +81,10 @@ export default function NoticeWriteDialog({
           {/* Header */}
           <div className="flex items-center justify-between border-b px-5 py-4">
             <div>
-              <h2 className="text-lg font-bold">공지 작성</h2>
-              <p className="text-xs text-gray-500">참가자들에게 전달할 공지사항을 작성하세요.</p>
+              <h2 className="text-lg font-bold">{isMeetup ? '메시지 작성' : '공지 작성'}</h2>
+              <p className="text-xs text-gray-500">
+                {isMeetup ? '멤버들과 이야기를 나눠보세요.' : '참가자들에게 전달할 공지사항을 작성하세요.'}
+              </p>
             </div>
             <button
               type="button"
@@ -118,7 +122,7 @@ export default function NoticeWriteDialog({
               value={content}
               onChange={(e) => onContentChange(e.target.value)}
               className="min-h-[200px] border-0 focus-visible:ring-0 resize-none p-0 text-base"
-              placeholder="공지 내용을 입력하세요..."
+              placeholder={isMeetup ? "메시지를 입력하세요..." : "공지 내용을 입력하세요..."}
               autoFocus
             />
           </div>
