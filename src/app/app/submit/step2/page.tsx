@@ -154,10 +154,10 @@ function Step2Content() {
   useEffect(() => {
     // Step1에서 이미지를 선택하고 넘어온 경우는 초기화하지 않음
     // 수정 모드도 초기화하지 않음
-    if (!existingSubmissionId && !imageFile && (selectedBook || manualTitle || review)) {
+    if (!existingSubmissionId && !imageFile && (selectedBook || manualTitle || globalReview)) {
       setSelectedBook(null);
       setManualTitle('');
-      setReview('');
+      setGlobalReview('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingSubmissionId, imageFile]); // 의도적으로 dependency 제한
@@ -321,7 +321,7 @@ function Step2Content() {
     return () => {
       cancelled = true;
     };
-  }, [existingSubmissionId, selectedBook, manualTitle, imageStorageUrl, setSelectedBook, setManualTitle, setReview, setImageFile, setImageStorageUrl, toast]);
+  }, [existingSubmissionId, selectedBook, manualTitle, imageStorageUrl, setSelectedBook, setManualTitle, setGlobalReview, setImageFile, setImageStorageUrl, toast]);
 
   // 책 검색 디바운스
   useEffect(() => {
