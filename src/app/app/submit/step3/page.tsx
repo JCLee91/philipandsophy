@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +22,8 @@ import type { DailyQuestion as DailyQuestionType } from '@/types/database';
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import { logger } from '@/lib/logger';
+import { useDebounce } from 'react-use';
+import { Loader2, Check } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,11 +50,11 @@ function Step3Content() {
     selectedBook,
     manualTitle,
     review,
-    dailyAnswer,
+    dailyAnswer: globalDailyAnswer,
     participantId,
     participationCode,
     setImageFile,
-    setDailyAnswer,
+    setDailyAnswer: setGlobalDailyAnswer,
     setSelectedBook,
     setManualTitle,
     setReview,
@@ -61,16 +63,72 @@ function Step3Content() {
     reset
   } = useSubmissionFlowStore();
 
+  // ✅ Local state for performance (prevent global store updates on every keystroke)
+  const [localDailyAnswer, setLocalDailyAnswer] = useState(globalDailyAnswer);
+  
+  // Sync local state with global state when global state changes (initial load)
+  useEffect(() => {
+    setLocalDailyAnswer(globalDailyAnswer);
+  }, [globalDailyAnswer]);
+
   const [dailyQuestion, setDailyQuestion] = useState<DailyQuestionType | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStep, setUploadStep] = useState<string>('');
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // Manual save state
+  const [isAutoSaving, setIsAutoSaving] = useState(false); // Auto save state
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const isSubmittingRef = useRef(false);
 
   const createSubmission = useCreateSubmission();
   const updateSubmission = useUpdateSubmission();
+
+  // ✅ Debounce global state update and auto-save
+  useDebounce(
+    async () => {
+      if (localDailyAnswer === globalDailyAnswer) return;
+      
+      // 1. Update Global Store
+      setGlobalDailyAnswer(localDailyAnswer);
+
+      // 2. Auto-save if conditions met
+      if (
+        !existingSubmissionId && 
+        participantId && 
+        participationCode && 
+        localDailyAnswer.length > 10 &&
+        !isSubmittingRef.current
+      ) {
+        await performAutoSave(localDailyAnswer);
+      }
+    },
+    1000, // 1 second debounce
+    [localDailyAnswer]
+  );
+
+  // Auto-save function
+  const performAutoSave = async (currentAnswer: string) => {
+    if (!participantId || !participationCode) return;
+    
+    setIsAutoSaving(true);
+    try {
+      const draftData: any = {
+        dailyAnswer: currentAnswer,
+      };
+      
+      if (participant?.cohortId) {
+        draftData.cohortId = participant.cohortId;
+      }
+
+      await saveDraft(participantId, participationCode, draftData);
+      setLastSavedAt(new Date());
+    } catch (error) {
+      console.error('Auto-save failed', error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  };
 
   // Step 2 검증 (제출 중일 때는 검증 건너뛰기)
   useEffect(() => {
@@ -122,7 +180,8 @@ function Step3Content() {
         const draft = await getDraftSubmission(participantId, cohortId);
 
         if (draft?.dailyAnswer) {
-          setDailyAnswer(draft.dailyAnswer);
+          setGlobalDailyAnswer(draft.dailyAnswer); // Update global
+          setLocalDailyAnswer(draft.dailyAnswer); // Update local
           toast({
             title: '임시 저장된 내용을 불러왔습니다',
             description: '이어서 작성하실 수 있습니다.',
@@ -149,7 +208,7 @@ function Step3Content() {
     };
 
     loadDraftAndQuestion();
-  }, [cohortId, existingSubmissionId, participantId, setDailyAnswer, toast]);
+  }, [cohortId, existingSubmissionId, participantId, setGlobalDailyAnswer, toast]);
 
   useEffect(() => {
     if (!cohortId || !existingSubmissionId || hasLoadedExistingRef.current) {
@@ -210,7 +269,8 @@ function Step3Content() {
 
         // dailyAnswer는 Step3에서 입력하므로 항상 DB 값 로드
         if (submission.dailyAnswer) {
-          setDailyAnswer(submission.dailyAnswer);
+          setGlobalDailyAnswer(submission.dailyAnswer);
+          setLocalDailyAnswer(submission.dailyAnswer);
         }
 
         const questionDate = submission.submissionDate || getSubmissionDate();
@@ -254,7 +314,7 @@ function Step3Content() {
     return () => {
       cancelled = true;
     };
-  }, [cohortId, existingSubmissionId, imageStorageUrl, review, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, toast]);
+  }, [cohortId, existingSubmissionId, imageStorageUrl, review, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setGlobalDailyAnswer, toast]);
 
   const handleSaveDraft = async () => {
     if (existingSubmissionId) {
@@ -286,6 +346,7 @@ function Step3Content() {
         review?: string;
         dailyQuestion?: string;
         dailyAnswer?: string;
+        cohortId?: string;
       } = {};
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
@@ -316,16 +377,18 @@ function Step3Content() {
       if (dailyQuestion?.question) {
         draftData.dailyQuestion = dailyQuestion.question;
       }
-      if (dailyAnswer) {
-        draftData.dailyAnswer = dailyAnswer;
+      // Use local answer for explicit save
+      if (localDailyAnswer) {
+        draftData.dailyAnswer = localDailyAnswer;
       }
 
       // 🆕 cohortId 추가 (중복 참가자 구분용)
       if (participant?.cohortId) {
-        (draftData as any).cohortId = participant.cohortId;
+        draftData.cohortId = participant.cohortId;
       }
 
       await saveDraft(participantId, participationCode, draftData);
+      setLastSavedAt(new Date());
 
       toast({
         title: '임시 저장되었습니다',
@@ -366,7 +429,7 @@ function Step3Content() {
       return;
     }
 
-    if (!dailyAnswer.trim()) {
+    if (!localDailyAnswer.trim()) {
       toast({
         title: '오늘의 질문에 답변해주세요',
         variant: 'destructive',
@@ -374,10 +437,10 @@ function Step3Content() {
       return;
     }
 
-    if (dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH) {
+    if (localDailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH) {
       toast({
         title: `최소 ${SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자 이상 작성해주세요`,
-        description: `현재 ${dailyAnswer.trim().length}자 입력됨`,
+        description: `현재 ${localDailyAnswer.trim().length}자 입력됨`,
         variant: 'destructive',
       });
       return;
@@ -414,7 +477,7 @@ function Step3Content() {
         ...(bookImageUrl && { bookImageUrl }),
         review: review.trim(),
         dailyQuestion: dailyQuestion?.question || '',
-        dailyAnswer: dailyAnswer.trim(),
+        dailyAnswer: localDailyAnswer.trim(),
         status: 'approved' as const,
         // 🆕 cohortId 추가 (중복 참가자 구분용, participant 우선)
         ...(( participant?.cohortId || cohortId) && { cohortId: participant?.cohortId || cohortId }),
@@ -541,22 +604,42 @@ function Step3Content() {
 
             {/* 질문 답변 입력 */}
             <div className="space-y-3">
-              <Textarea
-                value={dailyAnswer}
-                onChange={(e) => setDailyAnswer(e.target.value)}
-                placeholder="질문에 대한 답변을 자유롭게 작성해 주세요"
-                className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400"
-                disabled={uploading}
-              />
-              <p className={`text-xs text-right transition-colors ${
-                dailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
-                  ? 'text-red-500 font-medium'
-                  : 'text-transparent'
-              }`}>
-                {dailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
-                  ? `${dailyAnswer.length}/${SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자`
-                  : '　'}
-              </p>
+              <div className="relative">
+                <Textarea
+                  value={localDailyAnswer}
+                  onChange={(e) => setLocalDailyAnswer(e.target.value)}
+                  placeholder="질문에 대한 답변을 자유롭게 작성해 주세요"
+                  className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
+                  disabled={uploading}
+                />
+                {/* Auto-save indicator */}
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full border border-gray-100 shadow-sm">
+                  {isAutoSaving ? (
+                    <>
+                      <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+                      <span className="text-[10px] text-blue-500 font-medium">저장 중</span>
+                    </>
+                  ) : lastSavedAt ? (
+                    <>
+                      <Check className="w-3 h-3 text-green-500" />
+                      <span className="text-[10px] text-green-600 font-medium">저장됨</span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center px-1">
+                <span className="text-xs text-gray-400">
+                  {localDailyAnswer.length > 0 && '작성 중인 내용은 자동으로 저장됩니다'}
+                </span>
+                <p className={`text-xs transition-colors ${
+                  localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
+                    ? 'text-red-500 font-medium'
+                    : 'text-blue-500'
+                }`}>
+                  {localDailyAnswer.length} / {SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자
+                </p>
+              </div>
             </div>
 
             {uploadStep && (
@@ -586,7 +669,7 @@ function Step3Content() {
             <UnifiedButton
               onClick={handleSubmit}
               className={existingSubmissionId ? 'w-full' : 'flex-1'}
-              disabled={uploading || isSaving || !dailyAnswer.trim() || dailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}
+              disabled={uploading || isSaving || !localDailyAnswer.trim() || localDailyAnswer.trim().length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}
             >
               {uploading ? uploadStep || '제출 중...' : existingSubmissionId ? '수정하기' : '제출하기'}
             </UnifiedButton>

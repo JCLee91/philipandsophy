@@ -25,6 +25,8 @@ interface SubmissionFlowState {
 
   // Actions
   setImageFile: (file: File | null, preview: string | null, storageUrl?: string | null) => void;
+  // 💡 NEW: Clear only the memory-heavy preview if URL exists
+  clearImagePreview: () => void;
   setSelectedBook: (book: NaverBook | null) => void;
   setManualTitle: (title: string) => void;
   setReview: (review: string) => void;
@@ -53,6 +55,8 @@ export const useSubmissionFlowStore = create<SubmissionFlowState>((set) => ({
 
   setImageFile: (file, preview, storageUrl = null) =>
     set({ imageFile: file, imagePreview: preview, imageStorageUrl: storageUrl ?? null }),
+
+  clearImagePreview: () => set({ imagePreview: null }),
 
   setSelectedBook: (book) => set({ selectedBook: book }),
 

@@ -44,6 +44,7 @@ function Step1Content() {
     setImageFile,
     setMetaInfo,
     setImageStorageUrl,
+    clearImagePreview, // 🆕
     setSelectedBook,
     setManualTitle,
     setReview,
@@ -239,6 +240,11 @@ function Step1Content() {
       if (!bookImageUrl) {
         bookImageUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
         setImageStorageUrl(bookImageUrl);
+      }
+
+      // ✅ Memory Optimization: Once we have a URL, clear the memory-heavy Base64 preview
+      if (bookImageUrl) {
+        clearImagePreview();
       }
 
       // 🆕 cohortId 추가 (중복 참가자 구분용)
