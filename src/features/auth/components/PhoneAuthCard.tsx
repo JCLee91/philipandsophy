@@ -14,15 +14,17 @@ import {
 import { Input } from '@/components/ui/input';
 import UnifiedButton from '@/components/UnifiedButton';
 import { initRecaptcha, sendSmsVerification, confirmSmsCode } from '@/lib/firebase';
+import { getAuthErrorMessage } from '@/lib/firebase/error-mapping';
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 import { logger } from '@/lib/logger';
 import { appRoutes } from '@/lib/navigation';
 import { PHONE_VALIDATION, AUTH_ERROR_MESSAGES, STORAGE_KEYS } from '@/constants/auth';
 import { phoneFormatUtils } from '@/constants/phone-format';
+import { Loader2 } from 'lucide-react';
 
 const LAST_PHONE_KEY = STORAGE_KEYS.LAST_PHONE;
 
-type AuthStep = 'phone' | 'code';
+type AuthStep = 'phone' | 'code' | 'success';
 
 export default function PhoneAuthCard() {
   const router = useRouter();
@@ -170,7 +172,7 @@ export default function PhoneAuthCard() {
 
     } catch (error: any) {
 
-      setError(error.message || AUTH_ERROR_MESSAGES.SMS_SEND_FAILED);
+      setError(getAuthErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -250,14 +252,12 @@ export default function PhoneAuthCard() {
         return;
       }
 
-      // ✅ 인증 성공!
-      // Firebase의 onAuthStateChanged가 자동으로 트리거되고,
-      // AuthContext가 participant를 로드하며,
-      // 상위 컴포넌트(/app/page.tsx)가 자동으로 리다이렉트함
-      // 로딩 상태 유지 (리다이렉트 전까지)
+      // ✅ 인증 성공! Success step으로 이동하여 시각적 피드백 제공
+      // 상위 컴포넌트(/app/page.tsx)가 리다이렉트할 때까지 로딩 상태 유지
+      setStep('success');
 
     } catch (error: any) {
-      setError(error.message || AUTH_ERROR_MESSAGES.AUTH_FAILED);
+      setError(getAuthErrorMessage(error));
       confirmationResultRef.current = null;
       setVerificationCode('');
       setIsSubmitting(false);
@@ -302,7 +302,9 @@ export default function PhoneAuthCard() {
           <CardDescription>
             {step === 'phone'
               ? '등록된 휴대폰 번호를 입력해주세요.'
-              : '인증 코드를 입력해주세요.'}
+              : step === 'code'
+              ? '인증 코드를 입력해주세요.'
+              : '환영합니다!'}
           </CardDescription>
         </CardHeader>
 
@@ -322,7 +324,7 @@ export default function PhoneAuthCard() {
                 autoFocus
                 disabled={isSubmitting}
               />
-            ) : (
+            ) : step === 'code' ? (
               <div className="space-y-2">
                 <Input
                   type="text"
@@ -343,6 +345,13 @@ export default function PhoneAuthCard() {
                   {phoneNumber}로 전송된 인증 코드를 입력해주세요.
                 </p>
               </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                <p className="text-center font-medium text-lg">
+                  인증 완료! 입장 중입니다...
+                </p>
+              </div>
             )}
 
             {error && <p className="text-center text-sm text-destructive">{error}</p>}
@@ -360,7 +369,7 @@ export default function PhoneAuthCard() {
             >
               인증 코드 받기
             </UnifiedButton>
-          ) : (
+          ) : step === 'code' ? (
             <>
               <UnifiedButton
                 onClick={handleVerifyCode}
@@ -380,7 +389,7 @@ export default function PhoneAuthCard() {
                 다시 시작
               </button>
             </>
-          )}
+          ) : null}
         </CardFooter>
       </Card>
 

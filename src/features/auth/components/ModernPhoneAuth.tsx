@@ -16,6 +16,7 @@ import {
   setupWebOTPAutoFill,
   retryWithBackoff
 } from '@/lib/firebase/auth-enhanced';
+import { getAuthErrorMessage } from '@/lib/firebase/error-mapping';
 import { ArrowLeft, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 type AuthStep = 'phone' | 'verify' | 'success';
@@ -117,7 +118,7 @@ export default function ModernPhoneAuth() {
       });
 
     } catch (error: any) {
-      setError(error.message || 'SMS 발송에 실패했습니다.');
+      setError(getAuthErrorMessage(error));
       logger.error('SMS send error:', error);
     } finally {
       setLoadingState('idle');
@@ -157,7 +158,7 @@ export default function ModernPhoneAuth() {
       }, 1000);
 
     } catch (error: any) {
-      setError(error.message || '인증에 실패했습니다.');
+      setError(getAuthErrorMessage(error));
       setLoadingState('idle');
     }
   };
