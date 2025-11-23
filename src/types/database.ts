@@ -329,6 +329,7 @@ export interface Conversation {
   userInfo?: {
     name: string;
     profileImage?: string;
+    profileImageCircle?: string;
     cohortId?: string;
     cohortName?: string;
   };
