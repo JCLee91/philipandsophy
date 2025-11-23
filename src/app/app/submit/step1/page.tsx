@@ -269,10 +269,18 @@ function Step1Content() {
     return <LoadingSpinner message="로딩 중..." />;
   }
 
+  const handleBack = () => {
+    if (cohortId) {
+      router.push(appRoutes.chat(cohortId));
+    } else {
+      router.push('/app');
+    }
+  };
+
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
-        <TopBar onBack={() => router.back()} title="독서 인증하기" align="left" />
+        <TopBar onBack={handleBack} title="독서 인증하기" align="left" />
         <div className="fixed top-14 left-0 right-0 z-[998]">
           <ProgressIndicator currentStep={1} />
         </div>
