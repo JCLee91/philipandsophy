@@ -182,10 +182,6 @@ function Step3Content() {
         if (draft?.dailyAnswer) {
           setGlobalDailyAnswer(draft.dailyAnswer); // Update global
           setLocalDailyAnswer(draft.dailyAnswer); // Update local
-          toast({
-            title: '임시 저장된 내용을 불러왔습니다',
-            description: '이어서 작성하실 수 있습니다.',
-          });
         }
 
         // 2. 일일 질문 로드

@@ -81,10 +81,6 @@ function Step1Content() {
         const file = await createFileFromUrl(draft.bookImageUrl);
         setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
         setImageStorageUrl(draft.bookImageUrl);
-        toast({
-          title: '임시 저장된 내용을 불러왔습니다',
-          description: '이어서 작성하실 수 있습니다.',
-        });
       }
 
       setIsLoadingDraft(false);
