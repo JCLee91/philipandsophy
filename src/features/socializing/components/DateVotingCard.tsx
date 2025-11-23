@@ -25,13 +25,27 @@ export default function DateVotingCard({
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
-    const handleVote = (date: string) => {
-        setSelectedDate(date); // Optimistic update
+    const handleSelect = (date: string) => {
+        setSelectedDate(date);
+    };
+
+    const handleSubmit = () => {
+        if (!selectedDate) {
+            toast({
+                title: '날짜를 선택해주세요',
+                variant: 'destructive',
+            });
+            return;
+        }
 
         startTransition(async () => {
-            const result = await voteForDate(cohortId, date);
-            if (!result.success) {
-                setSelectedDate(currentVote); // Revert on failure
+            const result = await voteForDate(cohortId, selectedDate);
+            if (result.success) {
+                toast({
+                    title: '투표 완료!',
+                    description: `${format(new Date(selectedDate), 'M월 d일 (EEE)', { locale: ko })}에 투표하셨습니다.`,
+                });
+            } else {
                 toast({
                     title: '투표 실패',
                     description: result.error,
@@ -64,7 +78,7 @@ export default function DateVotingCard({
                     return (
                         <button
                             key={date}
-                            onClick={() => handleVote(date)}
+                            onClick={() => handleSelect(date)}
                             disabled={isPending}
                             className={cn(
                                 "w-full relative overflow-hidden rounded-xl border-2 transition-all p-4 text-left group",
@@ -108,6 +122,15 @@ export default function DateVotingCard({
                     );
                 })}
             </div>
+
+            <button
+                onClick={handleSubmit}
+                disabled={isPending || !selectedDate}
+                className="w-full mt-6 py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isPending ? '투표 중...' : '투표하기'}
+            </button>
 
             <div className="mt-4 text-center">
                 <p className="text-xs text-gray-400">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { MapPin, Check, Users } from 'lucide-react';
+import { MapPin, Check, Users, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { voteForLocation } from '@/features/socializing/actions/socializing-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -23,13 +23,27 @@ export default function LocationVotingCard({
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
-    const handleVote = (location: string) => {
-        setSelectedLocation(location); // Optimistic update
+    const handleSelect = (location: string) => {
+        setSelectedLocation(location);
+    };
+
+    const handleSubmit = () => {
+        if (!selectedLocation) {
+            toast({
+                title: '장소를 선택해주세요',
+                variant: 'destructive',
+            });
+            return;
+        }
 
         startTransition(async () => {
-            const result = await voteForLocation(cohortId, location);
-            if (!result.success) {
-                setSelectedLocation(currentVote); // Revert on failure
+            const result = await voteForLocation(cohortId, selectedLocation);
+            if (result.success) {
+                toast({
+                    title: '투표 완료!',
+                    description: `${selectedLocation}에 투표하셨습니다.`,
+                });
+            } else {
                 toast({
                     title: '투표 실패',
                     description: result.error,
@@ -62,7 +76,7 @@ export default function LocationVotingCard({
                     return (
                         <button
                             key={location}
-                            onClick={() => handleVote(location)}
+                            onClick={() => handleSelect(location)}
                             disabled={isPending}
                             className={cn(
                                 "w-full relative overflow-hidden rounded-xl border-2 transition-all p-4 text-left group",
@@ -106,6 +120,15 @@ export default function LocationVotingCard({
                     );
                 })}
             </div>
+
+            <button
+                onClick={handleSubmit}
+                disabled={isPending || !selectedLocation}
+                className="w-full mt-6 py-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isPending ? '투표 중...' : '투표하기'}
+            </button>
 
             <div className="mt-4 text-center">
                 <p className="text-xs text-gray-400">
