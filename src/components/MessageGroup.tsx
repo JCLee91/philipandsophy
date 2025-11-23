@@ -8,6 +8,7 @@ import { APP_CONSTANTS } from '@/constants/app';
 import { getFirstName } from '@/lib/utils';
 import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { Check, CheckCheck } from 'lucide-react';
 
 interface MessageGroupProps {
   senderId: string;
@@ -86,9 +87,13 @@ export default function MessageGroup({
         {/* 메시지들 */}
         {messages.map((msg) => (
           <div key={msg.id} className="flex items-end gap-1 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
-            {isMine && !msg.isRead && (
-              <span className="text-[10px] text-yellow-600 mb-0.5 min-w-[7px] text-center leading-none">
-                1
+            {isMine && (
+              <span className={`mb-0.5 min-w-[14px] flex justify-center ${msg.isRead ? 'text-blue-500' : 'text-muted-foreground'}`}>
+                {msg.isRead ? (
+                  <CheckCheck className="h-3 w-3" strokeWidth={2.5} />
+                ) : (
+                  <Check className="h-3 w-3" strokeWidth={2.5} />
+                )}
               </span>
             )}
             <div
