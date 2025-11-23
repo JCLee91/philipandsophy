@@ -463,7 +463,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
                             )}
                         </div>
                         <UnifiedButton
-                            variant="default"
+                            variant="primary"
                             onClick={handleConfirmMatching}
                             disabled={isMatchingProcessing}
                             className="bg-green-600 hover:bg-green-700 text-white"

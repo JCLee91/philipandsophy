@@ -38,9 +38,13 @@ export const ClusterSchema = z.object({
   id: z.string(),
   name: z.string(),
   emoji: z.string(),
-  reason: z.string(),
+  category: z.string(),
+  theme: z.string(),
+  reasoning: z.string(),
   memberIds: z.array(z.string()),
-  keywords: z.array(z.string()),
+  // Legacy fields (optional for backward compatibility)
+  reason: z.string().optional(),
+  keywords: z.array(z.string()).optional(),
 });
 
 // Complete matching result
