@@ -39,3 +39,4 @@ export { scheduledClusterMatching } from "./scheduled-cluster-matching";
 // ============================================================
 
 export { sendCustomNotification } from "./custom-notifications";
+export { manualClusterMatching } from "./manual-cluster-matching";

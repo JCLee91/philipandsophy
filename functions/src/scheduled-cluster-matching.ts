@@ -7,8 +7,8 @@
  * - 클러스터 크기: 5-7명
  * - 클러스터 내 전원 매칭
  *
- * @version 3.0.0
- * @date 2025-11-15
+ * @version 3.1.0
+ * @date 2025-11-24
  */
 
 import * as admin from "firebase-admin";
@@ -18,7 +18,8 @@ import { subDays, format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { logger } from "./lib/logger";
 import { getSeoulDB } from "./lib/db-helper";
-import { matchParticipantsWithClusters, DailySubmission } from './lib/cluster/index';
+import { matchParticipantsWithClusters } from './lib/cluster/index';
+import { fetchDailySubmissions } from './lib/cluster/data';
 
 // Environment parameters
 const cohortIdParam = defineString("DEFAULT_COHORT_ID", {
@@ -35,6 +36,7 @@ const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
  *
  * 매일 새벽 2시 (KST)에 자동으로 실행
  * 1. 어제 인증한 참가자의 감상평 + 답변 조회
+ *    - 비즈니스 로직: 어제 00:00 ~ 오늘 02:00 까지의 인증은 이미 '어제' 날짜로 저장되어 있음 (createSubmission 참조)
  * 2. AI 클러스터 생성
  * 3. 클러스터 내 매칭
  * 4. Firestore에 저장
@@ -48,7 +50,7 @@ export const scheduledClusterMatching = onSchedule(
     region: "asia-northeast3", // Seoul
   },
   async (event) => {
-    logger.info("🎯 Scheduled cluster matching started (v3.0)");
+    logger.info("🎯 Scheduled cluster matching started (v3.1)");
 
     try {
       // 1. 환경 설정
@@ -59,196 +61,139 @@ export const scheduledClusterMatching = onSchedule(
         return;
       }
 
-      // 2. 활성 cohort 조회
       const db = getSeoulDB();
-      const activeCohortsSnapshot = await db
-        .collection("cohorts")
-        .where("isActive", "==", true)
-        .limit(1)
-        .get();
 
-      const cohortId = activeCohortsSnapshot.empty
-        ? cohortIdParam.value()
-        : activeCohortsSnapshot.docs[0].id;
-
-      logger.info(`Active cohort: ${cohortId}`);
-
-      // 3. Cohort 데이터 조회
-      const cohortDoc = activeCohortsSnapshot.empty
-        ? await db.collection("cohorts").doc(cohortId).get()
-        : activeCohortsSnapshot.docs[0];
-
-      const cohortData = cohortDoc.data();
-
-      // 3-1. endDate 체크: 종료된 cohort 스킵
-      if (cohortData?.endDate) {
-        const today = new Date().toLocaleString('en-CA', {
-          timeZone: 'Asia/Seoul'
-        }).split(',')[0]; // YYYY-MM-DD
-
-        if (today > cohortData.endDate) {
-          logger.info(`Cohort ${cohortId} ended (${cohortData.endDate}), skipping matching`);
-          return;
-        }
-      }
-
-      // 3-2. profileUnlockDate 체크: 전체 공개 모드 스킵
-      const profileUnlockDate = cohortData?.profileUnlockDate;
-
-      if (profileUnlockDate) {
-        const today = new Date().toLocaleString('en-CA', {
-          timeZone: 'Asia/Seoul'
-        }).split(',')[0];
-
-        if (today >= profileUnlockDate) {
-          logger.info(`Profile unlock date reached (${profileUnlockDate}), skipping`);
-          return;
-        }
-      }
-
-      // 3-3. useClusterMatching 체크: v3.0 클러스터 매칭 사용 여부
-      const useClusterMatching = cohortData?.useClusterMatching === true;
-
-      if (!useClusterMatching) {
-        logger.info(`Cohort ${cohortId} not using cluster matching (v2.0), skipping`);
-        return;
-      }
-
-      logger.info(`✅ Cohort ${cohortId} uses cluster matching (v3.0)`);
-
-      // 4. 어제 날짜 계산 (KST)
+      // 2. 날짜 계산 (KST)
+      // 실행 시점: 11월 24일 02:00
+      // 타겟 날짜: 11월 23일 (yesterday)
       const now = new Date();
       const kstNow = toZonedTime(now, 'Asia/Seoul');
       const yesterday = subDays(kstNow, 1);
-      const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+      const yesterdayStr = format(yesterday, 'yyyy-MM-dd'); // "2025-11-23"
+      const todayStr = format(kstNow, 'yyyy-MM-dd');       // "2025-11-24" (참고용)
 
-      logger.info(`Matching date: ${yesterdayStr}`);
+      logger.info(`Matching target date: ${yesterdayStr}`);
 
-      // 5. 어제 인증한 참가자들의 감상평 + 답변 조회
-      const submissionsSnapshot = await db
-        .collection('reading_submissions')
-        .where('cohortId', '==', cohortId)
-        .where('submissionDate', '==', yesterdayStr)
-        .where('status', '==', 'approved')
+      // 3. 활성 cohort 조회 (전체)
+      // 기존 limit(1) 제거하여 모든 활성 기수 처리
+      const activeCohortsSnapshot = await db
+        .collection("cohorts")
+        .where("isActive", "==", true)
         .get();
 
-      if (submissionsSnapshot.empty) {
-        logger.warn(`No submissions for ${yesterdayStr}, skipping matching`);
+      if (activeCohortsSnapshot.empty) {
+        logger.info("No active cohorts found.");
         return;
       }
 
-      logger.info(`Found ${submissionsSnapshot.size} submissions for ${yesterdayStr}`);
+      logger.info(`Found ${activeCohortsSnapshot.size} active cohorts.`);
 
-      // 6. 참가자 정보 조회 (배치 처리)
-      const participantIds = Array.from(
-        new Set(submissionsSnapshot.docs.map(doc => doc.data().participantId))
-      );
+      // 4. 각 Cohort별로 순차 처리
+      for (const cohortDoc of activeCohortsSnapshot.docs) {
+        const cohortId = cohortDoc.id;
+        const cohortData = cohortDoc.data();
 
-      const participantsMap = new Map<string, { name: string; gender?: string }>();
+        try {
+          logger.info(`Processing cohort: ${cohortId}`);
 
-      // Firestore 'in' 쿼리 제한: 최대 30개씩 배치
-      const BATCH_SIZE = 30;
-      for (let i = 0; i < participantIds.length; i += BATCH_SIZE) {
-        const batch = participantIds.slice(i, i + BATCH_SIZE);
-        const participantsSnapshot = await db
-          .collection('participants')
-          .where(admin.firestore.FieldPath.documentId(), 'in', batch)
-          .get();
+          // 4-1. endDate 체크
+          if (cohortData?.endDate) {
+            if (todayStr > cohortData.endDate) {
+              logger.info(`Cohort ${cohortId} ended (${cohortData.endDate}), skipping matching`);
+              continue;
+            }
+          }
 
-        participantsSnapshot.docs.forEach(doc => {
-          const data = doc.data();
-          participantsMap.set(doc.id, {
-            name: data.name || 'Unknown',
-            gender: data.gender
+          // 4-2. profileUnlockDate 체크
+          const profileUnlockDate = cohortData?.profileUnlockDate;
+          if (profileUnlockDate) {
+            if (todayStr >= profileUnlockDate) {
+              logger.info(`Profile unlock date reached (${profileUnlockDate}), skipping`);
+              continue;
+            }
+          }
+
+          // 4-3. useClusterMatching 체크
+          const useClusterMatching = cohortData?.useClusterMatching === true;
+          if (!useClusterMatching) {
+            logger.info(`Cohort ${cohortId} not using cluster matching (v2.0), skipping`);
+            continue;
+          }
+
+          logger.info(`✅ Cohort ${cohortId} uses cluster matching (v3.0)`);
+
+          // 5. 인증 데이터 조회 (공통 함수 사용)
+          const dailySubmissions = await fetchDailySubmissions(db, cohortId, yesterdayStr);
+
+          if (dailySubmissions.length === 0) {
+            logger.warn(`No submissions for ${yesterdayStr}, skipping matching (Cohort ${cohortId})`);
+            continue;
+          }
+
+          // 8. 클러스터 매칭 실행
+          logger.info(`Starting cluster matching for Cohort ${cohortId}: ${dailySubmissions.length} participants`);
+
+          const matchingResult = await matchParticipantsWithClusters(dailySubmissions, yesterdayStr);
+
+          logger.info(
+            `Cluster matching completed for Cohort ${cohortId}: ` +
+            `${Object.keys(matchingResult.clusters).length} clusters, ` +
+            `${Object.keys(matchingResult.assignments).length} assignments`
+          );
+
+          // 9. Firestore 저장 (Transaction)
+          const matchingEntry = {
+            clusters: matchingResult.clusters,
+            assignments: matchingResult.assignments,
+            matchingVersion: 'cluster' as const,
+          };
+
+          const cohortRef = db.collection("cohorts").doc(cohortId);
+
+          await db.runTransaction(async (transaction) => {
+            const currentDoc = await transaction.get(cohortRef);
+            if (!currentDoc.exists) throw new Error(`Cohort ${cohortId} not found`);
+
+            const currentData = currentDoc.data();
+            const dailyFeaturedParticipants = currentData?.dailyFeaturedParticipants || {};
+
+            dailyFeaturedParticipants[yesterdayStr] = matchingEntry;
+
+            transaction.update(cohortRef, {
+              dailyFeaturedParticipants,
+              updatedAt: admin.firestore.Timestamp.now(),
+            });
           });
-        });
+
+          logger.info(`✅ Updated dailyFeaturedParticipants for ${yesterdayStr} (Cohort ${cohortId})`);
+
+          // 10. 백업 저장
+          const confirmRef = db
+            .collection("matching_results")
+            .doc(`${cohortId}-${yesterdayStr}`);
+
+          await confirmRef.set({
+            cohortId,
+            date: yesterdayStr,
+            matching: matchingEntry,
+            totalParticipants: dailySubmissions.length,
+            clusterCount: Object.keys(matchingResult.clusters).length,
+            confirmedAt: admin.firestore.Timestamp.now(),
+            confirmedBy: "scheduled_cluster_matching",
+          });
+
+          logger.info(`✅ Matching saved to matching_results (Cohort ${cohortId})`);
+
+        } catch (cohortError) {
+          logger.error(`❌ Error processing cohort ${cohortId}`, cohortError as Error);
+          // Continue to next cohort
+        }
       }
 
-      // 7. DailySubmission 형태로 변환
-      const dailySubmissions: DailySubmission[] = submissionsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        const participant = participantsMap.get(data.participantId);
+      logger.info("✅ Scheduled cluster matching finished for all cohorts.");
 
-        return {
-          participantId: data.participantId,
-          participantName: participant?.name || 'Unknown',
-          gender: participant?.gender,
-          bookTitle: data.bookTitle || '제목 없음',
-          bookAuthor: data.bookAuthor,
-          review: data.review || '',
-          dailyQuestion: data.dailyQuestion || '',
-          dailyAnswer: data.dailyAnswer || ''
-        };
-      });
-
-      // 8. 클러스터 매칭 실행
-      logger.info(`Starting cluster matching: ${dailySubmissions.length} participants`);
-
-      const matchingResult = await matchParticipantsWithClusters(dailySubmissions, yesterdayStr);
-
-      logger.info(
-        `Cluster matching completed: ` +
-        `${Object.keys(matchingResult.clusters).length}개 클러스터, ` +
-        `${Object.keys(matchingResult.assignments).length}명 할당`
-      );
-
-      // 9. Firestore에 저장 (Transaction)
-      const matchingEntry = {
-        clusters: matchingResult.clusters,
-        assignments: matchingResult.assignments,
-        matchingVersion: 'cluster' as const,
-      };
-
-      const cohortRef = db.collection("cohorts").doc(cohortId);
-
-      await db.runTransaction(async (transaction) => {
-        const doc = await transaction.get(cohortRef);
-
-        if (!doc.exists) {
-          throw new Error(`Cohort ${cohortId} not found`);
-        }
-
-        const data = doc.data();
-        const dailyFeaturedParticipants = data?.dailyFeaturedParticipants || {};
-
-        dailyFeaturedParticipants[yesterdayStr] = matchingEntry;
-
-        transaction.update(cohortRef, {
-          dailyFeaturedParticipants,
-          updatedAt: admin.firestore.Timestamp.now(),
-        });
-
-        logger.info(`✅ Updated dailyFeaturedParticipants for ${yesterdayStr}`);
-      });
-
-      // 10. matching_results 백업
-      const confirmData = {
-        cohortId,
-        date: yesterdayStr,
-        matching: matchingEntry,
-        totalParticipants: dailySubmissions.length,
-        clusterCount: Object.keys(matchingResult.clusters).length,
-        confirmedAt: admin.firestore.Timestamp.now(),
-        confirmedBy: "scheduled_cluster_matching",
-      };
-
-      const confirmRef = db
-        .collection("matching_results")
-        .doc(`${cohortId}-${yesterdayStr}`);
-
-      await confirmRef.set(confirmData);
-
-      logger.info(`✅ Matching saved to Firestore`);
-
-      logger.info(`✅ Cluster matching completed (v3.0)`, {
-        cohortId,
-        date: yesterdayStr,
-        participants: dailySubmissions.length,
-        clusters: Object.keys(matchingResult.clusters).length,
-        matchingVersion: 'cluster',
-      });
     } catch (error) {
-      logger.error("❌ Cluster matching failed", error as Error);
+      logger.error("❌ Cluster matching fatal error", error as Error);
       throw error;
     }
   }
