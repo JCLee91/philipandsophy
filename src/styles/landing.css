@@ -230,8 +230,8 @@
 }
 
 .nav-container {
-    backdrop-filter: var(--blur-xl);
     -webkit-backdrop-filter: var(--blur-xl);
+    backdrop-filter: var(--blur-xl);
     background: rgba(45, 45, 48, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 999px;
@@ -437,8 +437,8 @@
 
     /* Glassmorphism 효과 */
     background: var(--glass-bg-strong);
-    backdrop-filter: var(--blur-xl);
     -webkit-backdrop-filter: var(--blur-xl);
+    backdrop-filter: var(--blur-xl);
 
     /* 그림자와 테두리 */
     box-shadow: var(--glass-shadow-strong), inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
