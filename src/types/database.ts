@@ -159,6 +159,10 @@ export interface Cohort {
     dates?: string[]; // 투표 가능한 날짜 후보들
     locations?: string[]; // 투표 가능한 장소 후보들
   };
+  socializingResult?: {
+    date: string; // 확정된 날짜
+    location: string; // 확정된 장소
+  };
 }
 
 /**
