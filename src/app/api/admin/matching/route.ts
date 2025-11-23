@@ -20,8 +20,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { cohortId } = body ?? {};
+    const { cohortId, useClusterMatching } = body ?? {};
     requestCohortId = cohortId;
+
+    console.log('🔍 [Backend API] Received request:', {
+      cohortId,
+      useClusterMatching,
+      bodyKeys: Object.keys(body ?? {})
+    });
 
     if (!cohortId) {
       return NextResponse.json(
@@ -31,9 +37,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Cloud Run 함수 URL (환경변수에서 가져오기)
-    // 기본값은 manualClusterMatching 함수의 예상 URL
-    const matchingUrl = process.env.MANUAL_MATCHING_URL ||
-      'https://asia-northeast3-philipandsophy.cloudfunctions.net/manualClusterMatching';
+    // useClusterMatching 플래그에 따라 v2(랜덤) 또는 v3(클러스터) 함수 선택
+    const v3Url = process.env.MANUAL_CLUSTER_MATCHING_URL || 'https://manualclustermatching-vliq2xsjqa-du.a.run.app';
+    const v2Url = process.env.MANUAL_MATCHING_URL;
+    
+    const matchingUrl = useClusterMatching ? v3Url : v2Url;
+
+    // 디버깅 로그 추가
+    console.log('🔍 [Backend API] URL Selection:', {
+      useClusterMatching,
+      v3Url,
+      v2Url,
+      selectedUrl: matchingUrl,
+      willCallV3: useClusterMatching === true
+    });
+    
+    logger.info('Matching URL selection', {
+      cohortId,
+      useClusterMatching,
+      v3Url,
+      v2Url,
+      selectedUrl: matchingUrl
+    });
+
+    if (!matchingUrl) {
+       return NextResponse.json(
+        { error: '매칭 함수 URL이 설정되지 않았습니다.' },
+        { status: 500 }
+      );
+    }
 
     // 원본 Authorization 헤더에서 ID 토큰 추출
     const authHeader = request.headers.get('authorization');
@@ -100,6 +132,13 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await response.json();
+
+    console.log('🔍 [Backend API] Cloud Run Response:', {
+      matchingVersion: result.matching?.matchingVersion,
+      hasClusters: !!result.matching?.clusters,
+      hasAssignments: !!result.matching?.assignments,
+      totalParticipants: result.totalParticipants
+    });
 
     // Cloud Run 함수의 응답을 그대로 반환
     // (프리뷰 모드이므로 Firestore에는 저장하지 않음)

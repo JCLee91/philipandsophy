@@ -35,6 +35,7 @@ export interface Cluster {
     name: string;
     emoji: string;
     theme: string;
+    category: string;
     memberIds: string[];
     reasoning: string;
 }
@@ -66,6 +67,7 @@ export const ClusterSchema = z.object({
     id: z.string().describe('클러스터 ID (cluster1, cluster2, ...)'),
     name: z.string().describe('클러스터 이름 (예: "오늘의 사색파")'),
     emoji: z.string().describe('이모지 1개'),
+    category: z.string().describe('클러스터링 기준 키워드 (예: "감상평", "가치관", "정서", "생활습관" 등 짧은 단어)'),
     theme: z.string().describe('오늘의 주제/테마 (AI가 분석한 공통점, 한 문장)'),
     memberIds: z.array(z.string()).describe('클러스터 멤버 ID 배열'),
     reasoning: z.string().describe('AI 분석 근거 (왜 이 사람들을 묶었는지)')

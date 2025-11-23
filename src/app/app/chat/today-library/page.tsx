@@ -1381,8 +1381,8 @@ function TodayLibraryV3Content() {
 
             <div className="flex flex-col gap-2">
               <div className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px] inline-block self-center">
-                감상평
-              </div>
+              {cluster.category || '감상평'}
+            </div>
               <h3 className="text-[18px] font-bold text-black">
                 {cluster.theme}
               </h3>

@@ -88,6 +88,8 @@ export interface Cluster {
   name: string;
   /** 이모지 */
   emoji: string;
+  /** 클러스터링 기준 (예: "감상평", "가치관", "정서") */
+  category: string;
   /** 오늘의 주제/테마 (AI가 분석한 공통점) */
   theme: string;
   /** 클러스터 멤버 ID 배열 */

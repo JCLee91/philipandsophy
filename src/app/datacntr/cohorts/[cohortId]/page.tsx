@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, ArrowLeft, User, BookOpen, Calendar } from 'lucide-react';
+import { Loader2, ArrowLeft, User, BookOpen, Calendar, Sparkles, Check, AlertCircle } from 'lucide-react';
 import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import DataTable, { Column } from '@/components/datacntr/table/DataTable';
 import type { Cohort } from '@/types/database';
@@ -11,6 +11,11 @@ import { cohortParticipantSchema, type CohortParticipant } from '@/types/datacnt
 import TopBar from '@/components/TopBar';
 import BulkImageUploadModal from './_components/BulkImageUploadModal';
 import SocializingAdminControls from '@/features/socializing/components/SocializingAdminControls';
+import { getAdminHeaders } from '@/lib/auth-utils';
+import { getSubmissionDate } from '@/lib/date-utils';
+import type { MatchingResponse } from '@/types/matching';
+import UnifiedButton from '@/components/UnifiedButton';
+import { useToast } from '@/hooks/use-toast';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -20,6 +25,7 @@ interface CohortDetailPageProps {
 
 export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [cohortId, setCohortId] = useState<string>('');
   const [cohort, setCohort] = useState<Cohort | null>(null);
@@ -29,6 +35,11 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   const [tempUnlockDate, setTempUnlockDate] = useState<string>('');
   const [isUpdatingMatchingSystem, setIsUpdatingMatchingSystem] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+
+  // Matching State
+  const [isMatchingProcessing, setIsMatchingProcessing] = useState(false);
+  const [previewResult, setPreviewResult] = useState<MatchingResponse | null>(null);
+  const [matchingError, setMatchingError] = useState<string | null>(null);
 
   // Params 추출
   useEffect(() => {
@@ -149,6 +160,122 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
     }
   };
 
+  // 매칭 프리뷰 실행
+  const handleStartMatching = async () => {
+    if (!cohortId || isMatchingProcessing) return;
+    
+    setIsMatchingProcessing(true);
+    setMatchingError(null);
+    setPreviewResult(null);
+
+    try {
+      const headers = await getAdminHeaders();
+      if (!headers) throw new Error('인증 실패');
+
+      // v2/v3 환경변수를 사용하여 직접 Cloud Run 호출
+      const v3Url = process.env.NEXT_PUBLIC_MANUAL_CLUSTER_MATCHING_URL || 'https://manualclustermatching-vliq2xsjqa-du.a.run.app';
+      const v2Url = process.env.NEXT_PUBLIC_MANUAL_MATCHING_URL;
+      const matchingUrl = cohort?.useClusterMatching ? v3Url : v2Url;
+      
+      console.log('🔍 [Frontend] Matching Request:', {
+        cohortId,
+        useClusterMatching: cohort?.useClusterMatching,
+        v3Url,
+        v2Url,
+        selectedUrl: matchingUrl,
+        cohortData: cohort
+      });
+      
+      const response = await fetch(matchingUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ 
+          cohortId,
+          useClusterMatching: cohort?.useClusterMatching 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || '매칭 실행 실패');
+      }
+
+      const data: MatchingResponse = await response.json();
+      
+      console.log('🔍 [Frontend] Matching Response:', {
+        matchingVersion: data.matching?.matchingVersion,
+        hasClusters: !!data.matching?.clusters,
+        hasAssignments: !!data.matching?.assignments,
+        data
+      });
+      
+      setPreviewResult(data);
+      
+      if (data.totalParticipants === 0) {
+        toast({
+            title: "참가자 없음",
+            description: "어제 인증한 참가자가 없어 매칭할 수 없습니다.",
+            variant: "destructive"
+        });
+      }
+      
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '매칭 실행 중 오류 발생';
+      setMatchingError(message);
+      toast({
+        title: "매칭 실패",
+        description: message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsMatchingProcessing(false);
+    }
+  };
+
+  // 매칭 확정
+  const handleConfirmMatching = async () => {
+    if (!cohortId || !previewResult) return;
+
+    setIsMatchingProcessing(true);
+    try {
+       const headers = await getAdminHeaders();
+       if (!headers) throw new Error('인증 실패');
+
+       const response = await fetch('/api/admin/matching/confirm', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          cohortId,
+          matching: previewResult.matching,
+          date: previewResult.date,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || '매칭 저장 실패');
+      }
+
+      toast({
+        title: "매칭 확정 완료",
+        description: "매칭 결과가 저장되었습니다.",
+      });
+      
+      // Reset preview after success
+      setPreviewResult(null);
+      
+    } catch (error) {
+        const message = error instanceof Error ? error.message : '매칭 저장 중 오류 발생';
+        toast({
+            title: "저장 실패",
+            description: message,
+            variant: "destructive"
+        });
+    } finally {
+        setIsMatchingProcessing(false);
+    }
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -211,12 +338,6 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         rightAction={
           <div className="flex items-center">
             <button
-              onClick={() => router.push(`/app/admin/matching?cohort=${cohortId}`)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm mr-2"
-            >
-              매칭 실행
-            </button>
-            <button
               onClick={() => router.push(`/datacntr/cohorts/${cohortId}/daily-questions`)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
             >
@@ -237,10 +358,6 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         cohortId={cohortId}
         participants={participants}
         onSuccess={() => {
-          // Refresh participants list
-          // Since we don't have a refetch function exposed easily, we can just reload the page or trigger a re-fetch if we extract it.
-          // For now, let's just close the modal and maybe reload the window or rely on the user to refresh.
-          // Ideally we should refetch. Let's extract fetchCohortDetail or just call router.refresh()
           setIsBulkUploadOpen(false);
           window.location.reload();
         }}
@@ -255,50 +372,180 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
           )}
         </p>
 
-        {/* 매칭 시스템 설정 */}
+        {/* 매칭 시스템 설정 및 프리뷰 */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">매칭 시스템 설정</h2>
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600">
-              이 기수에서 사용할 매칭 알고리즘과 UI 버전을 선택합니다.
-            </p>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="matchingSystem"
-                  checked={cohort?.useClusterMatching !== true}
-                  onChange={() => handleUpdateMatchingSystem(false)}
-                  disabled={isUpdatingMatchingSystem}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  v2 (랜덤 매칭 / 기존 UI)
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="matchingSystem"
-                  checked={cohort?.useClusterMatching === true}
-                  onChange={() => handleUpdateMatchingSystem(true)}
-                  disabled={isUpdatingMatchingSystem}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  v3 (클러스터 매칭 / 신규 UI)
-                </span>
-              </label>
-              {isUpdatingMatchingSystem && (
-                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-              )}
+          <div className="flex items-center justify-between mb-4">
+             <h2 className="text-lg font-bold text-gray-900">매칭 시스템 설정</h2>
+             {/* 매칭 실행 버튼 */}
+             <UnifiedButton
+                variant="primary"
+                onClick={handleStartMatching}
+                disabled={isMatchingProcessing}
+                icon={isMatchingProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+             >
+                {isMatchingProcessing ? '매칭 분석 중...' : '매칭 실행 및 프리뷰'}
+             </UnifiedButton>
+          </div>
+
+          <div className="space-y-6">
+            {/* 시스템 선택 */}
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">
+                이 기수에서 사용할 매칭 알고리즘과 UI 버전을 선택합니다.
+              </p>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="matchingSystem"
+                    checked={cohort?.useClusterMatching !== true}
+                    onChange={() => handleUpdateMatchingSystem(false)}
+                    disabled={isUpdatingMatchingSystem}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    v2 (랜덤 매칭 / 기존 UI)
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="matchingSystem"
+                    checked={cohort?.useClusterMatching === true}
+                    onChange={() => handleUpdateMatchingSystem(true)}
+                    disabled={isUpdatingMatchingSystem}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    v3 (클러스터 매칭 / 신규 UI)
+                  </span>
+                </label>
+                {isUpdatingMatchingSystem && (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                )}
+              </div>
+              <p className="text-xs text-gray-500">
+                {cohort?.useClusterMatching === true
+                  ? '현재 v3 (클러스터 매칭) 시스템이 적용되어 있습니다. AI가 매일 주제별 클러스터를 생성합니다.'
+                  : '현재 v2 (랜덤 매칭) 시스템이 적용되어 있습니다. 성별 기반의 랜덤 매칭이 적용됩니다.'
+                }
+              </p>
             </div>
-            <p className="text-xs text-gray-500">
-              {cohort?.useClusterMatching === true
-                ? '현재 v3 (클러스터 매칭) 시스템이 적용되어 있습니다. AI가 매일 주제별 클러스터를 생성합니다.'
-                : '현재 v2 (랜덤 매칭) 시스템이 적용되어 있습니다. 성별 기반의 랜덤 매칭이 적용됩니다.'
-              }
-            </p>
+
+            {/* 에러 메시지 */}
+            {matchingError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                    <div className="text-sm">{matchingError}</div>
+                </div>
+            )}
+
+            {/* 매칭 프리뷰 영역 */}
+            {previewResult && (
+                <div className="mt-6 border-t border-gray-200 pt-6 animate-in fade-in slide-in-from-top-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                매칭 미리보기 
+                                <span className="ml-2 text-sm font-normal text-gray-500">
+                                    ({previewResult.date}, 총 {previewResult.totalParticipants}명)
+                                </span>
+                            </h3>
+                            {previewResult.matching.matchingVersion === 'cluster' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
+                                    ✨ V3 AI 클러스터 매칭
+                                </span>
+                            )}
+                            {previewResult.matching.matchingVersion === 'random' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                                    🎲 V2 랜덤 매칭
+                                </span>
+                            )}
+                        </div>
+                        <UnifiedButton
+                            variant="default"
+                            onClick={handleConfirmMatching}
+                            disabled={isMatchingProcessing}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            icon={<Check className="h-4 w-4" />}
+                        >
+                            이 결과로 확정하기
+                        </UnifiedButton>
+                    </div>
+
+                    {/* V3 클러스터 뷰 */}
+                    {previewResult.matching.clusters && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Object.values(previewResult.matching.clusters).map((cluster) => (
+                                <div key={cluster.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-2xl">{cluster.emoji}</span>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900">{cluster.name}</h4>
+                                            <p className="text-xs text-gray-500">{cluster.theme}</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-3 bg-white p-2 rounded border border-gray-100">
+                                        💡 {cluster.reasoning}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {cluster.memberIds.map(memberId => {
+                                            const member = participants.find(p => p.id === memberId);
+                                            return (
+                                                <span key={memberId} className="px-2 py-1 bg-white border border-gray-200 rounded text-xs font-medium text-gray-700">
+                                                    {member?.name || 'Unknown'}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* V2 랜덤 매칭 뷰 (Legacy Support) */}
+                    {!previewResult.matching.clusters && previewResult.matching.assignments && (
+                        <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">참가자</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">매칭된 파트너</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {Object.entries(previewResult.matching.assignments).slice(0, 10).map(([id, assignment]) => {
+                                        const member = participants.find(p => p.id === id);
+                                        // V2 logic: use assigned field
+                                        const assignedIds = assignment.assigned || []; 
+                                        
+                                        return (
+                                            <tr key={id}>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {member?.name || id}
+                                                </td>
+                                                <td className="px-4 py-2 text-sm text-gray-500">
+                                                    {assignedIds.map(aid => {
+                                                        const partner = participants.find(p => p.id === aid);
+                                                        return partner?.name || aid;
+                                                    }).join(', ')}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {Object.keys(previewResult.matching.assignments).length > 10 && (
+                                        <tr>
+                                            <td colSpan={2} className="px-4 py-2 text-center text-xs text-gray-400">
+                                                ... 외 {Object.keys(previewResult.matching.assignments).length - 10}명
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
           </div>
         </div>
 

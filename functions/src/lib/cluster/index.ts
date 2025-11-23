@@ -112,48 +112,68 @@ export async function generateDailyClusters(
         `[모드] ${isSmallGroup ? '소규모 그룹 - 공통점 추출' : isEdgeCase ? '엣지 케이스 - 2개(4~5명)' : '다중 클러스터 - 그룹 나누기'}`
     );
 
-    try {
-        const prompt = generateClusterPrompt(submissions, strategy, {
-            participantCount,
-            targetClusterCount,
-            membersPerCluster,
-            isSmallGroup,
-            isEdgeCase
-        });
+    const MAX_RETRIES = 3;
+    let lastError: Error | null = null;
 
-        const schema = z.object({
-            clusters: z.array(ClusterSchema)
-        });
+    // AI 재시도 로직: 중복/누락 발생 시 최대 3번 재시도
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            if (attempt > 1) {
+                logger.warn(`[AI Clustering] 재시도 ${attempt}/${MAX_RETRIES}...`);
+            }
 
-        // ✅ Lazy import AI SDK to avoid Firebase Functions deployment timeout
-        const { generateObject } = await import('ai');
-        const { anthropic } = await import('@ai-sdk/anthropic');
+            const prompt = generateClusterPrompt(submissions, strategy, {
+                participantCount,
+                targetClusterCount,
+                membersPerCluster,
+                isSmallGroup,
+                isEdgeCase
+            });
 
-        const result = await generateObject({
-            model: anthropic('claude-3-5-haiku-latest'),
-            schema: schema as any,
-            prompt
-        });
+            const schema = z.object({
+                clusters: z.array(ClusterSchema)
+            });
 
-        const clusters = result.object.clusters;
+            // ✅ Lazy import AI SDK to avoid Firebase Functions deployment timeout
+            const { generateObject } = await import('ai');
+            const { anthropic } = await import('@ai-sdk/anthropic');
 
-        validateClusters(clusters, submissions, {
-            participantCount,
-            targetClusterCount,
-            isSmallGroup,
-            isEdgeCase
-        });
+            const result = await generateObject({
+                model: anthropic('claude-3-5-haiku-latest'),
+                schema: schema as any,
+                prompt
+            });
 
-        logger.info(
-            `[AI Clustering] 완료: ${clusters.length}개 클러스터 생성\n` +
-            clusters.map(c => `  - ${c.emoji} ${c.name} (${c.memberIds.length}명)`).join('\n')
-        );
+            const clusters = result.object.clusters;
 
-        return clusters;
-    } catch (error) {
-        logger.error('[AI Clustering] 실패:', error);
-        throw error;
+            // 검증 (중복/누락 시 에러 발생)
+            validateClusters(clusters, submissions, {
+                participantCount,
+                targetClusterCount,
+                isSmallGroup,
+                isEdgeCase
+            });
+
+            logger.info(
+                `[AI Clustering] 완료 (${attempt}번째 시도): ${clusters.length}개 클러스터 생성\n` +
+                clusters.map(c => `  - ${c.emoji} ${c.name} (${c.memberIds.length}명)`).join('\n')
+            );
+
+            return clusters;
+        } catch (error) {
+            lastError = error as Error;
+            logger.error(`[AI Clustering] ${attempt}번째 시도 실패:`, error);
+
+            // 마지막 시도가 아니면 계속 재시도
+            if (attempt < MAX_RETRIES) {
+                continue;
+            }
+        }
     }
+
+    // 모든 재시도 실패
+    logger.error(`[AI Clustering] ${MAX_RETRIES}번 재시도 후 최종 실패`);
+    throw lastError || new Error('AI 클러스터링 실패');
 }
 
 // ============================================================

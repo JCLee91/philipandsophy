@@ -29,14 +29,24 @@ export interface MatchingReasons {
  */
 export interface ParticipantAssignment {
   /**
-   * @deprecated v1.0 전용 - v2.0에서는 `assigned` 필드 사용
+   * @deprecated v1.0 전용 - v2.0/v3.0에서는 `assigned` 필드 사용
    */
-  similar: string[];
+  similar?: string[];
 
   /**
-   * @deprecated v1.0 전용 - v2.0에서는 `assigned` 필드 사용
+   * @deprecated v1.0 전용 - v2.0/v3.0에서는 `assigned` 필드 사용
    */
-  opposite: string[];
+  opposite?: string[];
+
+  /**
+   * V2/V3 매칭 대상 (필수)
+   */
+  assigned?: string[];
+
+  /**
+   * V3 클러스터 ID (옵션)
+   */
+  clusterId?: string;
 
   /**
    * @deprecated v1.0 전용 - v2.0 랜덤 매칭에서는 매칭 이유 없음
@@ -70,8 +80,17 @@ export interface MatchingResponse {
   matching: {
     /** 전체 참가자 배정 */
     assignments: Record<string, ParticipantAssignment>;
+    /** V3 클러스터 정보 (옵션) */
+    clusters?: Record<string, {
+        id: string;
+        name: string;
+        emoji: string;
+        theme: string;
+        memberIds: string[];
+        reasoning: string;
+    }>;
     /** 매칭 방식 (v2.0 필드) */
-    matchingVersion?: 'ai' | 'random';
+    matchingVersion?: 'ai' | 'random' | 'cluster';
   };
   /** 매칭 검증 결과 */
   validation?: MatchingValidation;

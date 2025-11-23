@@ -40,12 +40,12 @@ export function validateClusters(
         }
     }
 
-    // 3. 중복 ID 체크
+    // 3. 중복 ID 체크 - AI가 잘못 배정한 경우 에러 발생
     if (duplicateIds.size > 0) {
         errors.push(`중복 배정된 ID: ${Array.from(duplicateIds).join(', ')}`);
     }
 
-    // 4. 누락된 ID 체크
+    // 4. 누락된 ID 체크 - AI가 누락한 경우 에러 발생
     const missingIds = [...submittedIds].filter(id => !assignedIds.has(id));
     if (missingIds.length > 0) {
         errors.push(`누락된 참가자 ID: ${missingIds.join(', ')}`);
