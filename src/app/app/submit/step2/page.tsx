@@ -15,13 +15,8 @@ import UnifiedButton from '@/components/UnifiedButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Search } from 'lucide-react';
-import { appRoutes } from '@/lib/navigation';
-import Image from 'next/image';
-import { SEARCH_CONFIG } from '@/constants/search';
-import { SUBMISSION_VALIDATION } from '@/constants/validation';
-import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
-import { logger } from '@/lib/logger';
+import { useDebounce } from 'react-use';
+import { Loader2, Check } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,23 +42,84 @@ function Step2Content() {
     imageStorageUrl,
     selectedBook,
     manualTitle,
-    review,
+    review: globalReview,
     participantId,
     participationCode,
     setSelectedBook,
     setManualTitle,
-    setReview,
+    setReview: setGlobalReview,
     setImageFile,
     setImageStorageUrl,
     setMetaInfo,
   } = useSubmissionFlowStore();
+
+  // ✅ Local state for performance
+  const [localReview, setLocalReview] = useState(globalReview);
+
+  // Sync local state with global state when global state changes (initial load)
+  useEffect(() => {
+    setLocalReview(globalReview);
+  }, [globalReview]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NaverBook[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // Manual save state (kept for initial draft creation)
+  const [isAutoSaving, setIsAutoSaving] = useState(false); // Auto save state
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // ✅ Debounce global state update and auto-save
+  useDebounce(
+    async () => {
+      if (localReview === globalReview) return;
+
+      // 1. Update Global Store
+      setGlobalReview(localReview);
+
+      // 2. Auto-save if conditions met
+      if (
+        !existingSubmissionId &&
+        participantId &&
+        participationCode &&
+        localReview.length > 5 &&
+        !isProcessing
+      ) {
+        await performAutoSave(localReview);
+      }
+    },
+    1000, // 1 second debounce
+    [localReview]
+  );
+
+  // Auto-save function
+  const performAutoSave = async (currentReview: string) => {
+    if (!participantId || !participationCode) return;
+
+    setIsAutoSaving(true);
+    try {
+      const draftData: any = {
+        review: currentReview,
+      };
+
+      if (selectedBook?.title || manualTitle) {
+        draftData.bookTitle = selectedBook?.title || manualTitle;
+      }
+      
+      if (cohortId) {
+        draftData.cohortId = cohortId;
+      }
+
+      await saveDraft(participantId, participationCode, draftData);
+      setLastSavedAt(new Date());
+    } catch (error) {
+      console.error('Auto-save failed', error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  };
 
 
   // Step 1 검증
@@ -144,7 +200,8 @@ function Step2Content() {
 
         // 감상평은 별도로 처리 (책 정보와 독립적)
         if (draft?.review) {
-          setReview(draft.review);
+          setGlobalReview(draft.review);
+          setLocalReview(draft.review);
         }
 
         // Draft에서 실제 데이터를 로드했을 때 (토스트 제거)
@@ -240,7 +297,8 @@ function Step2Content() {
         }
 
         if (submission.review) {
-          setReview(submission.review);
+          setGlobalReview(submission.review);
+          setLocalReview(submission.review);
         }
       } catch (error) {
         if (!cancelled) {
@@ -397,7 +455,7 @@ function Step2Content() {
       return;
     }
 
-    if (!review.trim()) {
+    if (!localReview.trim()) {
       toast({
         title: '감상평을 입력해주세요',
         description: '읽은 내용에 대한 생각이나 느낌을 작성해주세요.',
@@ -406,10 +464,10 @@ function Step2Content() {
       return;
     }
 
-    if (review.trim().length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
+    if (localReview.trim().length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
       toast({
         title: `최소 ${SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH}자 이상 작성해주세요`,
-        description: `현재 ${review.trim().length}자 입력됨`,
+        description: `현재 ${localReview.trim().length}자 입력됨`,
         variant: 'destructive',
       });
       return;
@@ -427,6 +485,7 @@ function Step2Content() {
           bookCoverUrl?: string;
           bookDescription?: string;
           review?: string;
+          cohortId?: string;
         } = {};
 
         // 이미지가 있으면 업로드 (File 객체인 경우만)
@@ -451,8 +510,8 @@ function Step2Content() {
         if (selectedBook?.description) {
           draftData.bookDescription = selectedBook.description;
         }
-        if (review) {
-          draftData.review = review;
+        if (localReview) {
+          draftData.review = localReview;
         }
 
         // 🆕 cohortId 추가 (중복 참가자 구분용)
@@ -644,22 +703,42 @@ function Step2Content() {
               <h4 className="font-bold text-base">
                 읽은 내용에 대한 생각이나 느낌을<br />자유롭게 작성해 주세요
               </h4>
-              <Textarea
-                value={review}
-                onChange={(e) => setReview(e.target.value)}
-                placeholder='예시) "너무 슬픈 일을 겪은 사람은, 슬프다는 말조차 쉽게 할 수 없게 돼." 이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다.'
-                className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400"
-                disabled={!selectedBook && !manualTitle.trim()}
-              />
-              <p className={`text-xs text-right transition-colors ${
-                review.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH
-                  ? 'text-red-500 font-medium'
-                  : 'text-transparent'
-              }`}>
-                {review.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH
-                  ? `${review.length}/${SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH}자`
-                  : '　'}
-              </p>
+              <div className="relative">
+                <Textarea
+                  value={localReview}
+                  onChange={(e) => setLocalReview(e.target.value)}
+                  placeholder='예시) "너무 슬픈 일을 겪은 사람은, 슬프다는 말조차 쉽게 할 수 없게 돼." 이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다.'
+                  className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
+                  disabled={!selectedBook && !manualTitle.trim()}
+                />
+                {/* Auto-save indicator */}
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full border border-gray-100 shadow-sm">
+                  {isAutoSaving ? (
+                    <>
+                      <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+                      <span className="text-[10px] text-blue-500 font-medium">저장 중</span>
+                    </>
+                  ) : lastSavedAt ? (
+                    <>
+                      <Check className="w-3 h-3 text-green-500" />
+                      <span className="text-[10px] text-green-600 font-medium">저장됨</span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center px-1">
+                <span className="text-xs text-gray-400">
+                  {localReview.length > 0 && '작성 중인 내용은 자동으로 저장됩니다'}
+                </span>
+                <p className={`text-xs transition-colors ${
+                  localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH
+                    ? 'text-red-500 font-medium'
+                    : 'text-blue-500'
+                }`}>
+                  {localReview.length} / {SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH}자
+                </p>
+              </div>
             </div>
           </div>
         </main>
@@ -670,14 +749,9 @@ function Step2Content() {
             className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4"
             style={{ paddingBottom: footerPaddingBottom }}
           >
-            {!existingSubmissionId && (
-              <UnifiedButton variant="outline" onClick={handleSaveDraft} disabled={isSaving} className="flex-1">
-                {isSaving ? '저장 중...' : '임시 저장하기'}
-              </UnifiedButton>
-            )}
             <UnifiedButton
               onClick={handleNext}
-              disabled={(!selectedBook && !manualTitle.trim()) || !review.trim() || review.trim().length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH || isSaving || isProcessing}
+              disabled={(!selectedBook && !manualTitle.trim()) || !localReview.trim() || localReview.trim().length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH || isSaving || isProcessing}
               loading={isProcessing}
               loadingText="저장 중..."
               className={existingSubmissionId ? 'w-full' : 'flex-1'}
