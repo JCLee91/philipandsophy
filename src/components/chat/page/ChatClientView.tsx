@@ -107,9 +107,9 @@ export function ChatClientView({
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  
+
   const isAdminMode = useIsAdminMode(); // ViewMode 전환용 (UI 기능)
-  
+
   // Admin Inquiry Inbox (Only active in Admin Mode)
   const { data: adminConversations = [] } = useAdminConversations({ enabled: isAdminMode });
   const adminUnreadCount = useMemo(() => {
@@ -421,7 +421,7 @@ export function ChatClientView({
     <>
       <Header
         onParticipantsClick={handleParticipantsClick}
-        onWriteClick={writeDialog.open}
+        onWriteClick={isAdminMode || cohort?.type === 'meetup' ? writeDialog.open : undefined}
         onInquiryClick={() => router.push('/app/admin/inquiries')}
         onMessageAdminClick={handleMessageAdmin}
         onSettingsClick={() => setSettingsOpen(true)}

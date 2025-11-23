@@ -6,7 +6,9 @@ import PhoneAuthCard from '@/features/auth/components/PhoneAuthCard';
 import SplashScreen from '@/features/auth/components/SplashScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { appRoutes } from '@/lib/navigation';
-import { useActiveCohorts } from '@/hooks/use-cohorts';
+import { useActiveCohorts, useCohort } from '@/hooks/use-cohorts';
+import SocializingDashboard from '@/features/socializing/components/SocializingDashboard';
+import { getSocializingStats } from '@/features/socializing/actions/socializing-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +31,11 @@ export default function Home() {
     enabled: isAdminUser,
     refetchOnWindowFocus: false,
   });
+
+  // Socializing Phase Logic - must be at top level
+  const targetCohortId = participant?.cohortId;
+  const { data: targetCohort } = useCohort(targetCohortId || undefined);
+  const [voteStats, setVoteStats] = useState<{ dateVotes: Record<string, number>; locationVotes: Record<string, number> }>({ dateVotes: {}, locationVotes: {} });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -66,7 +73,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (targetCohortId && targetCohort?.socializingPhase && targetCohort.socializingPhase !== 'idle' && targetCohort.socializingPhase !== 'confirmed') {
+      getSocializingStats(targetCohortId).then(setVoteStats);
+    }
+  }, [targetCohortId, targetCohort?.socializingPhase]);
+
+  useEffect(() => {
     if (participantStatus === 'ready' && participant && !hasNavigated) {
+      // Check if socializing is active - if so, don't redirect
+      if (targetCohort?.socializingPhase && targetCohort.socializingPhase !== 'idle') {
+        // Socializing is active, stay on this page to show socializing screen
+        return;
+      }
+
       let targetCohortId: string | null = null;
 
       if (isAdminUser) {
@@ -96,6 +115,7 @@ export default function Home() {
     hasNavigated,
     isAdminUser,
     router,
+    targetCohort,
   ]);
 
   if (isLoading || !minSplashElapsed) {
@@ -132,6 +152,19 @@ export default function Home() {
   }
 
   if (participantStatus === 'ready' && participant) {
+    // Check for Socializing Phase
+    if (targetCohort && targetCohort.socializingPhase && targetCohort.socializingPhase !== 'idle') {
+      return (
+        <div className="app-shell flex min-h-screen flex-col p-4 bg-gray-50">
+          <SocializingDashboard
+            cohort={targetCohort}
+            participant={participant}
+            voteStats={voteStats}
+          />
+        </div>
+      );
+    }
+
     if (!hasNavigated) {
       return <SplashScreen />;
     }

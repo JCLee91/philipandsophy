@@ -149,6 +149,16 @@ export interface Cohort {
   useClusterMatching?: boolean; // 🆕 클러스터 매칭 사용 여부 (true: v3.0 클러스터, false/undefined: v2.0 랜덤)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
+  type?: 'regular' | 'meetup'; // 🆕 기수 타입 (기본값: 'regular')
+  location?: string; // 🆕 모임 장소 (meetup 타입일 경우)
+  meetupDate?: string; // 🆕 모임 날짜 (meetup 타입일 경우, YYYY-MM-DD)
+
+  // 🆕 소셜링 시스템 (Phase-based Socializing)
+  socializingPhase?: 'idle' | 'date_vote' | 'location_vote' | 'confirmed';
+  socializingOptions?: {
+    dates?: string[]; // 투표 가능한 날짜 후보들
+    locations?: string[]; // 투표 가능한 장소 후보들
+  };
 }
 
 /**
@@ -232,6 +242,20 @@ export interface Participant {
   pushTokens?: PushTokenEntry[]; // 멀티 디바이스 FCM 푸시 토큰 배열 (Android/Desktop)
   webPushSubscriptions?: WebPushSubscriptionData[]; // 표준 Web Push 구독 배열 (iOS Safari + All)
   lastActivityAt?: Timestamp; // 마지막 활동 시간 (데이터센터용)
+
+  // 🆕 소셜링 투표 정보
+  socializingVotes?: {
+    date?: string; // 투표한 날짜
+    location?: string; // 투표한 장소
+  };
+
+  // 🆕 소셜링 매칭 결과 (Phase 3)
+  socializingResult?: {
+    cohortId: string; // 배정된 모임 기수 ID
+    date: string; // 확정된 날짜
+    location: string; // 확정된 장소
+  };
+
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }

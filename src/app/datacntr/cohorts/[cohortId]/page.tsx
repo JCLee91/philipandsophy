@@ -10,6 +10,7 @@ import type { Cohort } from '@/types/database';
 import { cohortParticipantSchema, type CohortParticipant } from '@/types/datacntr';
 import TopBar from '@/components/TopBar';
 import BulkImageUploadModal from './_components/BulkImageUploadModal';
+import SocializingAdminControls from '@/features/socializing/components/SocializingAdminControls';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -346,6 +347,13 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
             </p>
           </div>
         </div>
+
+        {/* 소셜링 관리 (Socializing Admin Controls) */}
+        {cohort && (
+          <div className="mb-6">
+            <SocializingAdminControls cohort={cohort} />
+          </div>
+        )}
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
