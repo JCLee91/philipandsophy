@@ -707,19 +707,12 @@ function Step2Content() {
 
             {/* 감상평 입력 */}
             <div className="space-y-3">
-              <h4 className="font-bold text-base">
-                읽은 내용에 대한 생각이나 느낌을<br />자유롭게 작성해 주세요
-              </h4>
-              <div className="relative">
-                <Textarea
-                  value={localReview}
-                  onChange={(e) => setLocalReview(e.target.value)}
-                  placeholder='예시) "너무 슬픈 일을 겪은 사람은, 슬프다는 말조차 쉽게 할 수 없게 돼." 이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다.'
-                  className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
-                  disabled={!selectedBook && !manualTitle.trim()}
-                />
+              <div className="flex justify-between items-end">
+                <h4 className="font-bold text-base">
+                  읽은 내용에 대한 생각이나 느낌을<br />자유롭게 작성해 주세요
+                </h4>
                 {/* Auto-save indicator */}
-                <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full border border-gray-100 shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1">
                   {isAutoSaving ? (
                     <>
                       <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
@@ -732,6 +725,15 @@ function Step2Content() {
                     </>
                   ) : null}
                 </div>
+              </div>
+              <div className="relative">
+                <Textarea
+                  value={localReview}
+                  onChange={(e) => setLocalReview(e.target.value)}
+                  placeholder='예시) "너무 슬픈 일을 겪은 사람은, 슬프다는 말조차 쉽게 할 수 없게 돼." 이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다.'
+                  className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
+                  disabled={!selectedBook && !manualTitle.trim()}
+                />
               </div>
               
               <div className="flex justify-between items-center px-1">

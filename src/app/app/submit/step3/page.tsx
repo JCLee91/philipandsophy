@@ -604,16 +604,9 @@ function Step3Content() {
 
             {/* 질문 답변 입력 */}
             <div className="space-y-3">
-              <div className="relative">
-                <Textarea
-                  value={localDailyAnswer}
-                  onChange={(e) => setLocalDailyAnswer(e.target.value)}
-                  placeholder="질문에 대한 답변을 자유롭게 작성해 주세요"
-                  className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
-                  disabled={uploading}
-                />
+              <div className="flex justify-end h-5">
                 {/* Auto-save indicator */}
-                <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full border border-gray-100 shadow-sm">
+                <div className="flex items-center gap-1.5">
                   {isAutoSaving ? (
                     <>
                       <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
@@ -626,6 +619,15 @@ function Step3Content() {
                     </>
                   ) : null}
                 </div>
+              </div>
+              <div className="relative">
+                <Textarea
+                  value={localDailyAnswer}
+                  onChange={(e) => setLocalDailyAnswer(e.target.value)}
+                  placeholder="질문에 대한 답변을 자유롭게 작성해 주세요"
+                  className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
+                  disabled={uploading}
+                />
               </div>
               
               <div className="flex justify-between items-center px-1">
