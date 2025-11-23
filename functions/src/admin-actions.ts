@@ -77,4 +77,3 @@ export const getImpersonationToken = functions.https.onCall(async (request) => {
     );
   }
 });
-

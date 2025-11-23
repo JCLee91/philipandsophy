@@ -9,9 +9,7 @@ import * as admin from "firebase-admin";
 import { setGlobalOptions } from "firebase-functions/v2";
 
 // Initialize Firebase Admin
-admin.initializeApp({
-  serviceAccountId: "philipandsophy@appspot.gserviceaccount.com", // App Engine default service account (권한이 더 확실함)
-});
+admin.initializeApp();
 
 // Global options for all functions
 setGlobalOptions({

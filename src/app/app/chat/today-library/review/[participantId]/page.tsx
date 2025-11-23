@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
@@ -42,6 +42,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
         queryKey: ['review-detail', participantId, submissionDate],
         queryFn: async () => {
             if (!submissionDate) throw new Error('Missing date parameter');
+            if (!participantId) throw new Error('Missing participant ID');
 
             const db = getDb();
 
@@ -102,9 +103,10 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
     useEffect(() => {
         if (error) {
+            console.error('Review load error:', error);
             toast({
                 title: '감상평을 불러올 수 없습니다',
-                description: '잠시 후 다시 시도해주세요',
+                description: error instanceof Error ? error.message : '잠시 후 다시 시도해주세요',
             });
             router.back();
         }
@@ -283,7 +285,6 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
 
 export default function ReviewDetailPage({ params }: { params: Promise<{ participantId: string }> }) {
-    const { use } = require('react');
     const resolvedParams = use(params);
     return (
         <Suspense fallback={<div>Loading...</div>}>
