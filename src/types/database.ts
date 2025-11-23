@@ -318,6 +318,23 @@ export interface DirectMessage {
 }
 
 /**
+ * 대화방 정보 (Admin Inquiry Inbox용)
+ */
+export interface Conversation {
+  id: string; // 문서 ID (conversationId)
+  participantId: string; // 참가자 ID
+  lastMessage: string; // 마지막 메시지 미리보기
+  lastMessageAt: Timestamp; // 마지막 메시지 시간
+  adminUnreadCount: number; // 관리자가 안 읽은 메시지 수
+  userInfo?: {
+    name: string;
+    profileImage?: string;
+    cohortId?: string;
+    cohortName?: string;
+  };
+}
+
+/**
  * 컬렉션 이름 상수
  */
 export const COLLECTIONS = {
@@ -327,6 +344,7 @@ export const COLLECTIONS = {
   NOTICES: 'notices',
   NOTICE_TEMPLATES: 'notice_templates', // 공지 템플릿
   MESSAGES: 'messages',
+  CONVERSATIONS: 'conversations', // 대화방
   MATCHING_JOBS: 'matching_jobs',
 } as const;
 

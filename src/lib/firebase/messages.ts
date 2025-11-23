@@ -19,9 +19,11 @@ import {
   Timestamp,
   onSnapshot,
   writeBatch,
+  setDoc,
+  increment,
 } from 'firebase/firestore';
 import { getDb } from './client';
-import type { DirectMessage } from '@/types/database';
+import type { DirectMessage, Conversation } from '@/types/database';
 import { COLLECTIONS } from '@/types/database';
 
 /**
@@ -48,6 +50,60 @@ export const createMessage = async (data: {
   };
 
   const docRef = await addDoc(messagesRef, newMessage);
+
+  // Update conversation metadata for Admin Inbox
+  try {
+    const conversationRef = doc(db, COLLECTIONS.CONVERSATIONS, data.conversationId);
+    const participantId = data.conversationId.replace('-admin', '');
+    const isFromUser = data.senderId === participantId;
+
+    const updateData: any = {
+      lastMessage: data.imageUrl ? '📷 사진' : data.content.trim(),
+      lastMessageAt: newMessage.createdAt,
+      participantId,
+      id: data.conversationId
+    };
+
+    if (isFromUser) {
+      updateData.adminUnreadCount = increment(1);
+    }
+
+    await updateDoc(conversationRef, updateData);
+  } catch (error: any) {
+    // If document not found, create it with user info
+    if (error.code === 'not-found') {
+      const participantId = data.conversationId.replace('-admin', '');
+      const isFromUser = data.senderId === participantId;
+      
+      // Fetch user and cohort info
+      const userDoc = await getDoc(doc(db, COLLECTIONS.PARTICIPANTS, participantId));
+      const userData = userDoc.data();
+      let cohortName = '';
+      
+      if (userData?.cohortId) {
+        const cohortDoc = await getDoc(doc(db, COLLECTIONS.COHORTS, userData.cohortId));
+        cohortName = cohortDoc.data()?.name || '';
+      }
+
+      const conversationRef = doc(db, COLLECTIONS.CONVERSATIONS, data.conversationId);
+      await setDoc(conversationRef, {
+        id: data.conversationId,
+        participantId,
+        lastMessage: data.imageUrl ? '📷 사진' : data.content.trim(),
+        lastMessageAt: newMessage.createdAt,
+        adminUnreadCount: isFromUser ? 1 : 0,
+        userInfo: userData ? {
+          name: userData.name,
+          profileImage: userData.profileImage || userData.profileImageCircle || '',
+          cohortId: userData.cohortId,
+          cohortName
+        } : undefined
+      });
+    } else {
+      console.error('Failed to update conversation metadata:', error);
+    }
+  }
+
   return docRef.id;
 };
 
@@ -185,6 +241,19 @@ export const markConversationAsRead = async (
 
   await batch.commit();
 
+  // Reset admin unread count if the reader is admin
+  const participantId = conversationId.replace('-admin', '');
+  if (userId !== participantId) {
+    const conversationRef = doc(db, COLLECTIONS.CONVERSATIONS, conversationId);
+    await updateDoc(conversationRef, {
+      adminUnreadCount: 0
+    }).catch(error => {
+      // It's okay if conversation doesn't exist (rare case)
+      if (error.code !== 'not-found') {
+        console.warn('Failed to reset admin unread count:', error);
+      }
+    });
+  }
 };
 
 /**
@@ -264,4 +333,33 @@ export const subscribeToMessages = (
  */
 export const getConversationId = (participantId: string): string => {
   return `${participantId}-admin`;
+};
+
+/**
+ * Subscribe to real-time admin conversations
+ */
+export const subscribeToAdminConversations = (
+  callback: (conversations: Conversation[]) => void
+): (() => void) => {
+  const db = getDb();
+  const conversationsRef = collection(db, COLLECTIONS.CONVERSATIONS);
+  const q = query(
+    conversationsRef,
+    orderBy('lastMessageAt', 'desc')
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const conversations = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Conversation[];
+      callback(conversations);
+    },
+    (error) => {
+      console.error('Error fetching conversations:', error);
+      callback([]);
+    }
+  );
 };

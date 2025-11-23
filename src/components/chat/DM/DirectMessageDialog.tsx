@@ -320,7 +320,14 @@ export default function DirectMessageDialog({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-lg font-bold">{displayName}</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold">{displayName}</h2>
+                  {(currentUser?.isSuperAdmin || currentUser?.isAdministrator) && !otherUser.isAdministrator && otherUser.cohortId && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-medium">
+                      {otherUser.cohortId}기
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">1:1 메시지</p>
               </div>
             </div>

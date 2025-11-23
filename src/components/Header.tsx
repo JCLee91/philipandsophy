@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, PenSquare, Mail, Settings } from 'lucide-react';
+import { Users, PenSquare, Mail, Settings, Inbox } from 'lucide-react';
 import { useTotalUnreadCount } from '@/hooks/use-messages';
 import { useAuth } from '@/contexts/AuthContext';
 import TopBar from '@/components/TopBar';
@@ -8,22 +8,33 @@ import TopBar from '@/components/TopBar';
 interface HeaderProps {
   onParticipantsClick?: () => void;
   onWriteClick?: () => void;
+  onInquiryClick?: () => void; // Added
   onMessageAdminClick?: () => void;
   onSettingsClick?: () => void;
   isAdmin?: boolean;
+  adminUnreadCount?: number; // Added
   currentCohort?: { id: string; name: string } | null;
 }
 
 export default function Header({
   onParticipantsClick,
   onWriteClick,
+  onInquiryClick,
   onMessageAdminClick,
   onSettingsClick,
   isAdmin,
+  adminUnreadCount = 0,
   currentCohort,
 }: HeaderProps) {
   const { participant } = useAuth();
-  const { data: unreadCount = 0 } = useTotalUnreadCount(participant?.id || '');
+  // Only fetch user unread count if NOT admin (or if we want to show personal DMs for admin too? But requirement focuses on Inquiry Inbox)
+  // For users, we use their ID.
+  const { data: userUnreadCount = 0 } = useTotalUnreadCount(participant?.id || '');
+
+  // If admin, use the passed adminUnreadCount. If user, use userUnreadCount.
+  // Actually, an admin might also be a participant in other contexts, but here we focus on "Inquiry Inbox" for admins.
+  // The 'Mail' button for users shows 'userUnreadCount'.
+  // The 'Inbox' button for admins shows 'adminUnreadCount'.
 
   return (
     <TopBar
@@ -46,11 +57,16 @@ export default function Header({
           {isAdmin ? (
             <button
               type="button"
-              onClick={onWriteClick}
-              className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
-              aria-label="공지 작성"
+              onClick={onInquiryClick}
+              className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+              aria-label="문의함"
             >
-              <PenSquare className="h-5 w-5" />
+              <Inbox className="h-5 w-5" />
+              {adminUnreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  {adminUnreadCount > 99 ? '99+' : adminUnreadCount}
+                </span>
+              )}
             </button>
           ) : (
             <button
@@ -60,9 +76,9 @@ export default function Header({
               aria-label="운영자에게 메시지"
             >
               <Mail className="h-5 w-5" />
-              {unreadCount > 0 && (
+              {userUnreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                  {unreadCount > 9 ? '9+' : unreadCount}
+                  {userUnreadCount > 9 ? '9+' : userUnreadCount}
                 </span>
               )}
             </button>
@@ -74,12 +90,6 @@ export default function Header({
             aria-label="참가자 목록"
           >
             <Users className="h-5 w-5" />
-            {/* 운영자에게만 참가자 목록 아이콘에 미확인 DM 배지 표시 */}
-            {isAdmin && unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
           </button>
         </>
       }

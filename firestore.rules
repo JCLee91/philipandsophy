@@ -100,6 +100,19 @@ service cloud.firestore {
     }
 
     // ============================================
+    // 대화방 정보 (Conversations) - Admin Inbox용
+    // ============================================
+    match /conversations/{conversationId} {
+      // 읽기: 로그인한 모든 사용자 허용 (관리자 Inbox 등)
+      allow read: if isSignedIn();
+
+      // 생성/수정: 로그인한 사용자 허용 (메시지 전송 시 메타데이터 업데이트)
+      allow create, update: if isSignedIn();
+      
+      allow delete: if false;
+    }
+
+    // ============================================
     // 독서 인증 자료 (Reading Submissions)
     // ============================================
     // 느슨한 규칙: 로그인한 사용자는 자유롭게 생성/수정/삭제 가능

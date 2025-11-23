@@ -44,8 +44,12 @@ export default function MessageGroup({
   onImageClick,
   isFirstGroup = false,
 }: MessageGroupProps) {
-  const isMine = senderId === currentUserId;
-  const isFromAdminTeam = otherUser.id === 'admin-team';
+  // If current user is an administrator, treat 'admin' sender as 'Mine' (right side)
+  // Or if senderId matches the current user's ID
+  const isAdminUser = currentUser?.isSuperAdmin || currentUser?.isAdministrator;
+  const isMine = senderId === currentUserId || (isAdminUser && senderId === 'admin');
+  
+  const isFromAdminTeam = otherUser.id === 'admin-team' || otherUser.id === 'admin';
   const displayName = otherUser.isAdministrator ? APP_CONSTANTS.ADMIN_NAME : getFirstName(otherUser.name);
 
   // 아바타 이미지 URL

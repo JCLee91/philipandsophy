@@ -34,6 +34,7 @@ import { useNoticeDialogs } from '@/hooks/chat/useNoticeDialogs';
 import { useDirectMessageDialogState } from '@/hooks/chat/useDirectMessageDialogState';
 import ChatFooterSection from '@/components/chat/page/ChatFooterSection';
 import ChatParticipantsSheet from '@/components/chat/page/ChatParticipantsSheet';
+import { useAdminConversations } from '@/hooks/chat/useAdminConversations';
 
 type ChatClientViewProps = {
   initialCohortId?: string | null;
@@ -106,6 +107,14 @@ export function ChatClientView({
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  
+  const isAdminMode = useIsAdminMode(); // ViewMode 전환용 (UI 기능)
+  
+  // Admin Inquiry Inbox (Only active in Admin Mode)
+  const { data: adminConversations = [] } = useAdminConversations({ enabled: isAdminMode });
+  const adminUnreadCount = useMemo(() => {
+    return adminConversations.reduce((acc, conv) => acc + (conv.adminUnreadCount || 0), 0);
+  }, [adminConversations]);
 
   const isIosStandalone = useIsIosStandalone();
   const { toast } = useToast();
@@ -116,7 +125,6 @@ export function ChatClientView({
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined, {
     initialData: initialCohort ?? undefined,
   });
-  const isAdminMode = useIsAdminMode(); // ViewMode 전환용 (UI 기능)
 
   // 실제 관리자 권한 (participant.isAdministrator 기반) - 데이터 접근 권한
   const isRealAdmin = participant?.isAdministrator === true || participant?.isSuperAdmin === true;
@@ -414,9 +422,11 @@ export function ChatClientView({
       <Header
         onParticipantsClick={handleParticipantsClick}
         onWriteClick={writeDialog.open}
+        onInquiryClick={() => router.push('/app/admin/inquiries')}
         onMessageAdminClick={handleMessageAdmin}
         onSettingsClick={() => setSettingsOpen(true)}
         isAdmin={isAdminMode}
+        adminUnreadCount={adminUnreadCount}
         currentCohort={cohort ? { id: cohort.id, name: cohort.name } : null}
       />
       <PageTransition>
