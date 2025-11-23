@@ -40,10 +40,11 @@ export const getImpersonationToken = functions.https.onCall(async (request) => {
     }
 
     const adminData = adminSnapshot.docs[0].data();
-    if (adminData.isSuperAdmin !== true) {
+    // Super Admin 또는 General Administrator 모두 허용
+    if (adminData.isSuperAdmin !== true && adminData.isAdministrator !== true) {
       throw new functions.https.HttpsError(
         'permission-denied',
-        '슈퍼 관리자만 이 기능을 사용할 수 있습니다.'
+        '관리자 권한이 필요합니다.'
       );
     }
 
