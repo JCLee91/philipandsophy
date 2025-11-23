@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "./node_modules/.bin/next dev",
-    "build": "npm run build:sw && ./node_modules/.bin/next build --webpack",
+    "build": "npm run build:sw && ./node_modules/.bin/next build",
     "build:sw": "echo '✅ Service Worker is already at public/sw.js (manual maintenance)'",
     "start": "./node_modules/.bin/next start",
     "lint": "./node_modules/.bin/next lint",
