@@ -15,7 +15,7 @@ const MIN_SPLASH_TIME = 1000;
 
 export default function Home() {
   const router = useRouter();
-  const { participant, participantStatus, isLoading } = useAuth();
+  const { participant, participantStatus, isLoading, retryParticipantFetch } = useAuth();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [minSplashElapsed, setMinSplashElapsed] = useState(false);
@@ -100,6 +100,35 @@ export default function Home() {
 
   if (isLoading || !minSplashElapsed) {
     return <SplashScreen />;
+  }
+
+  // Handle initialization error specifically
+  if (participantStatus === 'error') {
+    return (
+      <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-gray-50">
+        <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-sm text-center space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">접속 오류</h2>
+          <p className="text-gray-600">
+            사용자 정보를 불러오는데 실패했습니다.<br />
+            잠시 후 다시 시도해주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => retryParticipantFetch()}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            다시 시도
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm"
+          >
+            새로고침
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (participantStatus === 'ready' && participant) {
