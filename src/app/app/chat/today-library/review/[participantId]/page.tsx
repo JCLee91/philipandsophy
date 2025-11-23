@@ -41,24 +41,35 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     const { data, isLoading, error } = useQuery<ReviewData>({
         queryKey: ['review-detail', participantId, submissionDate],
         queryFn: async () => {
-            if (!submissionDate) throw new Error('Missing date parameter');
+            if (!submissionDate || submissionDate === 'undefined') throw new Error('Missing date parameter');
             if (!participantId) throw new Error('Missing participant ID');
 
             const db = getDb();
 
             // Fetch submission
             const submissionsRef = collection(db, 'reading_submissions');
+            // Simplify query to use existing index (participantId + submissionDate)
             const q = query(
                 submissionsRef,
                 where('participantId', '==', participantId),
-                where('submissionDate', '==', submissionDate),
-                where('status', '==', 'approved')
+                where('submissionDate', '==', submissionDate)
             );
             const submissionSnapshot = await getDocs(q);
 
-            let submission: ReadingSubmission;
+            let submission: ReadingSubmission | undefined;
 
-            if (submissionSnapshot.empty) {
+            if (!submissionSnapshot.empty) {
+                // Filter for approved status in memory
+                const approvedSubmission = submissionSnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() } as ReadingSubmission))
+                    .find(sub => sub.status === 'approved');
+
+                if (approvedSubmission) {
+                    submission = approvedSubmission;
+                }
+            }
+
+            if (!submission) {
                 // throw new Error('Submission not found');
                 // 목업 확인을 위해 가짜 데이터 반환
                 submission = {
@@ -72,17 +83,12 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                     bookImageUrl: 'https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788937461097.jpg', // 임시 이미지
                     review: `이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다. 겉으로는 가볍고 유쾌하지만, 그녀의 농담에는 늘 외로움이 깃들어 있다. 와타나베에게 미도리는 단순한 연인이 아니라, 살아 있음을 일깨워주는 존재였다.
 
-미도리는 어쩌면 삶 그 자체 같다. 불완전하고, 예측할 수 없으며, 때로는 잔인할 만큼 솔직하다. 그녀는 상처를 숨기지 않고, 오히려 그것을 품은 채 웃는다. 그 모습이야말로 이 소설이 말하는 진짜 어른이 되는 과정일지도 모른다.
+미도리는 어쩌면 삶의 그 자체 같다. 불완전하고, 예측할 수 없으며, 때로는 잔인할 만큼 솔직하다. 그녀는 상처를 숨기지 않고, 오히려 그것을 품은 채 웃는다. 그 모습이야말로 이 소설이 말하는 진짜 어른이 되는 과정일지도 모른다.
 
 책을 덮고 나면 이상하게도 마음이 먹먹해진다. 우리 모두에게는 언젠가 만났던 미도리가 있고, 그 사람 덕분에 다시 살아가기로 결심했던 순간이 있기 때문이다.`,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 } as unknown as ReadingSubmission;
-            } else {
-                submission = {
-                    id: submissionSnapshot.docs[0].id,
-                    ...submissionSnapshot.docs[0].data()
-                } as ReadingSubmission;
             }
 
             // Fetch participant
@@ -98,7 +104,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
             return { submission, participant };
         },
-        enabled: !!participantId && !!submissionDate,
+        enabled: !!participantId && !!submissionDate && submissionDate !== 'undefined',
     });
 
     useEffect(() => {
