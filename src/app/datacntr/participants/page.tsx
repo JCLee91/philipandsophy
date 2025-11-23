@@ -300,7 +300,7 @@ export default function ParticipantsPage() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-amber-600 focus:text-amber-700 focus:bg-amber-50"
-                  onClick={() => handleImpersonate(p.firebaseUid, p.name)}
+                  onClick={() => p.firebaseUid ? handleImpersonate(p.firebaseUid, p.name) : alert('해당 유저의 인증 정보가 없습니다.')}
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   이 유저로 보기
