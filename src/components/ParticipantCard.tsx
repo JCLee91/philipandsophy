@@ -6,14 +6,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Check, MessageSquare, MoreHorizontal, User, Book } from 'lucide-react';
+import { Check, MessageSquare, MoreHorizontal, User, Book, Eye } from 'lucide-react';
 import { getInitials, getFirstName } from '@/lib/utils';
 import { useVerifiedToday } from '@/stores/verified-today';
 import { useUnreadCount } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { httpsCallable } from 'firebase/functions';
+import { signInWithCustomToken } from 'firebase/auth';
+import { getFirebaseFunctions, getFirebaseAuth } from '@/lib/firebase/client';
+import { useRouter } from 'next/navigation';
 
 export interface ParticipantCardProps {
   participant: Participant;
@@ -48,6 +53,7 @@ export function ParticipantCard({
   onProfileBookClick,
   onImageClick,
 }: ParticipantCardProps) {
+  const router = useRouter();
   const initials = getInitials(participant.name);
 
   // 오늘 독서 인증 여부
@@ -65,6 +71,34 @@ export function ParticipantCard({
     conversationId,
     showUnreadBadge && currentUserId ? (isAdmin ? 'admin' : currentUserId) : ''
   );
+
+  // 유저로 보기 핸들러
+  const handleImpersonate = async () => {
+    if (!confirm(`정말 '${participant.name}' 님으로 로그인하시겠습니까?\n관리자 세션은 종료되며 해당 유저의 화면을 보게 됩니다.`)) {
+      return;
+    }
+
+    try {
+      const functions = getFirebaseFunctions();
+      const getImpersonationToken = httpsCallable(functions, 'getImpersonationToken');
+
+      // 로딩 표시가 없으므로 약간의 딜레이가 느껴질 수 있음 (향후 개선 포인트)
+      const result = await getImpersonationToken({ targetUid: participant.firebaseUid });
+      const { customToken } = result.data as { customToken: string };
+
+      const auth = getFirebaseAuth();
+      await signInWithCustomToken(auth, customToken);
+
+      sessionStorage.setItem('pns_admin_impersonation', 'true');
+      
+      // 메인 앱으로 이동 (새로고침 효과를 위해 window.location 사용 고려 가능하지만 router.push가 더 부드러움)
+      router.push('/app');
+      
+    } catch (error) {
+      console.error('Impersonation failed:', error);
+      alert('유저로 로그인하기 실패했습니다. 권한을 확인해주세요.');
+    }
+  };
 
   // 관리자이면서 자신이 아닌 참가자: 드롭다운 메뉴(별도 버튼)
   if (isAdmin && participant.id !== currentUserId) {
@@ -149,6 +183,14 @@ export function ParticipantCard({
             <DropdownMenuItem onClick={() => onProfileBookClick?.(participant)}>
               <Book className="mr-2 h-4 w-4" />
               프로필북 보기
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={handleImpersonate}
+              className="text-amber-600 focus:text-amber-700 focus:bg-amber-50"
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              이 유저로 보기
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

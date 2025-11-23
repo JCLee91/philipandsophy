@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, XCircle, Filter, MoreVertical, BookOpen } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Filter, MoreVertical, BookOpen, Eye } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
@@ -16,7 +16,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { httpsCallable } from 'firebase/functions';
+import { signInWithCustomToken } from 'firebase/auth';
+import { getFirebaseFunctions, getFirebaseAuth } from '@/lib/firebase/client';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -171,6 +175,38 @@ export default function ParticipantsPage() {
     setCurrentPage(1); // 필터링 시 첫 페이지로
   }, [searchQuery, filters, sortKey, sortDirection, participants]);
 
+  const handleImpersonate = async (targetUid: string, name: string) => {
+    if (!confirm(`정말 '${name}' 님으로 로그인하시겠습니까?\n관리자 세션은 종료되며 해당 유저의 화면을 보게 됩니다.`)) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const functions = getFirebaseFunctions();
+      const getImpersonationToken = httpsCallable(functions, 'getImpersonationToken');
+
+      const result = await getImpersonationToken({ targetUid });
+      const { customToken } = result.data as { customToken: string };
+
+      const auth = getFirebaseAuth();
+      await signInWithCustomToken(auth, customToken);
+
+      // 배너 표시를 위한 플래그 설정
+      sessionStorage.setItem('pns_admin_impersonation', 'true');
+      
+      // 원래 관리자 토큰이나 정보를 저장해두면 좋겠지만, 
+      // 보안상 다시 로그인하게 하는 것이 안전하므로 여기서는 플래그만 저장.
+      
+      // 메인 앱으로 이동
+      router.push('/app');
+      
+    } catch (error) {
+      console.error('Impersonation failed:', error);
+      alert('유저로 로그인하기 실패했습니다. 권한을 확인해주세요.');
+      setIsLoading(false);
+    }
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -258,6 +294,19 @@ export default function ParticipantsPage() {
               <BookOpen className="h-4 w-4 mr-2" />
               프로필북 보기
             </DropdownMenuItem>
+            {/* 본인(관리자)이 아닌 경우에만 표시 */}
+            {p.firebaseUid !== user.uid && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-amber-600 focus:text-amber-700 focus:bg-amber-50"
+                  onClick={() => handleImpersonate(p.firebaseUid, p.name)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  이 유저로 보기
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

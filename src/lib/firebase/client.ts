@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAuth, Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getFunctions, Functions } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { firebaseConfig } from './config';
 import { logger } from '@/lib/logger';
@@ -24,6 +25,7 @@ let app: FirebaseApp;
 let db: Firestore;
 let storage: FirebaseStorage;
 let auth: Auth;
+let functions: Functions;
 let initialized = false;
 
 /**
@@ -32,7 +34,7 @@ let initialized = false;
  */
 export function initializeFirebase() {
   if (initialized) {
-    return { app, db, storage, auth };
+    return { app, db, storage, auth, functions };
   }
 
   try {
@@ -76,6 +78,7 @@ export function initializeFirebase() {
 
     storage = getStorage(app);
     auth = getAuth(app);
+    functions = getFunctions(app, 'asia-northeast3');
 
     // PWA를 위한 명시적 persistence 설정
     // browserLocalPersistence: localStorage 사용 (기본값)
@@ -90,7 +93,7 @@ export function initializeFirebase() {
 
     initialized = true;
 
-    return { app, db, storage, auth };
+    return { app, db, storage, auth, functions };
   } catch (error: any) {
 
     // 초기화 실패 시 최소한의 동작을 위한 fallback
@@ -102,6 +105,7 @@ export function initializeFirebase() {
         db = getFirestore(app, 'seoul');
         storage = getStorage(app);
         auth = getAuth(app);
+        functions = getFunctions(app, 'asia-northeast3');
 
         // Fallback에서도 persistence 설정
         setPersistence(auth, browserLocalPersistence)
@@ -111,7 +115,7 @@ export function initializeFirebase() {
 
         initialized = true;
 
-        return { app, db, storage, auth };
+        return { app, db, storage, auth, functions };
       }
     }
 
@@ -158,4 +162,14 @@ export function getFirebaseAuth(): Auth {
     initializeFirebase();
   }
   return auth;
+}
+
+/**
+ * Get Firebase Functions instance
+ */
+export function getFirebaseFunctions(): Functions {
+  if (!functions) {
+    initializeFirebase();
+  }
+  return functions;
 }

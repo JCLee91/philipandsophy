@@ -16,6 +16,7 @@ import { CACHE_TIMES } from '@/constants/cache';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PushNotificationRefresher } from '@/components/PushNotificationRefresher';
+import ImpersonationBanner from '@/components/admin/ImpersonationBanner';
 
 // ✅ Firebase 즉시 초기화 (모듈 로드 시점, React 마운트 대기 불필요)
 if (typeof window !== 'undefined') {
@@ -84,6 +85,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const content = (
     <AuthProvider>
       <PushNotificationRefresher />
+      <ImpersonationBanner />
       {children}
       <Toaster />
       {/* React Query Devtools - lazy load (프로덕션 번들 제외) */}
