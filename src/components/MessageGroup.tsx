@@ -85,37 +85,43 @@ export default function MessageGroup({
 
         {/* 메시지들 */}
         {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`rounded-2xl ${msg.imageUrl ? 'p-2' : 'px-4 py-2'} ${
-              isMine
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-foreground'
-            }`}
-          >
-            {/* 이미지 */}
-            {msg.imageUrl && (
-              <div
-                className="mb-2 relative w-48 h-48 cursor-pointer hover:opacity-90 transition-opacity duration-fast"
-                onClick={() => onImageClick(msg.imageUrl!)}
-              >
-                <Image
-                  src={getResizedImageUrl(msg.imageUrl) || msg.imageUrl}
-                  alt="첨부 이미지"
-                  fill
-                  sizes="192px"
-                  className="object-cover rounded"
-                  priority={isFirstGroup && messages[0].id === msg.id}
-                />
-              </div>
+          <div key={msg.id} className="flex items-end gap-1 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
+            {isMine && !msg.isRead && (
+              <span className="text-[10px] text-yellow-600 mb-0.5 min-w-[7px] text-center leading-none">
+                1
+              </span>
             )}
+            <div
+              className={`rounded-2xl ${msg.imageUrl ? 'p-2' : 'px-4 py-2'} ${
+                isMine
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-foreground'
+              }`}
+            >
+              {/* 이미지 */}
+              {msg.imageUrl && (
+                <div
+                  className="mb-2 relative w-48 h-48 cursor-pointer hover:opacity-90 transition-opacity duration-fast"
+                  onClick={() => onImageClick(msg.imageUrl!)}
+                >
+                  <Image
+                    src={getResizedImageUrl(msg.imageUrl) || msg.imageUrl}
+                    alt="첨부 이미지"
+                    fill
+                    sizes="192px"
+                    className="object-cover rounded"
+                    priority={isFirstGroup && messages[0].id === msg.id}
+                  />
+                </div>
+              )}
 
-            {/* 텍스트 */}
-            {msg.content && (
-              <p className="text-sm whitespace-pre-wrap break-words">
-                {msg.content}
-              </p>
-            )}
+              {/* 텍스트 */}
+              {msg.content && (
+                <p className="text-sm whitespace-pre-wrap break-words">
+                  {msg.content}
+                </p>
+              )}
+            </div>
           </div>
         ))}
 
