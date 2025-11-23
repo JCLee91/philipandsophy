@@ -80,6 +80,7 @@ export const sanitizedParticipantSchema = z.object({
   currentBookCoverUrl: z.string().optional(),
   createdAt: z.any(), // Firestore Timestamp (서버/클라이언트 혼용)
   lastActivityAt: z.any().optional(),
+  firebaseUid: z.string().nullable().optional(),
 });
 
 // Data Center 참가자 응답 스키마 (API → 클라이언트)

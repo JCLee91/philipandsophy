@@ -454,7 +454,6 @@ export function ChatClientView({
     <>
       <Header
         onParticipantsClick={handleParticipantsClick}
-        onWriteClick={isAdminMode ? writeDialog.open : undefined}
         onInquiryClick={() => router.push('/app/admin/inquiries')}
         onMessageAdminClick={handleMessageAdmin}
         onSettingsClick={() => setSettingsOpen(true)}

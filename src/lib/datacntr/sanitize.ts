@@ -38,5 +38,6 @@ export function sanitizeParticipantForClient(participant: any): SanitizedPartici
     createdAt: participant.createdAt,
     lastActivityAt: participant.lastActivityAt,
     phoneNumber: participant.phoneNumber ?? '', // 현재는 전송 (참가자 관리에 필요)
+    firebaseUid: participant.firebaseUid ?? null, // 관리자 기능(Impersonation)을 위해 필요
   };
 }
