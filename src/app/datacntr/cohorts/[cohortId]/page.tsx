@@ -211,6 +211,12 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         rightAction={
           <div className="flex items-center">
             <button
+              onClick={() => router.push(`/app/admin/matching?cohort=${cohortId}`)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm mr-2"
+            >
+              매칭 실행
+            </button>
+            <button
               onClick={() => router.push(`/datacntr/cohorts/${cohortId}/daily-questions`)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
             >
