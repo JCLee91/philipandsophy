@@ -15,6 +15,7 @@ import {
   deleteDoc,
   query,
   where,
+  orderBy,
   Timestamp,
   setDoc,
 } from 'firebase/firestore';
@@ -85,7 +86,11 @@ export const getAllCohorts = async (): Promise<Cohort[]> => {
 export const getActiveCohorts = async (): Promise<Cohort[]> => {
   const db = getDb();
   const cohortsRef = collection(db, COLLECTIONS.COHORTS);
-  const q = query(cohortsRef, where('isActive', '==', true));
+  const q = query(
+    cohortsRef,
+    where('isActive', '==', true),
+    orderBy('startDate', 'desc')
+  );
 
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({

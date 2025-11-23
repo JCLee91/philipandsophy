@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { getDb } from './client';
 import { logger } from '@/lib/logger';
-import { Participant, BookHistoryEntry, COLLECTIONS } from '@/types/database';
+import { Participant, BookHistoryEntry, COLLECTIONS, Cohort } from '@/types/database';
 
 /**
  * Participant CRUD Operations
@@ -160,7 +160,6 @@ export async function getParticipantByFirebaseUid(
   const q = query(
     collection(db, COLLECTIONS.PARTICIPANTS),
     where('firebaseUid', '==', firebaseUid)
-    // orderBy 제거: 복합 인덱스 불필요, 메모리에서 정렬
   );
 
   const querySnapshot = await getDocs(q);
@@ -169,34 +168,8 @@ export async function getParticipantByFirebaseUid(
     return null;
   }
 
-  // 메모리에서 createdAt 기준 정렬 (최신 우선)
-  const docs = querySnapshot.docs.sort((a, b) => {
-    const aTime = a.data().createdAt?.toMillis() || 0;
-    const bTime = b.data().createdAt?.toMillis() || 0;
-    return bTime - aTime; // desc
-  });
-
-  // UID 중복 감지 및 자동 정리
-  if (docs.length > 1) {
-    logger.warn(`[UID Duplicate] Found ${docs.length} participants with same UID: ${firebaseUid}`);
-
-    const docsToCleanup = docs.slice(1);
-
-    logger.info(`[UID Cleanup] Primary candidate: ${docs[0].id}, Cleaning: ${docsToCleanup.map(d => d.id).join(', ')}`);
-
-    Promise.all(
-      docsToCleanup.map((docSnapshot) =>
-        updateDoc(docSnapshot.ref, {
-          firebaseUid: null,
-          updatedAt: Timestamp.now(),
-        }).catch((err) => logger.error(`[UID Cleanup] Failed to clean ${docSnapshot.id}:`, err))
-      )
-    ).then(() => {
-      logger.info(`[UID Cleanup] Completed for UID: ${firebaseUid}`);
-    });
-  }
-
-  const participantsWithDocs = docs.map((docSnapshot) => ({
+  // Map docs to participant objects
+  const participantsWithDocs = querySnapshot.docs.map((docSnapshot) => ({
     docSnapshot,
     participant: {
       id: docSnapshot.id,
@@ -204,36 +177,56 @@ export async function getParticipantByFirebaseUid(
     } as Participant,
   }));
 
+  // If only one, return it
   if (participantsWithDocs.length === 1) {
     return participantsWithDocs[0].participant;
   }
 
-  // 여러 기수에 중복 등록된 경우 활성 코호트 우선 반환
-  const cohortIds = [...new Set(participantsWithDocs.map(({ participant }) => participant.cohortId).filter(Boolean))];
+  // 여러 기수에 등록된 경우 최적의 참가자 정보 선택
+  // 1. 활성 코호트 우선 (isActive: true)
+  // 2. 최신 기수 우선 (startDate 기준 내림차순)
+  // 3. 생성일 기준 최신순 (createdAt 기준 내림차순)
+  
+  const cohortIds = [...new Set(participantsWithDocs.map(p => p.participant.cohortId).filter(Boolean))];
+  
+  // 코호트 정보 일괄 조회
   const cohortDocs = await Promise.all(
-    cohortIds.map((id) => getDoc(doc(db, COLLECTIONS.COHORTS, id)))
+    cohortIds.map(id => getDoc(doc(db, COLLECTIONS.COHORTS, id)))
   );
 
-  const cohortActiveMap = new Map<string, boolean>();
-  cohortDocs.forEach((cohortDoc, index) => {
-    if (cohortDoc.exists()) {
-      cohortActiveMap.set(cohortIds[index]!, cohortDoc.data()?.isActive ?? false);
+  const cohortMap = new Map<string, Cohort>();
+  cohortDocs.forEach(docSnap => {
+    if (docSnap.exists()) {
+      cohortMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Cohort);
     }
   });
 
-  const activeEntry = participantsWithDocs.find(
-    ({ participant }) => cohortActiveMap.get(participant.cohortId) === true
-  );
-
-  if (activeEntry) {
-    return activeEntry.participant;
-  }
-
-  // 모두 비활성이면 최신 코호트(숫자 큰 순) 반환
+  // 정렬
   participantsWithDocs.sort((a, b) => {
-    const aNum = parseInt(a.participant.cohortId) || 0;
-    const bNum = parseInt(b.participant.cohortId) || 0;
-    return bNum - aNum;
+    const pA = a.participant;
+    const pB = b.participant;
+    
+    const cA = cohortMap.get(pA.cohortId);
+    const cB = cohortMap.get(pB.cohortId);
+
+    // Priority 1: 활성 코호트 우선
+    const isActiveA = cA?.isActive ?? false;
+    const isActiveB = cB?.isActive ?? false;
+    if (isActiveA !== isActiveB) {
+      return isActiveA ? -1 : 1; // Active first
+    }
+
+    // Priority 2: 기수 시작일 (최신순)
+    const dateA = cA?.startDate || '';
+    const dateB = cB?.startDate || '';
+    if (dateA !== dateB) {
+      return dateB.localeCompare(dateA); // Descending string comparison (ISO dates)
+    }
+
+    // Priority 3: 생성일 (최신순) - Tie breaker
+    const timeA = pA.createdAt?.toMillis() || 0;
+    const timeB = pB.createdAt?.toMillis() || 0;
+    return timeB - timeA;
   });
 
   return participantsWithDocs[0].participant;
