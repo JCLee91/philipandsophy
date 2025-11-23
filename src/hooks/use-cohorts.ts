@@ -5,11 +5,13 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import {
   getAllCohorts,
   getActiveCohorts,
   getCohortById,
   updateCohort,
+  subscribeToCohort,
 } from '@/lib/firebase';
 import type { Cohort } from '@/types/database';
 
@@ -101,6 +103,32 @@ export const useUpdateCohort = () => {
       queryClient.invalidateQueries({ queryKey: cohortKeys.active });
     },
   });
+};
+
+/**
+ * Get cohort by ID with realtime updates
+ */
+export const useRealtimeCohort = (id?: string) => {
+  const [cohort, setCohort] = useState<Cohort | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) {
+      setCohort(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    const unsubscribe = subscribeToCohort(id, (data) => {
+      setCohort(data);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [id]);
+
+  return { data: cohort, isLoading };
 };
 
 // ❌ REMOVED: useDeleteCohort - 미사용 hook 제거

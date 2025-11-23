@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import PhoneAuthCard from '@/features/auth/components/PhoneAuthCard';
 import SplashScreen from '@/features/auth/components/SplashScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { appRoutes } from '@/lib/navigation';
-import { useActiveCohorts } from '@/hooks/use-cohorts';
+import { useActiveCohorts, useCohort, useRealtimeCohort } from '@/hooks/use-cohorts';
+import SocializingDashboard from '@/features/socializing/components/SocializingDashboard';
+import { getSocializingStats } from '@/features/socializing/actions/socializing-actions';
+import { subscribeToCohortParticipants } from '@/lib/firebase';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +32,11 @@ export default function Home() {
     enabled: isAdminUser,
     refetchOnWindowFocus: false,
   });
+
+  // Socializing Phase Logic - must be at top level
+  const targetCohortId = participant?.cohortId;
+  const { data: targetCohort, isLoading: isCohortLoading } = useRealtimeCohort(targetCohortId || undefined);
+  const [voteStats, setVoteStats] = useState<{ dateVotes: Record<string, number>; locationVotes: Record<string, number> }>({ dateVotes: {}, locationVotes: {} });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -65,25 +73,87 @@ export default function Home() {
 
   }, []);
 
+  // Realtime Vote Stats
+  useEffect(() => {
+    if (targetCohortId && targetCohort?.socializingPhase && targetCohort.socializingPhase !== 'idle' && targetCohort.socializingPhase !== 'confirmed') {
+      const unsubscribe = subscribeToCohortParticipants(targetCohortId, (participants) => {
+        // Calculate stats locally
+        const dateVotes: Record<string, number> = {};
+        const locationVotes: Record<string, number> = {};
+
+        participants.forEach(p => {
+          const dVotes = p.socializingVotes?.date;
+          const lVotes = p.socializingVotes?.location;
+
+          // Handle both string and array formats
+          const dVoteArray = Array.isArray(dVotes) ? dVotes : (dVotes ? [dVotes] : []);
+          const lVoteArray = Array.isArray(lVotes) ? lVotes : (lVotes ? [lVotes] : []);
+
+          dVoteArray.forEach(vote => {
+            if (vote) dateVotes[vote] = (dateVotes[vote] || 0) + 1;
+          });
+
+          lVoteArray.forEach(vote => {
+            if (vote) locationVotes[vote] = (locationVotes[vote] || 0) + 1;
+          });
+        });
+
+        setVoteStats({ dateVotes, locationVotes });
+      });
+
+      return () => unsubscribe();
+    }
+  }, [targetCohortId, targetCohort?.socializingPhase]);
+
+  // Define refreshVoteStats as no-op or simple fetch for interface compatibility if needed
+  // But since we use realtime listener, we don't strictly need it for updates.
+  // However, SocializingDashboard expects onRefresh.
+  // Let's keep a simple version that just re-fetches manually if called.
+  const refreshVoteStats = useCallback(async () => {
+    if (targetCohortId) {
+      const stats = await getSocializingStats(targetCohortId);
+      setVoteStats(stats);
+    }
+  }, [targetCohortId]);
+
   useEffect(() => {
     if (participantStatus === 'ready' && participant && !hasNavigated) {
-      let targetCohortId: string | null = null;
+      // If we have a cohort ID, ensure we have checked the cohort status.
+      // We rely on isCohortLoading, but we also need to handle the race condition.
+      
+      // 1. If loading, wait.
+      if (isCohortLoading) return;
+      
+      // 2. If we have an ID but no data, and we are NOT loading...
+      // This happens when the ID just changed and the hook hasn't updated loading state yet (async state update).
+      // We must wait for the data to arrive.
+      if (targetCohortId && !targetCohort) {
+         return;
+      }
+
+      // Check if socializing is active - if so, don't redirect (unless confirmed)
+      if (targetCohort?.socializingPhase && targetCohort.socializingPhase !== 'idle' && targetCohort.socializingPhase !== 'confirmed') {
+        // Socializing is active, stay on this page to show socializing screen
+        return;
+      }
+
+      let targetCohortIdToNavigate: string | null = null;
 
       if (isAdminUser) {
         const activeCohort = activeCohorts[0];
 
         if (activeCohort) {
-          targetCohortId = activeCohort.id;
+          targetCohortIdToNavigate = activeCohort.id;
         } else if (!activeCohortsLoading || loadingTimeout || activeCohortsError) {
-          targetCohortId = participant.cohortId;
+          targetCohortIdToNavigate = participant.cohortId;
         }
       } else {
-        targetCohortId = participant.cohortId;
+        targetCohortIdToNavigate = participant.cohortId;
       }
 
-      if (targetCohortId) {
+      if (targetCohortIdToNavigate) {
         setHasNavigated(true);
-        router.replace(appRoutes.chat(targetCohortId));
+        router.replace(appRoutes.chat(targetCohortIdToNavigate));
       }
     }
   }, [
@@ -96,9 +166,11 @@ export default function Home() {
     hasNavigated,
     isAdminUser,
     router,
+    isCohortLoading,
+    targetCohort,
   ]);
 
-  if (isLoading || !minSplashElapsed) {
+  if (isLoading || !minSplashElapsed || isCohortLoading) {
     return <SplashScreen />;
   }
 
@@ -132,6 +204,20 @@ export default function Home() {
   }
 
   if (participantStatus === 'ready' && participant) {
+    // Check for Socializing Phase
+    if (targetCohort && targetCohort.socializingPhase && targetCohort.socializingPhase !== 'idle' && targetCohort.socializingPhase !== 'confirmed') {
+      return (
+        <div className="app-shell flex min-h-screen flex-col p-4 bg-gray-50">
+          <SocializingDashboard
+            cohort={targetCohort}
+            participant={participant}
+            voteStats={voteStats}
+            onRefresh={refreshVoteStats}
+          />
+        </div>
+      );
+    }
+
     if (!hasNavigated) {
       return <SplashScreen />;
     }

@@ -29,6 +29,7 @@ export {
   getAllCohorts,
   getActiveCohorts,
   updateCohort,
+  subscribeToCohort,
 } from './cohorts';
 
 // Participant operations
@@ -44,6 +45,7 @@ export {
   getParticipantByFirebaseUid,
   linkFirebaseUid,
   unlinkFirebaseUid,
+  subscribeToCohortParticipants,
 } from './participants';
 
 // Submission operations

@@ -696,7 +696,7 @@ function TodayLibraryV2Content() {
                   </h3>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      프로필 북은 <strong className="text-gray-900">인증 다음날 오후 2시</strong>부터
+                      프로필 북은 <strong className="text-gray-900">인증 다음날 오전 2시</strong>부터
                       <br />
                       열어볼 수 있어요
                     </p>
@@ -842,7 +842,7 @@ function TodayLibraryV2Content() {
                                   title: '프로필 잠김 🔒',
                                   description: isFinalDay
                                     ? '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요 (마지막 날 특별 이벤트!)'
-                                    : '오늘의 독서를 인증하면 모든 프로필을 확인할 수 있어요',
+                                    : '독서를 인증하면 내일 오전 2시에 프로필을 확인할 수 있어요',
                                 });
                               }}
                             />
@@ -1280,7 +1280,7 @@ function TodayLibraryV3Content() {
                   </h3>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      독서모임 테이블은 <strong className="text-gray-900">인증 다음날 오후 2시</strong>부터
+                      독서모임 테이블은 <strong className="text-gray-900">인증 다음날 오전 2시</strong>부터
                       <br />
                       열어볼 수 있어요
                     </p>
@@ -1331,7 +1331,7 @@ function TodayLibraryV3Content() {
                     아직 준비중이에요
                   </h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    매일 오후 2시에 새로운 독서모임이 시작됩니다
+                    독서를 인증하면 내일 오전 2시에 독서모임이 시작돼요
                   </p>
                 </div>
 

@@ -91,6 +91,16 @@ export default function Header({
           >
             <Users className="h-5 w-5" />
           </button>
+          {onWriteClick && (
+            <button
+              type="button"
+              onClick={onWriteClick}
+              className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+              aria-label="글쓰기"
+            >
+              <PenSquare className="h-5 w-5" />
+            </button>
+          )}
         </>
       }
     />

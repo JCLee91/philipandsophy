@@ -15,8 +15,10 @@ import {
   deleteDoc,
   query,
   where,
+  orderBy,
   Timestamp,
   setDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import { getDb } from './client';
 import type { Cohort, DailyMatchingEntry } from '@/types/database';
@@ -85,7 +87,11 @@ export const getAllCohorts = async (): Promise<Cohort[]> => {
 export const getActiveCohorts = async (): Promise<Cohort[]> => {
   const db = getDb();
   const cohortsRef = collection(db, COLLECTIONS.COHORTS);
-  const q = query(cohortsRef, where('isActive', '==', true));
+  const q = query(
+    cohortsRef,
+    where('isActive', '==', true),
+    orderBy('startDate', 'desc')
+  );
 
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({
@@ -140,4 +146,33 @@ export const updateDailyFeaturedParticipants = async (
     dailyFeaturedParticipants,
     updatedAt: Timestamp.now(),
   });
+};
+
+/**
+ * Subscribe to a specific cohort for realtime updates
+ */
+export const subscribeToCohort = (
+  id: string,
+  callback: (cohort: Cohort | null) => void
+) => {
+  const db = getDb();
+  const cohortRef = doc(db, COLLECTIONS.COHORTS, id);
+
+  return onSnapshot(
+    cohortRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        callback({
+          id: snapshot.id,
+          ...snapshot.data(),
+        } as Cohort);
+      } else {
+        callback(null);
+      }
+    },
+    (error) => {
+      console.error('Error subscribing to cohort:', error);
+      callback(null);
+    }
+  );
 };

@@ -43,6 +43,14 @@ service cloud.firestore {
         allow read: if isSignedIn();    // 로그인한 사용자는 읽기 가능
         allow write: if isAdminClaim(); // 관리자만 쓰기 가능
       }
+
+      // 소셜링 모임 채팅 서브컬렉션
+      match /meetup_messages/{messageId} {
+        allow read: if isSignedIn();    // 해당 기수 참가자인지 검증은 UI 레벨에서 처리
+        allow create: if isSignedIn();  // 로그인한 유저라면 작성 가능 (필드 검증 권장)
+        allow update: if false;         // 채팅 수정 불가
+        allow delete: if false;         // 채팅 삭제 불가
+      }
     }
 
     // ============================================

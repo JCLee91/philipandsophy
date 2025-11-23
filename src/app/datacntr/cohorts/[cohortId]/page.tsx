@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, ArrowLeft, User, BookOpen, Calendar } from 'lucide-react';
@@ -10,6 +10,7 @@ import type { Cohort } from '@/types/database';
 import { cohortParticipantSchema, type CohortParticipant } from '@/types/datacntr';
 import TopBar from '@/components/TopBar';
 import BulkImageUploadModal from './_components/BulkImageUploadModal';
+import SocializingAdminControls from '@/features/socializing/components/SocializingAdminControls';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -42,38 +43,38 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   }, [authLoading, user, router]);
 
   // 코호트 데이터 로드
-  useEffect(() => {
+  const fetchCohortDetail = useCallback(async () => {
     if (!user || !cohortId) return;
 
-    const fetchCohortDetail = async () => {
-      try {
-        const idToken = await user.getIdToken();
-        const response = await fetch(`/api/datacntr/cohorts/${cohortId}`, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-          },
-        });
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(`/api/datacntr/cohorts/${cohortId}`, {
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error('코호트 상세 조회 실패');
-        }
-
-        const data = await response.json();
-        const parsedParticipants = cohortParticipantSchema.array().parse(data.participants) as CohortParticipant[];
-        // Sort alphabetically by name
-        parsedParticipants.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-
-        setCohort(data.cohort);
-        setParticipants(parsedParticipants);
-      } catch (error) {
-
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error('코호트 상세 조회 실패');
       }
-    };
 
-    fetchCohortDetail();
+      const data = await response.json();
+      const parsedParticipants = cohortParticipantSchema.array().parse(data.participants) as CohortParticipant[];
+      // Sort alphabetically by name
+      parsedParticipants.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+      setCohort(data.cohort);
+      setParticipants(parsedParticipants);
+    } catch (error) {
+      console.error('코호트 상세 조회 실패:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user, cohortId]);
+
+  useEffect(() => {
+    fetchCohortDetail();
+  }, [fetchCohortDetail]);
 
   // cohort 로드 시 tempUnlockDate 초기화
   useEffect(() => {
@@ -346,6 +347,13 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
             </p>
           </div>
         </div>
+
+        {/* 소셜링 관리 (Socializing Admin Controls) */}
+        {cohort && (
+          <div className="mb-6">
+            <SocializingAdminControls cohort={cohort} onUpdate={fetchCohortDetail} />
+          </div>
+        )}
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

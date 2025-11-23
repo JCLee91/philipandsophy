@@ -31,8 +31,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Cloud Run 함수 URL (환경변수에서 가져오기)
+    // 기본값은 manualClusterMatching 함수의 예상 URL
     const matchingUrl = process.env.MANUAL_MATCHING_URL ||
-      'https://manualmatchingpreview-vliq2xsjqa-du.a.run.app';
+      'https://asia-northeast3-philipandsophy.cloudfunctions.net/manualClusterMatching';
 
     // 원본 Authorization 헤더에서 ID 토큰 추출
     const authHeader = request.headers.get('authorization');
