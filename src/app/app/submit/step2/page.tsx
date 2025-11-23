@@ -15,9 +15,15 @@ import UnifiedButton from '@/components/UnifiedButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Search } from 'lucide-react';
 import { useDebounce } from 'react-use';
 import { Loader2, Check } from 'lucide-react';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
+import { appRoutes } from '@/lib/navigation';
+import Image from 'next/image';
+import { SEARCH_CONFIG } from '@/constants/search';
+import { SUBMISSION_VALIDATION } from '@/constants/validation';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
