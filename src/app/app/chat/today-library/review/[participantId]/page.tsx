@@ -42,7 +42,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
         queryKey: ['review-detail', participantId, submissionDate],
         queryFn: async () => {
             if (!submissionDate || submissionDate === 'undefined') throw new Error('Missing date parameter');
-            if (!participantId) throw new Error('Missing participant ID');
+            if (!participantId || participantId === 'undefined' || participantId === 'null') throw new Error('Missing participant ID');
 
             const db = getDb();
 
@@ -94,6 +94,10 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
             // Fetch participant
             const participantDoc = await getDoc(doc(db, 'participants', participantId));
             if (!participantDoc.exists()) {
+                // If participant is not found, it might be a data consistency issue or deleted user.
+                // We can throw a specific error or return a mock participant if that's safer for the UI.
+                // For now, let's throw a clear error.
+                console.error(`Participant document not found for ID: ${participantId}`);
                 throw new Error('Participant not found');
             }
 
@@ -104,7 +108,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
             return { submission, participant };
         },
-        enabled: !!participantId && !!submissionDate && submissionDate !== 'undefined',
+        enabled: !!participantId && participantId !== 'undefined' && participantId !== 'null' && !!submissionDate && submissionDate !== 'undefined',
     });
 
     useEffect(() => {
