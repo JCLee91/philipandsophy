@@ -82,10 +82,10 @@ export function initializeFirebase() {
     // 브라우저를 닫아도 로그인 유지
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
-
+        logger.info('Firebase Auth Persistence set to LOCAL');
       })
       .catch((error) => {
-
+        logger.error('Failed to set Firebase Auth Persistence', error);
       });
 
     initialized = true;

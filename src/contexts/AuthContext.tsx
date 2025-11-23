@@ -128,6 +128,9 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     : baseParticipant;
 
   // participant 변경 시 쿠키 및 localStorage 업데이트
+  // ℹ️ Cookie는 서버 사이드 렌더링(SSR) 보호(middleware/Page)를 위해 사용됩니다.
+  // Firebase Auth가 클라이언트 세션을 유지하더라도, 쿠키가 만료되면 서버에서 리다이렉트될 수 있으며,
+  // 이 경우 /app 페이지에서 클라이언트 Auth가 쿠키를 다시 복구합니다.
   useEffect(() => {
     if (!participant) return;
 

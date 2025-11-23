@@ -2,9 +2,9 @@
  * Navigation utilities for type-safe route construction
  * Provides consistent URL building for app routes with query parameters
  *
- * 🔒 세션 토큰 기반 인증으로 전환 (v2.3)
- * - userId를 URL에서 제거하여 보안 강화
- * - sessionStorage의 세션 토큰으로 사용자 인증
+ * 🔒 쿠키 및 Firebase Auth 기반 인증 (v2.4)
+ * - Firebase Auth: 클라이언트 사이드 세션 유지 (localStorage)
+ * - Cookies: 서버 사이드 렌더링(SSR) 보호 및 리다이렉트 처리 (pns-participant)
  */
 
 export const appRoutes = {
