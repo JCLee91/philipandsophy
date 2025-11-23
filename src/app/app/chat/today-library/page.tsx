@@ -986,17 +986,12 @@ function TodayLibraryV2Content() {
 function AccordionContent({
   text,
   isExpanded,
-  onToggle
 }: {
   text: string;
   isExpanded: boolean;
-  onToggle: () => void;
 }) {
   return (
-    <div
-      className="flex justify-between items-start gap-2 cursor-pointer"
-      onClick={onToggle}
-    >
+    <div className="flex justify-between items-start gap-2">
       <div
         className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px]' : 'max-h-[1.6em]'
           }`}
@@ -1224,22 +1219,13 @@ function TodayLibraryV3Content() {
   const handleReviewClick = (participantId: string) => {
     const isMe = participantId === currentUserId;
 
-    // 미인증 사용자 접근 제한 (본인 제외)
-    if (!viewerHasSubmittedToday && !isSuperAdmin && !isMe) {
+    // 미인증 사용자 접근 제한 (본인 제외) - isLocked로 통일
+    if (isLocked && !isSuperAdmin && !isMe) {
       showLockedToast('review');
       return;
     }
 
-    // 본인인데 미인증 상태라면 (리뷰가 없음) -> 목업 확인을 위해 임시로 허용
-    // if (isMe && !viewerHasSubmittedToday && !isSuperAdmin) {
-    //   toast({
-    //     title: '작성된 감상평이 없습니다',
-    //     description: '오늘의 독서를 인증해주세요'
-    //   });
-    //   return;
-    // }
-
-    router.push(`/app/chat/today-library/review/${participantId}?date=${clusterMatching?.matchingDate}&cohort=${cohortId}`);
+    router.push(`/app/chat/today-library/review/${encodeURIComponent(participantId)}?date=${clusterMatching?.matchingDate}&cohort=${cohortId}`);
   };
 
   // 로딩 상태
@@ -1420,7 +1406,7 @@ function TodayLibraryV3Content() {
               <h2 className="text-[18px] font-bold text-[#31363E] mb-4 leading-[1.4]">오늘의 감상평</h2>
               <div className="flex flex-col">
                 {clusterMembersWithSubmissions.map(member => (
-                  <div key={member.id} className="flex gap-3 border-b border-[#F2F4F6] py-4 first:pt-0 items-center">
+                  <div key={member.id} className="flex gap-3 border-b border-[#F2F4F6] py-4 first:pt-0 items-start">
                     {/* Left: Avatar & Name */}
                     <div className="flex flex-col items-center gap-1 shrink-0 w-[40px]">
                       <div
@@ -1483,7 +1469,7 @@ function TodayLibraryV3Content() {
                     return (
                       <div
                         key={member.id}
-                        className={`flex gap-3 border-b border-[#F2F4F6] py-4 first:pt-0 items-center`}
+                        className={`flex gap-3 border-b border-[#F2F4F6] py-4 first:pt-0 items-start`}
                       >
                         {/* Left: Avatar & Name */}
                         <div className="flex flex-col items-center gap-1 shrink-0 w-[40px]">
@@ -1503,7 +1489,10 @@ function TodayLibraryV3Content() {
                         </div>
 
                         {/* Right: Content */}
-                        <div className="flex-1 flex flex-col gap-1">
+                        <div
+                          className="flex-1 flex flex-col gap-1 cursor-pointer"
+                          onClick={() => toggleAnswer(member.id)}
+                        >
                           {/* Character Count */}
                           <span className="text-[12px] text-[#8B95A1]">
                             [{answerLength}자]
@@ -1513,7 +1502,6 @@ function TodayLibraryV3Content() {
                           <AccordionContent
                             text={member.dailyAnswer}
                             isExpanded={isExpanded}
-                            onToggle={() => toggleAnswer(member.id)}
                           />
                         </div>
                       </div>

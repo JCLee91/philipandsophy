@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
-// Mock Data for Dates and Locations
+// 환불 모임 선택 가능한 날짜 및 장소
 const AVAILABLE_DATES = [
     '2025-11-29',
     '2025-11-30',

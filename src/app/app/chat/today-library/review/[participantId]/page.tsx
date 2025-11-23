@@ -22,7 +22,7 @@ import { getResizedImageUrl } from '@/lib/image-utils';
 export const dynamic = 'force-dynamic';
 
 interface ReviewData {
-    submission: ReadingSubmission;
+    submission: ReadingSubmission | null;
     participant: Participant;
 }
 
@@ -33,6 +33,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     const { participant: currentUser } = useAuth();
     const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
 
+    // URL 디코딩 (한글 이름 처리)
     const participantId = decodeURIComponent(params.participantId);
     const submissionDate = searchParams.get('date');
     const cohortId = searchParams.get('cohort');
@@ -69,34 +70,9 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                 }
             }
 
-            if (!submission) {
-                // throw new Error('Submission not found');
-                // 목업 확인을 위해 가짜 데이터 반환
-                submission = {
-                    id: 'mock-id',
-                    participantId,
-                    submissionDate,
-                    status: 'approved',
-                    bookTitle: '노르웨이의 숲',
-                    bookAuthor: '무라카미 하루키',
-                    bookCoverUrl: 'https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788937461097.jpg',
-                    bookImageUrl: 'https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788937461097.jpg', // 임시 이미지
-                    review: `이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다. 겉으로는 가볍고 유쾌하지만, 그녀의 농담에는 늘 외로움이 깃들어 있다. 와타나베에게 미도리는 단순한 연인이 아니라, 살아 있음을 일깨워주는 존재였다.
-
-미도리는 어쩌면 삶의 그 자체 같다. 불완전하고, 예측할 수 없으며, 때로는 잔인할 만큼 솔직하다. 그녀는 상처를 숨기지 않고, 오히려 그것을 품은 채 웃는다. 그 모습이야말로 이 소설이 말하는 진짜 어른이 되는 과정일지도 모른다.
-
-책을 덮고 나면 이상하게도 마음이 먹먹해진다. 우리 모두에게는 언젠가 만났던 미도리가 있고, 그 사람 덕분에 다시 살아가기로 결심했던 순간이 있기 때문이다.`,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                } as unknown as ReadingSubmission;
-            }
-
-            // Fetch participant
+            // Fetch participant (always needed for empty state)
             const participantDoc = await getDoc(doc(db, 'participants', participantId));
             if (!participantDoc.exists()) {
-                // If participant is not found, it might be a data consistency issue or deleted user.
-                // We can throw a specific error or return a mock participant if that's safer for the UI.
-                // For now, let's throw a clear error.
                 console.error(`Participant document not found for ID: ${participantId}`);
                 throw new Error('Participant not found');
             }
@@ -106,7 +82,8 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                 ...participantDoc.data()
             } as Participant;
 
-            return { submission, participant };
+            // Return even if submission is null (will show empty state)
+            return { submission: submission || null, participant };
         },
         enabled: !!participantId && participantId !== 'undefined' && participantId !== 'null' && !!submissionDate && submissionDate !== 'undefined',
     });
@@ -150,15 +127,6 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
     const { submission, participant } = data;
 
-    // --- Mock Data Injection for Verification ---
-    const mockJob = "은행원";
-    const mockBookDescription = "보통의 연인들을 위한 보통의 연애담. 알랭 드 보통의 최고의 소설 연애가 사랑이 되는 순간, 우연이 사랑이 되는 순간의 비밀 사랑은 무엇이고 연애란 또 무엇인가?";
-    const mockBookImageUrl = "https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9788937461097.jpg";
-    const mockQuote = `터 시작하고 싶어, 하고 말했다.
-  미도리는 오래도록 수화기 저편에서 침묵을 지켰다. 마치 온 세상의 가느다란 빗줄기가 온 세상의 잔디밭 위에 내리는 듯한 그런 침묵이 이어졌다. 나는 그동안 창에 이마를 대고 눈을 감았다. 이윽고 미도리가 입을 열었다. "너, 지금 어디야?" 그녀는 조용한 목소리로 말했다.
-  나는 지금 어디에 있지?
-  나는 수화기를 든 채 고개를 들고 공중전화 부스 주변을 휙 둘러보았다. 나는 지금 어디에 있지? 그러나 거기가 어디`;
-
     // Format Date: "10월 22일의 기록"
     const formatDateTitle = (dateStr: string) => {
         if (!dateStr) return '오늘의 기록';
@@ -173,6 +141,56 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
             router.push(`/app/profile/${participantId}`);
         }
     };
+
+    // Empty state when no submission found
+    if (!submission) {
+        return (
+            <PageTransition>
+                <div className="app-shell flex flex-col overflow-hidden bg-white">
+                    <TopBar
+                        title={formatDateTitle(submissionDate || '')}
+                        onBack={() => router.back()}
+                        align="left"
+                        className="bg-white border-b-0"
+                    />
+
+                    <main className="flex-1 overflow-y-auto bg-white flex items-center justify-center">
+                        <div className="mx-auto max-w-md px-6 text-center">
+                            <div className="space-y-6">
+                                {/* Icon */}
+                                <div className="flex justify-center">
+                                    <div className="size-20 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <svg className="size-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                {/* Message */}
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-lg text-gray-900">
+                                        작성된 감상평이 없습니다
+                                    </h3>
+                                    <p className="text-sm text-gray-600 leading-relaxed">
+                                        이 날짜에 {participant.name}님의 독서 인증이 없습니다
+                                    </p>
+                                </div>
+
+                                {/* CTA */}
+                                <button
+                                    type="button"
+                                    onClick={() => router.back()}
+                                    className="bg-black text-white rounded-lg px-6 py-3 font-semibold text-base transition-colors hover:bg-gray-800 active:bg-gray-900"
+                                >
+                                    돌아가기
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </PageTransition>
+        );
+    }
 
     return (
         <PageTransition>
@@ -213,7 +231,6 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                         <path d="M9 18L15 12L9 6" stroke="#191F28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
                                 </button>
-                                <span className="text-[13px] text-[#8B95A1]">{(participant as any).job || mockJob}</span>
                             </div>
                         </div>
                         {/* 2. Book Info Section */}
@@ -247,9 +264,12 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                             </div>
 
                             {/* Book Description */}
-                            <p className="text-[14px] text-[#4E5968] leading-[1.6] break-keep">
-                                {submission.bookDescription || mockBookDescription}
-                            </p>
+                            {submission.bookDescription && (
+                                <p className="text-[14px] text-[#4E5968] leading-[1.6] break-keep">
+                                    {submission.bookDescription.slice(0, 100)}
+                                    {submission.bookDescription.length > 100 ? '...' : ''}
+                                </p>
+                            )}
                         </section>
 
                         {/* 3. Review Section */}
