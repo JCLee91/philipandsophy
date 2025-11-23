@@ -6,9 +6,7 @@ const GSTATIC_ENDPOINT = 'https://www.gstatic.com';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  productionBrowserSourceMaps: false,
   images: {
     unoptimized: true, // Vercel Image Optimization 비활성화 - Firebase Resize Extension 사용
     remotePatterns: [
