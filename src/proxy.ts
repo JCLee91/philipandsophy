@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 
 const APP_LOGIN_PATHS = new Set(['/app', '/app/']);
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 이 미들웨어는 /app 하위 경로만 보호한다.
+  // 이 프록시는 /app 하위 경로만 보호한다.
   if (!pathname.startsWith('/app')) {
     return NextResponse.next();
   }
