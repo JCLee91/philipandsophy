@@ -654,16 +654,6 @@ function Step3Content() {
             className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4"
             style={{ paddingBottom: footerPaddingBottom }}
           >
-            {!existingSubmissionId && (
-              <UnifiedButton
-                variant="outline"
-                onClick={handleSaveDraft}
-                className="flex-1"
-                disabled={uploading || isSaving}
-              >
-                {isSaving ? '저장 중...' : '임시 저장하기'}
-              </UnifiedButton>
-            )}
             <UnifiedButton
               onClick={handleSubmit}
               className={existingSubmissionId ? 'w-full' : 'flex-1'}
