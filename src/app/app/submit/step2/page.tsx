@@ -419,8 +419,8 @@ function Step2Content() {
       if (selectedBook?.description) {
         draftData.bookDescription = selectedBook.description;
       }
-      if (review) {
-        draftData.review = review;
+      if (localReview) {
+        draftData.review = localReview;
       }
 
       // 🆕 cohortId 추가 (중복 참가자 구분용)

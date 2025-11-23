@@ -51,7 +51,15 @@ export default function DirectMessageDialog({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const prevMessagesLengthRef = useRef(0);
   const inputContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const keyboardHeight = useKeyboardHeight();
+
+  const handleImageReset = useCallback(() => {
+    resetImage();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [resetImage]);
 
   const conversationId = useMemo(() => {
     if (!currentUserId || !otherUser) {
@@ -205,7 +213,7 @@ export default function DirectMessageDialog({
 
     // Optimistic UI: Clear input immediately
     setMessageContent('');
-    resetImage();
+    handleImageReset();
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -225,7 +233,7 @@ export default function DirectMessageDialog({
       // Note: Image restoration is complex with current hook structure, skipping for now
       // You might want to show a toast error here
     }
-  }, [imageFile, messageContent, resetImage, sendMessage]);
+  }, [imageFile, messageContent, handleImageReset, sendMessage]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -397,7 +405,7 @@ export default function DirectMessageDialog({
                   className="object-cover rounded border"
                 />
                 <button
-                  onClick={resetImage}
+                  onClick={handleImageReset}
                   className="absolute -top-2 -right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors duration-fast"
                   type="button"
                 >
@@ -408,6 +416,7 @@ export default function DirectMessageDialog({
 
             <div className={`flex ${FOOTER_STYLES.BUTTON_GAP}`}>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleImageSelect}
@@ -417,7 +426,7 @@ export default function DirectMessageDialog({
               <UnifiedButton
                 type="button"
                 variant="outline"
-                onClick={() => document.getElementById('dm-image-upload')?.click()}
+                onClick={() => fileInputRef.current?.click()}
                 className="h-10 w-10 p-0 shrink-0"
                 icon={<Paperclip className="h-4 w-4" />}
               />
