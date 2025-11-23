@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 
 /**
  * 관리자(Super Admin)가 특정 유저로 로그인하기 위한 Custom Token 발급
+ * + 복귀를 위한 관리자 본인의 Custom Token도 함께 발급
  */
 export const getImpersonationToken = functions.https.onCall(async (request) => {
   // 1. 호출자 인증 확인
@@ -48,7 +49,7 @@ export const getImpersonationToken = functions.https.onCall(async (request) => {
       );
     }
 
-    // 3. 대상 유저 존재 여부 확인 (선택사항, 안전을 위해)
+    // 3. 대상 유저 존재 여부 확인
     const userRecord = await admin.auth().getUser(targetUid);
     if (!userRecord) {
       throw new functions.https.HttpsError(
@@ -57,13 +58,19 @@ export const getImpersonationToken = functions.https.onCall(async (request) => {
       );
     }
 
-    // 4. Custom Token 생성
-    // developerClaims에 impersonator 정보를 넣으면 클라이언트에서 식별 가능
+    // 4. Target 유저의 Custom Token 생성 (로그인용)
     const customToken = await admin.auth().createCustomToken(targetUid, {
       impersonatorUid: callerUid // 원래 관리자의 UID를 클레임에 포함
     });
 
-    return { customToken };
+    // 5. Admin 본인의 Custom Token 생성 (복귀용)
+    // 주의: 이 토큰은 클라이언트의 Session Storage에 저장되어 복귀 시 사용됨
+    const adminToken = await admin.auth().createCustomToken(callerUid);
+
+    return { 
+      customToken,  // 대상 유저 로그인용
+      adminToken    // 관리자 복귀용 (저장용)
+    };
 
   } catch (error) {
     console.error('[getImpersonationToken] Error:', error);

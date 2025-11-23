@@ -33,7 +33,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     const { participant: currentUser } = useAuth();
     const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
 
-    const participantId = params.participantId;
+    const participantId = decodeURIComponent(params.participantId);
     const submissionDate = searchParams.get('date');
     const cohortId = searchParams.get('cohort');
 

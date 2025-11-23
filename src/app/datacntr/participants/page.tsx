@@ -186,16 +186,20 @@ export default function ParticipantsPage() {
       const getImpersonationToken = httpsCallable(functions, 'getImpersonationToken');
 
       const result = await getImpersonationToken({ targetUid });
-      const { customToken } = result.data as { customToken: string };
+      const { customToken, adminToken } = result.data as { customToken: string; adminToken: string };
 
+      // 1. 관리자 복귀용 토큰 저장
+      if (adminToken) {
+        sessionStorage.setItem('pns_admin_token', adminToken);
+      }
+      
+      // 2. 배너 표시 플래그 및 복귀 경로 저장
+      sessionStorage.setItem('pns_admin_impersonation', 'true');
+      sessionStorage.setItem('pns_impersonation_return_url', '/datacntr/participants');
+
+      // 3. 타겟 유저로 로그인
       const auth = getFirebaseAuth();
       await signInWithCustomToken(auth, customToken);
-
-      // 배너 표시를 위한 플래그 설정
-      sessionStorage.setItem('pns_admin_impersonation', 'true');
-      
-      // 원래 관리자 토큰이나 정보를 저장해두면 좋겠지만, 
-      // 보안상 다시 로그인하게 하는 것이 안전하므로 여기서는 플래그만 저장.
       
       // 메인 앱으로 이동
       router.push('/app');
@@ -300,7 +304,7 @@ export default function ParticipantsPage() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-amber-600 focus:text-amber-700 focus:bg-amber-50"
-                  onClick={() => p.firebaseUid ? handleImpersonate(p.firebaseUid, p.name) : alert('해당 유저의 인증 정보가 없습니다.')}
+                  onClick={() => handleImpersonate(p.firebaseUid, p.name)}
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   이 유저로 보기

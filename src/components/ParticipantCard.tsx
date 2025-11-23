@@ -18,7 +18,7 @@ import { getResizedImageUrl } from '@/lib/image-utils';
 import { httpsCallable } from 'firebase/functions';
 import { signInWithCustomToken } from 'firebase/auth';
 import { getFirebaseFunctions, getFirebaseAuth } from '@/lib/firebase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export interface ParticipantCardProps {
   participant: Participant;
@@ -54,6 +54,7 @@ export function ParticipantCard({
   onImageClick,
 }: ParticipantCardProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const initials = getInitials(participant.name);
 
   // 오늘 독서 인증 여부
@@ -84,12 +85,21 @@ export function ParticipantCard({
 
       // 로딩 표시가 없으므로 약간의 딜레이가 느껴질 수 있음 (향후 개선 포인트)
       const result = await getImpersonationToken({ targetUid: participant.firebaseUid });
-      const { customToken } = result.data as { customToken: string };
+      const { customToken, adminToken } = result.data as { customToken: string; adminToken: string };
 
+      // 1. 관리자 복귀용 토큰 저장
+      if (adminToken) {
+        sessionStorage.setItem('pns_admin_token', adminToken);
+      }
+      
+      // 2. 배너 표시 플래그 및 복귀 경로 저장
+      // 모바일 앱에서는 현재 경로를 저장해두고 복귀 시 해당 경로로 이동
+      sessionStorage.setItem('pns_admin_impersonation', 'true');
+      sessionStorage.setItem('pns_impersonation_return_url', pathname);
+
+      // 3. 타겟 유저로 로그인
       const auth = getFirebaseAuth();
       await signInWithCustomToken(auth, customToken);
-
-      sessionStorage.setItem('pns_admin_impersonation', 'true');
       
       // 메인 앱으로 이동 (새로고침 효과를 위해 window.location 사용 고려 가능하지만 router.push가 더 부드러움)
       router.push('/app');
