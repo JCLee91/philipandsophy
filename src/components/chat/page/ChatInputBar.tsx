@@ -40,8 +40,7 @@ export default function ChatInputBar({ onSend, isLoading }: ChatInputBarProps) {
         <UnifiedButton
           onClick={handleSubmit}
           disabled={!message.trim() || isLoading}
-          size="icon"
-          className="bg-primary hover:bg-primary/90 text-white rounded-full w-10 h-10 shrink-0"
+          className="bg-primary hover:bg-primary/90 text-white rounded-full w-10 h-10 shrink-0 p-0"
         >
           <Send className="w-4 h-4 ml-0.5" />
         </UnifiedButton>

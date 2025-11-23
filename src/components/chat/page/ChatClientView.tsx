@@ -517,9 +517,9 @@ export function ChatClientView({
           </main>
 
           {isMeetupMode ? (
-            <ChatInputBar 
-              onSend={(text) => sendMeetupMessage(text)} 
-              isLoading={isMeetupSending} 
+            <ChatInputBar
+              onSend={async (text) => { await sendMeetupMessage(text); }}
+              isLoading={isMeetupSending}
             />
           ) : (
             <ChatFooterSection
