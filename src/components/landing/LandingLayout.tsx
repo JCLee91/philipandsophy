@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import Script from 'next/script';
 import Footer from '@/components/Footer';
 import GlassNavigation from './GlassNavigation';
+import PartyFloatingButton from './PartyFloatingButton';
 import '../../styles/landing.css';
 
 interface LandingLayoutProps {
@@ -55,6 +56,9 @@ export default function LandingLayout({ children }: LandingLayoutProps) {
 
       {/* Page Content */}
       {children}
+
+      {/* Party Floating Button */}
+      <PartyFloatingButton />
 
       {/* Footer */}
       <Footer />

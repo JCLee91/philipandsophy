@@ -4,7 +4,6 @@ import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
 import CtaButton from '@/components/landing/CtaButton';
-import PartyFloatingButton from '@/components/landing/PartyFloatingButton';
 import { getImageUrl } from '@/constants/landing';
 import { ORGANIZATION_SCHEMA } from '@/constants/seo';
 import { ANALYTICS_EVENTS } from '@/constants/landing';
@@ -62,8 +61,6 @@ export default function HomePage() {
           analyticsName={ANALYTICS_EVENTS.HOME}
           ariaLabel="사전 신청 설문 열기"
         />
-
-        <PartyFloatingButton />
       </div>
     </LandingLayout>
   );
