@@ -95,6 +95,7 @@ export const createMessage = async (data: {
         userInfo: userData ? {
           name: userData.name,
           profileImage: userData.profileImage || userData.profileImageCircle || '',
+          profileImageCircle: userData.profileImageCircle || '',
           cohortId: userData.cohortId,
           cohortName
         } : undefined
