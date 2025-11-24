@@ -24,6 +24,7 @@ import NoticeTimeline from '@/components/chat/Notice/NoticeTimeline';
 import PageTransition from '@/components/PageTransition';
 import DirectMessageDialog from '@/components/chat/DM/DirectMessageDialog';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
+import ImageViewerDialog from '@/components/ImageViewerDialog';
 import NoticeWriteDialog from '@/components/NoticeWriteDialog';
 import NoticeEditDialog from '@/components/NoticeEditDialog';
 import NoticeDeleteDialog from '@/components/NoticeDeleteDialog';
@@ -116,6 +117,8 @@ export function ChatClientView({
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string>('');
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const isAdminMode = useIsAdminMode(); // ViewMode 전환용 (UI 기능)
@@ -138,13 +141,13 @@ export function ChatClientView({
 
   // 소셜링 채팅 Hook (isMeetup 상태일 때만 활성화)
   const isMeetupMode = cohort?.socializingPhase === 'confirmed' || cohort?.type === 'meetup';
-  const { 
-      messages: meetupMessages, 
-      sendMessage: sendMeetupMessage, 
-      isSending: isMeetupSending 
+  const {
+    messages: meetupMessages,
+    sendMessage: sendMeetupMessage,
+    isSending: isMeetupSending
   } = useMeetupChat(
-      isMeetupMode ? cohortId || undefined : undefined, 
-      participant || undefined
+    isMeetupMode ? cohortId || undefined : undefined,
+    participant || undefined
   );
 
   // 실제 관리자 권한 (participant.isAdministrator 기반) - 데이터 접근 권한
@@ -289,10 +292,10 @@ export function ChatClientView({
         content: contentToUse,
         imageFile,
         // 관리자 모드이면 '필립앤소피', 소셜링 모임이면 내 이름, 그 외에는 기본값(필립앤소피)
-        author: isAdminMode 
-          ? APP_CONSTANTS.ADMIN_NAME 
+        author: isAdminMode
+          ? APP_CONSTANTS.ADMIN_NAME
           : (cohort?.type === 'meetup' || cohort?.socializingPhase === 'confirmed')
-            ? participant?.name 
+            ? participant?.name
             : APP_CONSTANTS.ADMIN_NAME,
       });
 
@@ -393,6 +396,14 @@ export function ChatClientView({
     [router, cohortId]
   );
 
+  const handleImageClick = useCallback((participant: Participant) => {
+    const imageUrl = participant.faceImage || participant.profileImage;
+    if (imageUrl) {
+      setImageViewerUrl(imageUrl);
+      setImageViewerOpen(true);
+    }
+  }, []);
+
   const handleParticipantsClick = useCallback(() => {
     if (!cohortId) {
 
@@ -473,6 +484,8 @@ export function ChatClientView({
             onDMClick={handleDMClick}
             onProfileClick={(participant) => setSelectedParticipant(participant)}
             onProfileBookClick={handleProfileBookClick}
+            onImageClick={handleImageClick}
+            isImageViewerOpen={imageViewerOpen}
           />
 
           <DirectMessageDialog
@@ -491,6 +504,12 @@ export function ChatClientView({
             }}
           />
 
+          <ImageViewerDialog
+            open={imageViewerOpen}
+            onOpenChange={setImageViewerOpen}
+            imageUrl={imageViewerUrl}
+          />
+
           {/* 모임 확정 카드 (채팅방 상단) */}
           {cohort.socializingPhase === 'confirmed' && cohort.socializingResult && (
             <div className="px-4 pt-4">
@@ -501,7 +520,7 @@ export function ChatClientView({
           <main className="app-main-content relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
             {isMeetupMode ? (
               <div className="flex flex-col justify-end min-h-full">
-                 <MeetupChatTimeline messages={meetupMessages} currentUserId={currentUserId} />
+                <MeetupChatTimeline messages={meetupMessages} currentUserId={currentUserId} />
               </div>
             ) : (
               <NoticeTimeline

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { Z_INDEX } from '@/constants/z-index';
-import { getResizedImageUrl } from '@/lib/image-utils';
+import { getOriginalImageUrl } from '@/lib/image-utils';
 
 interface ImageViewerDialogProps {
   open: boolean;
@@ -86,7 +86,7 @@ export default function ImageViewerDialog({
           </div>
         ) : (
           <Image
-            src={getResizedImageUrl(imageUrl) || imageUrl}
+            src={imageUrl}
             alt="크게 보기"
             width={1000}
             height={1000}

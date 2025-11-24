@@ -13,6 +13,8 @@ type ChatParticipantsSheetProps = {
   onDMClick: (participant: Participant) => void;
   onProfileClick: (participant: Participant) => void;
   onProfileBookClick: (participant: Participant) => void;
+  onImageClick?: (participant: Participant) => void;
+  isImageViewerOpen?: boolean;
 };
 
 export function ChatParticipantsSheet({
@@ -24,6 +26,8 @@ export function ChatParticipantsSheet({
   onDMClick,
   onProfileClick,
   onProfileBookClick,
+  onImageClick,
+  isImageViewerOpen,
 }: ChatParticipantsSheetProps) {
   return (
     <ParticipantsList
@@ -35,6 +39,8 @@ export function ChatParticipantsSheet({
       onDMClick={onDMClick}
       onProfileClick={onProfileClick}
       onProfileBookClick={onProfileBookClick}
+      onImageClick={onImageClick}
+      isImageViewerOpen={isImageViewerOpen}
     />
   );
 }

@@ -36,7 +36,7 @@ export default function ProfileImageDialog({
   }, []);
 
   // 이미지 프리로드 및 모달 표시 타이밍 제어
-  // profileImage가 우선, 없으면 faceImage 사용 (기존에는 faceImage가 우선이었음)
+  // 간단 프로필 보기(프로필 카드)에서는 profileImage가 우선입니다.
   const imageUrl = participant?.profileImage || participant?.faceImage;
 
   useEffect(() => {

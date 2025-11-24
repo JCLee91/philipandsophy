@@ -81,8 +81,8 @@ function ParticipantsPageContent() {
   };
 
   const handleImageClick = (participant: Participant) => {
-    // 원본 이미지는 오직 faceImage만 사용 (폴백 없음)
-    const imageUrl = participant.faceImage;
+    // 원본 이미지는 faceImage를 우선 사용하고, 없으면 profileImage를 사용
+    const imageUrl = participant.faceImage || participant.profileImage;
     if (imageUrl) {
       setImageViewerUrl(imageUrl);
       setImageViewerOpen(true);

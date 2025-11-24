@@ -24,6 +24,8 @@ interface ParticipantsListProps {
   onDMClick?: (participant: Participant) => void;
   onProfileClick?: (participant: Participant) => void;
   onProfileBookClick?: (participant: Participant) => void;
+  onImageClick?: (participant: Participant) => void;
+  isImageViewerOpen?: boolean;
 }
 
 export default function ParticipantsList({
@@ -35,6 +37,8 @@ export default function ParticipantsList({
   onDMClick,
   onProfileClick,
   onProfileBookClick,
+  onImageClick,
+  isImageViewerOpen = false,
 }: ParticipantsListProps) {
   useModalCleanup(open);
 
@@ -58,7 +62,15 @@ export default function ParticipantsList({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-80 p-0 flex flex-col">
+      <SheetContent
+        side="right"
+        className="w-80 p-0 flex flex-col"
+        onInteractOutside={(e) => {
+          if (isImageViewerOpen) {
+            e.preventDefault();
+          }
+        }}
+      >
         <SheetHeader className="border-b px-6 py-4">
           <SheetTitle>참가자 목록 ({sortedParticipants.length})</SheetTitle>
           <SheetDescription className="sr-only">
@@ -82,6 +94,7 @@ export default function ParticipantsList({
                   onDMClick={onDMClick}
                   onProfileClick={handleProfileClick}
                   onProfileBookClick={onProfileBookClick}
+                  onImageClick={onImageClick}
                 />
               );
             })}
