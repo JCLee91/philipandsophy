@@ -89,10 +89,10 @@ export default function SecretPartyPage() {
                         href="https://smore.im/form/ghjIyG9Bv8"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group relative flex min-h-[64px] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-[20px] border border-white/30 bg-gradient-to-br from-red-600/90 to-red-700/95 px-8 py-4 text-center text-[18px] sm:text-[20px] font-bold leading-tight text-white shadow-[0_16px_48px_rgba(220,38,38,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl transition-all duration-[400ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[3px] hover:scale-[1.02] hover:bg-gradient-to-br hover:from-red-500/90 hover:to-red-600/95 hover:shadow-[0_20px_60px_rgba(220,38,38,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.98] active:-translate-y-[1px] active:duration-100"
+                        className="group relative flex min-h-[64px] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-[20px] border border-white/20 bg-gradient-to-br from-gray-800/90 to-black/95 px-8 py-4 text-center text-[18px] sm:text-[20px] font-semibold leading-tight text-white shadow-[0_12px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-xl transition-all duration-[400ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[3px] hover:scale-[1.02] hover:bg-gradient-to-br hover:from-gray-700/90 hover:to-black hover:shadow-[0_16px_48px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-[1px] active:duration-100 before:absolute before:left-[-100%] before:top-0 before:z-[1] before:h-full before:w-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:transition-all before:duration-1000 before:ease-out hover:before:left-[100%]"
                         aria-label="12월 멤버스 파티 신청하기"
                     >
-                        <span className="relative z-10 whitespace-nowrap [text-shadow:0_2px_4px_rgba(0,0,0,0.3)]">🎄 12월 멤버스 파티 신청하기</span>
+                        <span className="relative z-10 whitespace-nowrap [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]">12월 멤버스 파티 신청하기</span>
                     </a>
                 </div>
             </div>
