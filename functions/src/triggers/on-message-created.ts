@@ -37,7 +37,7 @@ export const onMessageCreated = onDocumentCreated(
       return;
     }
 
-    const senderName = await getParticipantName(receiverId);
+    const senderName = await getParticipantName(senderId);
     const { tokens, entriesMap, webPushSubscriptions } = await getPushTokens(receiverId);
 
     if (tokens.length === 0 && webPushSubscriptions.length === 0) {

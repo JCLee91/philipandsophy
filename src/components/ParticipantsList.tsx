@@ -81,6 +81,7 @@ export default function ParticipantsList({
                   showUnreadBadge={isAdmin} // 관리자만 뱃지 표시
                   onDMClick={onDMClick}
                   onProfileClick={handleProfileClick}
+                  onProfileBookClick={onProfileBookClick}
                 />
               );
             })}

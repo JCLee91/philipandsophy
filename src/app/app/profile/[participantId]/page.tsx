@@ -242,13 +242,22 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 매칭 날짜 기준으로 제출물 필터링 (스포일러 방지)
   // "어제 답변 → 오늘 공개" 규칙: 10월 17일 매칭은 10월 16일까지의 제출물만 표시
   const submissions = useMemo(() => {
+    // 1. 본인은 항상 모든 제출물 볼 수 있음
     if (isSelf) {
       return rawSubmissions;
     }
+
+    // 2. 관리자가 '참가자 목록' 등을 통해 들어온 경우 (matchingDate 없음) -> 모든 제출물 볼 수 있음
+    //    단, '오늘의 서재'를 통해 들어온 경우 (matchingDate 있음) -> 스포일러 방지 적용
+    if (isSuperAdmin && !matchingDate) {
+      return rawSubmissions;
+    }
+
+    // 3. 그 외의 경우 (일반 유저, 또는 관리자가 오늘의 서재로 진입) -> 날짜 필터링 적용
     // submittedAt이 있는 제출물만 필터링하여 타입 안전성 보장
     const validSubmissions = rawSubmissions.filter(s => s.submittedAt) as Array<ReadingSubmission & { submittedAt: Timestamp }>;
     return filterSubmissionsByDate(validSubmissions, submissionCutoffDate);
-  }, [rawSubmissions, submissionCutoffDate, isSelf]);
+  }, [rawSubmissions, submissionCutoffDate, isSelf, isSuperAdmin, matchingDate]);
 
   const sortedSubmissions = useMemo(() => {
     return [...submissions].sort((a, b) => getSubmissionTime(b) - getSubmissionTime(a));
