@@ -84,7 +84,7 @@ export default function SecretPartyPage() {
                 className={`fixed bottom-0 left-0 right-0 z-[1000] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${showFloatingButton ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
                     }`}
             >
-                <div className="flex justify-center px-4 pb-6 pt-3 bg-gradient-to-t from-black/95 via-black/90 to-transparent backdrop-blur-lg">
+                <div className="flex justify-center px-4 pb-[40px] pt-3 bg-gradient-to-t from-black/95 via-black/90 to-transparent backdrop-blur-lg">
                     <a
                         href="https://smore.im/form/ghjIyG9Bv8"
                         target="_blank"
