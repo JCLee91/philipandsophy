@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import LandingLayout from '@/components/landing/LandingLayout';
 import { getImageUrl } from '@/constants/landing';
@@ -8,6 +9,31 @@ import { getImageUrl } from '@/constants/landing';
 export const dynamic = 'force-dynamic';
 
 export default function SecretPartyPage() {
+    const buttonRef = useRef<HTMLDivElement>(null);
+    const [showFloatingButton, setShowFloatingButton] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // 버튼이 시야에서 벗어나면 floating 버튼 표시
+                setShowFloatingButton(!entry.isIntersecting);
+            },
+            {
+                threshold: 0.1, // 버튼의 10%만 보여도 "보이는 중"으로 간주
+            }
+        );
+
+        if (buttonRef.current) {
+            observer.observe(buttonRef.current);
+        }
+
+        return () => {
+            if (buttonRef.current) {
+                observer.unobserve(buttonRef.current);
+            }
+        };
+    }, []);
+
     return (
         <LandingLayout>
             {/* SEO 최적화를 위한 숨김 텍스트 - 시크릿 페이지이므로 최소화 */}
@@ -31,7 +57,7 @@ export default function SecretPartyPage() {
                     />
 
                     {/* 신청하기 버튼 오버레이 */}
-                    <div className="absolute left-0 right-0 top-[23.5%] z-10 flex flex-col items-center justify-center gap-3 px-4 sm:px-5">
+                    <div ref={buttonRef} className="absolute left-0 right-0 top-[23.5%] z-10 flex flex-col items-center justify-center gap-3 px-4 sm:px-5">
                         <a
                             href="https://smore.im/form/ghjIyG9Bv8"
                             target="_blank"
@@ -51,6 +77,24 @@ export default function SecretPartyPage() {
                     height={1161}
                     className="main-image"
                 />
+            </div>
+
+            {/* Floating Sticky Button - 원래 버튼이 시야에서 벗어났을 때만 표시 */}
+            <div
+                className={`fixed bottom-0 left-0 right-0 z-[1000] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${showFloatingButton ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
+                    }`}
+            >
+                <div className="flex justify-center px-4 pb-6 pt-3 bg-gradient-to-t from-black/95 via-black/90 to-transparent backdrop-blur-lg">
+                    <a
+                        href="https://smore.im/form/ghjIyG9Bv8"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative flex min-h-[64px] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-[20px] border border-white/30 bg-gradient-to-br from-red-600/90 to-red-700/95 px-8 py-4 text-center text-[18px] sm:text-[20px] font-bold leading-tight text-white shadow-[0_16px_48px_rgba(220,38,38,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl transition-all duration-[400ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[3px] hover:scale-[1.02] hover:bg-gradient-to-br hover:from-red-500/90 hover:to-red-600/95 hover:shadow-[0_20px_60px_rgba(220,38,38,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.98] active:-translate-y-[1px] active:duration-100"
+                        aria-label="12월 멤버스 파티 신청하기"
+                    >
+                        <span className="relative z-10 whitespace-nowrap [text-shadow:0_2px_4px_rgba(0,0,0,0.3)]">🎄 12월 멤버스 파티 신청하기</span>
+                    </a>
+                </div>
             </div>
         </LandingLayout>
     );
