@@ -114,7 +114,7 @@ function Step2Content() {
       if (selectedBook?.title || manualTitle) {
         draftData.bookTitle = selectedBook?.title || manualTitle;
       }
-      
+
       if (cohortId) {
         draftData.cohortId = cohortId;
       }
@@ -471,10 +471,10 @@ function Step2Content() {
       return;
     }
 
-    if (localReview.trim().length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
+    if (localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
       toast({
         title: `최소 ${SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH}자 이상 작성해주세요`,
-        description: `현재 ${localReview.trim().length}자 입력됨`,
+        description: `현재 ${localReview.length}자 입력됨`,
         variant: 'destructive',
       });
       return;
@@ -735,16 +735,15 @@ function Step2Content() {
                   disabled={!selectedBook && !manualTitle.trim()}
                 />
               </div>
-              
+
               <div className="flex justify-between items-center px-1">
                 <span className="text-xs text-gray-400">
                   {localReview.length > 0 && '작성 중인 내용은 자동으로 저장됩니다'}
                 </span>
-                <p className={`text-xs transition-colors ${
-                  localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH
+                <p className={`text-xs transition-colors ${localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH
                     ? 'text-red-500 font-medium'
                     : 'text-blue-500'
-                }`}>
+                  }`}>
                   {localReview.length} / {SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH}자
                 </p>
               </div>
@@ -760,7 +759,7 @@ function Step2Content() {
           >
             <UnifiedButton
               onClick={handleNext}
-              disabled={(!selectedBook && !manualTitle.trim()) || !localReview.trim() || localReview.trim().length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH || isSaving || isProcessing}
+              disabled={(!selectedBook && !manualTitle.trim()) || !localReview.trim() || localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH || isSaving || isProcessing}
               loading={isProcessing}
               loadingText="저장 중..."
               className={existingSubmissionId ? 'w-full' : 'flex-1'}
