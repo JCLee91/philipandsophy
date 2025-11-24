@@ -34,7 +34,7 @@ export default function PartyFloatingButton() {
             {/* Main button image with enhanced shadow */}
             <div className="relative h-full w-full">
               <Image
-                src={getImageUrl('/image/landing/party-button.png')}
+                src={getImageUrl('/image/landing/party-button.webp')}
                 alt="멤버스 파티 알아보기"
                 width={85}
                 height={85}
