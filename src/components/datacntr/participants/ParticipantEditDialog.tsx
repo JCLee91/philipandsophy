@@ -21,8 +21,8 @@ interface ParticipantEditDialogProps {
   onClose: () => void;
   participant: {
     id: string;
-    name: string;
-    phoneNumber: string;
+    name?: string;
+    phoneNumber?: string;
     gender?: string;
     cohortId?: string;
   } | null;
