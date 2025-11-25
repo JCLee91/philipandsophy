@@ -561,11 +561,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                       className="flex-shrink-0"
                     />
                   </button>
-                  {participant.occupation && (
-                    <p className="text-[14px] font-medium leading-[1.4] text-[#8f98a3]">
-                      {participant.occupation}
-                    </p>
-                  )}
                 </div>
 
                 {/* ❌ REMOVED: MatchingReasonBanner - v1.0 AI 매칭 레거시 */}
