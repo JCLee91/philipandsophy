@@ -6,7 +6,7 @@ import { toZonedTime } from "date-fns-tz";
 import { logger } from "./lib/logger";
 import { getSeoulDB } from "./lib/db-helper";
 import { matchParticipantsWithClusters } from './lib/cluster/index';
-import { fetchDailySubmissions } from './lib/cluster/data';
+import { fetchDailySubmissions, fetchRecentCategories } from './lib/cluster/data';
 
 const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
     description: "Internal secret for scheduled function authentication",
@@ -77,10 +77,13 @@ export const manualClusterMatching = onRequest(
                 return;
             }
 
-            // 4. 클러스터 매칭 실행
-            const matchingResult = await matchParticipantsWithClusters(dailySubmissions, targetDate);
+            // 4. 최근 카테고리 조회 (다양성 보장)
+            const recentCategories = await fetchRecentCategories(db, cohortId, targetDate, 3);
 
-            // 5. 결과 반환 (DB 저장 안함 - Preview)
+            // 5. 클러스터 매칭 실행
+            const matchingResult = await matchParticipantsWithClusters(dailySubmissions, targetDate, recentCategories);
+
+            // 6. 결과 반환 (DB 저장 안함 - Preview)
             res.status(200).json({
                 success: true,
                 date: targetDate,

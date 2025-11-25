@@ -1,23 +1,24 @@
 /**
- * 클러스터 매칭 시스템 v3.0
+ * 클러스터 매칭 시스템 v4.0
  *
  * 매일 어제 인증한 참가자들을 AI로 클러스터링하여 매칭
  * - 책 제목/장르 무시 (며칠간 같은 책을 읽기 때문)
  * - 오직 "오늘의 감상평 + 오늘의 답변"만 분석
+ * - **데이터 기반 동적 축 선택:** AI가 오늘 데이터에서 가장 의미있는 기준을 선택
  * - **2가지 모드 자동 분기:**
  *   - 1~7명: 소규모 그룹 (1개 클러스터, 공통점 추출)
  *   - 8명 이상: 다중 클러스터 (여러 그룹으로 나누기)
  * - 클러스터 내 전원 매칭 (본인 제외)
  *
- * @version 3.0.1
- * @date 2025-11-19
+ * @version 4.0.0
+ * @date 2025-11-25
  */
 
 // Lazy import for AI SDK to avoid initialization timeout in Firebase Functions deployment
 // import { generateObject, LanguageModel } from 'ai';
 import { z } from 'zod';
 import { Cluster, ClusterMatchingResult, ClusterSchema, DailySubmission } from './types';
-import { CLUSTER_CONFIG, generateClusterPrompt, getClusteringStrategy } from './prompt';
+import { CLUSTER_CONFIG, generateClusterPrompt } from './prompt';
 import { validateClusters } from './validation';
 
 // Firebase Functions 환경에서는 logger를 직접 사용
@@ -82,34 +83,40 @@ function calculateOptimalClusterCount(providerCount: number): number {
 // ============================================================
 
 /**
- * AI로 오늘의 클러스터 생성
+ * AI로 오늘의 클러스터 생성 (v4.0 - 데이터 기반 동적 축 선택)
  *
  * **2가지 모드로 자동 분기:**
  * - 1~7명: 소규모 그룹 모드 (1개 클러스터, 공통점 추출 중심)
  * - 8명 이상: 다중 클러스터 모드 (여러 클러스터로 나누기)
  *
+ * **AI가 오늘 데이터를 보고 가장 의미있는 축을 선택**
+ * - 가치관, 감정/정서, 관심사, 사고방식, 표현 스타일, 책 반응 등
+ * - 최근 사용된 카테고리와 다른 축을 우선 시도 (다양성 보장)
+ *
  * ⚠️ 중요: 책 제목은 감상평 맥락 이해용, 같은 책이라고 같은 클러스터에 넣지 않음
  *
  * @param submissions 오늘의 독서 인증 데이터
  * @param targetClusterCount 목표 클러스터 개수
- * @param dateStr 매칭 날짜 (전략 결정용)
+ * @param dateStr 매칭 날짜
+ * @param recentCategories 최근 N일간 사용된 카테고리 (다양성 보장용)
  * @returns 클러스터 배열 (소규모: 1개, 다중: targetClusterCount±1개)
  */
 export async function generateDailyClusters(
     submissions: DailySubmission[],
     targetClusterCount: number,
-    dateStr: string
+    dateStr: string,
+    recentCategories: string[] = []
 ): Promise<Cluster[]> {
     const participantCount = submissions.length;
     const membersPerCluster = Math.ceil(participantCount / targetClusterCount);
-    const strategy = getClusteringStrategy(dateStr);
     const isSmallGroup = participantCount <= 7; // 소규모 그룹 (나누기 X, 공통점 찾기 O)
     const isEdgeCase = participantCount === 8 || participantCount === 9; // 8/9명 엣지 케이스
 
     logger.info(
-        `[AI Clustering] 시작: ${participantCount}명 → ${targetClusterCount}개 클러스터 (${membersPerCluster}명/클러스터 목표)\n` +
-        `[전략] ${strategy.mode === 'focused' ? `초점: ${strategy.focus}` : 'AI 자율 판단'}\n` +
-        `[모드] ${isSmallGroup ? '소규모 그룹 - 공통점 추출' : isEdgeCase ? '엣지 케이스 - 2개(4~5명)' : '다중 클러스터 - 그룹 나누기'}`
+        `[AI Clustering v4.0] 시작: ${participantCount}명 → ${targetClusterCount}개 클러스터 (${membersPerCluster}명/클러스터 목표)\n` +
+        `[전략] 데이터 기반 동적 축 선택 (AI 자율 판단)\n` +
+        `[모드] ${isSmallGroup ? '소규모 그룹 - 공통점 추출' : isEdgeCase ? '엣지 케이스 - 2개(4~5명)' : '다중 클러스터 - 그룹 나누기'}` +
+        (recentCategories.length > 0 ? `\n[다양성] 최근 사용 축: [${recentCategories.join(', ')}]` : '')
     );
 
     const MAX_RETRIES = 3;
@@ -122,12 +129,13 @@ export async function generateDailyClusters(
                 logger.warn(`[AI Clustering] 재시도 ${attempt}/${MAX_RETRIES}...`);
             }
 
-            const prompt = generateClusterPrompt(submissions, strategy, {
+            const prompt = generateClusterPrompt(submissions, {
                 participantCount,
                 targetClusterCount,
                 membersPerCluster,
                 isSmallGroup,
-                isEdgeCase
+                isEdgeCase,
+                recentCategories
             });
 
             const schema = z.object({
@@ -162,8 +170,8 @@ export async function generateDailyClusters(
             });
 
             logger.info(
-                `[AI Clustering] 완료 (${attempt}번째 시도): ${clusters.length}개 클러스터 생성\n` +
-                clusters.map(c => `  - ${c.emoji} ${c.name} (${c.memberIds.length}명)`).join('\n')
+                `[AI Clustering v4.0] 완료 (${attempt}번째 시도): ${clusters.length}개 클러스터 생성\n` +
+                clusters.map(c => `  - ${c.emoji} ${c.name} [${c.category}] (${c.memberIds.length}명)`).join('\n')
             );
 
             return clusters;
@@ -226,24 +234,26 @@ export function matchWithinClusters(
 // ============================================================
 
 /**
- * 클러스터 매칭 실행 (v3.0)
+ * 클러스터 매칭 실행 (v4.0 - 데이터 기반 동적 축 선택)
  *
  * @param submissions 어제 인증한 참가자들의 감상평 + 답변
  * @param dateStr 매칭 날짜 (YYYY-MM-DD)
+ * @param recentCategories 최근 N일간 사용된 카테고리 (다양성 보장용)
  * @returns 클러스터 매칭 결과
  */
 export async function matchParticipantsWithClusters(
     submissions: DailySubmission[],
-    dateStr: string
+    dateStr: string,
+    recentCategories: string[] = []
 ): Promise<ClusterMatchingResult> {
-    logger.info(`[Cluster Matching v3.0] 시작: ${submissions.length}명 (${dateStr})`);
+    logger.info(`[Cluster Matching v4.0] 시작: ${submissions.length}명 (${dateStr})`);
 
     try {
         // 1. 클러스터 개수 계산
         const clusterCount = calculateOptimalClusterCount(submissions.length);
 
-        // 2. AI로 클러스터 생성
-        const clusters = await generateDailyClusters(submissions, clusterCount, dateStr);
+        // 2. AI로 클러스터 생성 (데이터 기반 동적 축 선택)
+        const clusters = await generateDailyClusters(submissions, clusterCount, dateStr, recentCategories);
 
         // 3. 클러스터 내 매칭
         const assignments = matchWithinClusters(clusters);
@@ -255,7 +265,7 @@ export async function matchParticipantsWithClusters(
         }, {} as Record<string, Cluster>);
 
         logger.info(
-            `[Cluster Matching v3.0] 완료: ` +
+            `[Cluster Matching v4.0] 완료: ` +
             `${clusters.length}개 클러스터, ${Object.keys(assignments).length}명 할당`
         );
 
@@ -264,7 +274,7 @@ export async function matchParticipantsWithClusters(
             assignments
         };
     } catch (error) {
-        logger.error('[Cluster Matching v3.0] 실패:', error);
+        logger.error('[Cluster Matching v4.0] 실패:', error);
         throw error;
     }
 }

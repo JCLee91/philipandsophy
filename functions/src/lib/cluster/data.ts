@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
-import { DailySubmission } from './types';
+import { subDays, format } from "date-fns";
+import { DailySubmission, Cluster } from './types';
 import { logger } from '../logger';
 
 /**
@@ -88,4 +89,73 @@ export async function fetchDailySubmissions(
     }
 
     return uniqueSubmissions;
+}
+
+/**
+ * 최근 N일간의 클러스터 카테고리 조회 (다양성 보장용)
+ * 
+ * @param db Firestore 인스턴스
+ * @param cohortId 기수 ID
+ * @param targetDateStr 타겟 날짜 (YYYY-MM-DD) - 이 날짜 이전 N일간 조회
+ * @param days 조회할 일수 (기본값: 3)
+ * @returns 최근 사용된 카테고리 배열 (중복 제거)
+ */
+export async function fetchRecentCategories(
+    db: admin.firestore.Firestore,
+    cohortId: string,
+    targetDateStr: string,
+    days: number = 3
+): Promise<string[]> {
+    try {
+        const cohortRef = db.collection('cohorts').doc(cohortId);
+        const cohortDoc = await cohortRef.get();
+
+        if (!cohortDoc.exists) {
+            logger.warn(`Cohort ${cohortId} not found for recent categories lookup`);
+            return [];
+        }
+
+        const cohortData = cohortDoc.data();
+        const dailyFeaturedParticipants = cohortData?.dailyFeaturedParticipants || {};
+
+        // 타겟 날짜 기준으로 이전 N일간의 날짜 생성
+        const targetDate = new Date(targetDateStr);
+        const recentDates: string[] = [];
+        
+        for (let i = 1; i <= days; i++) {
+            const prevDate = subDays(targetDate, i);
+            recentDates.push(format(prevDate, 'yyyy-MM-dd'));
+        }
+
+        logger.info(`[Diversity] Looking up categories for dates: ${recentDates.join(', ')}`);
+
+        // 각 날짜의 클러스터에서 카테고리 추출
+        const categories: string[] = [];
+
+        for (const dateStr of recentDates) {
+            const matchingEntry = dailyFeaturedParticipants[dateStr];
+            
+            if (!matchingEntry?.clusters) {
+                continue;
+            }
+
+            const clusters = matchingEntry.clusters as Record<string, Cluster>;
+            
+            for (const cluster of Object.values(clusters)) {
+                if (cluster.category) {
+                    categories.push(cluster.category);
+                }
+            }
+        }
+
+        // 중복 제거 (순서 유지)
+        const uniqueCategories = [...new Set(categories)];
+
+        logger.info(`[Diversity] Found recent categories: [${uniqueCategories.join(', ')}]`);
+
+        return uniqueCategories;
+    } catch (error) {
+        logger.error(`[Diversity] Error fetching recent categories:`, error as Error);
+        return []; // 에러 시 빈 배열 반환 (다양성 가이드 없이 진행)
+    }
 }

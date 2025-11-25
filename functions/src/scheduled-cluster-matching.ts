@@ -1,14 +1,16 @@
 /**
- * 스케줄된 클러스터 매칭 함수 (v3.0)
+ * 스케줄된 클러스터 매칭 함수 (v4.0)
  *
  * 기존 랜덤 매칭(v2.0)을 대체하는 AI 클러스터 매칭 시스템
  * - 매일 어제 인증한 참가자들만 클러스터링
  * - AI가 감상평 + 답변 분석 (책 제목 무시)
+ * - 데이터 기반 동적 축 선택 (가치관, 감정, 관심사 등)
+ * - 다양성 보장: 최근 3일 카테고리와 다른 축 우선 시도
  * - 클러스터 크기: 5-7명
  * - 클러스터 내 전원 매칭
  *
- * @version 3.1.0
- * @date 2025-11-24
+ * @version 4.0.0
+ * @date 2025-11-25
  */
 
 import * as admin from "firebase-admin";
@@ -19,7 +21,7 @@ import { toZonedTime } from "date-fns-tz";
 import { logger } from "./lib/logger";
 import { getSeoulDB } from "./lib/db-helper";
 import { matchParticipantsWithClusters } from './lib/cluster/index';
-import { fetchDailySubmissions } from './lib/cluster/data';
+import { fetchDailySubmissions, fetchRecentCategories } from './lib/cluster/data';
 
 // Environment parameters
 const cohortIdParam = defineString("DEFAULT_COHORT_ID", {
@@ -50,7 +52,7 @@ export const scheduledClusterMatching = onSchedule(
     region: "asia-northeast3", // Seoul
   },
   async (event) => {
-    logger.info("🎯 Scheduled cluster matching started (v3.1)");
+    logger.info("🎯 Scheduled cluster matching started (v4.0)");
 
     try {
       // 1. 환경 설정
@@ -130,10 +132,13 @@ export const scheduledClusterMatching = onSchedule(
             continue;
           }
 
-          // 8. 클러스터 매칭 실행
+          // 8. 최근 카테고리 조회 (다양성 보장)
+          const recentCategories = await fetchRecentCategories(db, cohortId, yesterdayStr, 3);
+
+          // 9. 클러스터 매칭 실행
           logger.info(`Starting cluster matching for Cohort ${cohortId}: ${dailySubmissions.length} participants`);
 
-          const matchingResult = await matchParticipantsWithClusters(dailySubmissions, yesterdayStr);
+          const matchingResult = await matchParticipantsWithClusters(dailySubmissions, yesterdayStr, recentCategories);
 
           logger.info(
             `Cluster matching completed for Cohort ${cohortId}: ` +
@@ -141,7 +146,7 @@ export const scheduledClusterMatching = onSchedule(
             `${Object.keys(matchingResult.assignments).length} assignments`
           );
 
-          // 9. Firestore 저장 (Transaction)
+          // 10. Firestore 저장 (Transaction)
           const matchingEntry = {
             clusters: matchingResult.clusters,
             assignments: matchingResult.assignments,
@@ -167,7 +172,7 @@ export const scheduledClusterMatching = onSchedule(
 
           logger.info(`✅ Updated dailyFeaturedParticipants for ${yesterdayStr} (Cohort ${cohortId})`);
 
-          // 10. 백업 저장
+          // 11. 백업 저장
           const confirmRef = db
             .collection("matching_results")
             .doc(`${cohortId}-${yesterdayStr}`);
