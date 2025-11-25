@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
@@ -255,8 +255,10 @@ function Step2Content() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participant, cohortId, existingSubmissionId]); // 의도적으로 dependency 제한 - 초기 로드만 수행
 
+  const loadedSubmissionId = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!existingSubmissionId || (selectedBook || manualTitle)) return;
+    if (!existingSubmissionId || loadedSubmissionId.current === existingSubmissionId) return;
 
     let cancelled = false;
 
@@ -307,6 +309,8 @@ function Step2Content() {
           setGlobalReview(submission.review);
           setLocalReview(submission.review);
         }
+
+        loadedSubmissionId.current = existingSubmissionId;
       } catch (error) {
         if (!cancelled) {
           toast({
@@ -327,7 +331,7 @@ function Step2Content() {
     return () => {
       cancelled = true;
     };
-  }, [existingSubmissionId, selectedBook, manualTitle, imageStorageUrl, setSelectedBook, setManualTitle, setGlobalReview, setImageFile, setImageStorageUrl, toast]);
+  }, [existingSubmissionId, imageStorageUrl, setSelectedBook, setManualTitle, setGlobalReview, setImageFile, setImageStorageUrl, toast]);
 
   // 책 검색 디바운스
   useEffect(() => {
@@ -371,6 +375,9 @@ function Step2Content() {
     );
 
     if (confirmed) {
+      if (selectedBook) {
+        setSearchQuery(selectedBook.title);
+      }
       setSelectedBook(null);
       setManualTitle('');
     }
@@ -640,13 +647,16 @@ function Step2Content() {
                       </p>
                       <button
                         type="button"
-                        onClick={() => setManualTitle('')}
+                        onClick={() => {
+                          setSearchQuery(manualTitle);
+                          setManualTitle('');
+                        }}
                         className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
-                        aria-label="제목 지우기"
+                        aria-label="제목 수정"
                       >
                         <Image
                           src="/image/today-library/ri_pencil-fill.svg"
-                          alt="제목 변경"
+                          alt="제목 수정"
                           width={18}
                           height={18}
                         />
@@ -741,8 +751,8 @@ function Step2Content() {
                   {localReview.length > 0 && '작성 중인 내용은 자동으로 저장됩니다'}
                 </span>
                 <p className={`text-xs transition-colors ${localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH
-                    ? 'text-red-500 font-medium'
-                    : 'text-blue-500'
+                  ? 'text-red-500 font-medium'
+                  : 'text-blue-500'
                   }`}>
                   {localReview.length} / {SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH}자
                 </p>

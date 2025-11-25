@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, MapPin, MessageSquare, Camera, Check, ChevronRight, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, MessageSquare, Camera, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { joinRefundMeetup } from '@/features/refund/actions/refund-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +43,7 @@ export default function RefundGuidePage() {
                     title: '모임 참여 완료!',
                     description: '단톡방으로 이동합니다.',
                 });
-                router.push(`/app/app/chat?cohort=${result.cohortId}`);
+                router.push(`/app/chat?cohort=${result.cohortId}`);
             } else {
                 toast({
                     title: '참여 실패',
