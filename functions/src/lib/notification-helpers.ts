@@ -118,7 +118,39 @@ export async function getAllAdministrators(): Promise<admin.firestore.QuerySnaps
 }
 
 /**
+ * Get participant info for notifications
+ */
+export async function getParticipantInfo(participantId: string): Promise<{
+  name: string;
+  profileImageCircle?: string;
+  isAdmin: boolean;
+}> {
+  try {
+    const db = getSeoulDB();
+    const participantDoc = await db
+      .collection("participants")
+      .doc(participantId)
+      .get();
+
+    if (!participantDoc.exists) {
+      return { name: "참가자", isAdmin: false };
+    }
+
+    const data = participantDoc.data();
+    return {
+      name: data?.name || "참가자",
+      profileImageCircle: data?.profileImageCircle,
+      isAdmin: data?.isAdministrator || data?.isSuperAdmin || false,
+    };
+  } catch (error) {
+    logger.error(`Error getting participant info for ${participantId}`, error as Error);
+    return { name: "참가자", isAdmin: false };
+  }
+}
+
+/**
  * Get participant name
+ * @deprecated Use getParticipantInfo instead
  */
 export async function getParticipantName(participantId: string): Promise<string> {
   try {
@@ -194,11 +226,14 @@ async function sendWebPushNotifications(
   title: string,
   body: string,
   url: string,
-  type: string
+  type: string,
+  icon?: string
 ): Promise<number> {
   if (subscriptions.length === 0) {
     return 0;
   }
+
+  const iconPath = icon || NOTIFICATION_CONFIG.ICON_PATH;
 
   if (!IS_WEBPUSH_CONFIGURED) {
     logger.warn("Web Push configuration missing, skipping Web Push delivery");
@@ -227,7 +262,7 @@ async function sendWebPushNotifications(
         const payload = JSON.stringify({
           title,
           body,
-          icon: NOTIFICATION_CONFIG.ICON_PATH,
+          icon: iconPath,
           badge: NOTIFICATION_CONFIG.BADGE_PATH,
           data: {
             url,
@@ -330,9 +365,11 @@ export async function sendPushNotificationMulticast(
   title: string,
   body: string,
   url: string,
-  type: string
+  type: string,
+  icon?: string
 ): Promise<number> {
   let totalSuccessCount = 0;
+  const iconPath = icon || NOTIFICATION_CONFIG.ICON_PATH;
 
   // Send via FCM
   if (tokens.length > 0) {
@@ -344,7 +381,7 @@ export async function sendPushNotificationMulticast(
         data: {
           title,
           body,
-          icon: NOTIFICATION_CONFIG.ICON_PATH,
+          icon: iconPath,
           badge: NOTIFICATION_CONFIG.BADGE_PATH,
           url,
           type,
@@ -416,7 +453,8 @@ export async function sendPushNotificationMulticast(
       title,
       body,
       url,
-      type
+      type,
+      iconPath
     );
     totalSuccessCount += webPushSuccessCount;
   } else if (webPushSubscriptions.length > 0) {

@@ -13,7 +13,7 @@ import {
 import {
   getPushTokens,
   truncateContent,
-  getParticipantName,
+  getParticipantInfo,
   sendPushNotificationMulticast,
 } from "../lib/notification-helpers";
 
@@ -37,13 +37,19 @@ export const onMessageCreated = onDocumentCreated(
       return;
     }
 
-    const senderName = await getParticipantName(senderId);
+    const senderInfo = await getParticipantInfo(senderId);
     const { tokens, entriesMap, webPushSubscriptions } = await getPushTokens(receiverId);
 
     if (tokens.length === 0 && webPushSubscriptions.length === 0) {
       logger.info(`No push tokens/subscriptions for receiver: ${receiverId}`);
       return;
     }
+
+    // Determine title and icon based on sender type
+    // Admin -> "필립앤소피" + Default Logo
+    // User -> User Name + Profile Image (or default if missing)
+    const title = senderInfo.isAdmin ? NOTIFICATION_CONFIG.BRAND_NAME : senderInfo.name;
+    const icon = senderInfo.isAdmin ? undefined : (senderInfo.profileImageCircle || undefined);
 
     const messagePreview = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
@@ -52,10 +58,11 @@ export const onMessageCreated = onDocumentCreated(
       tokens,
       entriesMap,
       webPushSubscriptions,
-      senderName,
+      title,
       messagePreview,
       NOTIFICATION_ROUTES.CHAT,
-      NOTIFICATION_TYPES.DM
+      NOTIFICATION_TYPES.DM,
+      icon
     );
 
     logger.info(`DM push notification processed (dual-path)`, {
