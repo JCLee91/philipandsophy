@@ -136,12 +136,19 @@ export async function generateDailyClusters(
 
             // ✅ Lazy import AI SDK to avoid Firebase Functions deployment timeout
             const { generateObject } = await import('ai');
-            const { anthropic } = await import('@ai-sdk/anthropic');
+            const { google } = await import('@ai-sdk/google');
 
             const result = await generateObject({
-                model: anthropic('claude-3-5-haiku-latest'),
+                model: google('gemini-3-pro-preview'),
                 schema: schema as any,
-                prompt
+                prompt,
+                providerOptions: {
+                    google: {
+                        thinkingConfig: {
+                            thinkingLevel: 'high'
+                        }
+                    }
+                }
             });
 
             const clusters = result.object.clusters;

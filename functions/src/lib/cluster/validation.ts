@@ -71,6 +71,36 @@ export function validateClusters(
         );
     }
 
+    // 6-1. 🚨 단일 성별 클러스터 검증 (절대 금지)
+    // 클러스터가 2개 이상이고, 전체 참가자 중 남/여가 모두 있는 경우에만 검증
+    const totalMales = submissions.filter(s => s.gender === 'male').length;
+    const totalFemales = submissions.filter(s => s.gender === 'female').length;
+    const hasBothGenders = totalMales > 0 && totalFemales > 0;
+
+    if (hasBothGenders && clusters.length >= 2) {
+        for (const cluster of clusters) {
+            let maleCount = 0;
+            let femaleCount = 0;
+
+            for (const memberId of cluster.memberIds) {
+                const submission = submissions.find(s => s.participantId === memberId);
+                if (submission?.gender === 'male') maleCount++;
+                else if (submission?.gender === 'female') femaleCount++;
+            }
+
+            // 단일 성별 클러스터 발견 시 에러
+            if (maleCount === 0 && femaleCount > 0) {
+                errors.push(
+                    `🚨 단일 성별 클러스터 금지 위반: "${cluster.name}" (여성만 ${femaleCount}명, 남성 0명)`
+                );
+            } else if (femaleCount === 0 && maleCount > 0) {
+                errors.push(
+                    `🚨 단일 성별 클러스터 금지 위반: "${cluster.name}" (남성만 ${maleCount}명, 여성 0명)`
+                );
+            }
+        }
+    }
+
     // 7. 클러스터 개수 검증
     if (isSmallGroup) {
         if (clusters.length !== 1) {

@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.45",
-    "@ai-sdk/google": "^2.0.23",
+    "@ai-sdk/google": "^2.0.43",
     "@ai-sdk/openai": "^2.0.53",
     "@firebase/app-check-interop-types": "^0.3.3",
     "ai": "^5.0.78",
