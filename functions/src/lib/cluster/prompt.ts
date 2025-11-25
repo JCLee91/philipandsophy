@@ -107,6 +107,10 @@ export function generateClusterPrompt(
 4. **각 참가자는 정확히 1개 클러스터에만 배정되어야 합니다**
    - 중복 배정 절대 금지 (한 사람이 여러 그룹에 들어가면 안 됨)
    - 누락 금지 (모든 참가자가 반드시 어딘가에 배정되어야 함)
+5. **참가자 ID(participantId)를 절대 변경하지 마세요**
+   - 입력된 ID를 그대로 사용해야 합니다. (대괄호 [] 안의 값이 ID입니다)
+   - 이름을 ID로 사용하지 마세요. (예: "cohort4-1-정윤"이 ID라면 "정윤"이나 "이정윤"으로 바꾸지 마세요)
+   - 띄어쓰기, 성(LastName) 추가/삭제 등 어떠한 변형도 금지합니다.
 `;
 
     const autonomousInstruction = strategy.mode === 'autonomous' ? `
