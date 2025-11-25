@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
       programStartDate,
       participants,
       questionsOption,
+      sourceCohortId,
+      useClusterMatching,
     } = body;
 
     // 유효성 검사
@@ -101,6 +103,7 @@ export async function POST(request: NextRequest) {
       endDate,
       programStartDate,
       isActive: true,
+      useClusterMatching: useClusterMatching ?? true, // 기본값 true
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
@@ -165,7 +168,7 @@ export async function POST(request: NextRequest) {
       // 기존 UID가 있으면 자동 연결 (마이그레이션)
       const existingUid = phoneToUidMap.get(p.phone) || null;
 
-      batch.set(participantRef, {
+      const participantData: any = {
         cohortId,
         name: p.name,
         phoneNumber: p.phone,
@@ -175,7 +178,14 @@ export async function POST(request: NextRequest) {
         firebaseUid: existingUid, // 자동 연결
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-      });
+      };
+
+      // 성별 정보 추가
+      if (p.gender) {
+        participantData.gender = p.gender;
+      }
+
+      batch.set(participantRef, participantData);
     }
 
     await batch.commit();
@@ -183,23 +193,26 @@ export async function POST(request: NextRequest) {
     // 3. Daily Questions 처리 (Day 2~14만, 총 13개)
     if (questionsOption === 'copy') {
       try {
-        // 가장 최근 기수 찾기 (현재 생성 중인 기수 제외)
-        const recentCohortsSnapshot = await db.collection(COLLECTIONS.COHORTS)
-          .orderBy('createdAt', 'desc')
-          .limit(2) // 현재 기수 포함될 수 있으므로 2개 조회
-          .get();
-
-        let sourceCohortId = '1'; // 기본값
-
-        // 생성된 기수(cohortId)가 아닌 가장 최신 기수 찾기
-        const latestCohort = recentCohortsSnapshot.docs.find(doc => doc.id !== cohortId);
-        if (latestCohort) {
-          sourceCohortId = latestCohort.id;
+        // 복사할 기수 ID가 지정되지 않았다면 가장 최근 기수 사용
+        let actualSourceCohortId = sourceCohortId;
+        
+        if (!actualSourceCohortId) {
+            const recentCohortsSnapshot = await db.collection(COLLECTIONS.COHORTS)
+            .orderBy('createdAt', 'desc')
+            .limit(2) 
+            .get();
+            
+            const latestCohort = recentCohortsSnapshot.docs.find(doc => doc.id !== cohortId);
+            if (latestCohort) {
+                actualSourceCohortId = latestCohort.id;
+            } else {
+                actualSourceCohortId = '1'; // fallback
+            }
         }
 
         // 질문 복사 (Day 2부터 시작, Day 1은 OT)
         const sourceQuestionsSnapshot = await db
-          .collection(`${COLLECTIONS.COHORTS}/${sourceCohortId}/daily_questions`)
+          .collection(`${COLLECTIONS.COHORTS}/${actualSourceCohortId}/daily_questions`)
           .where('dayNumber', '>=', 2)
           .orderBy('dayNumber', 'asc')
           .get();

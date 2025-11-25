@@ -19,6 +19,7 @@ export const dynamic = 'force-dynamic';
 type ParticipantRow = {
   name: string;
   phone: string;
+  gender: 'male' | 'female' | 'other' | ''; // Add gender
   role: 'participant' | 'admin' | 'ghost';
 };
 
@@ -41,7 +42,7 @@ export default function CohortCreatePage() {
 
   // 참가자 목록
   const [participants, setParticipants] = useState<ParticipantRow[]>([
-    { name: '', phone: '', role: 'participant' },
+    { name: '', phone: '', gender: '', role: 'participant' },
   ]);
 
   // Daily Questions 옵션
@@ -68,7 +69,7 @@ export default function CohortCreatePage() {
 
   // 참가자 행 추가
   const handleAddParticipant = () => {
-    setParticipants([...participants, { name: '', phone: '', role: 'participant' }]);
+    setParticipants([...participants, { name: '', phone: '', gender: '', role: 'participant' }]);
   };
 
   // 참가자 행 제거
@@ -91,6 +92,7 @@ export default function CohortCreatePage() {
     value: string
   ) => {
     const updated = [...participants];
+    // @ts-ignore - Dynamic key assignment
     updated[index] = { ...updated[index], [field]: value };
     setParticipants(updated);
   };
@@ -110,10 +112,16 @@ export default function CohortCreatePage() {
         const dataLines = lines.slice(1);
 
         const parsed: ParticipantRow[] = dataLines.map(line => {
-          const [name, phone, role] = line.split(',').map(s => s.trim());
+          const [name, phone, genderRaw, role] = line.split(',').map(s => s.trim());
+          
+          let gender: 'male' | 'female' | 'other' | '' = '';
+          if (genderRaw === '남' || genderRaw === '남성' || genderRaw === 'male') gender = 'male';
+          else if (genderRaw === '여' || genderRaw === '여성' || genderRaw === 'female') gender = 'female';
+          
           return {
             name: name || '',
             phone: phone || '',
+            gender,
             role: (role === 'admin' ? 'admin' : role === 'ghost' ? 'ghost' : 'participant') as 'participant' | 'admin' | 'ghost',
           };
         }).filter(p => p.name && p.phone); // 빈 행 제외
@@ -141,12 +149,12 @@ export default function CohortCreatePage() {
 
   // CSV 템플릿 다운로드
   const handleDownloadTemplate = () => {
-    const template = `이름,핸드폰번호,역할
-홍길동,010-1234-5678,participant
-김철수,01087654321,participant
-이영희,+821011112222,admin
-박민수,821099998888,ghost
-최지영,0821055556666,participant`;
+    const template = `이름,핸드폰번호,성별,역할
+홍길동,010-1234-5678,남,participant
+김철수,01087654321,남,participant
+이영희,+821011112222,여,admin
+박민수,821099998888,남,ghost
+최지영,0821055556666,여,participant`;
 
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -236,6 +244,7 @@ export default function CohortCreatePage() {
             return {
               ...p,
               phone: normalized || p.phone.replace(/-/g, ''), // fallback
+              gender: p.gender || null,
             };
           }),
           questionsOption,
@@ -405,6 +414,7 @@ export default function CohortCreatePage() {
                 <tr>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">이름</th>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">핸드폰번호</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">성별</th>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">역할</th>
                   <th className="px-4 py-2 w-12"></th>
                 </tr>
@@ -426,6 +436,18 @@ export default function CohortCreatePage() {
                         onChange={(e) => handleParticipantChange(index, 'phone', e.target.value)}
                         placeholder="010-1234-5678"
                         className="w-full"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <FormSelect
+                        value={p.gender}
+                        onChange={(value) => handleParticipantChange(index, 'gender', value)}
+                        options={[
+                          { value: '', label: '선택' },
+                          { value: 'male', label: '남성' },
+                          { value: 'female', label: '여성' },
+                          { value: 'other', label: '기타' },
+                        ]}
                       />
                     </td>
                     <td className="px-4 py-2">

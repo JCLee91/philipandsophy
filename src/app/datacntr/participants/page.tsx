@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, XCircle, Filter, MoreVertical, BookOpen, Eye } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Filter, MoreVertical, BookOpen, Eye, Edit } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
@@ -11,6 +11,7 @@ import TableSearch from '@/components/datacntr/table/TableSearch';
 import TablePagination from '@/components/datacntr/table/TablePagination';
 import { dataCenterParticipantSchema, type DataCenterParticipant } from '@/types/datacntr';
 import FormSelect from '@/components/datacntr/form/FormSelect';
+import ParticipantEditDialog from '@/components/datacntr/participants/ParticipantEditDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +50,7 @@ export default function ParticipantsPage() {
     engagementLevel: 'all',
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [editingParticipant, setEditingParticipant] = useState<ParticipantRow | null>(null);
   const itemsPerPage = 50;
 
   // 로그인 체크
@@ -226,7 +228,17 @@ export default function ParticipantsPage() {
       key: 'name',
       header: '이름',
       sortable: true,
-      width: '15%',
+      width: '12%',
+    },
+    {
+      key: 'gender',
+      header: '성별',
+      render: (p) => {
+        if (p.gender === 'male') return '남성';
+        if (p.gender === 'female') return '여성';
+        return '-';
+      },
+      width: '8%',
     },
     {
       key: 'cohortName',
@@ -290,6 +302,10 @@ export default function ParticipantsPage() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setEditingParticipant(p)}>
+              <Edit className="h-4 w-4 mr-2" />
+              정보 수정
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
                 window.open(`/app/profile/${p.id}`, '_blank');
@@ -418,6 +434,19 @@ export default function ParticipantsPage() {
           itemsPerPage={itemsPerPage}
         />
       )}
+
+      <ParticipantEditDialog
+        isOpen={!!editingParticipant}
+        onClose={() => setEditingParticipant(null)}
+        participant={editingParticipant}
+        onSuccess={() => {
+          setEditingParticipant(null);
+          // Refresh list - trigger re-fetch by toggling filter or specialized refresh logic
+          // For simplicity, we'll just rely on the fact that the user can refresh or we can force a reload
+          // A better way is to expose a refresh function from the useEffect, but for now:
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

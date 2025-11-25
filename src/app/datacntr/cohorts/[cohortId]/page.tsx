@@ -3,19 +3,26 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, ArrowLeft, User, BookOpen, Calendar, Sparkles, Check, AlertCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, User, BookOpen, Calendar, Sparkles, Check, AlertCircle, MoreVertical, Edit } from 'lucide-react';
 import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import DataTable, { Column } from '@/components/datacntr/table/DataTable';
 import type { Cohort } from '@/types/database';
 import { cohortParticipantSchema, type CohortParticipant } from '@/types/datacntr';
 import TopBar from '@/components/TopBar';
 import BulkImageUploadModal from './_components/BulkImageUploadModal';
+import ParticipantEditDialog from '@/components/datacntr/participants/ParticipantEditDialog';
 import SocializingAdminControls from '@/features/socializing/components/SocializingAdminControls';
 import { getAdminHeaders } from '@/lib/auth-utils';
 import { getSubmissionDate } from '@/lib/date-utils';
 import type { MatchingResponse } from '@/types/matching';
 import UnifiedButton from '@/components/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -40,6 +47,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
   const [isMatchingProcessing, setIsMatchingProcessing] = useState(false);
   const [previewResult, setPreviewResult] = useState<MatchingResponse | null>(null);
   const [matchingError, setMatchingError] = useState<string | null>(null);
+  const [editingParticipant, setEditingParticipant] = useState<CohortParticipant | null>(null);
 
   // Params 추출
   useEffect(() => {
@@ -326,6 +334,29 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
       sortable: true,
       render: (p) => `${p.submissionCount}회`,
       width: '10%',
+    },
+    {
+      key: 'actions',
+      header: '액션',
+      width: '8%',
+      render: (p) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <MoreVertical className="h-4 w-4 text-gray-600" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setEditingParticipant(p)}>
+              <Edit className="h-4 w-4 mr-2" />
+              정보 수정
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
     },
   ];
 
@@ -661,6 +692,16 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         {/* 참가자 테이블 */}
         <DataTable<CohortParticipant> columns={columns} data={participants} isLoading={isLoading} emptyMessage="참가자가 없습니다" />
       </div >
+      
+      <ParticipantEditDialog
+        isOpen={!!editingParticipant}
+        onClose={() => setEditingParticipant(null)}
+        participant={editingParticipant}
+        onSuccess={() => {
+          setEditingParticipant(null);
+          fetchCohortDetail();
+        }}
+      />
     </>
   );
 }
