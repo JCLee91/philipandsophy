@@ -11,6 +11,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   Timestamp,
   QueryConstraint,
   onSnapshot,
@@ -37,6 +38,8 @@ function mapToSubmissions(querySnapshot: QuerySnapshot): ReadingSubmission[] {
 
 /**
  * 독서 인증 제출
+ * 
+ * 같은 참가자가 같은 날짜에 이미 approved 제출물이 있으면 기존 ID 반환 (중복 방지)
  */
 export async function createSubmission(
   data: Omit<ReadingSubmission, 'id' | 'createdAt' | 'updatedAt' | 'submissionDate'>
@@ -45,12 +48,26 @@ export async function createSubmission(
   const now = Timestamp.now();
   const submissionDate = getSubmissionDate(); // 새벽 2시 마감 정책 적용
 
+  // 중복 제출 방지: 같은 날짜에 이미 approved 제출물이 있는지 확인
+  const existingQuery = query(
+    collection(db, COLLECTIONS.READING_SUBMISSIONS),
+    where('participantId', '==', data.participantId),
+    where('submissionDate', '==', submissionDate),
+    where('status', '==', 'approved'),
+    limit(1)
+  );
+  const existingSnapshot = await getDocs(existingQuery);
+
+  if (!existingSnapshot.empty) {
+    // 이미 제출됨 - 기존 ID 반환 (중복 생성 방지)
+    return existingSnapshot.docs[0].id;
+  }
+
   const docRef = await addDoc(collection(db, COLLECTIONS.READING_SUBMISSIONS), {
     ...data,
     submissionDate,
     createdAt: now,
     updatedAt: now,
-    // cohortId가 제공되지 않으면 undefined (기존 코드 호환성)
   });
 
   return docRef.id;
