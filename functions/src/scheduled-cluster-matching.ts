@@ -98,7 +98,7 @@ export const scheduledClusterMatching = onSchedule(
 
           // 4-1. endDate 체크
           if (cohortData?.endDate) {
-            if (todayStr > cohortData.endDate) {
+            if (yesterdayStr > cohortData.endDate) {
               logger.info(`Cohort ${cohortId} ended (${cohortData.endDate}), skipping matching`);
               continue;
             }

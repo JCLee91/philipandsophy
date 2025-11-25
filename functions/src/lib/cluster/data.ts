@@ -54,12 +54,15 @@ export async function fetchDailySubmissions(
         });
     }
 
-    // 3. DailySubmission 변환
-    const dailySubmissions: DailySubmission[] = submissionsSnapshot.docs.map(doc => {
+    // 3. DailySubmission 변환 및 중복 제거
+    // Map을 사용하여 participantId 별로 가장 최신의 제출물(또는 DB 순서상 마지막) 하나만 유지
+    const submissionsMap = new Map<string, DailySubmission>();
+
+    submissionsSnapshot.docs.forEach(doc => {
         const data = doc.data();
         const participant = participantsMap.get(data.participantId);
 
-        return {
+        const submission: DailySubmission = {
             participantId: data.participantId,
             participantName: participant?.name || 'Unknown',
             gender: participant?.gender,
@@ -69,7 +72,20 @@ export async function fetchDailySubmissions(
             dailyQuestion: data.dailyQuestion || '',
             dailyAnswer: data.dailyAnswer || ''
         };
+
+        // 이미 존재하는 경우 덮어쓰기 (Firestore 쿼리 결과 순서에 따라 달라짐, 보통 최신이 뒤에 오거나 생성순)
+        // 명시적인 순서가 필요하면 쿼리에 orderBy를 추가해야 함
+        submissionsMap.set(data.participantId, submission);
     });
 
-    return dailySubmissions;
+    const uniqueSubmissions = Array.from(submissionsMap.values());
+
+    if (submissionsSnapshot.size !== uniqueSubmissions.length) {
+        logger.info(
+            `[Deduplication] Filtered duplicate submissions: ` +
+            `${submissionsSnapshot.size} docs → ${uniqueSubmissions.length} unique participants`
+        );
+    }
+
+    return uniqueSubmissions;
 }
