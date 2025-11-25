@@ -34,11 +34,12 @@ export const onNoticeCreated = onDocumentCreated(
 
     const { cohortId, content, status, title } = noticeData;
 
-    // Skip push notifications for draft notices
-    if (status === 'draft') {
-      logger.info('Draft notice created, skipping push notifications', {
+    // Skip push notifications for draft and scheduled notices
+    if (status === 'draft' || status === 'scheduled') {
+      logger.info(`${status} notice created, skipping push notifications`, {
         noticeId: event.params.noticeId,
         cohortId,
+        status,
       });
       return;
     }

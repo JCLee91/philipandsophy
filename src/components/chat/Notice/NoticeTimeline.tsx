@@ -28,15 +28,17 @@ export function NoticeTimeline({
   latestNoticeId,
   latestNoticeRef,
 }: NoticeTimelineProps) {
-  // 추가 방어: 관리자가 아니면 draft 제외
-  // isAdmin은 ViewMode가 아닌 participant.isAdministrator 기반이어야 함
+  // 공지 필터링: scheduled는 모두에게 숨김, draft는 관리자만 표시
   const filteredNotices = useMemo(() => {
-    // 관리자는 draft 포함 모든 공지 표시
+    // scheduled 상태는 항상 제외 (예약 시간 전까지 앱에서 숨김)
+    const withoutScheduled = notices.filter(n => n.status !== 'scheduled');
+
     if (isAdmin) {
-      return notices;
+      // 관리자: draft + published 표시
+      return withoutScheduled;
     }
-    // 일반 참가자: draft 제외
-    return notices.filter(isPublishedNotice);
+    // 일반 참가자: published만 표시 (draft 제외)
+    return withoutScheduled.filter(isPublishedNotice);
   }, [notices, isAdmin]);
 
   const grouped = useMemo(() => {
