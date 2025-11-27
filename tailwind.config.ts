@@ -2,6 +2,10 @@ import type { Config } from 'tailwindcss';
 
 const config = {
   darkMode: ['class'],
+  // ✅ Mobile Optimization: Disable hover styles on touch devices (prevent sticky hover)
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   content: ['./src/**/*.{ts,tsx}'],
   prefix: '',
   theme: {
