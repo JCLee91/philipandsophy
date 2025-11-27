@@ -10,23 +10,51 @@ import { Input } from '@/components/ui/input';
 import type { Participant } from '@/types/database';
 import { Timestamp } from 'firebase/firestore';
 import TopBar from '@/components/TopBar';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DirectMessageDialog from '@/components/chat/DM/DirectMessageDialog';
 import { useDirectMessageDialogState } from '@/hooks/chat/useDirectMessageDialogState';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminInquiriesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { participant: currentUser } = useAuth();
   const { data: conversations = [], isLoading } = useAdminConversations();
   const [searchTerm, setSearchTerm] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [targetUserIdHandled, setTargetUserIdHandled] = useState(false);
   
   const dmDialog = useDirectMessageDialogState();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // 푸시 알림 클릭 시 특정 유저 대화 자동 열기
+  useEffect(() => {
+    const targetUserId = searchParams.get('userId');
+    if (targetUserId && conversations.length > 0 && !targetUserIdHandled) {
+      const targetConv = conversations.find(c => c.participantId === targetUserId);
+      if (targetConv) {
+        // 해당 유저 대화 열기
+        const participant: Participant = {
+          id: targetConv.participantId,
+          name: targetConv.userInfo?.name || 'Unknown',
+          profileImage: targetConv.userInfo?.profileImage,
+          profileImageCircle: targetConv.userInfo?.profileImageCircle,
+          cohortId: targetConv.userInfo?.cohortId || '',
+          phoneNumber: '',
+          firebaseUid: null,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        };
+        dmDialog.openWithParticipant({ participant });
+        setTargetUserIdHandled(true);
+        // URL에서 쿼리 파라미터 제거
+        router.replace('/app/admin/inquiries', { scroll: false });
+      }
+    }
+  }, [searchParams, conversations, router, dmDialog, targetUserIdHandled]);
 
   const filteredConversations = conversations.filter((conv) => {
     const name = conv.userInfo?.name || '';

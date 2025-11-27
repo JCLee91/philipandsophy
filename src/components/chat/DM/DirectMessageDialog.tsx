@@ -131,6 +131,15 @@ export default function DirectMessageDialog({
     }
   }, [open]);
 
+  // ✅ DM 다이얼로그 열릴 때 앱 아이콘 배지 제거
+  useEffect(() => {
+    if (open && 'clearAppBadge' in navigator) {
+      (navigator as any).clearAppBadge().catch(() => {
+        // Badge API not supported or failed, ignore
+      });
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open || !conversationId || !currentUser || !currentUserId || messages.length === 0) {
       return;
@@ -321,20 +330,20 @@ export default function DirectMessageDialog({
               </Avatar>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold">{displayName}</h2>
+                  <h2 className="text-heading-lg font-bold">{displayName}</h2>
                   {(currentUser?.isSuperAdmin || currentUser?.isAdministrator) && !otherUser.isAdministrator && otherUser.cohortId && (
                     <span className="px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-medium">
                       {otherUser.cohortId}기
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500">1:1 메시지</p>
+                <p className="text-xs text-text-secondary">1:1 메시지</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="flex items-center justify-center h-11 w-11 -mr-2 rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:bg-gray-200"
+              className="flex items-center justify-center h-11 w-11 -mr-2 rounded-lg text-muted-foreground transition-colors hover:bg-gray-100 hover:text-text-primary active:bg-gray-200"
               aria-label="닫기"
             >
               <X className="h-6 w-6" />
@@ -384,7 +393,7 @@ export default function DirectMessageDialog({
               <div className="sticky bottom-2 flex justify-center pointer-events-none animate-in fade-in-0 slide-in-from-bottom-4 duration-normal">
                 <button
                   onClick={scrollToBottomAndHideButton}
-                  className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-full shadow-lg hover:bg-gray-800 hover:shadow-xl transition-all duration-normal active:scale-95"
+                  className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-normal active:scale-95"
                 >
                   <ArrowDown className="h-4 w-4 animate-bounce" />
                   <span className="text-sm font-semibold">새 메시지</span>
@@ -443,7 +452,7 @@ export default function DirectMessageDialog({
                 onChange={(e) => setMessageContent(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="메시지를 입력하세요..."
-                className="flex-1 min-h-[40px] max-h-[120px] resize-none py-2.5 text-[15px] leading-snug"
+                className="flex-1 min-h-[40px] max-h-[120px] resize-none py-2.5 text-base leading-snug"
                 disabled={isUploading}
                 rows={1}
               />
@@ -452,8 +461,8 @@ export default function DirectMessageDialog({
                 disabled={!canSendMessage}
                 loading={isUploading}
                 className={`h-10 w-10 p-0 shrink-0 transition-all duration-200 ${canSendMessage
-                  ? 'bg-black hover:bg-gray-800 text-white'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed hover:bg-gray-200'
+                  ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed hover:bg-muted'
                   }`}
                 icon={<Send className="h-4 w-4" />}
               />

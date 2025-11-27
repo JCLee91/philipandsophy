@@ -22,7 +22,7 @@ export default function MeetupChatTimeline({ messages, currentUserId }: MeetupCh
 
     if (messages.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-sm">
+            <div className="flex flex-col items-center justify-center py-20 text-text-secondary text-sm">
                 <p>아직 대화가 없습니다.</p>
                 <p>첫 메시지를 남겨보세요!</p>
             </div>
@@ -43,9 +43,9 @@ export default function MeetupChatTimeline({ messages, currentUserId }: MeetupCh
                         {!isMe && (
                             <div className="w-8 flex-shrink-0 flex flex-col items-center">
                                 {showProfile ? (
-                                    <Avatar className="w-8 h-8 border border-gray-100">
+                                    <Avatar className="w-8 h-8 border border-border">
                                         <AvatarImage src={msg.authorProfileImage} />
-                                        <AvatarFallback className="text-[10px] bg-gray-100">
+                                        <AvatarFallback className="text-[10px] bg-muted text-muted-foreground">
                                             {msg.authorName?.[0]}
                                         </AvatarFallback>
                                     </Avatar>
@@ -56,21 +56,21 @@ export default function MeetupChatTimeline({ messages, currentUserId }: MeetupCh
                         <div className={cn("flex flex-col max-w-[70%]", isMe ? "items-end" : "items-start")}>
                             {/* Author Name (Only for others, when profile shown) */}
                             {!isMe && showProfile && (
-                                <span className="text-xs text-gray-500 ml-1 mb-1">{msg.authorName}</span>
+                                <span className="text-xs text-text-secondary ml-1 mb-1">{msg.authorName}</span>
                             )}
 
                             {/* Message Bubble */}
                             <div className={cn(
                                 "px-4 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-sm",
                                 isMe 
-                                    ? "bg-black text-white rounded-tr-none" 
-                                    : "bg-white text-black border border-gray-200 rounded-tl-none"
+                                    ? "bg-primary text-primary-foreground rounded-tr-none" 
+                                    : "bg-white text-text-primary border border-border rounded-tl-none"
                             )}>
                                 {msg.content}
                             </div>
 
                             {/* Timestamp */}
-                            <span className="text-[10px] text-gray-400 mt-1 px-1">
+                            <span className="text-[11px] text-text-secondary mt-1 px-1">
                                 {msg.createdAt ? format(msg.createdAt.toDate(), 'a h:mm', { locale: ko }) : '방금 전'}
                             </span>
                         </div>

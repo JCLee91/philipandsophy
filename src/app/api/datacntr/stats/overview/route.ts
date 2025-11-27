@@ -32,12 +32,15 @@ export async function GET(request: NextRequest) {
       const cohortDoc = await db.collection(COLLECTIONS.COHORTS).doc(cohortId).get();
       if (cohortDoc.exists) {
         cohortData = cohortDoc.data();
-        // 경과 일수 계산 (시작일부터 오늘까지, 첫 날 OT 제외)
+        // 경과 일수 계산 (시작일부터 오늘 또는 종료일까지, 첫 날 OT 제외)
         const startDate = new Date(cohortData.startDate);
+        const endDate = new Date(cohortData.endDate);
         const today = new Date(todayString);
-        const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        // 종료된 기수는 종료일까지만 계산 (오늘이 종료일 이후면 종료일 사용)
+        const compareDate = today > endDate ? endDate : today;
+        const daysDiff = Math.floor((compareDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         // OT 첫날 제외: daysDiff - 1 (최소 0일)
-        // 예: 1월 1일(OT) 시작, 오늘 1월 5일 → daysDiff = 4, elapsedDays = 3 (인증 가능 일수: 1/2, 1/3, 1/4)
+        // 예: 1월 1일(OT) 시작, 1월 5일 종료 → daysDiff = 4, elapsedDays = 3 (인증 가능 일수: 1/2, 1/3, 1/4)
         elapsedDays = Math.max(0, daysDiff - 1);
       }
     }
@@ -207,10 +210,10 @@ export async function GET(request: NextRequest) {
     } else if (!cohortId && nonSuperAdminParticipants.length > 0) {
       // 전체 보기 시: 각 참가자의 코호트별 경과 일수를 합산하여 계산
       const allCohortsSnapshot = await db.collection(COLLECTIONS.COHORTS).get();
-      const cohortMap = new Map<string, { startDate: string }>();
+      const cohortMap = new Map<string, { startDate: string; endDate: string }>();
       allCohortsSnapshot.docs.forEach(doc => {
         const data = doc.data();
-        cohortMap.set(doc.id, { startDate: data.startDate });
+        cohortMap.set(doc.id, { startDate: data.startDate, endDate: data.endDate });
       });
 
       const today = new Date(todayString);
@@ -222,7 +225,10 @@ export async function GET(request: NextRequest) {
         const cohortInfo = cohortMap.get(participantData.cohortId);
         if (cohortInfo) {
           const startDate = new Date(cohortInfo.startDate);
-          const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          const endDate = new Date(cohortInfo.endDate);
+          // 종료된 기수는 종료일까지만 계산
+          const compareDate = today > endDate ? endDate : today;
+          const daysDiff = Math.floor((compareDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
           const participantElapsedDays = Math.max(0, daysDiff - 1); // OT 첫날 제외
           totalMaxSubmissions += participantElapsedDays;
         }

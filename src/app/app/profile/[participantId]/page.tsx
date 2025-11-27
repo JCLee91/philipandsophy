@@ -673,7 +673,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                                 }`}
                             >
                               <div className="rounded-[12px] px-4 py-4" style={{ backgroundColor: colors.accentLight }}>
-                                <p className="text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap">
+                                <p className="text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap break-words">
                                   {answer}
                                 </p>
                               </div>
@@ -744,7 +744,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     한 줄 감상평
                   </p>
-                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
                     {selectedSubmission.review}
                   </p>
                 </div>

@@ -2,17 +2,20 @@
 
 import UnifiedButton from '@/components/UnifiedButton';
 import FooterActions from '@/components/FooterActions';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, PartyPopper } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ChatFooterSectionProps = {
   isAdmin: boolean;
   isDay1: boolean;
   isAfterDay14: boolean;
   hasSubmittedToday: boolean;
+  isSocializingActive?: boolean;
   cohortName?: string; // 기수 이름 (예: "2기")
   onRequestSubmission: () => void;
   onNavigateMatching: () => void;
   onNavigateTodayLibrary: () => void;
+  onOpenSocializing?: () => void;
 };
 
 export function ChatFooterSection({
@@ -20,10 +23,12 @@ export function ChatFooterSection({
   isDay1,
   isAfterDay14,
   hasSubmittedToday,
+  isSocializingActive,
   cohortName,
   onRequestSubmission,
   onNavigateMatching,
   onNavigateTodayLibrary,
+  onOpenSocializing,
 }: ChatFooterSectionProps) {
   return (
     <FooterActions>
@@ -43,37 +48,65 @@ export function ChatFooterSection({
               <p className="text-lg font-bold text-foreground mb-1">환영합니다</p>
               <p className="text-sm text-muted-foreground">독서 인증은 내일부터 시작됩니다</p>
             </div>
-          ) : isAfterDay14 ? (
-            <UnifiedButton
-              variant="primary"
-              onClick={onNavigateTodayLibrary}
-              className="col-span-2"
-            >
-              {cohortName ? `${cohortName} 멤버의 서재` : '멤버 프로필 둘러보기'}
-            </UnifiedButton>
           ) : (
             <>
-              {hasSubmittedToday ? (
-                <UnifiedButton
-                  onClick={onRequestSubmission}
-                  className="bg-[#E8E9ED] text-[#575E68] hover:bg-[#D8D9DD] font-bold"
-                >
-                  인증 수정하기
-                </UnifiedButton>
-              ) : (
+              {isSocializingActive && (
                 <UnifiedButton
                   variant="primary"
-                  onClick={onRequestSubmission}
+                  onClick={onOpenSocializing}
+                  className="whitespace-normal h-auto leading-tight"
                 >
-                  독서 인증하기
+                  애프터 다이닝
                 </UnifiedButton>
               )}
-              <UnifiedButton
-                variant="secondary"
-                onClick={onNavigateTodayLibrary}
-              >
-                오늘의 서재
-              </UnifiedButton>
+
+              {isAfterDay14 ? (
+                <UnifiedButton
+                  variant={isSocializingActive ? "secondary" : "primary"}
+                  onClick={onNavigateTodayLibrary}
+                  className={cn(
+                    "whitespace-normal h-auto leading-tight",
+                    !isSocializingActive && "col-span-2"
+                  )}
+                >
+                  {cohortName ? (
+                    <span className="flex flex-col items-center">
+                      <span>{cohortName}</span>
+                      <span>멤버의 서재</span>
+                    </span>
+                  ) : '멤버 프로필 둘러보기'}
+                </UnifiedButton>
+              ) : (
+                <>
+                  {hasSubmittedToday ? (
+                    <UnifiedButton
+                      onClick={onRequestSubmission}
+                      className="bg-[#E8E9ED] text-[#575E68] hover:bg-[#D8D9DD] font-bold whitespace-normal h-auto leading-tight"
+                    >
+                      인증 수정하기
+                    </UnifiedButton>
+                  ) : (
+                    <UnifiedButton
+                      variant="primary"
+                      onClick={onRequestSubmission}
+                      className="whitespace-normal h-auto leading-tight"
+                    >
+                      독서 인증하기
+                    </UnifiedButton>
+                  )}
+                  
+                  <UnifiedButton
+                    variant="secondary"
+                    onClick={onNavigateTodayLibrary}
+                    className={cn(
+                      "whitespace-normal h-auto leading-tight",
+                      isSocializingActive && "col-span-2"
+                    )}
+                  >
+                    오늘의 서재
+                  </UnifiedButton>
+                </>
+              )}
             </>
           )}
         </div>

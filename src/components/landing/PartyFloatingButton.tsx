@@ -21,7 +21,7 @@ export default function PartyFloatingButton() {
           aria-label="연말 파티 안내 보기"
           className="absolute bottom-[160px] right-6 pointer-events-auto group"
         >
-          <div className="relative h-[85px] w-[85px] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-2 hover:scale-110">
+          <div className="relative h-[85px] w-[85px] transition-all duration-300 ease-[cubic-bezier(0.23_1_0.32_1)] hover:-translate-y-2 hover:scale-110">
             {/* Strongest outer glow for maximum visibility */}
             <div className="absolute inset-[-12px] rounded-full bg-gradient-to-br from-red-500/60 to-green-500/60 blur-2xl opacity-75 animate-[pulse_2s_ease-in-out_infinite] group-hover:opacity-100 transition-opacity" />
 

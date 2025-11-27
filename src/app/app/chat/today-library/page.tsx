@@ -1357,7 +1357,10 @@ function TodayLibraryV3Content() {
           className="bg-white border-b-0"
         />
 
-        <main className="app-main-content flex-1 overflow-y-auto">
+        <main
+          className="app-main-content flex-1 overflow-y-auto overflow-x-hidden touch-pan-y"
+          style={{ overscrollBehaviorX: 'none' }}
+        >
 
           {/* 1. Theme Section (Top) */}
           <section className="flex flex-col items-center text-center gap-4 pt-8 pb-10 px-6 bg-[#F6F6F6]">
@@ -1365,20 +1368,20 @@ function TodayLibraryV3Content() {
               {cluster.emoji || '🥂'}
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 max-w-full">
               <div className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px] inline-block self-center">
-              {cluster.category || '감상평'}
-            </div>
+                {cluster.category || '감상평'}
+              </div>
               <h3 className="text-[18px] font-bold text-black">
                 {cluster.theme}
               </h3>
-              <p className="text-[14px] text-[#575E68] whitespace-pre-wrap leading-[1.4]">
+              <p className="text-[14px] text-[#575E68] whitespace-pre-wrap leading-[1.4] break-words">
                 {cluster.reasoning}
               </p>
             </div>
 
             {/* Horizontal Member List */}
-            <div className="flex items-start justify-center gap-4 mt-2">
+            <div className="flex flex-wrap items-start justify-center gap-4 mt-2">
               {clusterMembersWithSubmissions.map((member) => (
                 <div key={member.id} className="flex flex-col items-center gap-1.5">
                   <div
@@ -1426,7 +1429,7 @@ function TodayLibraryV3Content() {
 
                     {/* Right: Content */}
                     <div
-                      className="flex-1 flex flex-col gap-1 cursor-pointer"
+                      className="flex-1 flex flex-col gap-1 cursor-pointer min-w-0"
                       onClick={() => handleReviewClick(member.id)}
                     >
                       {member.submission?.bookTitle && (
@@ -1436,7 +1439,7 @@ function TodayLibraryV3Content() {
                           </h3>
                         </div>
                       )}
-                      <p className="text-[14px] text-[#333D4B] leading-[1.5] line-clamp-1 break-all">
+                      <p className="text-[14px] text-[#333D4B] leading-[1.5] line-clamp-1 break-words">
                         {member.review || '작성된 감상평이 없습니다.'}
                       </p>
                     </div>

@@ -442,8 +442,8 @@ export default function CohortCreatePage() {
                       <FormSelect
                         value={p.gender}
                         onChange={(value) => handleParticipantChange(index, 'gender', value)}
+                        placeholder="성별"
                         options={[
-                          { value: '', label: '선택' },
                           { value: 'male', label: '남성' },
                           { value: 'female', label: '여성' },
                           { value: 'other', label: '기타' },

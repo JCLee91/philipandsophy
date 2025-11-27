@@ -19,7 +19,25 @@ export const publishScheduledNotices = onSchedule(
     const db = getSeoulDB();
     const now = admin.firestore.Timestamp.now();
 
+    // 디버깅: 현재 시간 로깅
+    logger.info(`Current time (UTC): ${now.toDate().toISOString()}`);
+    logger.info(`Current time (KST): ${now.toDate().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`);
+
     try {
+      // 먼저 모든 scheduled 상태의 공지를 가져와서 확인 (디버깅용)
+      const allScheduledSnapshot = await db
+        .collection("notices")
+        .where("status", "==", "scheduled")
+        .get();
+
+      logger.info(`Total scheduled notices in DB: ${allScheduledSnapshot.size}`);
+
+      allScheduledSnapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const scheduledAt = data.scheduledAt?.toDate?.();
+        logger.info(`Notice ${doc.id}: scheduledAt=${scheduledAt?.toISOString() || 'undefined'}, isPast=${scheduledAt ? scheduledAt <= now.toDate() : 'N/A'}`);
+      });
+
       // Query for notices that are scheduled and due for publication
       const noticesSnapshot = await db
         .collection("notices")

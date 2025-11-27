@@ -223,6 +223,9 @@
 .app-shell {
   min-height: var(--app-viewport-height, 100vh);
   max-height: var(--app-viewport-height, 100vh);
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* 헤더 높이 보정 - fixed 헤더 아래 컨텐츠가 헤더를 덮지 않도록 */

@@ -388,6 +388,22 @@
     z-index: 10;
 }
 
+/* 좁은 화면 대응 - 영상 크기 및 위치 조정 */
+@media (max-width: 380px) {
+    .video-overlay {
+        width: 240px;
+        top: 54%;
+    }
+}
+
+/* 갤럭시 폴드 등 초소형 화면 */
+@media (max-width: 300px) {
+    .video-overlay {
+        width: 200px;
+        top: 55%;
+    }
+}
+
 .overlay-video {
     width: 100%;
     height: auto;

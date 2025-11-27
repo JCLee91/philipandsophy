@@ -53,6 +53,14 @@ export const onMessageCreated = onDocumentCreated(
 
     const messagePreview = truncateContent(content, NOTIFICATION_CONFIG.MAX_CONTENT_LENGTH);
 
+    // Determine notification URL based on receiver type
+    // - 관리자가 받는 알림 (유저→관리자): 문의함에서 해당 유저 대화 열기
+    // - 유저가 받는 알림 (관리자→유저): 채팅 페이지에서 관리자 DM 대화창 열기
+    const isReceiverAdmin = receiverId === 'admin';
+    const notificationUrl = isReceiverAdmin
+      ? `/app/admin/inquiries?userId=${senderId}`
+      : `${NOTIFICATION_ROUTES.CHAT}?openDM=admin`;
+
     const successCount = await sendPushNotificationMulticast(
       receiverId,
       tokens,
@@ -60,7 +68,7 @@ export const onMessageCreated = onDocumentCreated(
       webPushSubscriptions,
       title,
       messagePreview,
-      NOTIFICATION_ROUTES.CHAT,
+      notificationUrl,
       NOTIFICATION_TYPES.DM,
       icon
     );

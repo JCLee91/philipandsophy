@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 import AppViewportEffect from '@/components/AppViewportEffect';
 import RegisterServiceWorker from '../app/register-sw';
 import { ViewModeProvider } from '@/contexts/ViewModeContext';
-import { useAppBadgeClear } from '@/hooks/use-app-badge';
+import InAppBrowserBlocker from '@/components/InAppBrowserBlocker';
 
 /**
  * App 레벨 클라이언트 전용 Provider 통합
@@ -13,17 +13,16 @@ import { useAppBadgeClear } from '@/hooks/use-app-badge';
  * - ViewModeProvider: localStorage 기반 상태 관리
  * - AppViewportEffect: iOS PWA viewport 계산
  * - RegisterServiceWorker: Service Worker 등록
- * - useAppBadgeClear: 앱 진입 시 배지 제거
+ * - InAppBrowserBlocker: 카카오톡/인스타그램 등 인앱 브라우저 차단
+ *
+ * Note: 앱 배지는 DM 대화창을 열 때만 제거됩니다 (DirectMessageDialog)
  */
 export default function AppClientProviders({ children }: { children: ReactNode }) {
-  // 앱 열릴 때 배지 자동 제거
-  useAppBadgeClear();
-
   return (
     <ViewModeProvider>
       <AppViewportEffect />
       <RegisterServiceWorker />
-      {children}
+      <InAppBrowserBlocker>{children}</InAppBrowserBlocker>
     </ViewModeProvider>
   );
 }

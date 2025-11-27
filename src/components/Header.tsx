@@ -11,6 +11,7 @@ interface HeaderProps {
   onInquiryClick?: () => void; // Added
   onMessageAdminClick?: () => void;
   onSettingsClick?: () => void;
+  onBack?: () => void; // Added
   isAdmin?: boolean;
   adminUnreadCount?: number; // Added
   currentCohort?: { id: string; name: string } | null;
@@ -22,6 +23,7 @@ export default function Header({
   onInquiryClick,
   onMessageAdminClick,
   onSettingsClick,
+  onBack,
   isAdmin,
   adminUnreadCount = 0,
   currentCohort,
@@ -42,15 +44,18 @@ export default function Header({
       className="z-[999]"
       title={`필립앤소피 ${currentCohort?.name || ''}`}
       align="center"
+      onBack={onBack}
       leftAction={
-        <button
-          type="button"
-          onClick={onSettingsClick}
-          className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
-          aria-label="설정"
-        >
-          <Settings className="h-5 w-5" />
-        </button>
+        !onBack ? (
+          <button
+            type="button"
+            onClick={onSettingsClick}
+            className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+            aria-label="설정"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+        ) : null
       }
       rightAction={
         <>

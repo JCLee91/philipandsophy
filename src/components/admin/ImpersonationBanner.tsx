@@ -33,12 +33,12 @@ export default function ImpersonationBanner() {
         try {
           // 2. 관리자 토큰으로 재로그인 시도
           await signInWithCustomToken(auth, adminToken);
-          
+
           // 3. 성공 시 스토리지 정리 및 이동
           sessionStorage.removeItem('pns_admin_impersonation');
           sessionStorage.removeItem('pns_admin_token');
           sessionStorage.removeItem('pns_impersonation_return_url');
-          
+
           // 원래 진입했던 경로(데이터센터 or 앱)로 복귀
           router.replace(returnUrl);
           return;
@@ -53,7 +53,7 @@ export default function ImpersonationBanner() {
       sessionStorage.removeItem('pns_admin_impersonation');
       sessionStorage.removeItem('pns_admin_token');
       sessionStorage.removeItem('pns_impersonation_return_url');
-      
+
       // 관리자 로그인 페이지로 이동
       router.replace('/datacntr/login');
     } catch (error) {
@@ -64,20 +64,23 @@ export default function ImpersonationBanner() {
   if (!isImpersonating) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[9999] bg-amber-500 text-white px-4 py-2 shadow-md flex items-center justify-between animate-in slide-in-from-top duration-300">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Eye className="h-5 w-5" />
-        <span>
-          현재 <strong>{participant?.name || user?.email || '사용자'}</strong> 님으로 로그인되어 있습니다. (관리자 모드)
-        </span>
+    <>
+      {/* 1. 화면 전체 테두리 (클릭 통과) */}
+      <div className="fixed inset-0 z-[9999] border-[4px] border-amber-500 pointer-events-none" />
+
+      {/* 2. 하단 플로팅 복귀 버튼 (클릭 가능) */}
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">
+        <button
+          onClick={handleExit}
+          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-full shadow-lg font-bold transition-all hover:scale-105 active:scale-95"
+        >
+          <Eye className="h-4 w-4" />
+          <span>
+            {participant?.name || user?.email || '사용자'} (관리자 복귀)
+          </span>
+          <LogOut className="h-4 w-4 ml-1" />
+        </button>
       </div>
-      <button
-        onClick={handleExit}
-        className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-sm font-bold transition-colors border border-white/30"
-      >
-        <LogOut className="h-4 w-4" />
-        관리자로 복귀
-      </button>
-    </div>
+    </>
   );
 }

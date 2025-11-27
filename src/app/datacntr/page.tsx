@@ -20,9 +20,32 @@ export default function DataCenterPage() {
 
   // 첫 로드 시 활성 기수를 디폴트로 선택 (selectedCohortId가 없으면)
   useEffect(() => {
-    if (cohorts.length > 0 && !selectedCohortId) {
-      const activeCohort = cohorts.find(c => c.isActive);
-      setSelectedCohortId(activeCohort?.id || cohorts[0].id);
+    if (cohorts.length > 0 && selectedCohortId === null) {
+      // 1. 활성 기수만 필터링
+      let activeCohorts = cohorts.filter(c => c.isActive);
+
+      // 2. 테스트 기수(0기) 제외
+      activeCohorts = activeCohorts.filter(c => c.id !== '0');
+
+      // 3. 시작일 기준 내림차순 정렬 (최신순)
+      activeCohorts.sort((a, b) => b.startDate.localeCompare(a.startDate));
+
+      // 4. 최신 기수 선택 (없으면 전체 기수 중 0기 제외하고 최신순)
+      if (activeCohorts.length > 0) {
+        setSelectedCohortId(activeCohorts[0].id);
+      } else {
+        // 활성 기수가 하나도 없으면, 전체 중 0기 제외하고 최신순
+        const fallbackCohorts = cohorts
+          .filter(c => c.id !== '0')
+          .sort((a, b) => b.startDate.localeCompare(a.startDate));
+
+        if (fallbackCohorts.length > 0) {
+          setSelectedCohortId(fallbackCohorts[0].id);
+        } else {
+          // 정말 아무것도 없으면 그냥 첫 번째 (0기라도)
+          setSelectedCohortId(cohorts[0].id);
+        }
+      }
     }
   }, [cohorts, selectedCohortId, setSelectedCohortId]);
 

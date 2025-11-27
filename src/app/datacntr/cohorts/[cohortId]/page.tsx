@@ -632,7 +632,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
           </div>
         </div>
 
-        {/* 소셜링 관리 (Socializing Admin Controls) */}
+        {/* 애프터 다이닝 관리 (Socializing Admin Controls) */}
         {cohort && (
           <div className="mb-6">
             <SocializingAdminControls cohort={cohort} onUpdate={fetchCohortDetail} />

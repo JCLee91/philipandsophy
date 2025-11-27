@@ -109,7 +109,10 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                         align="center"
                         className="bg-white border-b-0"
                     />
-                    <main className="flex-1 overflow-y-auto bg-white">
+                    <main
+                        className="flex-1 overflow-y-auto bg-white overflow-x-hidden touch-pan-y"
+                        style={{ overscrollBehaviorX: 'none' }}
+                    >
                         <div className="mx-auto max-w-md px-6 py-8">
                             <div className="space-y-4">
                                 <div className="h-20 w-20 rounded-full bg-gray-100 mx-auto" />
@@ -154,7 +157,10 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                         className="bg-white border-b-0"
                     />
 
-                    <main className="flex-1 overflow-y-auto bg-white flex items-center justify-center">
+                    <main
+                        className="flex-1 overflow-y-auto bg-white flex items-center justify-center overflow-x-hidden touch-pan-y"
+                        style={{ overscrollBehaviorX: 'none' }}
+                    >
                         <div className="mx-auto max-w-md px-6 text-center">
                             <div className="space-y-6">
                                 {/* Icon */}
@@ -202,7 +208,10 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                     className="bg-white border-b-0"
                 />
 
-                <main className="flex-1 overflow-y-auto bg-white">
+                <main
+                    className="flex-1 overflow-y-auto bg-white overflow-x-hidden touch-pan-y"
+                    style={{ overscrollBehaviorX: 'none' }}
+                >
                     <div className="mx-auto max-w-md px-6 pb-24">
 
                         {/* 1. Profile Section (Top) */}
@@ -293,7 +302,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
                             {/* Review Text */}
                             <div className="space-y-6">
-                                <p className="text-[15px] text-[#191F28] leading-[1.7] whitespace-pre-wrap">
+                                <p className="text-[15px] text-[#191F28] leading-[1.7] whitespace-pre-wrap break-words">
                                     {submission.review || '작성된 감상평이 없습니다.'}
                                 </p>
                             </div>

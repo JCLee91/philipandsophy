@@ -61,7 +61,7 @@ export default function RefundGuidePage() {
                 <p className="text-blue-400 font-bold mb-2">Special Benefit!</p>
                 <h1 className="text-3xl font-bold mb-4">지원금 환급 방법</h1>
                 <p className="text-gray-400 text-sm">
-                    필립앤소피 앱에서 후속 소셜링에 참여할 수 있어요
+                    필립앤소피 앱에서 애프터 다이닝에 참여할 수 있어요
                 </p>
             </div>
 

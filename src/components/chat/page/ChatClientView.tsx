@@ -11,7 +11,7 @@ import { APP_CONSTANTS } from '@/constants/app';
 import type { Cohort, Notice, Participant } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
 import { AUTH_TIMING } from '@/constants/auth';
-import { useCohort } from '@/hooks/use-cohorts';
+import { useCohort, useRealtimeCohort } from '@/hooks/use-cohorts';
 import { useParticipantsByCohort } from '@/hooks/use-participants';
 import { useNoticesByCohort } from '@/hooks/use-notices';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,15 +37,14 @@ import ChatFooterSection from '@/components/chat/page/ChatFooterSection';
 import ChatParticipantsSheet from '@/components/chat/page/ChatParticipantsSheet';
 import { useAdminConversations } from '@/hooks/chat/useAdminConversations';
 
-import { MessageCircle, Send } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import UnifiedButton from '@/components/UnifiedButton';
-import ConfirmedCard from '@/features/socializing/components/ConfirmedCard';
-import { Input } from '@/components/ui/input';
 import { useMeetupChat } from '@/hooks/chat/useMeetupChat';
 import MeetupChatTimeline from '@/components/chat/Meetup/MeetupChatTimeline';
 import ChatInputBar from '@/components/chat/page/ChatInputBar';
-
-// ... existing imports ...
+import SocializingDashboard from '@/features/socializing/components/SocializingDashboard';
+import { getSocializingStats, type VoterInfo } from '@/features/socializing/actions/socializing-actions';
+import { subscribeToCohortParticipants } from '@/lib/firebase';
 
 type ChatClientViewProps = {
   initialCohortId?: string | null;
@@ -53,6 +52,8 @@ type ChatClientViewProps = {
   initialParticipants?: Participant[];
   initialNotices?: Notice[];
 };
+
+type ViewMode = 'chat' | 'socializing';
 
 export function ChatClientView({
   initialCohortId,
@@ -70,6 +71,8 @@ export function ChatClientView({
 
   const { participant, isLoading: sessionLoading, allUserParticipants } = useAuth();
   const currentUserId = participant?.id;
+
+  const [viewMode, setViewMode] = useState<ViewMode>('chat');
 
   // 유저가 참가한 모든 코호트 조회 (AuthContext에서 이미 조회한 데이터 활용)
   const [userCohorts, setUserCohorts] = useState<Array<{ cohortId: string; cohortName: string }>>([]);
@@ -139,8 +142,114 @@ export function ChatClientView({
     initialData: initialCohort ?? undefined,
   });
 
+  // 실시간 cohort 상태 감지 (소셜링 투표 상태 전환용)
+  const { data: realtimeCohort } = useRealtimeCohort(cohortId || undefined);
+
+  // 소셜링 투표 관련 상태
+  const [voteStats, setVoteStats] = useState<{
+    optionVotes: Record<string, number>;
+    optionVoters: Record<string, VoterInfo[]>;
+    cantAttendCount: number;
+    cantAttendVoters: VoterInfo[];
+    attendanceStats: {
+      attending: number;
+      notAttending: number;
+      attendingVoters: VoterInfo[];
+      notAttendingVoters: VoterInfo[];
+    };
+  }>({
+    optionVotes: {},
+    optionVoters: {},
+    cantAttendCount: 0,
+    cantAttendVoters: [],
+    attendanceStats: { attending: 0, notAttending: 0, attendingVoters: [], notAttendingVoters: [] },
+  });
+
+  // 현재 유저의 실시간 투표 상태
+  const [realtimeUserVotes, setRealtimeUserVotes] = useState<Participant['socializingVotes'] | undefined>(undefined);
+
+  // 소셜링 활성화 여부
+  const isSocializingActive = useMemo(() => {
+    const phase = realtimeCohort?.socializingPhase;
+    return phase && phase !== 'idle';
+  }, [realtimeCohort?.socializingPhase]);
+
+  // Realtime Vote Stats Sync
+  useEffect(() => {
+    if (cohortId && isSocializingActive) {
+      const unsubscribe = subscribeToCohortParticipants(cohortId, (participants: Participant[]) => {
+        const optionVotes: Record<string, number> = {};
+        const optionVoters: Record<string, VoterInfo[]> = {};
+        let cantAttendCount = 0;
+        const cantAttendVoters: VoterInfo[] = [];
+        let attendingCount = 0;
+        let notAttendingCount = 0;
+        const attendingVoters: VoterInfo[] = [];
+        const notAttendingVoters: VoterInfo[] = [];
+
+        participants.forEach(p => {
+          const votes = p.socializingVotes;
+          const voterInfo: VoterInfo = {
+            id: p.id,
+            name: p.name,
+            profileImageCircle: p.profileImageCircle,
+          };
+
+          // 현재 유저의 투표 상태 실시간 업데이트
+          if (currentUserId && p.id === currentUserId) {
+            setRealtimeUserVotes(votes);
+          }
+
+          if (votes?.cantAttend) {
+            cantAttendCount++;
+            cantAttendVoters.push(voterInfo);
+          } else if (votes?.optionIds && votes.optionIds.length > 0) {
+            votes.optionIds.forEach(optionId => {
+              optionVotes[optionId] = (optionVotes[optionId] || 0) + 1;
+              if (!optionVoters[optionId]) {
+                optionVoters[optionId] = [];
+              }
+              optionVoters[optionId].push(voterInfo);
+            });
+          }
+
+          if (votes?.attendance === 'attending') {
+            attendingCount++;
+            attendingVoters.push(voterInfo);
+          } else if (votes?.attendance === 'not_attending') {
+            notAttendingCount++;
+            notAttendingVoters.push(voterInfo);
+          }
+        });
+
+        setVoteStats({
+          optionVotes,
+          optionVoters,
+          cantAttendCount,
+          cantAttendVoters,
+          attendanceStats: {
+            attending: attendingCount,
+            notAttending: notAttendingCount,
+            attendingVoters,
+            notAttendingVoters,
+          },
+        });
+      });
+      return () => unsubscribe();
+    }
+  }, [cohortId, isSocializingActive, currentUserId]);
+
+  const refreshVoteStats = useCallback(async () => {
+    if (cohortId) {
+      const stats = await getSocializingStats(cohortId);
+      setVoteStats(stats);
+    }
+  }, [cohortId]);
+
   // 소셜링 채팅 Hook (isMeetup 상태일 때만 활성화)
-  const isMeetupMode = cohort?.socializingPhase === 'confirmed' || cohort?.type === 'meetup';
+  // realtimeCohort를 우선 사용하여 실시간으로 confirmed 상태 감지
+  // ✅ FIX: 'confirmed' 상태여도 채팅방으로 전환되지 않도록 수정 (오픈카톡방 안내로 변경됨)
+  const isMeetupMode = (realtimeCohort?.type ?? cohort?.type) === 'meetup';
   const {
     messages: meetupMessages,
     sendMessage: sendMeetupMessage,
@@ -164,6 +273,8 @@ export function ChatClientView({
     refetchOnWindowFocus: false,
   });
 
+  const confirmedResult = realtimeCohort?.socializingResult ?? cohort?.socializingResult;
+  
   useEffect(() => {
     if (isAdminMode) {
       setShouldLoadParticipants(true);
@@ -203,6 +314,28 @@ export function ChatClientView({
       }
     }
   }, [searchParams, router, cohortId, toast]);
+
+  // ✅ 푸시 알림 클릭 시 관리자 DM 대화창 자동 열기
+  useEffect(() => {
+    const openDM = searchParams.get('openDM');
+    if (openDM === 'admin' && participant && cohortId) {
+      // URL에서 쿼리 파라미터 제거
+      router.replace(appRoutes.chat(cohortId), { scroll: false });
+      // 관리자 DM 대화창 열기
+      const adminTarget: Participant = {
+        id: 'admin',
+        cohortId: cohortId,
+        name: APP_CONSTANTS.ADMIN_NAME,
+        phoneNumber: '01000000001',
+        profileImage: '/favicon.webp',
+        isAdministrator: true,
+        firebaseUid: null,
+        createdAt: new Date() as any,
+        updatedAt: new Date() as any,
+      };
+      dmDialog.openWithAdmin(adminTarget);
+    }
+  }, [searchParams, participant, cohortId, router, dmDialog]);
 
   // ✅ 페이지 진입 시 notice 타입 알림 제거 (알림센터 정리)
   useEffect(() => {
@@ -294,7 +427,7 @@ export function ChatClientView({
         // 관리자 모드이면 '필립앤소피', 소셜링 모임이면 내 이름, 그 외에는 기본값(필립앤소피)
         author: isAdminMode
           ? APP_CONSTANTS.ADMIN_NAME
-          : (cohort?.type === 'meetup' || cohort?.socializingPhase === 'confirmed')
+          : isMeetupMode
             ? participant?.name
             : APP_CONSTANTS.ADMIN_NAME,
       });
@@ -308,7 +441,7 @@ export function ChatClientView({
         scrollToBottom(undefined, { behavior: 'smooth', delay: AUTH_TIMING.SCROLL_DELAY });
       }
     },
-    [cohortId, noticeActions, toast, writeDialog, isAdminMode, cohort?.type, cohort?.socializingPhase, participant?.name]
+    [cohortId, noticeActions, toast, writeDialog, isAdminMode, isMeetupMode, participant?.name]
   );
 
   const handleEditNotice = useCallback(
@@ -471,6 +604,7 @@ export function ChatClientView({
         isAdmin={isAdminMode}
         adminUnreadCount={adminUnreadCount}
         currentCohort={cohort ? { id: cohort.id, name: cohort.name } : null}
+        onBack={viewMode === 'socializing' ? () => setViewMode('chat') : undefined}
       />
       <PageTransition>
         <div className="app-shell flex flex-col overflow-hidden pt-14">
@@ -510,15 +644,22 @@ export function ChatClientView({
             imageUrl={imageViewerUrl}
           />
 
-          {/* 모임 확정 카드 (채팅방 상단) */}
-          {cohort.socializingPhase === 'confirmed' && cohort.socializingResult && (
-            <div className="px-4 pt-4">
-              <ConfirmedCard result={{ ...cohort.socializingResult, cohortId: cohort.id }} />
-            </div>
-          )}
-
-          <main className="app-main-content relative flex flex-col-reverse flex-1 overflow-y-auto bg-background pb-6">
-            {isMeetupMode ? (
+          <main className={cn(
+            "app-main-content relative flex flex-1 overflow-y-auto bg-background pb-6",
+            viewMode === 'socializing' ? "flex-col" : "flex-col-reverse"
+          )}>
+            {viewMode === 'socializing' && realtimeCohort ? (
+               <div className="w-full p-4">
+                 <SocializingDashboard
+                    cohort={realtimeCohort}
+                    participant={participant}
+                    voteStats={voteStats}
+                    onRefresh={refreshVoteStats}
+                    realtimeUserVotes={realtimeUserVotes}
+                    onExit={() => setViewMode('chat')}
+                 />
+               </div>
+            ) : isMeetupMode ? (
               <div className="flex flex-col justify-end min-h-full">
                 <MeetupChatTimeline messages={meetupMessages} currentUserId={currentUserId} />
               </div>
@@ -534,7 +675,7 @@ export function ChatClientView({
             )}
           </main>
 
-          {isMeetupMode ? (
+          {viewMode === 'socializing' ? null : isMeetupMode ? (
             <ChatInputBar
               onSend={async (text) => { await sendMeetupMessage(text); }}
               isLoading={isMeetupSending}
@@ -545,10 +686,12 @@ export function ChatClientView({
               isDay1={isDay1 ?? false}
               isAfterDay14={isAfterDay14}
               hasSubmittedToday={hasSubmittedToday}
+              isSocializingActive={isSocializingActive}
               cohortName={cohort?.name}
               onRequestSubmission={handleOpenSubmissionFlow}
               onNavigateMatching={handleNavigateMatching}
               onNavigateTodayLibrary={handleNavigateTodayLibrary}
+              onOpenSocializing={() => setViewMode('socializing')}
             />
           )}
 
@@ -559,7 +702,7 @@ export function ChatClientView({
             onContentChange={writeDialog.setContent}
             onSubmit={(file) => handleCreateNotice(file)}
             uploading={noticeActions.isUploading}
-            isMeetup={cohort?.type === 'meetup' || cohort?.socializingPhase === 'confirmed'}
+            isMeetup={isMeetupMode}
           />
 
           <NoticeEditDialog

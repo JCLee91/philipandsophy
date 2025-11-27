@@ -113,7 +113,11 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         const participants = await getAllParticipantsByPhoneNumber(baseParticipant.phoneNumber);
         setAllUserParticipants(participants);
       } catch (error) {
-        logger.error('Failed to fetch all user participants', error);
+        // Firestore 권한 에러 등 발생 시 fallback 처리
+        // 단일 코호트 사용자나 권한 제한 시에도 앱은 정상 동작
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[AuthContext] getAllParticipantsByPhoneNumber failed, using fallback:', error);
+        }
         setAllUserParticipants([baseParticipant]); // fallback to base
       }
     };
