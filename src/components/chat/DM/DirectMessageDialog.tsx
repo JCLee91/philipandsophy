@@ -145,7 +145,7 @@ export default function DirectMessageDialog({
       return;
     }
 
-    const userId = currentUserId;
+    const userId = (currentUser.isSuperAdmin || currentUser.isAdministrator) ? 'admin' : currentUserId;
     const hasUnread = messages.some((message) => !message.isRead && message.receiverId === userId);
 
     if (hasUnread) {
