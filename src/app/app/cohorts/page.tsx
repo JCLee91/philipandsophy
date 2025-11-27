@@ -126,6 +126,18 @@ export default function CohortsPage() {
             {displayCohorts.map((cohort) => {
               const isSelected = selectedCohortId === cohort.id;
 
+              // 🔍 DEBUG: 초기 로드 시 선택 상태 확인
+              if (isSelected) {
+                console.log('🔍 Selected cohort detected:', {
+                  cohortId: cohort.id,
+                  cohortName: cohort.name,
+                  selectedCohortId,
+                  isEqual: selectedCohortId === cohort.id,
+                  selectedType: typeof selectedCohortId,
+                  cohortIdType: typeof cohort.id,
+                });
+              }
+
               return (
                 <button
                   key={cohort.id}
@@ -135,7 +147,7 @@ export default function CohortsPage() {
                     w-full bg-white border rounded-xl p-4 transition-all
                     ${isSelected
                       ? 'border-primary bg-primary/5 opacity-75 cursor-wait'
-                      : 'border-gray-200 hover:border-primary hover:bg-gray-50 active:scale-[0.98]'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none'
                     }
                   `}
                 >
@@ -143,7 +155,7 @@ export default function CohortsPage() {
                     <div className="flex-1 text-left">
                       {/* 코호트 이름 */}
                       <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-5 w-5 text-primary" />
+                        <Users className={`h-5 w-5 ${isSelected ? 'text-primary' : 'text-gray-400'}`} />
                         <h3 className="font-bold text-gray-900">{cohort.name}</h3>
                         {cohort.isActive && (
                           <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">

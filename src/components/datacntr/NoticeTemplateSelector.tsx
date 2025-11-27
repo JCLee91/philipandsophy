@@ -132,7 +132,7 @@ export default function NoticeTemplateSelector({
                         className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
                           selectedId === template.id
                             ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                       >
                         <div className="flex items-center h-6">

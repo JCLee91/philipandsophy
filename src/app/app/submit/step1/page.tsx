@@ -297,7 +297,7 @@ function Step1Content() {
             {!imagePreview ? (
               <label
                 htmlFor="book-image"
-                className="flex flex-col items-center justify-center aspect-[4/3] w-full border-2 border-dashed border-blue-200 rounded-2xl cursor-pointer hover:border-blue-300 transition-colors bg-blue-50/30"
+                className="flex flex-col items-center justify-center aspect-[4/3] w-full border-2 border-dashed border-blue-200 rounded-2xl cursor-pointer hover:border-gray-400 transition-colors bg-blue-50/30"
               >
                 <Upload className="h-12 w-12 text-blue-400 mb-4" />
                 <p className="text-sm font-medium text-gray-700">이미지를 업로드하려면 클릭하세요</p>

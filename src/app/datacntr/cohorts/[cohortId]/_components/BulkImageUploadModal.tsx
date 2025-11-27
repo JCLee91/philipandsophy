@@ -201,7 +201,7 @@ export default function BulkImageUploadModal({
                 onDragOver={handleDragOver}
                 className={`
           relative w-full h-24 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center p-2 transition-colors
-          ${file ? 'border-blue-500 bg-blue-50' : existingUrl ? 'border-green-200 bg-green-50/30' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'}
+          ${file ? 'border-blue-500 bg-blue-50' : existingUrl ? 'border-green-200 bg-green-50/30' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}
           ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${isSuccess ? 'border-green-500 bg-green-50' : ''}
           ${isError ? 'border-red-500 bg-red-50' : ''}
