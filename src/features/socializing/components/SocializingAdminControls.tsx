@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format, parseISO, isValid } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
+import ParticipantListDialog from './ParticipantListDialog';
 
 interface SocializingAdminControlsProps {
     cohort: Cohort;
@@ -73,6 +74,8 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
             attendingVoters: VoterInfo[];
             notAttendingVoters: VoterInfo[];
         };
+        totalVoterCount: number;
+        totalVoters: VoterInfo[];
     }>({ 
         optionVotes: {}, 
         optionVoters: {}, 
@@ -83,7 +86,9 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
             notAttending: 0, 
             attendingVoters: [], 
             notAttendingVoters: [] 
-        } 
+        },
+        totalVoterCount: 0,
+        totalVoters: []
     });
 
     // New State for Phase 0
@@ -94,6 +99,11 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
     
     // Open Chat URL State
     const [openChatUrl, setOpenChatUrl] = useState(cohort.socializingOpenChatUrl || '');
+
+    // Dialog State
+    const [isParticipantDialogOpen, setIsParticipantDialogOpen] = useState(false);
+    const [dialogVoters, setDialogVoters] = useState<VoterInfo[]>([]);
+    const [dialogTitle, setDialogTitle] = useState('');
 
     // 투표 마감 시간 (시간 단위)
     const [deadlineHours, setDeadlineHours] = useState<number>(12);
@@ -123,6 +133,9 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
             const attendingVoters: VoterInfo[] = [];
             const notAttendingVoters: VoterInfo[] = [];
 
+            let totalVoterCount = 0;
+            const totalVoters: VoterInfo[] = [];
+
             participants.forEach(p => {
                 const votes = p.socializingVotes;
                 const voterInfo: VoterInfo = {
@@ -130,6 +143,15 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                     name: p.name,
                     profileImageCircle: p.profileImageCircle,
                 };
+
+                // Check if user participated in phase 1
+                const hasVotedOptions = votes?.optionIds && votes.optionIds.length > 0;
+                const isCantAttend = votes?.cantAttend;
+                
+                if (hasVotedOptions || isCantAttend) {
+                     totalVoterCount++;
+                     totalVoters.push(voterInfo);
+                }
 
                 if (votes?.cantAttend) {
                     cantAttendCount++;
@@ -164,6 +186,8 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                     attendingVoters,
                     notAttendingVoters,
                 },
+                totalVoterCount,
+                totalVoters
             });
         });
 
@@ -287,17 +311,19 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
         if (!confirm('초기화 하시겠습니까? 모든 투표 데이터가 삭제됩니다.')) return;
 
         startTransition(async () => {
-            const res = await resetSocializing(cohort.id);
-            if (res.success) {
-                toast({ title: '초기화 완료' });
-                setStats({ 
-                    optionVotes: {}, 
-                    optionVoters: {}, 
-                    cantAttendCount: 0, 
-                    cantAttendVoters: [], 
-                    attendanceStats: { attending: 0, notAttending: 0, attendingVoters: [], notAttendingVoters: [] } 
-                });
-                setSelectedDates([]);
+                    const res = await resetSocializing(cohort.id);
+                    if (res.success) {
+                        toast({ title: '초기화 완료' });
+                        setStats({ 
+                            optionVotes: {}, 
+                            optionVoters: {}, 
+                            cantAttendCount: 0, 
+                            cantAttendVoters: [], 
+                            attendanceStats: { attending: 0, notAttending: 0, attendingVoters: [], notAttendingVoters: [] },
+                            totalVoterCount: 0,
+                            totalVoters: []
+                        });
+                        setSelectedDates([]);
                 setSelectedLocations([]);
                 setCustomLocation('');
                 onUpdate?.();
@@ -328,6 +354,13 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                 toast({ title: '실패', description: res.error, variant: 'destructive' });
             }
         });
+    };
+
+    const openVoterDialog = (e: React.MouseEvent, title: string, voters: VoterInfo[]) => {
+        e.stopPropagation();
+        setDialogTitle(title);
+        setDialogVoters(voters);
+        setIsParticipantDialogOpen(true);
     };
 
     // Get top vote
@@ -378,6 +411,7 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                     {optionsWithCounts.map((option, idx) => {
                         const percent = total > 0 ? Math.round((option.count / total) * 100) : 0;
                         const isWinner = selectedWinnerId ? selectedWinnerId === option.id : idx === 0;
+                        const voters = stats.optionVoters[option.id] || [];
 
                         return (
                             <div 
@@ -393,7 +427,19 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                                         {idx + 1}. {formatSafeDate(option.date)} {option.time} {option.location}
                                         {isWinner && <CheckCircle className="inline w-3 h-3 ml-1 text-blue-500" />}
                                     </span>
-                                    <span className="text-gray-500">{option.count}표 ({percent}%)</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-gray-500">{option.count}표 ({percent}%)</span>
+                                        {voters.length > 0 && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 rounded-full hover:bg-blue-100"
+                                                onClick={(e) => openVoterDialog(e, `${formatSafeDate(option.date)} ${option.time} ${option.location}`, voters)}
+                                            >
+                                                <Users className="w-3 h-3 text-gray-500" />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden mt-1">
                                     <div
@@ -408,7 +454,19 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                         <div className="space-y-1 opacity-60 p-2">
                             <div className="flex items-center justify-between text-xs">
                                 <span className="font-medium text-gray-500">불참</span>
-                                <span className="text-gray-400">{stats.cantAttendCount}명</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-gray-400">{stats.cantAttendCount}명</span>
+                                    {stats.cantAttendVoters.length > 0 && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full hover:bg-gray-200"
+                                            onClick={(e) => openVoterDialog(e, "불참", stats.cantAttendVoters)}
+                                        >
+                                            <Users className="w-3 h-3 text-gray-500" />
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -487,7 +545,7 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                     <Separator />
                     <CardContent className="pt-6">
                         {/* Phase 0: Idle - 선택지 추가 */}
-                {currentPhase === 'idle' && (
+                        {currentPhase === 'idle' && (
                     <div className="space-y-6">
                         <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
                             <AlertCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
@@ -671,9 +729,21 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                                 </p>
                             </div>
                             <div className="p-4 border rounded-lg space-y-1">
-                                <p className="text-xs text-muted-foreground">총 투표</p>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xs text-muted-foreground">총 투표 참여</p>
+                                    {stats.totalVoters.length > 0 && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full hover:bg-gray-100 -mr-2"
+                                            onClick={(e) => openVoterDialog(e, "전체 참여자 명단", stats.totalVoters)}
+                                        >
+                                            <Users className="w-3 h-3 text-gray-500" />
+                                        </Button>
+                                    )}
+                                </div>
                                 <p className="text-lg font-bold">
-                                    {Object.values(stats.optionVotes).reduce((a, b) => a + b, 0) + stats.cantAttendCount}표
+                                    {stats.totalVoterCount}명
                                 </p>
                             </div>
                         </div>
@@ -743,16 +813,40 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-4 border rounded-lg space-y-1 bg-green-50 border-green-200">
-                                <div className="flex items-center gap-2">
-                                    <UserCheck className="w-4 h-4 text-green-600" />
-                                    <p className="text-xs text-green-700">참석</p>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <UserCheck className="w-4 h-4 text-green-600" />
+                                        <p className="text-xs text-green-700">참석</p>
+                                    </div>
+                                    {stats.attendanceStats.attendingVoters.length > 0 && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full hover:bg-green-100 -mr-2"
+                                            onClick={(e) => openVoterDialog(e, "참석자 명단", stats.attendanceStats.attendingVoters)}
+                                        >
+                                            <Users className="w-3 h-3 text-green-600" />
+                                        </Button>
+                                    )}
                                 </div>
                                 <p className="text-2xl font-bold text-green-700">{stats.attendanceStats.attending}명</p>
                             </div>
                             <div className="p-4 border rounded-lg space-y-1 bg-gray-50">
-                                <div className="flex items-center gap-2">
-                                    <UserX className="w-4 h-4 text-gray-500" />
-                                    <p className="text-xs text-gray-500">불참</p>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <UserX className="w-4 h-4 text-gray-500" />
+                                        <p className="text-xs text-gray-500">불참</p>
+                                    </div>
+                                    {stats.attendanceStats.notAttendingVoters.length > 0 && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full hover:bg-gray-200 -mr-2"
+                                            onClick={(e) => openVoterDialog(e, "불참자 명단", stats.attendanceStats.notAttendingVoters)}
+                                        >
+                                            <Users className="w-3 h-3 text-gray-500" />
+                                        </Button>
+                                    )}
                                 </div>
                                 <p className="text-2xl font-bold text-gray-600">{stats.attendanceStats.notAttending}명</p>
                             </div>
@@ -839,6 +933,13 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                     </CardContent>
                 </div>
             )}
+
+            <ParticipantListDialog 
+                open={isParticipantDialogOpen}
+                onOpenChange={setIsParticipantDialogOpen}
+                title={dialogTitle}
+                voters={dialogVoters}
+            />
         </Card>
     );
 }

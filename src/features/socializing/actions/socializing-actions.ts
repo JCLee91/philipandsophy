@@ -155,6 +155,8 @@ export async function getSocializingStats(cohortId: string): Promise<{
         attendingVoters: VoterInfo[];
         notAttendingVoters: VoterInfo[];
     };
+    totalVoterCount: number;
+    totalVoters: VoterInfo[];
 }> {
     try {
         const { db } = getFirebaseAdmin();
@@ -172,6 +174,9 @@ export async function getSocializingStats(cohortId: string): Promise<{
         let notAttendingCount = 0;
         const attendingVoters: VoterInfo[] = [];
         const notAttendingVoters: VoterInfo[] = [];
+        
+        let totalVoterCount = 0;
+        const totalVoters: VoterInfo[] = [];
 
         snapshot.docs.forEach(doc => {
             const data = doc.data() as Participant;
@@ -182,6 +187,15 @@ export async function getSocializingStats(cohortId: string): Promise<{
                 name: data.name,
                 profileImageCircle: data.profileImageCircle,
             };
+            
+            // Check if user participated in phase 1
+            const hasVotedOptions = votes?.optionIds && votes.optionIds.length > 0;
+            const isCantAttend = votes?.cantAttend;
+            
+            if (hasVotedOptions || isCantAttend) {
+                 totalVoterCount++;
+                 totalVoters.push(voterInfo);
+            }
 
             // 1차 투표 집계 (복수 선택)
             if (votes?.cantAttend) {
@@ -218,6 +232,8 @@ export async function getSocializingStats(cohortId: string): Promise<{
                 attendingVoters,
                 notAttendingVoters,
             },
+            totalVoterCount,
+            totalVoters,
         };
 
     } catch (error) {
@@ -228,6 +244,8 @@ export async function getSocializingStats(cohortId: string): Promise<{
             cantAttendCount: 0,
             cantAttendVoters: [],
             attendanceStats: { attending: 0, notAttending: 0, attendingVoters: [], notAttendingVoters: [] },
+            totalVoterCount: 0,
+            totalVoters: [],
         };
     }
 }
