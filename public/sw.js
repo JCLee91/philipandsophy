@@ -300,9 +300,16 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json();
   } catch (error) {
+    const text = event.data.text();
+    
+    // 텍스트도 없으면 무시
+    if (!text || text.trim() === '') {
+      return;
+    }
+
     payload = {
       title: '필립앤소피',
-      body: event.data.text(),
+      body: text,
     };
   }
 
@@ -311,8 +318,17 @@ self.addEventListener('push', (event) => {
   // Web Push: { title, body, data: { ... } }
   const messageData = payload?.data || {};
 
-  const title = messageData?.title || payload?.title || '필립앤소피';
-  const body = messageData?.body || payload?.body || '';
+  // 1. 유효성 검사: 제목과 내용이 모두 없는 경우 무시 (Firebase 내부 메시지 등)
+  const rawTitle = messageData?.title || payload?.title;
+  const rawBody = messageData?.body || payload?.body;
+
+  if (!rawTitle && !rawBody) {
+    console.log('[SW] Ignoring push message with no title and body');
+    return;
+  }
+
+  const title = rawTitle || '필립앤소피';
+  const body = rawBody || '';
   const icon = messageData?.icon || payload?.icon || '/image/app-icon-192.png';
   const badge = messageData?.badge || payload?.badge || '/image/badge-icon.webp';
   const url = messageData?.url || payload?.url || '/app';
