@@ -563,9 +563,9 @@ export function ChatClientView({
     setParticipantsOpen(true);
   }, [cohortId, isIosStandalone, isNavigating, router]);
 
-  const handleNavigateMatching = useCallback(() => {
+  const handleNavigateDashboard = useCallback(() => {
     if (!cohortId) return;
-    router.push(`/app/admin/matching?cohort=${cohortId}`);
+    router.push(appRoutes.adminDashboard(cohortId));
   }, [cohortId, router]);
 
   const handleNavigateTodayLibrary = useCallback(() => {
@@ -689,7 +689,7 @@ export function ChatClientView({
               isSocializingActive={isSocializingActive}
               cohortName={cohort?.name}
               onRequestSubmission={handleOpenSubmissionFlow}
-              onNavigateMatching={handleNavigateMatching}
+              onNavigateDashboard={handleNavigateDashboard}
               onNavigateTodayLibrary={handleNavigateTodayLibrary}
               onOpenSocializing={() => setViewMode('socializing')}
             />

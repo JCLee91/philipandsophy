@@ -2,7 +2,7 @@
 
 import UnifiedButton from '@/components/UnifiedButton';
 import FooterActions from '@/components/FooterActions';
-import { BookOpen, PartyPopper } from 'lucide-react';
+import { LayoutDashboard, PartyPopper } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ChatFooterSectionProps = {
@@ -13,7 +13,7 @@ type ChatFooterSectionProps = {
   isSocializingActive?: boolean;
   cohortName?: string; // 기수 이름 (예: "2기")
   onRequestSubmission: () => void;
-  onNavigateMatching: () => void;
+  onNavigateDashboard: () => void;
   onNavigateTodayLibrary: () => void;
   onOpenSocializing?: () => void;
 };
@@ -26,7 +26,7 @@ export function ChatFooterSection({
   isSocializingActive,
   cohortName,
   onRequestSubmission,
-  onNavigateMatching,
+  onNavigateDashboard,
   onNavigateTodayLibrary,
   onOpenSocializing,
 }: ChatFooterSectionProps) {
@@ -35,11 +35,11 @@ export function ChatFooterSection({
       {isAdmin ? (
         <UnifiedButton
           variant="primary"
-          onClick={onNavigateMatching}
-          icon={<BookOpen className="h-5 w-5" />}
+          onClick={onNavigateDashboard}
+          icon={<LayoutDashboard className="h-5 w-5" />}
           className="w-full"
         >
-          매칭 관리
+          관리자 대시보드
         </UnifiedButton>
       ) : (
         <div className="grid grid-cols-2 gap-2">

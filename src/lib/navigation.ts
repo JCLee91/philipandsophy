@@ -86,4 +86,15 @@ export const appRoutes = {
    * 독서 인증 Step 3 - 질문 답변
    */
   submitStep3: '/app/submit/step3',
+
+  /**
+   * 모바일 관리자 대시보드
+   * @param cohortId - 기수 ID
+   */
+  adminDashboard: (cohortId: string) => {
+    const params = new URLSearchParams({
+      cohort: cohortId,
+    });
+    return `/app/admin/dashboard?${params}`;
+  },
 } as const;
