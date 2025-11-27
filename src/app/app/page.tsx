@@ -32,6 +32,7 @@ export default function Home() {
 
   const targetCohortId = participant?.cohortId;
   const { data: targetCohort, isLoading: isCohortLoading } = useRealtimeCohort(targetCohortId || undefined);
+  const [cohortError, setCohortError] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -42,14 +43,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isLoading || (isAdminUser && activeCohortsLoading)) {
+    if (isLoading || (isAdminUser && activeCohortsLoading) || isCohortLoading) {
       const timer = setTimeout(() => {
         setLoadingTimeout(true);
       }, MAX_LOADING_TIME);
 
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isAdminUser, activeCohortsLoading]);
+  }, [isLoading, isAdminUser, activeCohortsLoading, isCohortLoading]);
 
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
@@ -73,13 +74,18 @@ export default function Home() {
       // If we have a cohort ID, ensure we have checked the cohort status.
       // We rely on isCohortLoading, but we also need to handle the race condition.
       
-      // 1. If loading, wait.
-      if (isCohortLoading) return;
+      // 1. If loading, check timeout
+      if (isCohortLoading) {
+        if (loadingTimeout) {
+          setCohortError(true);
+        }
+        return;
+      }
       
       // 2. If we have an ID but no data, and we are NOT loading...
-      // This happens when the ID just changed and the hook hasn't updated loading state yet (async state update).
-      // We must wait for the data to arrive.
+      // This means the cohort does not exist or we don't have permission.
       if (targetCohortId && !targetCohort) {
+         setCohortError(true);
          return;
       }
 
@@ -119,6 +125,41 @@ export default function Home() {
 
   if (isLoading || !minSplashElapsed || isCohortLoading) {
     return <SplashScreen />;
+  }
+
+  // Handle cohort error specifically
+  if (cohortError) {
+    return (
+      <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-gray-50">
+        <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-sm text-center space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">접속 오류</h2>
+          <p className="text-gray-600">
+            참여 중인 기수 정보를 불러올 수 없습니다.<br />
+            관리자에게 문의해주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            새로고침
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+               // Logout logic could be here, but we don't have logout function directly exposed here easily without calling AuthContext.
+               // Retry logic:
+               setCohortError(false);
+               setLoadingTimeout(false);
+               window.location.reload();
+            }}
+            className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Handle initialization error specifically

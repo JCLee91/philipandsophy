@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { appRoutes } from '@/lib/navigation';
 import type { DailyQuestion as DailyQuestionType } from '@/types/database';
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
+import { useFooterPadding } from '@/hooks/use-footer-padding';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import { logger } from '@/lib/logger';
 import { useDebounce } from 'react-use';
@@ -36,13 +37,7 @@ function Step3Content() {
   const { participant, isLoading: sessionLoading } = useAuth();
   const { toast } = useToast();
   const keyboardHeight = useKeyboardHeight();
-  const footerPaddingBottom = useMemo(
-    () =>
-      keyboardHeight > 0
-        ? `calc(16px + env(safe-area-inset-bottom, 0px))`
-        : `calc(60px + env(safe-area-inset-bottom, 0px))`,
-    [keyboardHeight]
-  );
+  const footerPaddingBottom = useFooterPadding();
 
   const {
     imageFile,

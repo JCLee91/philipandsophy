@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
@@ -16,6 +16,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
 import { appRoutes } from '@/lib/navigation';
+import { useFooterPadding } from '@/hooks/use-footer-padding';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 
 export const dynamic = 'force-dynamic';
@@ -29,13 +30,7 @@ function Step1Content() {
   const { participant, isLoading: sessionLoading } = useAuth();
   const { toast } = useToast();
   const keyboardHeight = useKeyboardHeight();
-  const footerPaddingBottom = useMemo(
-    () =>
-      keyboardHeight > 0
-        ? `calc(16px + env(safe-area-inset-bottom, 0px))`
-        : `calc(60px + env(safe-area-inset-bottom, 0px))`,
-    [keyboardHeight]
-  );
+  const footerPaddingBottom = useFooterPadding();
 
   const {
     imageFile,

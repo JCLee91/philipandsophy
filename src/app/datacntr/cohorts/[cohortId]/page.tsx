@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, ArrowLeft, User, BookOpen, Calendar, Sparkles, Check, AlertCircle, MoreVertical, Edit } from 'lucide-react';
+import { Loader2, ArrowLeft, User, BookOpen, Calendar, Sparkles, AlertCircle, MoreVertical, Edit } from 'lucide-react';
+import MatchingPreview from '@/components/datacntr/matching/MatchingPreview';
 import { formatISODateKST } from '@/lib/datacntr/timestamp';
 import DataTable, { Column } from '@/components/datacntr/table/DataTable';
 import type { Cohort } from '@/types/database';
@@ -473,109 +474,12 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
 
             {/* 매칭 프리뷰 영역 */}
             {previewResult && (
-                <div className="mt-6 border-t border-gray-200 pt-6 animate-in fade-in slide-in-from-top-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                매칭 미리보기 
-                                <span className="ml-2 text-sm font-normal text-gray-500">
-                                    ({previewResult.date}, 총 {previewResult.totalParticipants}명)
-                                </span>
-                            </h3>
-                            {previewResult.matching.matchingVersion === 'cluster' && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
-                                    ✨ V3 AI 클러스터 매칭
-                                </span>
-                            )}
-                            {previewResult.matching.matchingVersion === 'random' && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                    🎲 V2 랜덤 매칭
-                                </span>
-                            )}
-                        </div>
-                        <UnifiedButton
-                            variant="primary"
-                            onClick={handleConfirmMatching}
-                            disabled={isMatchingProcessing}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            icon={<Check className="h-4 w-4" />}
-                        >
-                            이 결과로 확정하기
-                        </UnifiedButton>
-                    </div>
-
-                    {/* V3 클러스터 뷰 */}
-                    {previewResult.matching.clusters && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {Object.values(previewResult.matching.clusters).map((cluster) => (
-                                <div key={cluster.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-2xl">{cluster.emoji}</span>
-                                        <div>
-                                            <h4 className="font-bold text-gray-900">{cluster.name}</h4>
-                                            <p className="text-xs text-gray-500">{cluster.theme}</p>
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-gray-600 mb-3 bg-white p-2 rounded border border-gray-100">
-                                        💡 {cluster.reasoning}
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {cluster.memberIds.map(memberId => {
-                                            const member = participants.find(p => p.id === memberId);
-                                            return (
-                                                <span key={memberId} className="px-2 py-1 bg-white border border-gray-200 rounded text-xs font-medium text-gray-700">
-                                                    {member?.name || 'Unknown'}
-                                                </span>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* V2 랜덤 매칭 뷰 (Legacy Support) */}
-                    {!previewResult.matching.clusters && previewResult.matching.assignments && (
-                        <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-100">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">참가자</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">매칭된 파트너</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {Object.entries(previewResult.matching.assignments).slice(0, 10).map(([id, assignment]) => {
-                                        const member = participants.find(p => p.id === id);
-                                        // V2 logic: use assigned field
-                                        const assignedIds = assignment.assigned || []; 
-                                        
-                                        return (
-                                            <tr key={id}>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {member?.name || id}
-                                                </td>
-                                                <td className="px-4 py-2 text-sm text-gray-500">
-                                                    {assignedIds.map(aid => {
-                                                        const partner = participants.find(p => p.id === aid);
-                                                        return partner?.name || aid;
-                                                    }).join(', ')}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                    {Object.keys(previewResult.matching.assignments).length > 10 && (
-                                        <tr>
-                                            <td colSpan={2} className="px-4 py-2 text-center text-xs text-gray-400">
-                                                ... 외 {Object.keys(previewResult.matching.assignments).length - 10}명
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+              <MatchingPreview
+                previewResult={previewResult}
+                participants={participants}
+                isProcessing={isMatchingProcessing}
+                onConfirm={handleConfirmMatching}
+              />
             )}
           </div>
         </div>

@@ -1,12 +1,12 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState, useRef } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
 import { getParticipantById, saveDraft, uploadReadingImage } from '@/lib/firebase';
 import { createFileFromUrl } from '@/lib/image-validation';
-import { searchNaverBooks, cleanBookData, type NaverBook } from '@/lib/naver-book-api';
+import type { NaverBook } from '@/lib/naver-book-api';
 import { useToast } from '@/hooks/use-toast';
 import TopBar from '@/components/TopBar';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
@@ -18,10 +18,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Search } from 'lucide-react';
 import { useDebounce } from 'react-use';
 import { Loader2, Check } from 'lucide-react';
+import { useFooterPadding } from '@/hooks/use-footer-padding';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
+import { useBookSearch } from '@/hooks/use-book-search';
 import { appRoutes } from '@/lib/navigation';
 import Image from 'next/image';
-import { SEARCH_CONFIG } from '@/constants/search';
+// SEARCH_CONFIG moved to useBookSearch hook
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { logger } from '@/lib/logger';
 
@@ -36,13 +38,7 @@ function Step2Content() {
   const { participant, isLoading: sessionLoading } = useAuth();
   const { toast } = useToast();
   const keyboardHeight = useKeyboardHeight();
-  const footerPaddingBottom = useMemo(
-    () =>
-      keyboardHeight > 0
-        ? `calc(16px + env(safe-area-inset-bottom, 0px))`
-        : `calc(60px + env(safe-area-inset-bottom, 0px))`,
-    [keyboardHeight]
-  );
+  const footerPaddingBottom = useFooterPadding();
 
   const {
     imageFile,
@@ -68,10 +64,19 @@ function Step2Content() {
     setLocalReview(globalReview);
   }, [globalReview]);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<NaverBook[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  // ✅ 책 검색 훅 (searchQuery, searchResults, isSearching, showDropdown 대체)
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    results: searchResults,
+    isSearching,
+    showDropdown,
+    setShowDropdown,
+    selectBook: handleBookSelectFromHook,
+  } = useBookSearch({
+    onSelect: setSelectedBook,
+  });
+
   const [isSaving, setIsSaving] = useState(false); // Manual save state (kept for initial draft creation)
   const [isAutoSaving, setIsAutoSaving] = useState(false); // Auto save state
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -333,40 +338,10 @@ function Step2Content() {
     };
   }, [existingSubmissionId, imageStorageUrl, setSelectedBook, setManualTitle, setGlobalReview, setImageFile, setImageStorageUrl, toast]);
 
-  // 책 검색 디바운스
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (searchQuery.trim().length < 2) {
-        setSearchResults([]);
-        setShowDropdown(false);
-        return;
-      }
-
-      setIsSearching(true);
-      try {
-        const response = await searchNaverBooks({
-          query: searchQuery,
-          display: SEARCH_CONFIG.MAX_RESULTS,
-          sort: 'sim',
-        });
-        const cleanedBooks = response.items.map(cleanBookData);
-        setSearchResults(cleanedBooks);
-        setShowDropdown(cleanedBooks.length > 0);
-      } catch (error) {
-        setSearchResults([]);
-        setShowDropdown(false);
-      } finally {
-        setIsSearching(false);
-      }
-    }, SEARCH_CONFIG.DEBOUNCE_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // ✅ 책 검색 디바운스 로직은 useBookSearch 훅으로 이동됨
 
   const handleBookSelect = (book: NaverBook) => {
-    setSelectedBook(book);
-    setSearchQuery('');
-    setShowDropdown(false);
+    handleBookSelectFromHook(book);
   };
 
   const handleEditBook = () => {

@@ -20,6 +20,7 @@ import TopBar from '@/components/TopBar';
 import ParticipantAssignmentTable from '@/components/admin/ParticipantAssignmentTable';
 import { useToast } from '@/hooks/use-toast';
 import { useParticipantsByCohortRealtime } from '@/hooks/use-participants-realtime';
+import { useMatchingStorage } from '@/hooks/use-matching-storage';
 import type { Participant } from '@/types/database';
 import type {
   MatchingResponse,
@@ -31,9 +32,7 @@ import { appRoutes } from '@/lib/navigation';
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 
-// localStorage 상수 (컴포넌트 외부 정의로 안정성 보장)
-const STORAGE_VERSION = '1.0';
-const STORAGE_TTL = 24 * 60 * 60 * 1000; // 24시간
+// ✅ localStorage 로직은 useMatchingStorage 훅으로 이동됨
 
 function MatchingPageContent() {
   const router = useRouter();
@@ -67,66 +66,16 @@ function MatchingPageContent() {
   const todayDate = useMemo(() => getSubmissionDate(), []); // 새벽 2시 마감 기준 날짜
   const todayQuestion = useMemo(() => getDailyQuestionText(todayDate), [todayDate]);
 
-  // 로컬 스토리지 키 (todayDate 기준 - Firestore 키와 일치)
-  const PREVIEW_STORAGE_KEY = `matching-preview-${cohortId}-${todayDate}`;
-  const CONFIRMED_STORAGE_KEY = `matching-confirmed-${cohortId}-${todayDate}`;
-  const IN_PROGRESS_KEY = `matching-in-progress-${cohortId}-${todayDate}`;
-
-  // localStorage 데이터 검증 및 안전한 로드
-  const loadFromStorage = useCallback((key: string): MatchingResponse | null => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (!stored) return null;
-
-      const parsed = JSON.parse(stored);
-
-      // 버전 체크
-      if (parsed.version && parsed.version !== STORAGE_VERSION) {
-
-        localStorage.removeItem(key);
-        return null;
-      }
-
-      // TTL 체크 (타임스탬프가 있는 경우)
-      if (parsed.timestamp && Date.now() - parsed.timestamp > STORAGE_TTL) {
-
-        localStorage.removeItem(key);
-        return null;
-      }
-
-      // 데이터 구조 검증 (data 필드 또는 직접 MatchingResponse 형태)
-      const data = parsed.data || parsed;
-      if (!data.matching || !data.date) {
-
-        localStorage.removeItem(key);
-        return null;
-      }
-
-      return data;
-    } catch (error) {
-
-      // 손상된 데이터 제거
-      try {
-        localStorage.removeItem(key);
-      } catch (e) {
-        // Ignore removal errors
-      }
-      return null;
-    }
-  }, []); // 상수만 사용하므로 dependency 불필요
-
-  const saveToStorage = useCallback((key: string, data: MatchingResponse) => {
-    try {
-      const stored = {
-        version: STORAGE_VERSION,
-        timestamp: Date.now(),
-        data,
-      };
-      localStorage.setItem(key, JSON.stringify(stored));
-    } catch (error) {
-
-    }
-  }, []); // 상수만 사용하므로 dependency 불필요
+  // ✅ localStorage 관리는 훅으로 분리
+  const {
+    loadFromStorage,
+    saveToStorage,
+    removeFromStorage,
+    PREVIEW_STORAGE_KEY,
+    CONFIRMED_STORAGE_KEY,
+    IN_PROGRESS_KEY,
+    cleanupOldEntries,
+  } = useMatchingStorage({ cohortId, todayDate });
 
   // ✅ 날짜/코호트 변경 시 상태 초기화 (전날 데이터 제거)
   useEffect(() => {
@@ -137,30 +86,10 @@ function MatchingPageContent() {
     setHasFetchedInitialResult(false);
     setError(null);
 
-    // 2. 전날 localStorage 캐시 제거
-    try {
-      // 현재 날짜 키와 다른 모든 매칭 관련 키 제거
-      const allKeys = Object.keys(localStorage);
-      allKeys.forEach(key => {
-        // 이 코호트의 매칭 관련 키이지만 오늘 날짜가 아닌 경우 삭제
-        if (key.startsWith(`matching-preview-${cohortId}-`) && !key.includes(todayDate)) {
-          localStorage.removeItem(key);
+    // 2. 전날 localStorage 캐시 제거 (훅 사용)
+    cleanupOldEntries();
 
-        }
-        if (key.startsWith(`matching-confirmed-${cohortId}-`) && !key.includes(todayDate)) {
-          localStorage.removeItem(key);
-
-        }
-        if (key.startsWith(`matching-in-progress-${cohortId}-`) && !key.includes(todayDate)) {
-          localStorage.removeItem(key);
-
-        }
-      });
-    } catch (storageError) {
-
-    }
-
-  }, [cohortId, submissionDate, todayDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY]);
+  }, [cohortId, submissionDate, todayDate, PREVIEW_STORAGE_KEY, CONFIRMED_STORAGE_KEY, IN_PROGRESS_KEY, cleanupOldEntries]);
 
   // ✅ Solution 3: localStorage 체크를 동기로 처리하여 초기 렌더링 블로킹 제거
   useEffect(() => {
@@ -179,7 +108,7 @@ function MatchingPageContent() {
           variant: 'default',
         });
 
-        localStorage.removeItem(IN_PROGRESS_KEY);
+        removeFromStorage(IN_PROGRESS_KEY);
 
       }
 
@@ -601,7 +530,7 @@ function MatchingPageContent() {
 
       // 성공 시 중단 플래그 제거
       try {
-        localStorage.removeItem(IN_PROGRESS_KEY);
+        removeFromStorage(IN_PROGRESS_KEY);
 
       } catch (storageError) {
 
@@ -618,7 +547,7 @@ function MatchingPageContent() {
 
       // 실패 시에도 중단 플래그 제거 (재시도 가능하도록)
       try {
-        localStorage.removeItem(IN_PROGRESS_KEY);
+        removeFromStorage(IN_PROGRESS_KEY);
 
       } catch (storageError) {
 
@@ -663,13 +592,8 @@ function MatchingPageContent() {
       setMatchingState('confirmed');
 
       // 로컬 스토리지 업데이트 (프리뷰 삭제, 확정 저장)
-      try {
-        localStorage.removeItem(PREVIEW_STORAGE_KEY); // 프리뷰는 삭제
-        localStorage.setItem(CONFIRMED_STORAGE_KEY, JSON.stringify(previewResult)); // 확정 결과 저장
-
-      } catch (storageError) {
-
-      }
+      removeFromStorage(PREVIEW_STORAGE_KEY); // 프리뷰는 삭제
+      saveToStorage(CONFIRMED_STORAGE_KEY, previewResult); // 확정 결과 저장
 
       // Firestore matching_previews 상태 업데이트 (자동 생성된 preview가 있다면)
       try {

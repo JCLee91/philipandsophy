@@ -373,25 +373,22 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   }, [selectedSubmission?.bookImageUrl]);
 
   // v2.0/v1.0 호환: assigned 우선, fallback으로 similar + opposite
-  const accessibleProfileIds = useMemo(() => {
-    return new Set(assignedProfileIds);
-  }, [assignedProfileIds]);
+  // ✅ 불필요한 useMemo 제거 (단순 Set 생성)
+  const accessibleProfileIds = new Set(assignedProfileIds);
   const matchingVersion = matchingLookup?.matching.matchingVersion;
   const isRandomMatching = matchingVersion === 'random' || assignedProfileIds.length > 0;
 
   // ✅ 불필요한 useMemo 제거 (단순 replace, indexOf 연산)
   const normalizedParticipantId = participantId ? participantId.replace(/^ghost-/, '') : participantId;
   const assignmentIndex = normalizedParticipantId ? assignedProfileIds.indexOf(normalizedParticipantId) : -1;
-  const previewLimit = useMemo(() => {
-    if (
-      unlockedProfileBooks === null ||
-      unlockedProfileBooks === undefined ||
-      !Number.isFinite(unlockedProfileBooks)
-    ) {
-      return assignedProfileIds.length;
-    }
-    return Math.min(unlockedProfileBooks, assignedProfileIds.length);
-  }, [unlockedProfileBooks, assignedProfileIds.length]);
+  // ✅ 불필요한 useMemo 제거 (단순 Math.min 계산)
+  const previewLimit = (
+    unlockedProfileBooks === null ||
+    unlockedProfileBooks === undefined ||
+    !Number.isFinite(unlockedProfileBooks)
+  )
+    ? assignedProfileIds.length
+    : Math.min(unlockedProfileBooks, assignedProfileIds.length);
   const canPreviewAccess = isRandomMatching && assignmentIndex >= 0 && assignmentIndex < previewLimit;
 
   const isFeatured = accessibleProfileIds.has(participantId);
