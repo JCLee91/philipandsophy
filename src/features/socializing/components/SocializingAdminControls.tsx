@@ -124,6 +124,8 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
 
         // Use realtime subscription for immediate updates
         const unsubscribe = subscribeToCohortParticipants(cohort.id, (participants: Participant[]) => {
+            console.log('Participants update:', participants.length);
+            
             const optionVotes: Record<string, number> = {};
             const optionVoters: Record<string, VoterInfo[]> = {};
             let cantAttendCount = 0;
@@ -145,19 +147,19 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                 };
 
                 // Check if user participated in phase 1
-                const hasVotedOptions = votes?.optionIds && votes.optionIds.length > 0;
-                const isCantAttend = votes?.cantAttend;
+                const hasOptionIds = Array.isArray(votes?.optionIds) && votes.optionIds.length > 0;
+                const isCantAttend = Boolean(votes?.cantAttend);
                 
-                if (hasVotedOptions || isCantAttend) {
+                if (hasOptionIds || isCantAttend) {
                      totalVoterCount++;
                      totalVoters.push(voterInfo);
                 }
 
-                if (votes?.cantAttend) {
+                if (isCantAttend) {
                     cantAttendCount++;
                     cantAttendVoters.push(voterInfo);
-                } else if (votes?.optionIds && votes.optionIds.length > 0) {
-                    votes.optionIds.forEach(optionId => {
+                } else if (hasOptionIds) {
+                    votes!.optionIds!.forEach(optionId => {
                         optionVotes[optionId] = (optionVotes[optionId] || 0) + 1;
                         if (!optionVoters[optionId]) {
                             optionVoters[optionId] = [];
@@ -166,6 +168,7 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                     });
                 }
 
+                // Phase 2 stats
                 if (votes?.attendance === 'attending') {
                     attendingCount++;
                     attendingVoters.push(voterInfo);
@@ -174,6 +177,8 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
                     notAttendingVoters.push(voterInfo);
                 }
             });
+
+            console.log('Stats updated:', { totalVoterCount, optionVotes });
 
             setStats({
                 optionVotes,
