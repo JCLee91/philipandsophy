@@ -17,22 +17,52 @@ export async function voteForOptions(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const cookieStore = await cookies();
-        const participantId = cookieStore.get('pns-participant')?.value;
+        const sessionParticipantId = cookieStore.get('pns-participant')?.value;
 
-        if (!participantId) {
+        if (!sessionParticipantId) {
             return { success: false, error: '로그인이 필요합니다.' };
         }
 
         const { db } = getFirebaseAdmin();
 
+        // 1. Get session participant to find phone number
+        const sessionDoc = await db.collection(COLLECTIONS.PARTICIPANTS).doc(sessionParticipantId).get();
+        if (!sessionDoc.exists) {
+            return { success: false, error: '사용자 정보를 찾을 수 없습니다.' };
+        }
+        const sessionData = sessionDoc.data() as Participant;
+        const phoneNumber = sessionData.phoneNumber;
+
+        let targetParticipantId = sessionParticipantId;
+
+        // 2. If cohort doesn't match, find the correct participant doc for this cohort
+        if (sessionData.cohortId !== cohortId) {
+            const querySnapshot = await db.collection(COLLECTIONS.PARTICIPANTS)
+                .where('phoneNumber', '==', phoneNumber)
+                .where('cohortId', '==', cohortId)
+                .limit(1)
+                .get();
+
+            if (querySnapshot.empty) {
+                return { success: false, error: '해당 기수의 참가자가 아닙니다.' };
+            }
+            targetParticipantId = querySnapshot.docs[0].id;
+        }
+
         // Update participant's vote
-        await db.collection(COLLECTIONS.PARTICIPANTS).doc(participantId).update({
+        await db.collection(COLLECTIONS.PARTICIPANTS).doc(targetParticipantId).update({
             'socializingVotes.optionIds': cantAttend ? [] : optionIds,
             'socializingVotes.cantAttend': cantAttend,
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        logger.info('User voted for options', { participantId, cohortId, optionIds, cantAttend });
+        logger.info('User voted for options', { 
+            sessionParticipantId, 
+            targetParticipantId, 
+            cohortId, 
+            optionIds, 
+            cantAttend 
+        });
         return { success: true };
 
     } catch (error) {
@@ -50,21 +80,50 @@ export async function voteAttendance(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const cookieStore = await cookies();
-        const participantId = cookieStore.get('pns-participant')?.value;
+        const sessionParticipantId = cookieStore.get('pns-participant')?.value;
 
-        if (!participantId) {
+        if (!sessionParticipantId) {
             return { success: false, error: '로그인이 필요합니다.' };
         }
 
         const { db } = getFirebaseAdmin();
 
+        // 1. Get session participant to find phone number
+        const sessionDoc = await db.collection(COLLECTIONS.PARTICIPANTS).doc(sessionParticipantId).get();
+        if (!sessionDoc.exists) {
+            return { success: false, error: '사용자 정보를 찾을 수 없습니다.' };
+        }
+        const sessionData = sessionDoc.data() as Participant;
+        const phoneNumber = sessionData.phoneNumber;
+
+        let targetParticipantId = sessionParticipantId;
+
+        // 2. If cohort doesn't match, find the correct participant doc for this cohort
+        if (sessionData.cohortId !== cohortId) {
+            const querySnapshot = await db.collection(COLLECTIONS.PARTICIPANTS)
+                .where('phoneNumber', '==', phoneNumber)
+                .where('cohortId', '==', cohortId)
+                .limit(1)
+                .get();
+
+            if (querySnapshot.empty) {
+                return { success: false, error: '해당 기수의 참가자가 아닙니다.' };
+            }
+            targetParticipantId = querySnapshot.docs[0].id;
+        }
+
         // Update participant's attendance
-        await db.collection(COLLECTIONS.PARTICIPANTS).doc(participantId).update({
+        await db.collection(COLLECTIONS.PARTICIPANTS).doc(targetParticipantId).update({
             'socializingVotes.attendance': attendance,
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        logger.info('User voted attendance', { participantId, cohortId, attendance });
+        logger.info('User voted attendance', { 
+            sessionParticipantId, 
+            targetParticipantId, 
+            cohortId, 
+            attendance 
+        });
         return { success: true };
 
     } catch (error) {
