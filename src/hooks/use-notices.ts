@@ -56,11 +56,13 @@ export function useNoticesByCohort(
 ) {
   const queryClient = useQueryClient();
 
+  const enabled = options?.enabled ?? !!cohortId;
+
   // Initial fetch
   const query = useQuery({
     queryKey: NOTICE_KEYS.byCohort(cohortId || ''),
     queryFn: () => (cohortId ? getNoticesByCohort(cohortId) : []),
-    enabled: options?.enabled ?? !!cohortId,
+    enabled: enabled,
     // React Query 캐시 설정 (실시간 구독 최적화)
     staleTime: Infinity, // 실시간 구독으로 자동 업데이트
     refetchOnWindowFocus: false, // 실시간 구독 활성 (중복 구독 방지)
@@ -72,7 +74,7 @@ export function useNoticesByCohort(
 
   // Subscribe to real-time updates
   useEffect(() => {
-    if (!cohortId) return undefined;
+    if (!cohortId || !enabled) return undefined;
 
     // 이 effect가 여전히 활성 상태인지 추적 (경쟁 조건 방지)
     let isActive = true;
@@ -89,7 +91,7 @@ export function useNoticesByCohort(
       isActive = false; // cleanup 시 비활성화
       unsubscribe();
     };
-  }, [cohortId, queryClient]);
+  }, [cohortId, queryClient, enabled]);
 
   return query;
 }

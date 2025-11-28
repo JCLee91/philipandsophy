@@ -176,7 +176,7 @@ export function ChatClientView({
 
   // Realtime Vote Stats Sync
   useEffect(() => {
-    if (cohortId && isSocializingActive) {
+    if (cohortId && isSocializingActive && participant) {
       const unsubscribe = subscribeToCohortParticipants(cohortId, (participants: Participant[]) => {
         const optionVotes: Record<string, number> = {};
         const optionVoters: Record<string, VoterInfo[]> = {};
