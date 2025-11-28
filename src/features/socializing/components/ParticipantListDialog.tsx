@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { VoterInfo } from '@/features/socializing/actions/socializing-actions';
+import { getFirstName } from '@/lib/utils';
 
 interface ParticipantListDialogProps {
   open: boolean;
@@ -43,11 +44,11 @@ export default function ParticipantListDialog({
                   <Avatar className="h-10 w-10 border border-gray-100">
                     <AvatarImage src={voter.profileImageCircle || undefined} alt={voter.name} />
                     <AvatarFallback className="bg-gray-100 text-gray-500 text-xs">
-                      {voter.name[0]}
+                      {getFirstName(voter.name)[0]}
                     </AvatarFallback>
                   </Avatar>
                   <span className="font-medium text-gray-900 text-sm">
-                    {voter.name}
+                    {getFirstName(voter.name)}
                   </span>
                 </li>
               ))}

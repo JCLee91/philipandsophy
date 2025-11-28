@@ -16,7 +16,7 @@ import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/use-access-control';
-import { getInitials, formatShortDate } from '@/lib/utils';
+import { getInitials, formatShortDate, getFirstName } from '@/lib/utils';
 import { format, startOfDay, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
@@ -440,7 +440,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const initials = getInitials(participant.name);
 
   // 이름에서 성 제거 (예: "김철수" -> "철수")
-  const firstName = participant.name.length > 2 ? participant.name.slice(1) : participant.name;
+  const firstName = getFirstName(participant.name);
 
   // 이미지 클릭 핸들러
   const handleImageClick = () => {

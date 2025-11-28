@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
-import { getInitials } from '@/lib/utils';
+import { getInitials, getFirstName } from '@/lib/utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
 
 // ✅ Disable static generation
@@ -178,7 +178,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                         작성된 감상평이 없습니다
                                     </h3>
                                     <p className="text-sm text-gray-600 leading-relaxed">
-                                        이 날짜에 {participant.name}님의 독서 인증이 없습니다
+                                        이 날짜에 {getFirstName(participant.name)}님의 독서 인증이 없습니다
                                     </p>
                                 </div>
 
@@ -235,7 +235,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                     onClick={() => setProfileImageDialogOpen(true)}
                                     className="flex items-center gap-1 transition-opacity hover:opacity-70"
                                 >
-                                    <span className="text-[18px] font-bold text-[#191F28]">{participant.name}</span>
+                                    <span className="text-[18px] font-bold text-[#191F28]">{getFirstName(participant.name)}</span>
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M9 18L15 12L9 6" stroke="#191F28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>

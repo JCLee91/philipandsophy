@@ -24,6 +24,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import type { Participant, Cluster, ReadingSubmission } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
+import { getFirstName } from '@/lib/utils';
 import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { Lock, Heart, ChevronLeft, ChevronDown } from 'lucide-react';
@@ -1118,7 +1119,7 @@ function TodayLibraryV3Content() {
 
       return {
         ...member,
-        name: isMe ? '나' : member.name, // 본인은 '나'로 표시
+        name: isMe ? '나' : getFirstName(member.name), // 본인은 '나', 타인은 이름만 표시
         submission,
         review: submission?.review || '',
         dailyAnswer: submission?.dailyAnswer || '',
