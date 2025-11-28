@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, Suspense } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { initializeFirebase, getFirebaseAuth } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
 import { Participant } from '@/types/database';
@@ -43,6 +44,7 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   // pushState, replaceState, popstate 모두 자동 감지됨
   const searchParams = useSearchParams();
   const urlCohortId = searchParams.get('cohort');
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     let mounted = true;
@@ -157,6 +159,11 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     try {
       const auth = getFirebaseAuth();
       await signOut(auth);
+      
+      // ✅ 캐시 강제 초기화 (로그아웃 시 중요)
+      // 다음 로그인 시 반드시 새로운 데이터를 가져오도록 함
+      queryClient.removeQueries({ queryKey: ['participant'] });
+      
       deleteClientCookie('pns-participant');
       deleteClientCookie('pns-cohort');
 

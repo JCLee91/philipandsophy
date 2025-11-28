@@ -58,8 +58,8 @@ export function useParticipant(firebaseUid: string | null | undefined, enabled =
     retry: 2,
     retryDelay: 1000, // 고정 1초 (총 최대 2초 대기)
     // 캐싱 전략
-    staleTime: 5 * 60 * 1000, // 5분 (참가자 정보는 자주 변경되지 않음)
-    gcTime: 10 * 60 * 1000, // 10분 (메모리에 오래 유지)
+    staleTime: 0, // 항상 최신 데이터 조회 (참가자 정보는 정확성이 중요)
+    gcTime: 5 * 60 * 1000, // 5분 (메모리 유지 시간 단축)
     // 에러 발생 시에도 이전 데이터 유지
     placeholderData: (previousData) => previousData,
   });
