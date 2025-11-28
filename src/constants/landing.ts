@@ -7,7 +7,7 @@
  */
 export const LANDING_CONSTANTS = {
   /** 사전 신청 폼 URL */
-  FORM_URL: 'https://smore.im/form/13J1nUevrX',
+  FORM_URL: '/application',
 
   /** 이미지 캐시 버스팅 버전 */
   IMAGE_VERSION: '1762739366900',

@@ -99,8 +99,10 @@ export default function RootLayout({
           crossOrigin="anonymous"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css"
         />
+        {/* Karina Font */}
+        <link href="https://fonts.cdnfonts.com/css/karina" rel="stylesheet" />
       </head>
-      <body className="font-pretendard antialiased">
+      <body className="font-sans antialiased">
         <AppBodyClass />
         <Providers>{children}</Providers>
       </body>

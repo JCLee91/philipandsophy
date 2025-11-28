@@ -442,6 +442,60 @@ html[data-app="true"] .app-footer {
     transition: all 0.1s ease;
   }
 
+  /* CTA Button White Version (For Dark Backgrounds) */
+  .cta-button-white {
+    display: inline-flex;
+    align-items: flex-start; /* 텍스트 상단 정렬을 위해 변경 */
+    justify-content: center;
+    gap: 8px;
+    width: auto;
+    min-width: 100px; /* 가로 길이 더 축소 */
+    height: 44px;
+    padding: 10px 20px 0 20px; /* 텍스트 위쪽으로 이동 (상단 패딩 축소/하단 여백 확보) */
+    border-radius: 10px;
+    text-decoration: none;
+    color: #000000;
+    font-size: 14px;
+    font-weight: 700;
+    position: relative;
+    overflow: hidden;
+    
+    /* Glassmorphism White */
+    background: rgba(255, 255, 255, 0.95);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    
+    /* Glow Effect */
+    box-shadow: 
+      0 0 15px rgba(255, 255, 255, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+    
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    cursor: pointer;
+  }
+
+  .cta-button-white:hover {
+    transform: translateY(-2px);
+    background: #ffffff;
+    box-shadow: 
+      0 0 25px rgba(255, 255, 255, 0.5),
+      0 8px 20px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+
+  .cta-button-white:active {
+    transform: translateY(0);
+  }
+  
+  .cta-button-white[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
   /* 컴팩트 버전 */
   .cta-button.compact {
     max-width: 280px;
@@ -466,6 +520,12 @@ html[data-app="true"] .app-footer {
     .cta-button .cta-arrow {
       width: 28px;
       height: 28px;
+    }
+    
+    .cta-button-white {
+      font-size: 16px;
+      height: 56px;
+      padding: 16px 24px;
     }
   }
 }

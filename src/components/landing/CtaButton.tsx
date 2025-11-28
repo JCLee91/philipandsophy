@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Tooltip from '@/components/Tooltip';
 import { trackRegistration } from '@/lib/analytics';
 import { LANDING_CONSTANTS, CTA_TEXTS } from '@/constants/landing';
@@ -30,19 +31,32 @@ export default function CtaButton({
   text = CTA_TEXTS.JOIN(LANDING_CONSTANTS.COHORT_NUMBER),
   href = LANDING_CONSTANTS.FORM_URL,
 }: CtaButtonProps) {
+  const isInternal = href.startsWith('/');
+
   return (
     <div className="cta-section">
       <Tooltip />
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={ariaLabel}
-        className="cta-button"
-        onClick={() => trackRegistration(analyticsName)}
-      >
-        <span className="cta-text">{text}</span>
-      </a>
+      {isInternal ? (
+        <Link
+          href={href}
+          aria-label={ariaLabel}
+          className="cta-button"
+          onClick={() => trackRegistration(analyticsName)}
+        >
+          <span className="cta-text">{text}</span>
+        </Link>
+      ) : (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={ariaLabel}
+          className="cta-button"
+          onClick={() => trackRegistration(analyticsName)}
+        >
+          <span className="cta-text">{text}</span>
+        </a>
+      )}
     </div>
   );
 }
