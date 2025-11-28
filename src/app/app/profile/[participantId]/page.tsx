@@ -11,7 +11,6 @@ import HistoryWeekRow from '@/components/HistoryWeekRow';
 import ErrorState from '@/components/ErrorState';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
 import ImageViewerDialog from '@/components/ImageViewerDialog';
-// import MatchingReasonBanner from '@/components/MatchingReasonBanner'; // 논의 중인 기능
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -399,8 +398,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 새로운 규칙: 어제 인증한 사람인지 체크
   const isYesterdayVerified = yesterdayVerifiedIds?.has(participantId) ?? false;
 
-  // ❌ REMOVED: matchingReason - v1.0 AI 매칭 레거시 (UI에서 사용 안 함)
-
   // 최종 접근 권한:
   // - 본인 OR 슈퍼관리자: 항상 가능
   // - 14일차 + 인증 완료: 모든 프로필 접근 가능
@@ -562,8 +559,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                     />
                   </button>
                 </div>
-
-                {/* ❌ REMOVED: MatchingReasonBanner - v1.0 AI 매칭 레거시 */}
 
                 {/* 최근 본 도서 */}
                 {latestSubmission && (
