@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 export default function AppBodyClass() {
   const pathname = usePathname();
   const isAppRoute = pathname?.startsWith('/app');
-  const isLandingPage = pathname === '/' || pathname === '/service' || pathname === '/membership' || pathname === '/program' || pathname === '/party-reviews' || pathname === '/secret-party';
+  const isLandingPage = pathname === '/' || pathname === '/service' || pathname === '/membership' || pathname === '/program' || pathname === '/party-reviews' || pathname === '/secret-party' || pathname?.startsWith('/application');
 
   useEffect(() => {
     if (isAppRoute) {
