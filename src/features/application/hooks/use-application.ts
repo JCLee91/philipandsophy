@@ -202,6 +202,14 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
 
             set({ isComplete: true });
 
+            // GTM 전환 이벤트 발생
+            if (typeof window !== 'undefined' && window.dataLayer) {
+                window.dataLayer.push({
+                    event: 'application_complete',
+                    member_type: isNewMember ? 'new' : 'existing',
+                });
+            }
+
             // 제출 완료 퍼널 이벤트 로깅
             const sessionId = getOrCreateSessionId();
             const memberType: 'new' | 'existing' =

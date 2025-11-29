@@ -86,6 +86,16 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning lang="ko">
       <head>
+        {/* Google Tag Manager */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5S8LBDTS');`,
+          }}
+        />
         {/* Pretendard Variable Font */}
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link
@@ -103,6 +113,13 @@ export default function RootLayout({
         <link href="https://fonts.cdnfonts.com/css/karina" rel="stylesheet" />
       </head>
       <body className="font-sans antialiased">
+        {/* Google Tag Manager (noscript) */}
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html: `<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5S8LBDTS"
+height="0" width="0" style="display:none;visibility:hidden"></iframe>`,
+          }}
+        />
         <AppBodyClass />
         <Providers>{children}</Providers>
       </body>
