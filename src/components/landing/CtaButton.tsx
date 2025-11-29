@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Tooltip from '@/components/Tooltip';
-import { trackRegistration } from '@/lib/analytics';
 import { LANDING_CONSTANTS, CTA_TEXTS } from '@/constants/landing';
 
 interface CtaButtonProps {
@@ -41,7 +40,6 @@ export default function CtaButton({
           href={href}
           aria-label={ariaLabel}
           className="cta-button"
-          onClick={() => trackRegistration(analyticsName)}
         >
           <span className="cta-text">{text}</span>
         </Link>
@@ -52,7 +50,6 @@ export default function CtaButton({
           rel="noopener noreferrer"
           aria-label={ariaLabel}
           className="cta-button"
-          onClick={() => trackRegistration(analyticsName)}
         >
           <span className="cta-text">{text}</span>
         </a>

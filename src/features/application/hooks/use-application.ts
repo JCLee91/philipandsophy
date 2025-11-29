@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { logger } from '@/lib/logger';
 import { uploadApplicationPhoto } from '@/lib/firebase/storage';
 import { logFunnelEvent, getStepIndex } from '@/lib/firebase/funnel';
+import { trackRegistration } from '@/lib/analytics';
 import { Question, QUESTIONS, START_QUESTION_ID } from '../constants/questions';
 
 /**
@@ -209,6 +210,9 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                     member_type: isNewMember ? 'new' : 'existing',
                 });
             }
+
+            // Facebook Pixel 전환 이벤트 발생
+            trackRegistration('신청서 제출');
 
             // 제출 완료 퍼널 이벤트 로깅
             const sessionId = getOrCreateSessionId();
