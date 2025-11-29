@@ -37,7 +37,7 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v10'; // Increment version to force update (v10: Skip external image domains)
+const CACHE_NAME = 'philipandsophy-v11'; // Increment version to force update (v11: Force CSP header refresh)
 
 // ✅ 앱 셸 프리캐시 (초기 로딩 필수 리소스)
 const urlsToCache = [
