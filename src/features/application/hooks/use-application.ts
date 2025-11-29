@@ -162,6 +162,16 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
             };
             const gender = answers['gender'] as string;
 
+            // 3. 유입채널 한글 변환
+            const channelMap: Record<string, string> = {
+                'instagram': '인스타그램',
+                'threads': '쓰레드',
+                'linkedin': '링크드인',
+                'friend': '지인 추천',
+                'other': '그 외',
+            };
+            const channel = answers['channel'] as string;
+
             // 3. 사진 URL (FileUpload에서 미리 업로드됨)
             const photoUrl = (answers['photoUrl'] as string) || '';
 
@@ -177,7 +187,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                 // 신규 멤버 전용 필드
                 회사명: answers['company'] || '',
                 직군: answers['job_detail'] || '',
-                유입채널: answers['channel'] || '',
+                유입채널: channelMap[channel] || channel || '',
                 생년월일: answers['birthdate'] || '',
                 사진URL: photoUrl,
 
