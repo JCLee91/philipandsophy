@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Tooltip from '@/components/Tooltip';
 import { LANDING_CONSTANTS, CTA_TEXTS } from '@/constants/landing';
+import { trackEvent } from '@/lib/analytics';
 
 interface CtaButtonProps {
   /** Analytics 이벤트에 사용될 콘텐츠 이름 */
@@ -40,6 +41,7 @@ export default function CtaButton({
           href={href}
           aria-label={ariaLabel}
           className="cta-button"
+          onClick={() => trackEvent('Lead', analyticsName)}
         >
           <span className="cta-text">{text}</span>
         </Link>
@@ -50,6 +52,7 @@ export default function CtaButton({
           rel="noopener noreferrer"
           aria-label={ariaLabel}
           className="cta-button"
+          onClick={() => trackEvent('Lead', analyticsName)}
         >
           <span className="cta-text">{text}</span>
         </a>
