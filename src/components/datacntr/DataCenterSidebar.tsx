@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   Table,
-  Send
+  Send,
+  TrendingDown
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -59,6 +60,11 @@ const navItems: NavItem[] = [
     href: '/datacntr/notifications',
     label: '커스텀 알림',
     icon: <Send className="h-5 w-5" />,
+  },
+  {
+    href: '/datacntr/funnel',
+    label: '퍼널 분석',
+    icon: <TrendingDown className="h-5 w-5" />,
   },
   {
     href: '/datacntr/settings',

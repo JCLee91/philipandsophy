@@ -161,5 +161,22 @@ service cloud.firestore {
       allow read: if isSignedIn() && request.auth.uid == userId;
       allow create, update, delete: if false;
     }
+
+    // ============================================
+    // 퍼널 이벤트 (Funnel Events) - 신청서 전환률 분석용
+    // ============================================
+    match /funnel_events/{eventId} {
+      // 읽기: 관리자만 (데이터센터에서 분석)
+      allow read: if isAdminClaim();
+
+      // 쓰기: 공개 허용 (비로그인 사용자도 신청서 작성 가능)
+      // 필수 필드 검증
+      allow create: if
+        request.resource.data.sessionId is string &&
+        request.resource.data.stepId is string &&
+        request.resource.data.stepIndex is number;
+
+      allow update, delete: if false;
+    }
   }
 }
