@@ -1,23 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 
 const PIXEL_ID = '1151958033749307';
 
-export default function FacebookPixel() {
-    const [loaded, setLoaded] = useState(false);
+function PixelEvents() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
     useEffect(() => {
-        if (!loaded) return;
-
         if (window.fbq) {
             window.fbq('track', 'PageView');
         }
-    }, [pathname, searchParams, loaded]);
+    }, [pathname, searchParams]);
+
+    return null;
+}
+
+export default function FacebookPixel() {
+    const [loaded, setLoaded] = useState(false);
 
     return (
         <div>
@@ -33,6 +36,11 @@ export default function FacebookPixel() {
                     }
                 }}
             />
+            {loaded && (
+                <Suspense fallback={null}>
+                    <PixelEvents />
+                </Suspense>
+            )}
         </div>
     );
 }
