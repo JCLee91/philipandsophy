@@ -42,10 +42,13 @@ export default function ApplicationPage() {
                         <p className="text-gray-400 mb-8">참여해 주셔서 감사합니다.</p>
                         <button
                             type="button"
-                            onClick={resetForm}
+                            onClick={() => {
+                                resetForm();
+                                window.location.href = '/';
+                            }}
                             className="cta-button-white"
                         >
-                            처음으로 돌아가기
+                            홈으로 돌아가기
                         </button>
                     </motion.div>
                 </div>
