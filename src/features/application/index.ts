@@ -7,6 +7,7 @@ export { FileUpload } from './components/FileUpload';
 export { ProgressBar } from './components/ProgressBar';
 export { QuestionStep } from './components/QuestionStep';
 
+
 // Hooks & Store
 export { useApplicationStore } from './hooks/use-application';
 

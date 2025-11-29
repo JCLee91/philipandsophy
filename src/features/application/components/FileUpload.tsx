@@ -1,20 +1,25 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Loader2, CheckCircle } from 'lucide-react';
 import { isValidFileSize, isValidImageType } from '../lib/validation';
+import { uploadApplicationPhoto } from '@/lib/firebase/storage';
 
 interface FileUploadProps {
     onFileSelect: (file: File | null) => void;
+    onUploadComplete?: (url: string) => void;
     currentFile?: File | null;
     onError?: (error: string) => void;
 }
 
 const MAX_FILE_SIZE_MB = 20;
 
-export function FileUpload({ onFileSelect, currentFile, onError }: FileUploadProps) {
+export function FileUpload({ onFileSelect, onUploadComplete, currentFile, onError }: FileUploadProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isUploadComplete, setIsUploadComplete] = useState(false);
 
     // 메모리 누수 방지: previewUrl cleanup
     useEffect(() => {
@@ -25,7 +30,7 @@ export function FileUpload({ onFileSelect, currentFile, onError }: FileUploadPro
         };
     }, [previewUrl]);
 
-    const validateAndSetFile = (file: File) => {
+    const validateAndSetFile = async (file: File) => {
         // 파일 타입 검증
         if (!isValidImageType(file)) {
             onError?.('이미지 파일만 업로드 가능합니다. (JPG, PNG, GIF, WebP)');
@@ -38,9 +43,30 @@ export function FileUpload({ onFileSelect, currentFile, onError }: FileUploadPro
             return;
         }
 
+        // 미리보기 설정
         onFileSelect(file);
         const url = URL.createObjectURL(file);
         setPreviewUrl(url);
+
+        // Firebase에 즉시 업로드
+        setIsUploading(true);
+        setUploadProgress(0);
+        setIsUploadComplete(false);
+
+        try {
+            const downloadUrl = await uploadApplicationPhoto(file, (progress) => {
+                setUploadProgress(Math.round(progress));
+            });
+            setIsUploadComplete(true);
+            onUploadComplete?.(downloadUrl);
+        } catch (error) {
+            console.error('사진 업로드 실패:', error);
+            onError?.('사진 업로드에 실패했습니다. 다시 시도해주세요.');
+            // 실패 시 초기화
+            handleClear();
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +93,11 @@ export function FileUpload({ onFileSelect, currentFile, onError }: FileUploadPro
 
     const handleClear = () => {
         onFileSelect(null);
+        onUploadComplete?.('');
         setPreviewUrl(null);
+        setIsUploading(false);
+        setUploadProgress(0);
+        setIsUploadComplete(false);
         if (inputRef.current) {
             inputRef.current.value = '';
         }
@@ -107,10 +137,28 @@ export function FileUpload({ onFileSelect, currentFile, onError }: FileUploadPro
                         alt="Preview"
                         className="max-w-full max-h-full object-contain"
                     />
+                    
+                    {/* 업로드 상태 오버레이 */}
+                    {isUploading && (
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
+                            <Loader2 className="w-8 h-8 text-white animate-spin mb-2" />
+                            <p className="text-white text-sm">업로드 중... {uploadProgress}%</p>
+                        </div>
+                    )}
+                    
+                    {/* 업로드 완료 표시 */}
+                    {isUploadComplete && !isUploading && (
+                        <div className="absolute bottom-2 left-2 bg-green-500/90 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>업로드 완료</span>
+                        </div>
+                    )}
+                    
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center transition-colors"
+                        disabled={isUploading}
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="이미지 삭제"
                     >
                         <X className="w-4 h-4 text-white" />

@@ -265,6 +265,9 @@ export function QuestionStep({ question }: QuestionStepProps) {
                                 setAnswer(question.id, file);
                                 setValidationError(null);
                             }}
+                            onUploadComplete={(url) => {
+                                setAnswer('photoUrl', url);
+                            }}
                             currentFile={currentAnswer as File | null}
                             onError={(error) => setValidationError(error)}
                         />

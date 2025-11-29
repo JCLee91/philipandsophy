@@ -2,7 +2,6 @@
 
 import { create } from 'zustand';
 import { logger } from '@/lib/logger';
-import { uploadApplicationPhoto } from '@/lib/firebase/storage';
 import { logFunnelEvent, getStepIndex } from '@/lib/firebase/funnel';
 import { trackRegistration } from '@/lib/analytics';
 import { Question, QUESTIONS, START_QUESTION_ID } from '../constants/questions';
@@ -36,7 +35,7 @@ interface ApplicationState {
     setPrivacyConsent: (consent: boolean) => void;
     nextStep: () => void;
     prevStep: () => void;
-    submitForm: () => Promise<void>;
+    submitForm: () => void;
     resetForm: () => void;
     getCurrentQuestion: () => Question;
     getHistoryLength: () => number;
@@ -144,36 +143,27 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
         }
     },
 
-    submitForm: async () => {
+    submitForm: () => {
         const { history, answers, trackedSteps } = get();
         const currentId = history[history.length - 1];
         const currentQuestion = QUESTIONS[currentId];
 
-        // 외부 링크가 있으면 즉시 새 탭으로 열기 (팝업 차단 방지)
-        // 데이터 전송은 백그라운드에서 진행됨
-        if (currentQuestion.externalLink) {
-            window.open(currentQuestion.externalLink, '_blank');
-        }
-
         set({ isSubmitting: true });
-        try {
-            // 1. 사진이 있으면 Firebase Storage에 업로드
-            let photoUrl = '';
-            const photoFile = answers['photo'] as File | undefined;
-            if (photoFile) {
-                photoUrl = await uploadApplicationPhoto(photoFile);
-            }
 
-            // 2. 회원 유형 판별
+        try {
+            // 1. 회원 유형 판별
             const membershipStatus = answers['membership_status'] as string;
             const isNewMember = membershipStatus === 'new';
 
-            // 3. 성별 한글 변환
+            // 2. 성별 한글 변환
             const genderMap: Record<string, string> = {
                 'male': '남성',
                 'female': '여성',
             };
             const gender = answers['gender'] as string;
+
+            // 3. 사진 URL (FileUpload에서 미리 업로드됨)
+            const photoUrl = (answers['photoUrl'] as string) || '';
 
             // 4. 웹훅으로 전송할 데이터 구성
             const webhookData = {
@@ -195,16 +185,11 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                 기수: answers['cohort_check'] || '',
             };
 
-            // 5. Make 웹훅으로 전송
+            // 5. Make 웹훅으로 전송 (sendBeacon 사용 - 페이지 이동해도 전송 보장)
             const webhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL;
             if (webhookUrl) {
-                await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(webhookData),
-                });
+                const blob = new Blob([JSON.stringify(webhookData)], { type: 'application/json' });
+                navigator.sendBeacon(webhookUrl, blob);
             }
 
             set({ isComplete: true });
@@ -234,9 +219,13 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                 });
                 set({ trackedSteps: new Set([...trackedSteps, 'submit']) });
             }
+
+            // 6. 외부 링크가 있으면 즉시 새 탭으로 열기
+            if (currentQuestion.externalLink) {
+                window.open(currentQuestion.externalLink, '_blank');
+            }
         } catch (error) {
             logger.error('설문 제출 실패', error);
-            // 디버깅용 상세 로그
             if (error instanceof Error) {
                 console.error('Error name:', error.name);
                 console.error('Error message:', error.message);
@@ -244,7 +233,6 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
             } else {
                 console.error('Non-Error thrown:', JSON.stringify(error));
             }
-            throw error; // 에러를 다시 던져서 UI에서 처리할 수 있도록
         } finally {
             set({ isSubmitting: false });
         }
