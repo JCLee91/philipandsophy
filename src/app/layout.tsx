@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Providers from './providers';
 import AppBodyClass from '@/components/AppBodyClass';
-import FacebookPixel from '@/components/analytics/FacebookPixel';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -88,9 +87,29 @@ export default function RootLayout({
     <html suppressHydrationWarning lang="ko">
       <head>
         {/* Meta Pixel Code */}
-        {/* Meta Pixel Code */}
-        <FacebookPixel />
-
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1151958033749307');
+fbq('track', 'PageView');`,
+          }}
+        />
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: 'none' }}
+            src="https://www.facebook.com/tr?id=1151958033749307&ev=PageView&noscript=1"
+            alt=""
+          />
+        </noscript>
         {/* Pretendard Variable Font */}
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link

@@ -8,9 +8,9 @@ declare global {
      * Facebook Pixel 트래킹 함수
      */
     fbq?: (
-      action: 'init' | 'track' | 'trackCustom',
+      action: 'track' | 'trackCustom',
       eventName: string,
-      params?: Record<string, string | number> | any
+      params?: Record<string, string | number>
     ) => void;
 
     /**
