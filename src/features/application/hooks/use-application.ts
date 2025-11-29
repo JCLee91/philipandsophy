@@ -185,11 +185,20 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                 기수: answers['cohort_check'] || '',
             };
 
-            // 5. Make 웹훅으로 전송 (sendBeacon 사용 - 페이지 이동해도 전송 보장)
+            // 5. Make 웹훅으로 전송 (keepalive 옵션으로 페이지 이동해도 전송 보장)
             const webhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL;
             if (webhookUrl) {
-                const blob = new Blob([JSON.stringify(webhookData)], { type: 'application/json' });
-                navigator.sendBeacon(webhookUrl, blob);
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(webhookData),
+                    keepalive: true, // 페이지 이동/닫힘에도 전송 보장
+                }).catch((err) => {
+                    // 에러 발생해도 무시 (사용자 경험 방해 X)
+                    console.error('웹훅 전송 실패:', err);
+                });
             }
 
             set({ isComplete: true });
