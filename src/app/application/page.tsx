@@ -35,18 +35,20 @@ export default function ApplicationPage() {
 
     if (isComplete) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center p-4">
-                <motion.div className="text-center" {...fadeIn}>
-                    <h1 className="text-3xl font-bold mb-4 text-white">제출이 완료되었습니다!</h1>
-                    <p className="text-gray-400 mb-8">참여해 주셔서 감사합니다.</p>
-                    <button
-                        type="button"
-                        onClick={resetForm}
-                        className="cta-button-white"
-                    >
-                        처음으로 돌아가기
-                    </button>
-                </motion.div>
+            <div className="application-page">
+                <div className="application-container">
+                    <motion.div className="application-content text-center" {...fadeIn}>
+                        <h1 className="text-2xl font-bold mb-4 text-white">제출이 완료되었습니다!</h1>
+                        <p className="text-gray-400 mb-8">참여해 주셔서 감사합니다.</p>
+                        <button
+                            type="button"
+                            onClick={resetForm}
+                            className="cta-button-white"
+                        >
+                            처음으로 돌아가기
+                        </button>
+                    </motion.div>
+                </div>
             </div>
         );
     }
@@ -54,66 +56,67 @@ export default function ApplicationPage() {
     // currentQuestion이 없는 경우 (에러 상태)
     if (!currentQuestion) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center p-4">
-                <motion.div className="text-center" {...fadeIn}>
-                    <h1 className="text-2xl font-bold mb-4 text-white">오류가 발생했습니다</h1>
-                    <button
-                        type="button"
-                        onClick={resetForm}
-                        className="cta-button-white"
-                    >
-                        처음으로 돌아가기
-                    </button>
-                </motion.div>
+            <div className="application-page">
+                <div className="application-container">
+                    <motion.div className="application-content text-center" {...fadeIn}>
+                        <h1 className="text-xl font-bold mb-4 text-white">오류가 발생했습니다</h1>
+                        <button
+                            type="button"
+                            onClick={resetForm}
+                            className="cta-button-white"
+                        >
+                            처음으로 돌아가기
+                        </button>
+                    </motion.div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-black flex flex-col text-white">
-            {/* 상단 로고 심볼 */}
-            <motion.header 
-                className="fixed top-6 left-0 w-full flex justify-center z-40 pointer-events-none"
-                {...fadeIn}
-            >
-                <div className="relative w-48 h-24">
-                    <Image 
-                        src="/image/pns_logo_symbol.png" 
-                        alt="Logo" 
-                        fill 
-                        className="object-contain"
-                        priority
-                    />
-                </div>
-            </motion.header>
+        <div className="application-page">
+            <div className="application-container">
+                {/* 상단 로고 */}
+                <motion.header className="application-header" {...fadeIn}>
+                    <div className="application-logo">
+                        <Image
+                            src="/image/pns_logo_symbol.png"
+                            alt="Logo"
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
+                </motion.header>
 
-            <ProgressBar 
-                currentStep={historyLength} 
-                totalSteps={totalSteps} 
-                onBack={prevStep}
-                canGoBack={canGoBack()}
-            />
+                {/* 메인 콘텐츠 */}
+                <main className="application-content">
+                    <AnimatePresence mode="wait">
+                        <QuestionStep key={currentQuestion.id} question={currentQuestion} />
+                    </AnimatePresence>
+                </main>
 
-            <main className="flex-1 flex flex-col relative overflow-hidden">
-                <AnimatePresence mode="wait">
-                    <QuestionStep key={currentQuestion.id} question={currentQuestion} />
-                </AnimatePresence>
-            </main>
+                {/* 프로그레스바 - 하단 */}
+                <ProgressBar
+                    currentStep={historyLength}
+                    totalSteps={totalSteps}
+                    onBack={prevStep}
+                    canGoBack={canGoBack()}
+                />
 
-            <motion.footer 
-                className="fixed bottom-8 w-full flex justify-center z-40 pointer-events-none"
-                {...fadeIn}
-            >
-                <div className="relative w-52 h-12 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
-                    <Image 
-                        src="/image/pns_logo_text_white.png" 
-                        alt="Philip & Sophy" 
-                        fill 
-                        className="object-contain"
-                        priority
-                    />
-                </div>
-            </motion.footer>
+                {/* 하단 로고 */}
+                <motion.footer className="application-footer" {...fadeIn}>
+                    <div className="application-footer-logo">
+                        <Image
+                            src="/image/pns_logo_text_white.png"
+                            alt="Philip & Sophy"
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
+                </motion.footer>
+            </div>
         </div>
     );
 }
