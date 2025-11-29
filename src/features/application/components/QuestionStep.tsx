@@ -21,10 +21,11 @@ interface QuestionStepProps {
 }
 
 export function QuestionStep({ question }: QuestionStepProps) {
-    const { answers, setAnswer, nextStep, privacyConsent, setPrivacyConsent, trackCurrentStep } = useApplicationStore();
+    const { answers, setAnswer, nextStep, privacyConsent, setPrivacyConsent, trackCurrentStep, isSubmitting } = useApplicationStore();
     const currentAnswer = answers[question.id];
     const [validationError, setValidationError] = useState<string | null>(null);
     const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
 
     // 현재 단계 퍼널 이벤트 트래킹
     useEffect(() => {
@@ -52,6 +53,7 @@ export function QuestionStep({ question }: QuestionStepProps) {
     };
 
     const validateAndNext = () => {
+        if (isNavigating || isSubmitting) return;
         setValidationError(null);
 
         if (question.type !== 'intro' && question.required !== false) {
@@ -134,6 +136,7 @@ export function QuestionStep({ question }: QuestionStepProps) {
             return;
         }
 
+        setIsNavigating(true);
         nextStep();
     };
 
@@ -214,7 +217,11 @@ export function QuestionStep({ question }: QuestionStepProps) {
                             placeholder={question.placeholder}
                             className="form-input-dark"
                             autoFocus
-                            onKeyDown={(e) => e.key === 'Enter' && currentAnswer && validateAndNext()}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.nativeEvent.isComposing && currentAnswer) {
+                                    validateAndNext();
+                                }
+                            }}
                         />
                         {renderSubmitSection()}
                     </div>
@@ -230,7 +237,11 @@ export function QuestionStep({ question }: QuestionStepProps) {
                             placeholder={question.placeholder}
                             className="form-input-dark"
                             autoFocus
-                            onKeyDown={(e) => e.key === 'Enter' && currentAnswer && validateAndNext()}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.nativeEvent.isComposing && currentAnswer) {
+                                    validateAndNext();
+                                }
+                            }}
                         />
                         {renderSubmitSection()}
                     </div>
@@ -251,7 +262,11 @@ export function QuestionStep({ question }: QuestionStepProps) {
                             placeholder={question.placeholder}
                             className="form-input-dark"
                             autoFocus
-                            onKeyDown={(e) => e.key === 'Enter' && (currentAnswer as string)?.length === 8 && validateAndNext()}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.nativeEvent.isComposing && (currentAnswer as string)?.length === 8) {
+                                    validateAndNext();
+                                }
+                            }}
                         />
                         {renderSubmitSection()}
                     </div>
