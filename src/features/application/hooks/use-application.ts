@@ -149,6 +149,12 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
         const currentId = history[history.length - 1];
         const currentQuestion = QUESTIONS[currentId];
 
+        // 외부 링크가 있으면 즉시 새 탭으로 열기 (팝업 차단 방지)
+        // 데이터 전송은 백그라운드에서 진행됨
+        if (currentQuestion.externalLink) {
+            window.open(currentQuestion.externalLink, '_blank');
+        }
+
         set({ isSubmitting: true });
         try {
             // 1. 사진이 있으면 Firebase Storage에 업로드
@@ -227,11 +233,6 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                     memberType,
                 });
                 set({ trackedSteps: new Set([...trackedSteps, 'submit']) });
-            }
-
-            // 외부 링크가 있으면 새 탭에서 열기
-            if (currentQuestion.externalLink) {
-                window.open(currentQuestion.externalLink, '_blank');
             }
         } catch (error) {
             logger.error('설문 제출 실패', error);
