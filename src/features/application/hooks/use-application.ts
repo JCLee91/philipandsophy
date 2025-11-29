@@ -223,6 +223,15 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
             }
         } catch (error) {
             logger.error('설문 제출 실패', error);
+            // 디버깅용 상세 로그
+            if (error instanceof Error) {
+                console.error('Error name:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+            } else {
+                console.error('Non-Error thrown:', JSON.stringify(error));
+            }
+            throw error; // 에러를 다시 던져서 UI에서 처리할 수 있도록
         } finally {
             set({ isSubmitting: false });
         }
