@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Upload, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { isValidFileSize, isValidImageType } from '../lib/validation';
 
 interface FileUploadProps {
@@ -16,6 +15,15 @@ const MAX_FILE_SIZE_MB = 20;
 export function FileUpload({ onFileSelect, currentFile, onError }: FileUploadProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    // 메모리 누수 방지: previewUrl cleanup
+    useEffect(() => {
+        return () => {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl]);
 
     const validateAndSetFile = (file: File) => {
         // 파일 타입 검증
@@ -80,33 +88,33 @@ export function FileUpload({ onFileSelect, currentFile, onError }: FileUploadPro
                     onClick={() => inputRef.current?.click()}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
-                    className="border-2 border-dashed border-zinc-700 bg-zinc-800/50 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-white hover:bg-zinc-800 transition-all group"
+                    className="border-2 border-dashed border-zinc-700 bg-zinc-800/50 rounded-xl h-48 flex flex-col items-center justify-center cursor-pointer hover:border-white hover:bg-zinc-800 transition-all group"
                 >
-                    <div className="w-16 h-16 bg-zinc-700 rounded-full flex items-center justify-center mb-4 group-hover:bg-zinc-600 transition-colors">
-                        <Upload className="w-8 h-8 text-gray-400 group-hover:text-white" />
+                    <div className="w-12 h-12 bg-zinc-700 rounded-full flex items-center justify-center mb-3 group-hover:bg-zinc-600 transition-colors">
+                        <Upload className="w-6 h-6 text-gray-400 group-hover:text-white" />
                     </div>
-                    <p className="text-lg font-medium text-gray-300 group-hover:text-white">
+                    <p className="text-base font-medium text-gray-300 group-hover:text-white">
                         파일을 끌어오거나 선택해 주세요.
                     </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                        (최대 파일 크기: {MAX_FILE_SIZE_MB}MB)
+                    <p className="text-xs text-gray-500 mt-1">
+                        (최대 {MAX_FILE_SIZE_MB}MB)
                     </p>
                 </div>
             ) : (
-                <div className="relative rounded-xl overflow-hidden border-2 border-zinc-700">
+                <div className="relative rounded-xl overflow-hidden border-2 border-zinc-700 h-48 bg-zinc-900 flex items-center justify-center">
                     <img
                         src={previewUrl}
                         alt="Preview"
-                        className="w-full h-auto max-h-[400px] object-contain bg-black"
+                        className="max-w-full max-h-full object-contain"
                     />
-                    <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 rounded-full bg-black/50 hover:bg-black/80"
+                    <button
+                        type="button"
                         onClick={handleClear}
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center transition-colors"
+                        aria-label="이미지 삭제"
                     >
-                        <X className="w-4 h-4" />
-                    </Button>
+                        <X className="w-4 h-4 text-white" />
+                    </button>
                 </div>
             )}
         </div>

@@ -3,12 +3,26 @@
  * 원본 smore 폼과 일치하도록 구성
  */
 
-export type QuestionType = 'single-select' | 'text' | 'date' | 'phone' | 'file' | 'intro' | 'birthdate';
+export type QuestionType = 'single-select' | 'text' | 'date' | 'phone' | 'file' | 'intro' | 'birthdate' | 'composite';
 
 export interface Option {
     label: string;
     value: string;
     nextQuestionId?: string; // For branching logic
+}
+
+// Composite 필드 타입 (여러 입력을 한 스텝에서 받을 때 사용)
+export interface FieldOption {
+    label: string;
+    value: string;
+}
+
+export interface Field {
+    id: string;
+    type: 'text' | 'phone' | 'select';
+    label: string;
+    placeholder?: string;
+    options?: FieldOption[]; // select 타입용
 }
 
 export interface Question {
@@ -17,12 +31,14 @@ export interface Question {
     title: string;
     description?: string;
     options?: Option[];
+    fields?: Field[]; // composite 타입용
     required?: boolean;
     placeholder?: string;
     nextQuestionId?: string; // Default next question if not overridden by option
     buttonText?: string; // For intro pages
     isLastStep?: boolean; // 마지막 단계 여부 (제출 버튼 표시용)
     submitButtonText?: string; // 제출 버튼 텍스트 (기존/신규 멤버에 따라 다름)
+    externalLink?: string; // 제출 후 이동할 외부 링크
     style?: {
         textAlign?: 'left' | 'center' | 'right';
         titleSize?: string; // tailwind class (e.g. 'text-2xl')
@@ -63,7 +79,7 @@ export const QUESTIONS: Record<string, Question> = {
         title: '필립앤소피 프로그램을\n진행한 적이 있으신가요?',
         options: [
             { label: '예, 재참여하려고 합니다.', value: 'existing', nextQuestionId: 'cohort_check' },
-            { label: '아니요, 신규 멤버입니다.', value: 'new', nextQuestionId: 'name' },
+            { label: '아니요, 신규 멤버입니다.', value: 'new', nextQuestionId: 'personal_info' },
         ],
         required: true,
     },
@@ -71,28 +87,30 @@ export const QUESTIONS: Record<string, Question> = {
     // ============================================
     // Branch 1: New Member Flow (신규 멤버)
     // ============================================
-    'name': {
-        id: 'name',
-        type: 'text',
-        title: '당신의 실명을 기입해주세요.',
-        placeholder: '홍길동',
+    'personal_info': {
+        id: 'personal_info',
+        type: 'composite',
+        title: '기본 정보를 입력해주세요.',
+        fields: [
+            { id: 'name', type: 'text', label: '이름', placeholder: '홍길동' },
+            { id: 'phone', type: 'phone', label: '연락처', placeholder: '010-0000-0000' },
+            { id: 'gender', type: 'select', label: '성별', options: [
+                { label: '남성', value: 'male' },
+                { label: '여성', value: 'female' },
+            ]},
+        ],
         required: true,
-        nextQuestionId: 'phone',
+        nextQuestionId: 'job_info',
     },
-    'phone': {
-        id: 'phone',
-        type: 'phone',
-        title: '연락처를 기입해 주세요.',
-        placeholder: 'ex. 010-1234-5678',
-        required: true,
-        nextQuestionId: 'job_details',
-    },
-    'job_details': {
-        id: 'job_details',
-        type: 'text',
-        title: '현재 회사명과 하시는 일을 적어 주세요.',
+    'job_info': {
+        id: 'job_info',
+        type: 'composite',
+        title: '어떤 일을 하시나요?',
         description: '해당 없으신 분은 "해당 없음"으로 적어주세요.',
-        placeholder: 'ex. ##전자 / 마케팅',
+        fields: [
+            { id: 'company', type: 'text', label: '회사명', placeholder: '회사명 또는 소속' },
+            { id: 'job_detail', type: 'text', label: '직군', placeholder: '예: 마케팅, 개발, 디자인' },
+        ],
         required: true,
         nextQuestionId: 'channel',
     },
@@ -127,6 +145,7 @@ export const QUESTIONS: Record<string, Question> = {
         required: true,
         isLastStep: true,
         submitButtonText: '인터뷰 예약하기',
+        externalLink: 'https://whattime.co.kr/philipandsophy/10mins_interview',
         // End of New Member flow
     },
 
@@ -139,13 +158,16 @@ export const QUESTIONS: Record<string, Question> = {
         title: '2주간 활동하셨던\n프로그램 기수를 입력해주세요.',
         placeholder: '예시: 1기',
         required: true,
-        nextQuestionId: 'phone_existing',
+        nextQuestionId: 'personal_info_existing',
     },
-    'phone_existing': {
-        id: 'phone_existing',
-        type: 'phone',
-        title: '연락처를 기입해 주세요.',
-        placeholder: 'ex. 010-1234-5678',
+    'personal_info_existing': {
+        id: 'personal_info_existing',
+        type: 'composite',
+        title: '기본 정보를 입력해주세요.',
+        fields: [
+            { id: 'name', type: 'text', label: '이름', placeholder: '홍길동' },
+            { id: 'phone', type: 'phone', label: '연락처', placeholder: '010-0000-0000' },
+        ],
         required: true,
         isLastStep: true,
         submitButtonText: '인터뷰 없이 신청 완료',
@@ -156,5 +178,5 @@ export const QUESTIONS: Record<string, Question> = {
 /**
  * 총 질문 수 계산 (브랜칭에 따라 다름)
  */
-export const NEW_MEMBER_TOTAL_STEPS = 8; // intro -> membership_status -> name -> phone -> job_details -> channel -> photo -> birthdate
-export const EXISTING_MEMBER_TOTAL_STEPS = 4; // intro -> membership_status -> cohort_check -> phone_existing
+export const NEW_MEMBER_TOTAL_STEPS = 7; // intro -> membership_status -> personal_info -> job_info -> channel -> photo -> birthdate
+export const EXISTING_MEMBER_TOTAL_STEPS = 4; // intro -> membership_status -> cohort_check -> personal_info_existing

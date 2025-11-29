@@ -24,6 +24,7 @@ import Image from 'next/image';
 import { SEARCH_CONFIG } from '@/constants/search';
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -769,10 +770,14 @@ function Step2Content() {
           >
             <UnifiedButton
               onClick={handleNext}
-              disabled={(!selectedBook && !manualTitle.trim()) || !localReview.trim() || localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH || isSaving || isProcessing}
+              disabled={isSaving || isProcessing}
               loading={isProcessing}
               loadingText="저장 중..."
-              className={existingSubmissionId ? 'w-full' : 'flex-1'}
+              className={cn(
+                existingSubmissionId ? 'w-full' : 'flex-1',
+                // 유효성 검사 실패 시 시각적으로만 비활성화 처리
+                ((!selectedBook && !manualTitle.trim()) || !localReview.trim() || localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) && "opacity-50"
+              )}
             >
               다음
             </UnifiedButton>

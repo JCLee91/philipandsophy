@@ -32,6 +32,13 @@ export const STORAGE_PATHS = {
    */
   PROFILE: (participantId: string, fileName: string) =>
     `profiles/${participantId}/${fileName}`,
+
+  /**
+   * 신청서 사진
+   * applications/{timestamp}_{fileName}
+   */
+  APPLICATION: (fileName: string) =>
+    `applications/${fileName}`,
 } as const;
 
 /**

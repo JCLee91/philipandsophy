@@ -103,5 +103,18 @@ export async function uploadDMImage(
   return uploadFileWithProgress(file, path);
 }
 
+/**
+ * 이미지 업로드 (신청서용)
+ */
+export async function uploadApplicationPhoto(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  const fileName = generateStorageFileName(file.name);
+  const path = STORAGE_PATHS.APPLICATION(fileName);
+
+  return uploadFileWithProgress(file, path, onProgress);
+}
+
 // ❌ REMOVED: deleteFile - 미사용 함수 제거 (이미지 삭제 기능 미구현)
 // ❌ REMOVED: deleteMultipleFiles - 미사용 함수 제거

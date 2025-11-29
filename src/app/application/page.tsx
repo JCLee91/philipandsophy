@@ -2,16 +2,15 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
     useApplicationStore,
     QuestionStep,
     ProgressBar,
     NEW_MEMBER_TOTAL_STEPS,
     EXISTING_MEMBER_TOTAL_STEPS,
+    fadeIn,
 } from '@/features/application';
-import { Button } from '@/components/ui/button';
-import { ChevronUp, ChevronDown } from 'lucide-react';
 
 export default function ApplicationPage() {
     const {
@@ -36,12 +35,18 @@ export default function ApplicationPage() {
 
     if (isComplete) {
         return (
-            <div className="min-h-screen bg-white flex items-center justify-center p-4">
-                <div className="text-center">
-                    <h1 className="text-3xl font-bold mb-4">제출이 완료되었습니다!</h1>
-                    <p className="text-gray-600 mb-8">참여해 주셔서 감사합니다.</p>
-                    <Button onClick={resetForm} variant="outline">처음으로 돌아가기</Button>
-                </div>
+            <div className="min-h-screen bg-black flex items-center justify-center p-4">
+                <motion.div className="text-center" {...fadeIn}>
+                    <h1 className="text-3xl font-bold mb-4 text-white">제출이 완료되었습니다!</h1>
+                    <p className="text-gray-400 mb-8">참여해 주셔서 감사합니다.</p>
+                    <button
+                        type="button"
+                        onClick={resetForm}
+                        className="cta-button-white"
+                    >
+                        처음으로 돌아가기
+                    </button>
+                </motion.div>
             </div>
         );
     }
@@ -49,11 +54,17 @@ export default function ApplicationPage() {
     // currentQuestion이 없는 경우 (에러 상태)
     if (!currentQuestion) {
         return (
-            <div className="min-h-screen bg-white flex items-center justify-center p-4">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">오류가 발생했습니다</h1>
-                    <Button onClick={resetForm} variant="outline">처음으로 돌아가기</Button>
-                </div>
+            <div className="min-h-screen bg-black flex items-center justify-center p-4">
+                <motion.div className="text-center" {...fadeIn}>
+                    <h1 className="text-2xl font-bold mb-4 text-white">오류가 발생했습니다</h1>
+                    <button
+                        type="button"
+                        onClick={resetForm}
+                        className="cta-button-white"
+                    >
+                        처음으로 돌아가기
+                    </button>
+                </motion.div>
             </div>
         );
     }
@@ -61,7 +72,10 @@ export default function ApplicationPage() {
     return (
         <div className="min-h-screen bg-black flex flex-col text-white">
             {/* 상단 로고 심볼 */}
-            <header className="fixed top-6 left-0 w-full flex justify-center z-40 pointer-events-none">
+            <motion.header 
+                className="fixed top-6 left-0 w-full flex justify-center z-40 pointer-events-none"
+                {...fadeIn}
+            >
                 <div className="relative w-48 h-24">
                     <Image 
                         src="/image/pns_logo_symbol.png" 
@@ -71,7 +85,7 @@ export default function ApplicationPage() {
                         priority
                     />
                 </div>
-            </header>
+            </motion.header>
 
             <ProgressBar 
                 currentStep={historyLength} 
@@ -80,13 +94,16 @@ export default function ApplicationPage() {
                 canGoBack={canGoBack()}
             />
 
-            <main className="flex-1 flex flex-col relative overflow-hidden justify-center">
+            <main className="flex-1 flex flex-col relative overflow-hidden">
                 <AnimatePresence mode="wait">
                     <QuestionStep key={currentQuestion.id} question={currentQuestion} />
                 </AnimatePresence>
             </main>
 
-            <footer className="fixed bottom-8 w-full flex justify-center z-40 pointer-events-none">
+            <motion.footer 
+                className="fixed bottom-8 w-full flex justify-center z-40 pointer-events-none"
+                {...fadeIn}
+            >
                 <div className="relative w-52 h-12 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
                     <Image 
                         src="/image/pns_logo_text_white.png" 
@@ -96,7 +113,7 @@ export default function ApplicationPage() {
                         priority
                     />
                 </div>
-            </footer>
+            </motion.footer>
         </div>
     );
 }

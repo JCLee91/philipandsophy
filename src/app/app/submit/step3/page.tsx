@@ -24,6 +24,7 @@ import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import { logger } from '@/lib/logger';
 import { useDebounce } from 'react-use';
 import { Loader2, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -634,8 +635,8 @@ function Step3Content() {
                   {localDailyAnswer.length > 0 && '작성 중인 내용은 자동으로 저장됩니다'}
                 </span>
                 <p className={`text-xs transition-colors ${localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
-                    ? 'text-red-500 font-medium'
-                    : 'text-blue-500'
+                  ? 'text-red-500 font-medium'
+                  : 'text-blue-500'
                   }`}>
                   {localDailyAnswer.length} / {SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자
                 </p>
@@ -658,8 +659,12 @@ function Step3Content() {
           >
             <UnifiedButton
               onClick={handleSubmit}
-              className={existingSubmissionId ? 'w-full' : 'flex-1'}
-              disabled={uploading || isSaving || !localDailyAnswer.trim() || localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}
+              className={cn(
+                existingSubmissionId ? 'w-full' : 'flex-1',
+                // 유효성 검사 실패 시 시각적으로만 비활성화 처리
+                (uploading || isSaving || !localDailyAnswer.trim() || localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH) && "opacity-50"
+              )}
+              disabled={uploading || isSaving}
             >
               {uploading ? uploadStep || '제출 중...' : existingSubmissionId ? '수정하기' : '제출하기'}
             </UnifiedButton>

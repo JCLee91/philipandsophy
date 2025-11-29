@@ -3,6 +3,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { PROGRESS_BAR } from '../constants/layout';
 
 interface ProgressBarProps {
     currentStep: number;
@@ -17,18 +19,32 @@ export function ProgressBar({ currentStep, totalSteps, onBack, canGoBack }: Prog
     const progress = (currentStep / safeTotal) * 100;
 
     return (
-        <div className="fixed bottom-[120px] left-0 w-full px-4 z-50 flex justify-center items-center pointer-events-none">
-            <div className="flex items-center gap-3 max-w-[280px] w-full pointer-events-auto">
-                {canGoBack && (
-                    <button
-                        onClick={onBack}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800 hover:bg-zinc-700 transition-colors text-white"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                )}
-                
-                <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+        <div className={cn(
+            "fixed left-0 w-full px-8 z-50 flex justify-center items-center pointer-events-none",
+            PROGRESS_BAR.BOTTOM
+        )}>
+            <div className={cn(
+                "flex items-center gap-3 w-full pointer-events-auto",
+                PROGRESS_BAR.MAX_WIDTH
+            )}>
+                {/* 왼쪽: 뒤로가기 버튼 (항상 동일한 공간 차지) */}
+                <button
+                    type="button"
+                    onClick={onBack}
+                    disabled={!canGoBack}
+                    aria-label="이전 단계로"
+                    className={cn(
+                        "w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full transition-all",
+                        canGoBack
+                            ? 'bg-zinc-800 hover:bg-zinc-700 text-white'
+                            : 'bg-transparent text-transparent cursor-default'
+                    )}
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                {/* 중앙: 프로그레스바 */}
+                <div className={cn("flex-1 bg-zinc-800 rounded-full overflow-hidden", PROGRESS_BAR.HEIGHT)}>
                     <motion.div
                         className="h-full bg-white"
                         initial={{ width: 0 }}
@@ -36,6 +52,9 @@ export function ProgressBar({ currentStep, totalSteps, onBack, canGoBack }: Prog
                         transition={{ duration: 0.5, ease: "easeInOut" }}
                     />
                 </div>
+
+                {/* 오른쪽: 대칭을 위한 빈 공간 (버튼과 동일한 크기) */}
+                <div className="w-8 h-8 flex-shrink-0" aria-hidden="true" />
             </div>
         </div>
     );

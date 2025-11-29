@@ -101,3 +101,4 @@ export function isValidImageType(file: File): boolean {
     return validTypes.includes(file.type);
 }
 
+
