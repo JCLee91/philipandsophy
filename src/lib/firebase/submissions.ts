@@ -6,6 +6,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -37,12 +38,29 @@ function mapToSubmissions(querySnapshot: QuerySnapshot): ReadingSubmission[] {
 }
 
 /**
+ * 제출물 문서 ID 생성
+ * 형식: 참가자이름_MMDD_HHmm (예: 김철수_1129_1330)
+ */
+function generateSubmissionId(participantName: string): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  // 이름에서 공백 제거하고 안전한 문자만 사용
+  const safeName = participantName.replace(/\s+/g, '').replace(/[\/\\?%*:|"<>]/g, '');
+  return `${safeName}_${month}${day}_${hours}${minutes}`;
+}
+
+/**
  * 독서 인증 제출
- * 
+ *
  * 같은 참가자가 같은 날짜에 이미 approved 제출물이 있으면 기존 ID 반환 (중복 방지)
+ * 문서 ID 형식: 참가자이름_MMDD_HHmm (예: 김철수_1129_1330)
  */
 export async function createSubmission(
-  data: Omit<ReadingSubmission, 'id' | 'createdAt' | 'updatedAt' | 'submissionDate'>
+  data: Omit<ReadingSubmission, 'id' | 'createdAt' | 'updatedAt' | 'submissionDate'>,
+  participantName: string
 ): Promise<string> {
   const db = getDb();
   const now = Timestamp.now();
@@ -63,14 +81,18 @@ export async function createSubmission(
     return existingSnapshot.docs[0].id;
   }
 
-  const docRef = await addDoc(collection(db, COLLECTIONS.READING_SUBMISSIONS), {
+  // 커스텀 ID로 문서 생성
+  const customId = generateSubmissionId(participantName);
+  const docRef = doc(db, COLLECTIONS.READING_SUBMISSIONS, customId);
+
+  await setDoc(docRef, {
     ...data,
     submissionDate,
     createdAt: now,
     updatedAt: now,
   });
 
-  return docRef.id;
+  return customId;
 }
 
 /**
@@ -259,6 +281,7 @@ export async function getDraftSubmission(
 
 /**
  * 임시저장 (새로 생성 또는 업데이트)
+ * 문서 ID 형식: 참가자이름_MMDD_HHmm (예: 김철수_1129_1330)
  */
 export async function saveDraft(
   participantId: string,
@@ -273,7 +296,8 @@ export async function saveDraft(
     review?: string;
     dailyAnswer?: string;
     dailyQuestion?: string;
-  }
+  },
+  participantName?: string
 ): Promise<string> {
   const db = getDb();
   const now = Timestamp.now();
@@ -299,12 +323,17 @@ export async function saveDraft(
     await updateDoc(docRef, draftData);
     return existingDraft.id;
   } else {
-    // 새 draft 생성
-    const docRef = await addDoc(collection(db, COLLECTIONS.READING_SUBMISSIONS), {
+    // 새 draft 생성 - 커스텀 ID 사용
+    const customId = participantName
+      ? generateSubmissionId(participantName)
+      : `draft_${participantId}_${Date.now()}`;
+    const docRef = doc(db, COLLECTIONS.READING_SUBMISSIONS, customId);
+
+    await setDoc(docRef, {
       ...draftData,
       createdAt: now,
     });
-    return docRef.id;
+    return customId;
   }
 }
 

@@ -100,9 +100,13 @@ export function useCreateSubmission() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      data: Omit<ReadingSubmission, 'id' | 'createdAt' | 'updatedAt' | 'submissionDate'>
-    ) => createSubmission(data),
+    mutationFn: ({
+      data,
+      participantName,
+    }: {
+      data: Omit<ReadingSubmission, 'id' | 'createdAt' | 'updatedAt' | 'submissionDate'>;
+      participantName: string;
+    }) => createSubmission(data, participantName),
     onSuccess: async () => {
       // 모든 submission 관련 쿼리 무효화 (프로필북 포함)
       // await로 invalidation 완료 보장 (race condition 방지)

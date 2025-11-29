@@ -121,7 +121,7 @@ function Step3Content() {
         draftData.cohortId = participant.cohortId;
       }
 
-      await saveDraft(participantId, participationCode, draftData);
+      await saveDraft(participantId, participationCode, draftData, participant?.name);
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('Auto-save failed', error);
@@ -383,7 +383,7 @@ function Step3Content() {
         draftData.cohortId = participant.cohortId;
       }
 
-      await saveDraft(participantId, participationCode, draftData);
+      await saveDraft(participantId, participationCode, draftData, participant?.name);
       setLastSavedAt(new Date());
 
       toast({
@@ -489,10 +489,13 @@ function Step3Content() {
         });
       } else {
         await createSubmission.mutateAsync({
-          participantId,
-          participationCode,
-          ...submissionPayload,
-          submittedAt: Timestamp.now(),
+          data: {
+            participantId,
+            participationCode,
+            ...submissionPayload,
+            submittedAt: Timestamp.now(),
+          },
+          participantName: participant?.name || '익명',
         });
       }
 
