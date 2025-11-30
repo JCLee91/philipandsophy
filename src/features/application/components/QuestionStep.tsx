@@ -124,9 +124,15 @@ export function QuestionStep({ question }: QuestionStepProps) {
             }
 
             // 파일 업로드 검증
-            if (question.type === 'file' && !currentAnswer) {
-                setValidationError('사진을 업로드해주세요.');
-                return;
+            if (question.type === 'file') {
+                if (!currentAnswer) {
+                    setValidationError('사진을 업로드해주세요.');
+                    return;
+                }
+                if (!answers['photoUrl']) {
+                    setValidationError('사진 업로드가 완료될 때까지 기다려주세요.');
+                    return;
+                }
             }
         }
 

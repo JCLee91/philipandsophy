@@ -34,7 +34,7 @@ export function PrivacyPolicyModal({ open, onOpenChange }: PrivacyPolicyModalPro
                     <p className="text-sm text-gray-400 mt-1">시행일자: 2025년 9월 23일</p>
                 </DialogHeader>
 
-                <div className="overflow-y-auto px-6 py-4 text-sm text-gray-300 space-y-6 max-h-[calc(80vh-80px)]">
+                <div className="overflow-y-auto px-6 pt-4 pb-8 text-sm text-gray-300 space-y-6 max-h-[calc(80vh-100px)]">
                     <p>
                         휠즈랩스(이하 "회사")는 개인정보보호법에 따라 정보주체의 개인정보를 보호하고
                         이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 하기 위하여 다음과 같이
@@ -50,7 +50,7 @@ export function PrivacyPolicyModal({ open, onOpenChange }: PrivacyPolicyModalPro
                         </p>
                         <ol className="list-decimal list-inside space-y-2 ml-2">
                             <li>
-                                <strong className="text-white">필립앤소피 소셈클럽 서비스 제공</strong>
+                                <strong className="text-white">필립앤소피 소셜클럽 서비스 제공</strong>
                                 <ul className="list-disc list-inside ml-4 mt-1 text-gray-400">
                                     <li>승인제 멤버십 가입 심사 및 관리</li>
                                     <li>독서 프로그램 운영 및 멤버 간 커뮤니케이션 지원</li>
@@ -125,7 +125,7 @@ export function PrivacyPolicyModal({ open, onOpenChange }: PrivacyPolicyModalPro
                         <h2 className="text-base font-bold text-white mb-3">제5조 (개인정보처리의 위탁)</h2>
                         <div className="bg-zinc-800 rounded-lg p-3 space-y-2">
                             <div className="flex justify-between border-b border-zinc-700 pb-2">
-                                <span className="text-gray-400">Smore (스몰)</span>
+                                <span className="text-gray-400">Smore (스모어)</span>
                                 <span className="text-white">온라인 신청서 수집/관리</span>
                             </div>
                             <div className="flex justify-between border-b border-zinc-700 pb-2">
