@@ -105,8 +105,8 @@ export function PrivacyPolicyModal({ open, onOpenChange }: PrivacyPolicyModalPro
                     <section>
                         <h2 className="text-base font-bold text-white mb-3">제3조 (처리하는 개인정보 항목)</h2>
                         <ul className="space-y-2">
-                            <li><strong className="text-white">필수항목:</strong> 이름, 나이, 성별, 연락처, 이메일주소, 직업, 거주지역</li>
-                            <li><strong className="text-white">선택항목:</strong> 관심분야, 독서선호도, 소셜미디어 계정</li>
+                            <li><strong className="text-white">필수항목:</strong> 이름, 생년월일, 성별, 연락처, 회사명/직군, 프로필 사진</li>
+                            <li><strong className="text-white">선택항목:</strong> 관심분야, 독서선호도, 소셜미디어 계정, 유입채널</li>
                             <li><strong className="text-white">자동수집:</strong> IP주소, 쿠키, MAC주소, 서비스 이용 기록 등</li>
                         </ul>
                     </section>
@@ -125,8 +125,16 @@ export function PrivacyPolicyModal({ open, onOpenChange }: PrivacyPolicyModalPro
                         <h2 className="text-base font-bold text-white mb-3">제5조 (개인정보처리의 위탁)</h2>
                         <div className="bg-zinc-800 rounded-lg p-3 space-y-2">
                             <div className="flex justify-between border-b border-zinc-700 pb-2">
+                                <span className="text-gray-400">Firebase (Google Cloud)</span>
+                                <span className="text-white">데이터 저장/인증</span>
+                            </div>
+                            <div className="flex justify-between border-b border-zinc-700 pb-2">
                                 <span className="text-gray-400">Smore (스모어)</span>
                                 <span className="text-white">온라인 신청서 수집/관리</span>
+                            </div>
+                            <div className="flex justify-between border-b border-zinc-700 pb-2">
+                                <span className="text-gray-400">Make (Integromat)</span>
+                                <span className="text-white">신청 데이터 자동화</span>
                             </div>
                             <div className="flex justify-between border-b border-zinc-700 pb-2">
                                 <span className="text-gray-400">카카오톡</span>
@@ -137,7 +145,7 @@ export function PrivacyPolicyModal({ open, onOpenChange }: PrivacyPolicyModalPro
                                 <span className="text-white">웹사이트 이용통계 분석</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-400">Facebook</span>
+                                <span className="text-gray-400">Facebook (Meta)</span>
                                 <span className="text-white">마케팅 성과 분석</span>
                             </div>
                         </div>
