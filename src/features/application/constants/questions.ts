@@ -55,7 +55,7 @@ export const COHORT_INFO = {
     timeline: [
         { date: '12/6 오후 2시', event: '온라인 오리엔테이션' },
         { date: '12/7~12/20', event: '온라인 독서프로그램' },
-        { date: '12/21 저녁 6시', event: '클로징 파티(서울)' },
+        { date: '12/21 저녁 6시', event: '강남 소재 호텔 라운지 바' },
     ],
 };
 
