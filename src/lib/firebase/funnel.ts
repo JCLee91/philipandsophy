@@ -225,22 +225,30 @@ export async function getFunnelData(
   const steps = memberType === 'existing' ? EXISTING_MEMBER_FUNNEL_STEPS : FUNNEL_STEPS;
   const firstStepCount = stepCounts.get(steps[0].stepId) || 0;
 
-  let prevCount = firstStepCount;
-
-  return steps.map((step, index) => {
+  // 먼저 각 단계의 기본 데이터 계산
+  const stepDataList = steps.map((step) => {
     const count = stepCounts.get(step.stepId) || 0;
     const percentage = firstStepCount > 0 ? Math.round((count / firstStepCount) * 100) : 0;
-    const dropoffRate = prevCount > 0 ? Math.round(((prevCount - count) / prevCount) * 100) : 0;
-
-    prevCount = count;
-
     return {
       stepId: step.stepId,
       stepLabel: step.label,
       stepIndex: step.stepIndex,
       count,
       percentage,
-      dropoffRate: index === 0 ? 0 : dropoffRate,
     };
+  });
+
+  // 이탈률: 현재 단계에서 다음 단계로 넘어가지 못한 비율
+  // 마지막 단계는 이탈률 0 (다음 단계가 없으므로)
+  return stepDataList.map((step, index) => {
+    const isLastStep = index === stepDataList.length - 1;
+
+    let dropoffRate = 0;
+    if (!isLastStep && step.count > 0) {
+      const nextCount = stepDataList[index + 1].count;
+      dropoffRate = Math.round(((step.count - nextCount) / step.count) * 100);
+    }
+
+    return { ...step, dropoffRate };
   });
 }

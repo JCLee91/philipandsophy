@@ -210,7 +210,7 @@ export default function FunnelAnalyticsPage() {
                         <p className="text-sm text-gray-600">
                           첫 단계 대비: <span className="font-medium">{data.percentage}%</span>
                         </p>
-                        {data.dropoffRate > 0 && (
+                        {data.stepId !== funnelData[funnelData.length - 1]?.stepId && (
                           <p className="text-sm text-red-600">
                             이탈률: <span className="font-medium">{data.dropoffRate}%</span>
                           </p>
@@ -260,7 +260,7 @@ export default function FunnelAnalyticsPage() {
                     첫 단계 대비
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    이전 단계 대비 이탈률
+                    이탈률
                   </th>
                 </tr>
               </thead>
@@ -295,7 +295,9 @@ export default function FunnelAnalyticsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      {step.dropoffRate > 0 ? (
+                      {index === funnelData.length - 1 ? (
+                        <span className="text-sm text-gray-400">-</span>
+                      ) : (
                         <span
                           className={cn(
                             'text-sm font-medium',
@@ -308,8 +310,6 @@ export default function FunnelAnalyticsPage() {
                         >
                           {step.dropoffRate}%
                         </span>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
                       )}
                     </td>
                   </tr>
