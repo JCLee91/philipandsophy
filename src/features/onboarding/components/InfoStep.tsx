@@ -31,6 +31,16 @@ export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext,
     }
   };
 
+  // 스텝별 드래그 방향 제한
+  // 1번: 왼쪽만 허용 (오른쪽 모션 차단)
+  // 3번: 오른쪽만 허용 (왼쪽 모션 차단)
+  // 2번: 양쪽 모두 허용
+  const getDragElastic = () => {
+    if (id === 1) return { left: 0.2, right: 0 };
+    if (id === MAX_SWIPE_STEP) return { left: 0, right: 0.2 };
+    return 0.2;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -39,7 +49,7 @@ export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext,
       transition={{ duration: 0.5 }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.2}
+      dragElastic={getDragElastic()}
       onDragEnd={handleDragEnd}
       className="application-container flex h-[100dvh] flex-col text-white cursor-grab active:cursor-grabbing"
     >
