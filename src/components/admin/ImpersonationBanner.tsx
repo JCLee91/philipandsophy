@@ -75,9 +75,7 @@ export default function ImpersonationBanner() {
           className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-full shadow-lg font-bold transition-all hover:scale-105 active:scale-95"
         >
           <Eye className="h-4 w-4" />
-          <span>
-            {participant?.name || user?.email || '사용자'} (관리자 복귀)
-          </span>
+          <span>{participant?.name || user?.email || '사용자'}</span>
           <LogOut className="h-4 w-4 ml-1" />
         </button>
       </div>
