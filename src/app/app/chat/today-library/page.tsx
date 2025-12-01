@@ -27,7 +27,7 @@ import { appRoutes } from '@/lib/navigation';
 import { getFirstName } from '@/lib/utils';
 import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
-import { Lock, Heart, ChevronLeft, ChevronDown } from 'lucide-react';
+import { Lock, Heart, ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
 import { getAssignedProfiles, detectMatchingVersion } from '@/lib/matching-compat';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
@@ -129,6 +129,47 @@ function LegacyHeader({
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+/**
+ * 특정 clusterId로 클러스터 정보 찾기 (다른 모임 구경가기용)
+ */
+function findClusterById(
+  dailyFeaturedParticipants: Record<string, any>,
+  targetClusterId: string,
+  preferredDate?: string
+): ClusterMatchingData | null {
+  const dates = Object.keys(dailyFeaturedParticipants).sort().reverse();
+
+  // 1차: preferredDate 우선
+  if (preferredDate && dailyFeaturedParticipants[preferredDate]) {
+    const dayData = dailyFeaturedParticipants[preferredDate];
+    if (dayData.matchingVersion === 'cluster' && dayData.clusters?.[targetClusterId]) {
+      const cluster = dayData.clusters[targetClusterId];
+      return {
+        clusterId: targetClusterId,
+        cluster,
+        assignedIds: cluster.memberIds || [],
+        matchingDate: preferredDate
+      };
+    }
+  }
+
+  // 2차: 가장 최근 클러스터 매칭에서 찾기
+  for (const date of dates) {
+    const dayData = dailyFeaturedParticipants[date];
+    if (dayData.matchingVersion === 'cluster' && dayData.clusters?.[targetClusterId]) {
+      const cluster = dayData.clusters[targetClusterId];
+      return {
+        clusterId: targetClusterId,
+        cluster,
+        assignedIds: cluster.memberIds || [],
+        matchingDate: date
+      };
+    }
+  }
+
+  return null;
+}
 
 function findLatestClusterMatching(
   dailyFeaturedParticipants: Record<string, any>,
@@ -648,6 +689,18 @@ function TodayLibraryV2Content() {
         {/* Main Content */}
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-6 w-full pt-3 md:pt-2 pb-6">
+            {/* 다른 모임 구경하기 버튼 (v3.0 클러스터 매칭인 경우) - 네비바 아래 오른쪽 */}
+            {matchingVersion === 'cluster' && (
+              <div className="flex justify-end mb-2">
+                <button
+                  onClick={() => router.push(appRoutes.todayLibraryOtherClusters(cohortId))}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                >
+                  다른 모임 구경하기 <ChevronRight className="size-4" />
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-col gap-6">
               {/* Header Section */}
               <div className="flex flex-col gap-3">
@@ -929,6 +982,7 @@ function TodayLibraryV3Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
+  const targetClusterIdParam = searchParams.get('cluster'); // 다른 모임 구경가기용
 
   const { participant, isLoading: sessionLoading } = useAuth();
   const currentUserId = participant?.id;
@@ -953,8 +1007,8 @@ function TodayLibraryV3Content() {
   const totalSubmissionCount = viewerSubmissions.length;
   const isFirstTimeUser = totalSubmissionCount === 0;
 
-  // 클러스터 매칭 데이터 조회
-  const clusterMatching = useMemo(() => {
+  // 내 클러스터 매칭 데이터 조회 (기본)
+  const myClusterMatching = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
       return null;
     }
@@ -965,6 +1019,25 @@ function TodayLibraryV3Content() {
       preferredMatchingDate
     );
   }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate]);
+
+  // 다른 클러스터 구경 시 해당 클러스터 데이터 조회
+  const targetClusterMatching = useMemo(() => {
+    if (!targetClusterIdParam || !cohort?.dailyFeaturedParticipants) {
+      return null;
+    }
+
+    return findClusterById(
+      cohort.dailyFeaturedParticipants,
+      targetClusterIdParam,
+      preferredMatchingDate
+    );
+  }, [cohort?.dailyFeaturedParticipants, targetClusterIdParam, preferredMatchingDate]);
+
+  // 최종 사용할 클러스터 매칭 데이터
+  const clusterMatching = targetClusterIdParam ? targetClusterMatching : myClusterMatching;
+
+  // 다른 모임 구경 중인지 여부
+  const isViewingOtherCluster = targetClusterIdParam && myClusterMatching?.clusterId !== targetClusterIdParam;
 
   // 비인증 시 표시할 프로필 개수
   const unlockedProfileCount = isFirstTimeUser ? 0 : isLocked ? 1 : clusterMatching?.assignedIds.length || 0;
@@ -1263,31 +1336,65 @@ function TodayLibraryV3Content() {
 
   // ... (skipping imports for now, will do in next step)
 
+  // 뒤로가기 핸들러
+  // - 내 모임: 메인 화면(채팅)으로 이동 (히스토리 무관하게 명확한 동선)
+  // - 다른 모임 구경 중: 클러스터 목록으로 이동
+  const handleBack = () => {
+    if (isViewingOtherCluster) {
+      router.push(appRoutes.todayLibraryOtherClusters(cohortId!));
+    } else {
+      router.push(appRoutes.chat(cohortId!));
+    }
+  };
+
+
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-[#F6F6F6]">
         {/* Custom Header using TopBar - Changed to bg-white as per feedback */}
         <TopBar
-          title="오늘의 서재"
-          onBack={() => router.back()}
+          title={isViewingOtherCluster ? "다른 모임 구경 중" : "오늘의 서재"}
+          onBack={handleBack}
           align="center"
           className="bg-white border-b-0"
         />
 
         <main
-          className="app-main-content flex-1 overflow-y-auto overflow-x-hidden touch-pan-y"
+          className="flex-1 overflow-y-auto overflow-x-hidden touch-pan-y"
           style={{ overscrollBehaviorX: 'none' }}
         >
+          {/* 네비게이션 버튼 영역 */}
+          <div className="flex px-6 pt-5 bg-[#F6F6F6]">
+            {/* 내 모임으로 돌아가기 - 왼쪽 */}
+            {isViewingOtherCluster ? (
+              <button
+                onClick={() => router.push(appRoutes.todayLibrary(cohortId!))}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+              >
+                <ChevronLeft className="size-4" />
+                내 모임으로 돌아가기
+              </button>
+            ) : (
+              /* 다른 모임 구경하기 - 오른쪽 */
+              <button
+                onClick={() => router.push(appRoutes.todayLibraryOtherClusters(cohortId!))}
+                className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+              >
+                다른 모임 구경하기 <ChevronRight className="size-4" />
+              </button>
+            )}
+          </div>
 
           {/* 1. Theme Section (Top) */}
-          <section className="flex flex-col items-center text-center gap-4 pt-8 pb-10 px-6 bg-[#F6F6F6]">
-            <div className="w-20 h-20 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-[40px]">
+          <section className="flex flex-col items-center text-center gap-3 pt-2 pb-6 px-6 bg-[#F6F6F6]">
+
+            <div className="w-16 h-16 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-[32px]">
               {cluster.emoji || '🥂'}
             </div>
 
             <div className="flex flex-col gap-2 max-w-full">
               <div className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px] inline-block self-center">
-                {cluster.category || '감상평'}
+                {isViewingOtherCluster ? '다른 모임 구경 중' : (cluster.category || '감상평')}
               </div>
               <h3 className="text-[18px] font-bold text-black">
                 {cluster.theme}
