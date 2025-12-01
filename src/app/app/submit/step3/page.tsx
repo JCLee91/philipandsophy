@@ -498,16 +498,15 @@ function Step3Content() {
         });
       }
 
-      if (!isEditing) {
-        try {
-          const { getDraftSubmission, deleteDraft } = await import('@/lib/firebase/submissions');
-          const draft = await getDraftSubmission(participantId, cohortId!);
-          if (draft) {
-            await deleteDraft(draft.id);
-          }
-        } catch (error) {
-          logger.error('[Step3] Draft deletion failed', error);
+      // 신규/수정 모두 draft 삭제 (자동저장된 임시저장 정리)
+      try {
+        const { getDraftSubmission, deleteDraft } = await import('@/lib/firebase/submissions');
+        const draft = await getDraftSubmission(participantId, cohortId!);
+        if (draft) {
+          await deleteDraft(draft.id);
         }
+      } catch (error) {
+        logger.error('[Step3] Draft deletion failed', error);
       }
 
       // 토스트는 메인 화면에서 표시하기 위해 쿼리 파라미터로 전달

@@ -296,6 +296,7 @@ export async function saveDraft(
     review?: string;
     dailyAnswer?: string;
     dailyQuestion?: string;
+    editingSubmissionId?: string; // 🆕 수정 모드에서 원본 제출물 ID 추적
   },
   participantName?: string
 ): Promise<string> {
