@@ -36,7 +36,7 @@ export async function fetchDailySubmissions(
         new Set(submissionsSnapshot.docs.map(doc => doc.data().participantId))
     );
 
-    const participantsMap = new Map<string, { name: string; gender?: string }>();
+    const participantsMap = new Map<string, { name: string; gender?: string; isAdministrator?: boolean; isGhost?: boolean }>();
     const BATCH_SIZE = 30;
 
     for (let i = 0; i < participantIds.length; i += BATCH_SIZE) {
@@ -50,7 +50,9 @@ export async function fetchDailySubmissions(
             const pData = pDoc.data();
             participantsMap.set(pDoc.id, {
                 name: pData.name || 'Unknown',
-                gender: pData.gender
+                gender: pData.gender,
+                isAdministrator: pData.isAdministrator === true,
+                isGhost: pData.isGhost === true
             });
         });
     }
@@ -62,6 +64,12 @@ export async function fetchDailySubmissions(
     submissionsSnapshot.docs.forEach(doc => {
         const data = doc.data();
         const participant = participantsMap.get(data.participantId);
+
+        // 관리자 또는 고스트 계정은 매칭에서 제외
+        if (participant?.isAdministrator || participant?.isGhost) {
+            logger.info(`[Filter] Excluding ${participant?.isAdministrator ? 'administrator' : 'ghost'}: ${data.participantId}`);
+            return;
+        }
 
         const submission: DailySubmission = {
             participantId: data.participantId,
