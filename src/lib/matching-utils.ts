@@ -15,6 +15,16 @@ export interface MatchingLookupResult {
 }
 
 /**
+ * 클러스터 매칭 조회 결과
+ */
+export interface ClusterMatchingData {
+  clusterId: string;
+  cluster: Cluster;
+  assignedIds: string[];
+  matchingDate: string;
+}
+
+/**
  * 일일 매칭 데이터를 정규화 (레거시 형식 호환)
  *
  * Firebase에 저장된 매칭 데이터는 세 가지 형식이 존재합니다:
@@ -124,6 +134,63 @@ export function findLatestMatchingForParticipant(
     const result = tryResolve(date);
     if (result) {
       return result;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 클러스터 매칭 전용: 지정한 참가자의 클러스터 매칭 데이터를 찾습니다.
+ * matchingVersion === 'cluster'인 매칭만 검색합니다.
+ *
+ * @param dailyFeaturedParticipants - 날짜별 매칭 결과 맵
+ * @param participantId - 조회할 참가자 ID
+ * @param preferredDate - 우선적으로 확인할 날짜 (오늘 인증했으면 오늘, 아니면 undefined)
+ * @returns 클러스터 매칭 데이터, 없으면 null
+ */
+export function findLatestClusterMatching(
+  dailyFeaturedParticipants: Record<string, any>,
+  participantId: string,
+  preferredDate?: string
+): ClusterMatchingData | null {
+  const dates = Object.keys(dailyFeaturedParticipants).sort().reverse();
+
+  // 1차: preferredDate 우선
+  if (preferredDate && dailyFeaturedParticipants[preferredDate]) {
+    const dayData = dailyFeaturedParticipants[preferredDate];
+    if (dayData.matchingVersion === 'cluster' && dayData.assignments?.[participantId]) {
+      const assignment = dayData.assignments[participantId];
+      const clusterId = assignment.clusterId;
+      const cluster = dayData.clusters?.[clusterId];
+
+      if (cluster && assignment.assigned) {
+        return {
+          clusterId,
+          cluster,
+          assignedIds: assignment.assigned,
+          matchingDate: preferredDate
+        };
+      }
+    }
+  }
+
+  // 2차: 가장 최근 클러스터 매칭
+  for (const date of dates) {
+    const dayData = dailyFeaturedParticipants[date];
+    if (dayData.matchingVersion === 'cluster' && dayData.assignments?.[participantId]) {
+      const assignment = dayData.assignments[participantId];
+      const clusterId = assignment.clusterId;
+      const cluster = dayData.clusters?.[clusterId];
+
+      if (cluster && assignment.assigned) {
+        return {
+          clusterId,
+          cluster,
+          assignedIds: assignment.assigned,
+          matchingDate: date
+        };
+      }
     }
   }
 

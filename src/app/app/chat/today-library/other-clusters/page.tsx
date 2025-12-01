@@ -11,13 +11,13 @@ import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getSubmissionDate } from '@/lib/date-utils';
-import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
+import { findLatestClusterMatching } from '@/lib/matching-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { getFirstName } from '@/lib/utils';
 import { appRoutes } from '@/lib/navigation';
 import PageTransition from '@/components/PageTransition';
-import { parseISO, isBefore } from 'date-fns';
 import { Cluster, Participant } from '@/types/database';
+import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 
 export default function OtherClustersPage() {
     const router = useRouter();
@@ -29,6 +29,16 @@ export default function OtherClustersPage() {
     const { toast } = useToast();
     const currentUserId = participant?.id;
 
+    // 오늘의 서재와 동일한 로직: 오늘 인증 여부 확인
+    const todayDate = getSubmissionDate();
+    const { data: viewerSubmissions = [], isLoading: viewerSubmissionLoading } = useParticipantSubmissionsRealtime(currentUserId);
+    const viewerSubmissionDates = useMemo(
+        () => new Set(viewerSubmissions.map(s => s.submissionDate)),
+        [viewerSubmissions]
+    );
+    const viewerHasSubmittedToday = viewerSubmissionDates.has(todayDate);
+    const preferredMatchingDate = viewerHasSubmittedToday ? todayDate : undefined;
+
     // Check access permission
     useEffect(() => {
         if (!sessionLoading && !cohortLoading) {
@@ -36,50 +46,38 @@ export default function OtherClustersPage() {
                 router.replace('/app');
                 return;
             }
-
-            // Check date permission - REMOVED (Always allowed for V3)
-            /*
-            const today = getSubmissionDate();
-            const unlockDate = cohort.clusterVisitUnlockDate;
-            
-            if (!unlockDate || isBefore(parseISO(today), parseISO(unlockDate))) {
-              toast({
-                title: '접근 권한이 없습니다',
-                description: '아직 다른 모임을 구경할 수 있는 기간이 아니에요.',
-              });
-              router.back();
-            }
-            */
         }
-    }, [sessionLoading, cohortLoading, participant, cohort, cohortId, router, toast]);
+    }, [sessionLoading, cohortLoading, participant, cohort, cohortId, router]);
 
-    // Get matching data
-    const matchingData = useMemo(() => {
+    // Get matching data - 오늘의 서재와 동일한 로직 사용
+    const clusterMatching = useMemo(() => {
         if (!cohort?.dailyFeaturedParticipants || !currentUserId) return null;
 
-        // Use the same logic as TodayLibrary to find the active matching date
-        const todayDate = getSubmissionDate();
-        // We want to see clusters for the *current* active matching
-        // Usually this is the latest one.
-        return findLatestMatchingForParticipant(
+        return findLatestClusterMatching(
             cohort.dailyFeaturedParticipants,
             currentUserId,
-            { preferredDate: todayDate }
+            preferredMatchingDate
         );
-    }, [cohort, currentUserId]);
+    }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate]);
 
-    const myClusterId = matchingData?.matching.assignments?.[currentUserId || '']?.clusterId;
+    const myClusterId = clusterMatching?.clusterId;
 
+    // 모든 클러스터 가져오기 (해당 날짜의 전체 클러스터)
     const clusters = useMemo(() => {
-        if (!matchingData?.matching.clusters) return [];
-        const allClusters = Object.values(matchingData.matching.clusters);
+        if (!clusterMatching || !cohort?.dailyFeaturedParticipants) return [];
+
+        const matchingDate = clusterMatching.matchingDate;
+        const dayData = cohort.dailyFeaturedParticipants[matchingDate];
+        if (!dayData?.clusters) return [];
+
+        const allClusters = Object.values(dayData.clusters) as Cluster[];
         // 내 모임을 상단에 배치
         return allClusters.sort((a, b) => {
             if (a.id === myClusterId) return -1;
             if (b.id === myClusterId) return 1;
             return 0;
         });
-    }, [matchingData, myClusterId]);
+    }, [clusterMatching, cohort?.dailyFeaturedParticipants, myClusterId]);
 
     // 모든 클러스터 멤버 ID 추출
     const allMemberIds = useMemo(() => {
@@ -127,7 +125,7 @@ export default function OtherClustersPage() {
         router.push(`${appRoutes.todayLibrary(cohortId!)}&cluster=${clusterId}`);
     };
 
-    if (sessionLoading || cohortLoading) {
+    if (sessionLoading || cohortLoading || viewerSubmissionLoading) {
         return <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
         </div>;

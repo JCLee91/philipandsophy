@@ -28,7 +28,7 @@ import { getFirstName } from '@/lib/utils';
 import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { Lock, Heart, ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
-import { findLatestMatchingForParticipant } from '@/lib/matching-utils';
+import { findLatestMatchingForParticipant, findLatestClusterMatching, ClusterMatchingData } from '@/lib/matching-utils';
 import { getAssignedProfiles, detectMatchingVersion } from '@/lib/matching-compat';
 import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified-participants';
 
@@ -49,13 +49,6 @@ type ClusterMemberWithSubmission = Participant & {
   bookCoverUrl?: string;
   bookImageUrl?: string;
 };
-
-interface ClusterMatchingData {
-  clusterId: string;
-  cluster: Cluster;
-  assignedIds: string[];
-  matchingDate: string;
-}
 
 // ============================================================================
 // Legacy Header Component (for V2 Compatibility)
@@ -165,54 +158,6 @@ function findClusterById(
         assignedIds: cluster.memberIds || [],
         matchingDate: date
       };
-    }
-  }
-
-  return null;
-}
-
-function findLatestClusterMatching(
-  dailyFeaturedParticipants: Record<string, any>,
-  participantId: string,
-  preferredDate?: string
-): ClusterMatchingData | null {
-  const dates = Object.keys(dailyFeaturedParticipants).sort().reverse();
-
-  // 1차: preferredDate 우선
-  if (preferredDate && dailyFeaturedParticipants[preferredDate]) {
-    const dayData = dailyFeaturedParticipants[preferredDate];
-    if (dayData.matchingVersion === 'cluster' && dayData.assignments?.[participantId]) {
-      const assignment = dayData.assignments[participantId];
-      const clusterId = assignment.clusterId;
-      const cluster = dayData.clusters?.[clusterId];
-
-      if (cluster && assignment.assigned) {
-        return {
-          clusterId,
-          cluster,
-          assignedIds: assignment.assigned,
-          matchingDate: preferredDate
-        };
-      }
-    }
-  }
-
-  // 2차: 가장 최근 클러스터 매칭
-  for (const date of dates) {
-    const dayData = dailyFeaturedParticipants[date];
-    if (dayData.matchingVersion === 'cluster' && dayData.assignments?.[participantId]) {
-      const assignment = dayData.assignments[participantId];
-      const clusterId = assignment.clusterId;
-      const cluster = dayData.clusters?.[clusterId];
-
-      if (cluster && assignment.assigned) {
-        return {
-          clusterId,
-          cluster,
-          assignedIds: assignment.assigned,
-          matchingDate: date
-        };
-      }
     }
   }
 
