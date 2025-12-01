@@ -233,7 +233,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                 logFunnelEvent({
                     sessionId,
                     stepId: 'submit',
-                    stepIndex: memberType === 'existing' ? 4 : 7,
+                    stepIndex: memberType === 'existing' ? 8 : 11,
                     memberType,
                 });
                 set({ trackedSteps: new Set([...trackedSteps, 'submit']) });

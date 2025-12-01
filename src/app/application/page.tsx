@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -11,8 +11,11 @@ import {
     EXISTING_MEMBER_TOTAL_STEPS,
     fadeIn,
 } from '@/features/application';
+import OnboardingFlow from '@/features/onboarding/components/OnboardingFlow';
 
 export default function ApplicationPage() {
+    const [showForm, setShowForm] = useState(false);
+
     const {
         getCurrentQuestion,
         getHistoryLength,
@@ -32,6 +35,11 @@ export default function ApplicationPage() {
     const totalSteps = membershipStatus === 'existing'
         ? EXISTING_MEMBER_TOTAL_STEPS
         : NEW_MEMBER_TOTAL_STEPS;
+
+    // 온보딩 미완료 시 온보딩 플로우 표시
+    if (!showForm) {
+        return <OnboardingFlow onComplete={() => setShowForm(true)} />;
+    }
 
     if (isComplete) {
         return (

@@ -241,6 +241,12 @@ export default function ParticipantsPage() {
       width: '8%',
     },
     {
+      key: 'occupation',
+      header: '직업',
+      render: (p) => p.occupation || '-',
+      width: '12%',
+    },
+    {
       key: 'cohortName',
       header: '코호트',
       sortable: true,

@@ -32,16 +32,20 @@ const MEMBER_TYPE_OPTIONS = [
   { value: 'existing', label: '기존 회원' },
 ] as const;
 
-// 바 차트 색상 (점진적 그라데이션)
+// 바 차트 색상 (점진적 그라데이션 - 12단계 대응)
 const BAR_COLORS = [
-  '#3B82F6', // blue-500
-  '#60A5FA', // blue-400
-  '#93C5FD', // blue-300
-  '#BFDBFE', // blue-200
-  '#DBEAFE', // blue-100
-  '#EFF6FF', // blue-50
-  '#F8FAFC', // slate-50
-  '#F1F5F9', // slate-100
+  '#1D4ED8', // blue-700 (온보딩 영상)
+  '#2563EB', // blue-600 (검증된 사람들)
+  '#3B82F6', // blue-500 (2주간 독서)
+  '#60A5FA', // blue-400 (클로징 파티)
+  '#93C5FD', // blue-300 (인트로)
+  '#BFDBFE', // blue-200 (회원 유형 선택)
+  '#DBEAFE', // blue-100 (기본 정보)
+  '#EFF6FF', // blue-50 (직장 정보)
+  '#F8FAFC', // slate-50 (유입 채널)
+  '#F1F5F9', // slate-100 (사진 업로드)
+  '#E2E8F0', // slate-200 (생년월일)
+  '#CBD5E1', // slate-300 (제출 완료)
 ];
 
 export default function FunnelAnalyticsPage() {
@@ -175,7 +179,7 @@ export default function FunnelAnalyticsPage() {
             <p className="text-sm mt-1">선택한 기간에 퍼널 이벤트가 기록되지 않았습니다.</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={520}>
             <BarChart
               data={funnelData}
               layout="vertical"

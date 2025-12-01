@@ -25,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // 2. Parse Body
     const body = await request.json();
-    const { name, phoneNumber, gender, cohortId } = body;
+    const { name, phoneNumber, gender, cohortId, occupation } = body;
 
     // 3. Update Firestore
     const db = getAdminDb();
@@ -45,6 +45,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
     if (gender !== undefined) updateData.gender = gender;
     if (cohortId !== undefined) updateData.cohortId = cohortId;
+    if (occupation !== undefined) updateData.occupation = occupation;
 
     await participantRef.update(updateData);
 

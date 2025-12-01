@@ -25,6 +25,7 @@ interface ParticipantEditDialogProps {
     phoneNumber?: string;
     gender?: string;
     cohortId?: string;
+    occupation?: string;
   } | null;
   onSuccess: () => void;
 }
@@ -42,6 +43,7 @@ export default function ParticipantEditDialog({
     name: '',
     phoneNumber: '',
     gender: '',
+    occupation: '',
   });
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export default function ParticipantEditDialog({
         name: participant.name || '',
         phoneNumber: participant.phoneNumber || '',
         gender: participant.gender || '',
+        occupation: participant.occupation || '',
       });
     }
   }, [participant, isOpen]);
@@ -72,6 +75,7 @@ export default function ParticipantEditDialog({
           name: formData.name,
           phoneNumber: formData.phoneNumber,
           gender: formData.gender || null, // Empty string means null (remove gender)
+          occupation: formData.occupation || null, // Empty string means null (remove occupation)
         }),
       });
 
@@ -135,6 +139,15 @@ export default function ParticipantEditDialog({
                 { value: 'other', label: '기타' },
               ]}
               placeholder="성별 선택"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="occupation">직업</Label>
+            <Input
+              id="occupation"
+              value={formData.occupation}
+              onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+              placeholder="예: 소프트웨어 엔지니어"
             />
           </div>
           <DialogFooter>

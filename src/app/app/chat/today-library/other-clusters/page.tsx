@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import TopBar from '@/components/TopBar';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -137,28 +138,14 @@ export default function OtherClustersPage() {
     return (
         <PageTransition>
             <div className="app-shell flex flex-col h-screen bg-gray-50">
-                {/* Header */}
-                <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b safe-area-header">
-                    <div className="flex gap-3 items-center px-4 h-14">
-                        <button
-                            onClick={() => router.push(appRoutes.todayLibrary(cohortId!))}
-                            className="shrink-0 size-6"
-                        >
-                            <Image
-                                src="/icons/arrow-back.svg"
-                                alt="Back"
-                                width={24}
-                                height={24}
-                            />
-                        </button>
-                        <h1 className="flex-1 font-semibold text-lg text-center pr-6">
-                            다른 모임 구경하기
-                        </h1>
-                    </div>
-                </div>
+                <TopBar
+                    title="다른 모임 구경하기"
+                    onBack={() => router.push(appRoutes.todayLibrary(cohortId!))}
+                    position="fixed"
+                />
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto pt-14 pb-20 px-4">
+                <main className="flex-1 overflow-y-auto pt-16 pb-20 px-4">
                     <div className="py-6 space-y-4">
                         <div className="text-center mb-8">
                             <h2 className="text-xl font-bold text-gray-900 mb-2">
@@ -255,11 +242,6 @@ export default function OtherClustersPage() {
                     </div>
                 </main>
             </div>
-            <style jsx>{`
-        .safe-area-header {
-          padding-top: env(safe-area-inset-top);
-        }
-      `}</style>
         </PageTransition>
     );
 }

@@ -81,7 +81,7 @@ export default function SecretPartyPage() {
 
             {/* Floating Sticky Button - 원래 버튼이 시야에서 벗어났을 때만 표시 */}
             <div
-                className={`cta-section transition-all duration-500 ease-[cubic-bezier(0.23_1_0.32_1)] ${showFloatingButton ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
+                className={`cta-section transition-all duration-500 ease-bounce ${showFloatingButton ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
                     }`}
             >
                 <a

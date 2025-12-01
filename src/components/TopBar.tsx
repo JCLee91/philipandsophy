@@ -56,7 +56,7 @@ export default function TopBar({
   return (
     <header
       className={cn(
-        'z-[50] w-full border-b bg-background safe-area-header isolate',
+        'z-[50] w-full border-b bg-background/95 backdrop-blur-sm shadow-sm safe-area-header isolate',
         position === 'sticky' && 'sticky top-0',
         position === 'fixed' && 'fixed top-0 left-0 right-0',
         position === 'relative' && 'relative',
@@ -65,7 +65,7 @@ export default function TopBar({
       )}
       style={style}
     >
-      <div className="container mx-auto flex h-14 items-center px-4 relative">
+      <div className="container mx-auto flex h-16 items-center px-4 relative">
         {/* Left Section */}
         <div className="flex items-center gap-2 z-10 shrink-0">
           {onBack && (

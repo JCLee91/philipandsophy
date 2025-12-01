@@ -1,24 +1,66 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import VideoIntro from './VideoIntro';
 import InfoStep from './InfoStep';
 import { ONBOARDING_STEPS, ONBOARDING_VIDEO_SRC } from '../constants';
-import { LANDING_CONSTANTS } from '@/constants/landing';
+import { logFunnelEvent } from '@/lib/firebase/funnel';
 
-export default function OnboardingFlow() {
-  const router = useRouter();
-  const [step, setStep] = useState<'video' | number>('video');
-  const [isExiting, setIsExiting] = useState(false);
+/**
+ * 세션 ID 관리 (use-application.ts와 동일한 키 사용)
+ */
+const SESSION_STORAGE_KEY = 'pns_funnel_session_id';
 
-  // 마지막 스텝에서만 설문 페이지 미리 로드
+function getOrCreateSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  let sessionId = sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+  }
+  return sessionId;
+}
+
+/**
+ * 온보딩 단계별 퍼널 stepId 매핑
+ */
+const ONBOARDING_FUNNEL_MAP: Record<string, { stepId: string; stepIndex: number }> = {
+  video: { stepId: 'onboarding_video', stepIndex: 0 },
+  '1': { stepId: 'onboarding_step_1', stepIndex: 1 },
+  '2': { stepId: 'onboarding_step_2', stepIndex: 2 },
+  '3': { stepId: 'onboarding_step_3', stepIndex: 3 },
+};
+
+interface OnboardingFlowProps {
+  onComplete: () => void;
+}
+
+export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
+  const [step, setStep] = useState<'video' | number | 'done'>('video');
+  const trackedStepsRef = useRef<Set<string>>(new Set());
+
+  // 단계 진입 시 퍼널 이벤트 로깅
   useEffect(() => {
-    if (step === ONBOARDING_STEPS.length) {
-      router.prefetch('/application');
-    }
-  }, [router, step]);
+    const stepKey = String(step);
+    const funnelInfo = ONBOARDING_FUNNEL_MAP[stepKey];
+
+    // done 단계이거나 이미 로깅된 단계는 무시
+    if (!funnelInfo || trackedStepsRef.current.has(funnelInfo.stepId)) return;
+
+    const sessionId = getOrCreateSessionId();
+    if (!sessionId) return;
+
+    // 퍼널 이벤트 로깅 (memberType은 아직 null - 회원 유형 선택 전)
+    logFunnelEvent({
+      sessionId,
+      stepId: funnelInfo.stepId,
+      stepIndex: funnelInfo.stepIndex,
+      memberType: null,
+    });
+
+    trackedStepsRef.current.add(funnelInfo.stepId);
+  }, [step]);
 
   const handleVideoComplete = () => {
     setStep(1);
@@ -30,23 +72,20 @@ export default function OnboardingFlow() {
     if (step < ONBOARDING_STEPS.length) {
       setStep(step + 1);
     } else {
-      // 마지막 단계에서 설문폼으로 이동
-      setIsExiting(true);
-      
-      // 페이드 아웃 애니메이션 시간(500ms)만큼 대기 후 이동
-      setTimeout(() => {
-        router.push('/application');
-      }, 500);
+      // 마지막 단계 - exit 애니메이션 트리거
+      setStep('done');
+    }
+  };
+
+  const handleExitComplete = () => {
+    if (step === 'done') {
+      onComplete();
     }
   };
 
   return (
-    <motion.div 
-      className="relative h-screen w-full overflow-hidden bg-black text-white"
-      animate={{ opacity: isExiting ? 0 : 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <AnimatePresence mode="wait">
+    <div className="relative h-screen w-full overflow-hidden bg-black text-white">
+      <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
         {step === 'video' && (
           <VideoIntro
             key="video"
@@ -63,6 +102,6 @@ export default function OnboardingFlow() {
           />
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

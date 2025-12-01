@@ -108,6 +108,7 @@ const config = {
       transitionTimingFunction: {
         'smooth': 'var(--ease-smooth)',
         'out': 'var(--ease-out)',
+        'bounce': 'cubic-bezier(0.23, 1, 0.32, 1)',
       },
       keyframes: {
         'accordion-down': {
