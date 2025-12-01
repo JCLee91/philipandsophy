@@ -84,7 +84,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black text-white">
+    <div className="application-page text-white">
       <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
         {step === 'video' && (
           <VideoIntro
