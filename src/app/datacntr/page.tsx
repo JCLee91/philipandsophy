@@ -49,8 +49,8 @@ export default function DataCenterPage() {
     }
   }, [cohorts, selectedCohortId, setSelectedCohortId]);
 
-  // 'all' 선택 시 cohortId를 전달하지 않음 (전체 조회)
-  const statsSelectedCohortId = selectedCohortId === 'all' ? undefined : selectedCohortId;
+  // 선택된 cohortId로 통계 조회
+  const statsSelectedCohortId = selectedCohortId || undefined;
 
   const { data: stats, isLoading: statsLoading } = useDataCenterStats(statsSelectedCohortId);
   const { data: activities, isLoading: activityLoading } = useActivityChart(14, statsSelectedCohortId);
@@ -62,7 +62,7 @@ export default function DataCenterPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">개요 대시보드</h1>
         <p className="text-gray-600 mt-2">
-          {selectedCohort ? `${selectedCohort.name} 기수 현황` : selectedCohortId === 'all' ? '전체 기수 통합 현황' : '기수별 서비스 현황을 한눈에 확인하세요'}
+          {selectedCohort ? `${selectedCohort.name} 기수 현황` : '기수별 서비스 현황을 한눈에 확인하세요'}
         </p>
       </div>
 

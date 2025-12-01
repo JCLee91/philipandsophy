@@ -75,7 +75,7 @@ export default function DataCenterLayout({ children }: DataCenterLayoutProps) {
       <DataCenterSidebar />
 
       {/* 메인 콘텐츠 영역 */}
-      <div className="flex-1 flex flex-col lg:ml-[240px]">
+      <div className="flex-1 flex flex-col lg:ml-[260px]">
         {/* 헤더 */}
         <DataCenterHeader />
 

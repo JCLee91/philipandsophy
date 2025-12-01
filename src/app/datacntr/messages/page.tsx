@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, MessageSquare, CheckCheck, Clock } from 'lucide-react';
+import { Loader2, MessageSquare, CheckCheck, Clock, Users } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { DirectMessage } from '@/types/database';
@@ -33,15 +33,13 @@ export default function MessagesPage() {
 
   // 메시지 데이터 로드 (기수별 필터링)
   useEffect(() => {
-    if (!user) return;
+    if (!user || !selectedCohortId) return;
 
     const fetchMessages = async () => {
       try {
         setIsLoading(true);
         const idToken = await user.getIdToken();
-        const url = selectedCohortId === 'all'
-          ? '/api/datacntr/messages'
-          : `/api/datacntr/messages?cohortId=${selectedCohortId}`;
+        const url = `/api/datacntr/messages?cohortId=${selectedCohortId}`;
 
         const response = await fetch(url, {
           headers: {
@@ -74,6 +72,22 @@ export default function MessagesPage() {
   }
 
   if (!user) return null;
+
+  // 기수가 선택되지 않은 경우
+  if (!selectedCohortId) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">메시지 분석</h1>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
+          <Users className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">기수를 먼저 선택해주세요</h2>
+          <p className="text-gray-600">상단 헤더에서 기수를 선택해야 합니다.</p>
+        </div>
+      </div>
+    );
+  }
 
   const unreadCount = messages.filter((m) => !m.isRead).length;
 

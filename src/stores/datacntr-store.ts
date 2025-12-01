@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface DatacntrStore {
-  selectedCohortId: string | 'all' | null;
-  setSelectedCohortId: (cohortId: string | 'all') => void;
+  selectedCohortId: string | null;
+  setSelectedCohortId: (cohortId: string) => void;
 }
 
 export const useDatacntrStore = create<DatacntrStore>()(

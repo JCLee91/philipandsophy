@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Bell, Calendar } from 'lucide-react';
+import { Loader2, Bell, Calendar, Users } from 'lucide-react';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { Notice, Cohort } from '@/types/database';
 import NoticeTemplateSelector from '@/components/datacntr/NoticeTemplateSelector';
@@ -11,7 +11,6 @@ import SaveAsTemplateModal from '@/components/datacntr/SaveAsTemplateModal';
 import CohortHeader from '@/components/datacntr/CohortHeader';
 import NoticeCard from '@/components/datacntr/NoticeCard';
 
-// ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 
 interface NoticeWithCohort extends Notice {
@@ -21,12 +20,11 @@ interface NoticeWithCohort extends Notice {
 export default function NoticesPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  const { selectedCohortId: selectedCohortFilter } = useDatacntrStore();
+  const { selectedCohortId } = useDatacntrStore();
   const [notices, setNotices] = useState<NoticeWithCohort[]>([]);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-  const [selectedCohortId, setSelectedCohortId] = useState<string>('');
   const [showSaveAsTemplateModal, setShowSaveAsTemplateModal] = useState(false);
   const [selectedNoticeId, setSelectedNoticeId] = useState<string>('');
 
@@ -46,17 +44,16 @@ export default function NoticesPage() {
         const idToken = await user.getIdToken();
         const response = await fetch('/api/datacntr/cohorts', {
           headers: {
-            'Authorization': `Bearer ${idToken}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
 
         if (response.ok) {
           const data = await response.json();
-          // API는 배열로 반환함
           setCohorts(Array.isArray(data) ? data : []);
         }
       } catch (error) {
-
+        // 에러 처리
       }
     };
 
@@ -72,7 +69,7 @@ export default function NoticesPage() {
         const idToken = await user.getIdToken();
         const response = await fetch('/api/datacntr/notices', {
           headers: {
-            'Authorization': `Bearer ${idToken}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
 
@@ -83,7 +80,7 @@ export default function NoticesPage() {
         const data = await response.json();
         setNotices(data);
       } catch (error) {
-
+        // 에러 처리
       } finally {
         setIsLoading(false);
       }
@@ -92,38 +89,22 @@ export default function NoticesPage() {
     fetchNotices();
   }, [user]);
 
-  // 필터링된 공지사항
-  const filteredNotices = selectedCohortFilter === 'all'
-    ? notices
-    : notices.filter(n => n.cohortId === selectedCohortFilter);
+  // 선택된 코호트의 공지사항만 필터링
+  const filteredNotices = selectedCohortId
+    ? notices.filter((n) => n.cohortId === selectedCohortId)
+    : [];
 
-  // 기수별 공지 그룹핑
-  const cohortGroups = selectedCohortFilter === 'all'
-    ? // 전체 기수 보기: 공지가 있는 기수만 표시
-      Array.from(new Set(filteredNotices.map((n) => n.cohortId)))
-        .map((cohortId) => ({
-          cohortId,
-          cohortName: filteredNotices.find((n) => n.cohortId === cohortId)?.cohortName || cohortId,
-          notices: filteredNotices.filter((n) => n.cohortId === cohortId),
-        }))
-        .sort((a, b) => b.cohortId.localeCompare(a.cohortId))
-    : // 특정 기수 필터: 공지가 없어도 해당 기수 섹션 표시
-      [{
-        cohortId: selectedCohortFilter,
-        cohortName: cohorts.find(c => c.id === selectedCohortFilter)?.name || selectedCohortFilter,
-        notices: filteredNotices,
-      }];
+  const selectedCohort = cohorts.find((c) => c.id === selectedCohortId);
 
   // 템플릿 추가 핸들러
-  const handleAddTemplate = (cohortId: string) => {
-    setSelectedCohortId(cohortId);
+  const handleAddTemplate = () => {
     setShowTemplateSelector(true);
   };
 
-  // ✅ 템플릿 선택 후 공지 작성 페이지로 이동
+  // 템플릿 선택 후 공지 작성 페이지로 이동
   const handleSelectTemplate = (templateId: string) => {
     setShowTemplateSelector(false);
-    router.push(`/datacntr/notices/create?cohortId=${selectedCohortId}&templateId=${templateId}`);
+    router.push(`/datacntr/notices/create?templateId=${templateId}`);
   };
 
   // 공지를 템플릿으로 저장 (모달 열기)
@@ -175,7 +156,6 @@ export default function NoticesPage() {
         setNotices(data);
       }
     } catch (error) {
-
       alert(error instanceof Error ? error.message : '공지 삭제 중 오류가 발생했습니다');
     }
   };
@@ -190,16 +170,38 @@ export default function NoticesPage() {
 
   if (!user) return null;
 
+  // 기수가 선택되지 않은 경우
+  if (!selectedCohortId) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">공지사항</h1>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
+          <Users className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">기수를 먼저 선택해주세요</h2>
+          <p className="text-gray-600">
+            공지사항을 확인하려면 상단 헤더에서 기수를 선택해야 합니다.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 공지 정렬: 최신순 (createdAt 내림차순)
+  const sortedNotices = [...filteredNotices].sort((a, b) => {
+    const aTime = a.createdAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || 0;
+    return bTime - aTime;
+  });
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* 헤더 */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">공지사항</h1>
-        <p className="text-gray-600 mt-2">
-          {selectedCohortFilter === 'all'
-            ? '전체 공지사항 내역'
-            : `${cohorts.find(c => c.id === selectedCohortFilter)?.name || ''} 공지사항`}
-        </p>
+        <p className="text-gray-600 mt-2">{selectedCohort?.name || selectedCohortId} 공지사항</p>
       </div>
 
       {/* 통계 */}
@@ -207,9 +209,7 @@ export default function NoticesPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">
-                {selectedCohortFilter === 'all' ? '전체 공지' : '필터링된 공지'}
-              </p>
+              <p className="text-sm text-gray-600">전체 공지</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">{filteredNotices.length}개</p>
             </div>
             <div className="p-3 rounded-lg bg-blue-50">
@@ -233,57 +233,31 @@ export default function NoticesPage() {
         </div>
       </div>
 
-      {/* 기수별 공지사항 리스트 */}
-      <div className="space-y-6">
-        {cohortGroups.map((cohort) => {
-          // 공지 정렬: 최신순 (createdAt 내림차순)
-          const sortedNotices = cohort.notices.sort((a, b) => {
-            const aTime = a.createdAt?.seconds || 0;
-            const bTime = b.createdAt?.seconds || 0;
-            return bTime - aTime;
-          });
+      {/* 기수 헤더 */}
+      <CohortHeader
+        cohortName={selectedCohort?.name || selectedCohortId}
+        cohortId={selectedCohortId}
+        onCreateNotice={() => router.push('/datacntr/notices/create')}
+        onUseTemplate={handleAddTemplate}
+        onManageTemplates={() => router.push('/datacntr/notice-templates')}
+      />
 
-          return (
-          <div key={cohort.cohortId}>
-            {/* 기수 헤더 */}
-            <CohortHeader
-              cohortName={cohort.cohortName}
-              cohortId={cohort.cohortId}
-              onCreateNotice={() => router.push(`/datacntr/notices/create?cohortId=${cohort.cohortId}`)}
-              onUseTemplate={() => handleAddTemplate(cohort.cohortId)}
-              onManageTemplates={() => router.push('/datacntr/notice-templates')}
+      {/* 공지 목록 */}
+      {sortedNotices.length > 0 ? (
+        <div className="space-y-2">
+          {sortedNotices.map((notice) => (
+            <NoticeCard
+              key={notice.id}
+              notice={notice}
+              onEdit={() => router.push(`/datacntr/notices/edit/${notice.id}`)}
+              onSaveAsTemplate={() => handleSaveAsTemplate(notice.id)}
+              onDelete={() => handleDeleteNotice(notice.id, notice.author)}
             />
-
-            {/* 공지 목록 */}
-            <div className="space-y-2">
-              {sortedNotices.map((notice) => (
-                <NoticeCard
-                  key={notice.id}
-                  notice={notice}
-                  onEdit={() => router.push(`/datacntr/notices/edit/${notice.id}`)}
-                  onSaveAsTemplate={() => handleSaveAsTemplate(notice.id)}
-                  onDelete={() => handleDeleteNotice(notice.id, notice.author)}
-                />
-              ))}
-            </div>
-
-            {cohort.notices.length === 0 && (
-              <div className="bg-gray-50 rounded-lg p-8 text-center">
-                <p className="text-gray-500 text-sm">이 기수에는 아직 공지가 없습니다</p>
-              </div>
-            )}
-          </div>
-          );
-        })}
-      </div>
-
-      {filteredNotices.length === 0 && !isLoading && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <p className="text-gray-500">
-            {selectedCohortFilter === 'all'
-              ? '등록된 공지사항이 없습니다'
-              : '해당 기수에 등록된 공지사항이 없습니다'}
-          </p>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-gray-50 rounded-lg p-8 text-center mt-4">
+          <p className="text-gray-500 text-sm">이 기수에는 아직 공지가 없습니다</p>
         </div>
       )}
 

@@ -53,13 +53,13 @@ export default function DataCenterBoardPage() {
 
         // 2. Select cohort based on global filter
         let targetCohort: Cohort | null = null;
-        if (selectedCohortId === 'all') {
-          // 'all'이면 활성 기수
-          targetCohort = cohortsList.find(c => c.isActive) || cohortsList[0] || null;
-        } else {
-          // 선택된 기수
-          targetCohort = cohortsList.find(c => c.id === selectedCohortId) || null;
+        if (!selectedCohortId) {
+          // 기수 미선택 시 로딩 종료
+          setLoading(false);
+          return;
         }
+        // 선택된 기수
+        targetCohort = cohortsList.find(c => c.id === selectedCohortId) || null;
 
         if (!targetCohort) {
 
@@ -158,6 +158,22 @@ export default function DataCenterBoardPage() {
         <div className="text-center">
           <div className="shimmer h-12 w-12 rounded-full mx-auto mb-4" />
           <p className="text-muted-foreground">독서 인증 현황을 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 기수가 선택되지 않은 경우
+  if (!selectedCohortId) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">독서 인증 현황판</h1>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
+          <Users className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">기수를 먼저 선택해주세요</h2>
+          <p className="text-gray-600">상단 헤더에서 기수를 선택해야 합니다.</p>
         </div>
       </div>
     );

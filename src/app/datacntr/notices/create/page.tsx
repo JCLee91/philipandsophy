@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Upload, X, ArrowLeft } from 'lucide-react';
+import { Loader2, Upload, X, ArrowLeft, Users } from 'lucide-react';
 import Image from 'next/image';
-import { getResizedImageUrl } from '@/lib/image-utils';
 import { logger } from '@/lib/logger';
+import { useDatacntrStore } from '@/stores/datacntr-store';
 import type { Cohort } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -15,29 +15,21 @@ export default function NoticeCreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
+  const { selectedCohortId } = useDatacntrStore();
 
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
-  const [selectedCohortId, setSelectedCohortId] = useState<string>('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
-  const [templateImageUrl, setTemplateImageUrl] = useState<string>(''); // ✅ 템플릿에서 가져온 이미지 URL
-  const [isDrafting, setIsDrafting] = useState(false); // 임시저장 로딩
-  const [isPublishing, setIsPublishing] = useState(false); // 발행 로딩
+  const [templateImageUrl, setTemplateImageUrl] = useState<string>('');
+  const [isDrafting, setIsDrafting] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // URL에서 cohortId 가져오기
-  useEffect(() => {
-    const cohortIdFromUrl = searchParams.get('cohortId');
-    if (cohortIdFromUrl) {
-      setSelectedCohortId(cohortIdFromUrl);
-    }
-  }, [searchParams]);
-
-  // ✅ templateId가 있으면 템플릿 데이터 로드
+  // templateId가 있으면 템플릿 데이터 로드
   useEffect(() => {
     const templateId = searchParams.get('templateId');
     if (!templateId || !user) return;
@@ -59,7 +51,7 @@ export default function NoticeCreatePage() {
         setContent(template.content);
         if (template.imageUrl) {
           setImagePreview(template.imageUrl);
-          setTemplateImageUrl(template.imageUrl); // ✅ 템플릿 이미지 URL 저장
+          setTemplateImageUrl(template.imageUrl);
         }
       } catch (error) {
         logger.error('템플릿 로드 실패:', error);
@@ -70,7 +62,7 @@ export default function NoticeCreatePage() {
     fetchTemplate();
   }, [searchParams, user]);
 
-  // 코호트 목록 조회
+  // 코호트 목록 조회 (선택된 코호트 이름을 표시하기 위함)
   useEffect(() => {
     if (!user) return;
 
@@ -90,7 +82,6 @@ export default function NoticeCreatePage() {
         const data = await response.json();
         setCohorts(data);
       } catch (error) {
-
         alert('코호트 목록을 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);
@@ -105,22 +96,19 @@ export default function NoticeCreatePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 파일 크기 체크 (5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('이미지 크기는 5MB 이하여야 합니다.');
       return;
     }
 
-    // 이미지 파일 타입 체크
     if (!file.type.startsWith('image/')) {
       alert('이미지 파일만 업로드 가능합니다.');
       return;
     }
 
     setImageFile(file);
-    setTemplateImageUrl(''); // ✅ 새 이미지 선택 시 템플릿 이미지 URL 초기화
+    setTemplateImageUrl('');
 
-    // 미리보기 생성
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
@@ -132,7 +120,7 @@ export default function NoticeCreatePage() {
   const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview('');
-    setTemplateImageUrl(''); // ✅ 템플릿 이미지 URL도 제거
+    setTemplateImageUrl('');
   };
 
   // 공지 작성/임시저장 제출
@@ -140,7 +128,7 @@ export default function NoticeCreatePage() {
     e.preventDefault();
 
     if (!selectedCohortId) {
-      alert('기수를 선택해주세요.');
+      alert('기수를 먼저 선택해주세요. 상단 헤더에서 기수를 선택할 수 있습니다.');
       return;
     }
 
@@ -156,11 +144,6 @@ export default function NoticeCreatePage() {
 
     if (!user) return;
 
-    // Note: The original instruction included a check for `currentStatus` which is not defined in this component.
-    // As this is a create page, `currentStatus` is not applicable.
-    // If this component were for editing, `currentStatus` would need to be passed as a prop or fetched.
-
-    // 임시저장/발행에 따라 다른 로딩 상태 사용
     if (isDraft) {
       setIsDrafting(true);
     } else {
@@ -183,12 +166,9 @@ export default function NoticeCreatePage() {
         formData.append('status', isDraft ? 'draft' : 'published');
       }
 
-      // ✅ 새 이미지 파일이 있으면 업로드
       if (imageFile) {
         formData.append('image', imageFile);
-      }
-      // ✅ 템플릿 이미지 URL이 있으면 전달 (새 이미지가 없을 때만)
-      else if (templateImageUrl) {
+      } else if (templateImageUrl) {
         formData.append('templateImageUrl', templateImageUrl);
       }
 
@@ -214,10 +194,8 @@ export default function NoticeCreatePage() {
       }
       router.push('/datacntr/notices');
     } catch (error) {
-
       alert(error instanceof Error ? error.message : '공지 작성 중 오류가 발생했습니다.');
     } finally {
-      // 각각의 로딩 상태 해제
       if (isDraft) {
         setIsDrafting(false);
       } else {
@@ -236,6 +214,42 @@ export default function NoticeCreatePage() {
 
   if (!user) return null;
 
+  // 코호트가 선택되지 않은 경우
+  if (!selectedCohortId) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            뒤로 가기
+          </button>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <Users className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            기수를 먼저 선택해주세요
+          </h2>
+          <p className="text-gray-600 mb-4">
+            공지사항을 작성하려면 상단 헤더에서 기수를 선택해야 합니다.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push('/datacntr/notices')}
+            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+          >
+            공지사항 목록으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedCohort = cohorts.find((c) => c.id === selectedCohortId);
   const isSubmitting = isDrafting || isPublishing;
 
   return (
@@ -256,24 +270,22 @@ export default function NoticeCreatePage() {
 
       {/* 공지 작성 폼 */}
       <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
-        {/* 기수 선택 */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            기수 선택 <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={selectedCohortId}
-            onChange={(e) => setSelectedCohortId(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="">기수를 선택하세요</option>
-            {cohorts.map((cohort) => (
-              <option key={cohort.id} value={cohort.id}>
-                {cohort.name}
-              </option>
-            ))}
-          </select>
+        {/* 기수 표시 (고정, 변경 불가) */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+              <Users className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-blue-600 font-medium">작성 대상 기수</p>
+              <p className="text-lg font-bold text-gray-900">
+                {selectedCohort?.name || selectedCohortId}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-blue-500 mt-2">
+            * 다른 기수에 공지를 작성하려면 상단 헤더에서 기수를 변경하세요.
+          </p>
         </div>
 
         {/* 푸시 알림 제목 (선택) */}
@@ -289,7 +301,7 @@ export default function NoticeCreatePage() {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <p className="text-sm text-gray-500 mt-2">
-            ℹ️ 채팅방에는 표시되지 않으며, 푸시 알림과 관리자 목록에서만 확인 가능합니다.
+            * 채팅방에는 표시되지 않으며, 푸시 알림과 관리자 목록에서만 확인 가능합니다.
           </p>
         </div>
 
@@ -306,9 +318,7 @@ export default function NoticeCreatePage() {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             required
           />
-          <p className="text-sm text-gray-500 mt-2">
-            현재 {content.length}자
-          </p>
+          <p className="text-sm text-gray-500 mt-2">현재 {content.length}자</p>
         </div>
 
         {/* 이미지 업로드 */}
@@ -324,9 +334,7 @@ export default function NoticeCreatePage() {
                 <p className="text-sm text-gray-600 font-medium">
                   클릭하여 이미지 업로드
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  PNG, JPG, WEBP (최대 5MB)
-                </p>
+                <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP (최대 5MB)</p>
               </div>
               <input
                 type="file"
@@ -358,9 +366,7 @@ export default function NoticeCreatePage() {
         {/* 예약 발행 설정 */}
         <div className="bg-white rounded-lg p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <label className="text-sm font-medium text-gray-900">
-              예약 발행 설정
-            </label>
+            <label className="text-sm font-medium text-gray-900">예약 발행 설정</label>
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -369,12 +375,14 @@ export default function NoticeCreatePage() {
                 onChange={(e) => {
                   setIsScheduled(e.target.checked);
                   if (e.target.checked && !scheduledAt) {
-                    // 기본값: 현재 시간 + 1시간 (ISO String slice for input)
                     const nextHour = new Date();
                     nextHour.setHours(nextHour.getHours() + 1);
                     nextHour.setMinutes(0);
-                    // 로컬 시간 포맷팅 (YYYY-MM-DDTHH:mm)
-                    const localIso = new Date(nextHour.getTime() - nextHour.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                    const localIso = new Date(
+                      nextHour.getTime() - nextHour.getTimezoneOffset() * 60000
+                    )
+                      .toISOString()
+                      .slice(0, 16);
                     setScheduledAt(localIso);
                   }
                 }}
@@ -388,9 +396,7 @@ export default function NoticeCreatePage() {
 
           {isScheduled && (
             <div className="mt-2">
-              <label className="block text-sm text-gray-600 mb-1">
-                발행 예정 시간
-              </label>
+              <label className="block text-sm text-gray-600 mb-1">발행 예정 시간</label>
               <input
                 type="datetime-local"
                 value={scheduledAt}
@@ -419,7 +425,7 @@ export default function NoticeCreatePage() {
 
             {/* 오른쪽 버튼 그룹 */}
             <div className="flex items-center gap-3">
-              {!isScheduled && ( // Only show "임시저장" button if not scheduled
+              {!isScheduled && (
                 <button
                   type="button"
                   onClick={(e) => handleSubmit(e, true)}
@@ -439,16 +445,19 @@ export default function NoticeCreatePage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`flex-1 sm:flex-none px-6 py-3 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${isScheduled ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                className={`flex-1 sm:flex-none px-6 py-3 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                  isScheduled ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                {isPublishing ? ( // Use isPublishing for the main submit button
+                {isPublishing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     {isScheduled ? '예약 중...' : '작성 중...'}
                   </>
+                ) : isScheduled ? (
+                  '예약하기'
                 ) : (
-                  isScheduled ? '예약하기' : '발행하기'
+                  '발행하기'
                 )}
               </button>
             </div>
