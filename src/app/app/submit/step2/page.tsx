@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
-import { getParticipantById, saveDraft, uploadReadingImage } from '@/lib/firebase';
+import { getParticipantById, saveDraft, uploadReadingImage, uploadImageFromUrl } from '@/lib/firebase';
 import { createFileFromUrl } from '@/lib/image-validation';
 import { searchNaverBooks, cleanBookData, type NaverBook } from '@/lib/naver-book-api';
 import { useToast } from '@/hooks/use-toast';
@@ -59,6 +59,7 @@ function Step2Content() {
     setImageFile,
     setImageStorageUrl,
     setMetaInfo,
+    isEBook,
   } = useSubmissionFlowStore();
 
   // ✅ Local state for performance
@@ -111,10 +112,18 @@ function Step2Content() {
         review: currentReview,
         // 수정 모드인 경우 원본 submissionId 저장
         ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
+        isEBook,
       };
 
       if (selectedBook?.title || manualTitle) {
         draftData.bookTitle = selectedBook?.title || manualTitle;
+      }
+
+      // 전자책인 경우: 이미 업로드된 URL이 있으면 사용, 없으면 네이버 URL 임시 저장
+      // (최종 업로드는 handleNext에서 수행)
+      if (isEBook && selectedBook?.image) {
+        draftData.bookImageUrl = imageStorageUrl || selectedBook.image;
+        draftData.bookCoverUrl = selectedBook.image;
       }
 
       if (cohortId) {
@@ -133,7 +142,8 @@ function Step2Content() {
 
   // Step 1 검증
   useEffect(() => {
-    if (!imageFile && !existingSubmissionId) {
+    // 전자책이 아니고 이미지가 없으면 Step 1으로 이동
+    if (!imageFile && !existingSubmissionId && !isEBook) {
       toast({
         title: '이미지를 먼저 업로드해주세요',
         variant: 'destructive',
@@ -141,7 +151,7 @@ function Step2Content() {
       const step1Url = appRoutes.submitStep1(cohortId!);
       router.replace(`${step1Url}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     }
-  }, [imageFile, existingSubmissionId, cohortId, router, toast]);
+  }, [imageFile, existingSubmissionId, cohortId, router, toast, isEBook]);
 
   // 인증 확인
   useEffect(() => {
@@ -163,12 +173,15 @@ function Step2Content() {
     // Step1에서 이미지를 선택하고 넘어온 경우는 초기화하지 않음
     // 수정 모드도 초기화하지 않음
     if (!existingSubmissionId && !imageFile && (selectedBook || manualTitle || globalReview)) {
-      setSelectedBook(null);
-      setManualTitle('');
-      setGlobalReview('');
+      // 전자책 모드일 때는 초기화하지 않음 (Step 1에서 넘어왔을 수 있음)
+      if (!isEBook) {
+        setSelectedBook(null);
+        setManualTitle('');
+        setGlobalReview('');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existingSubmissionId, imageFile]); // 의도적으로 dependency 제한
+  }, [existingSubmissionId, imageFile, isEBook]); // 의도적으로 dependency 제한
 
   // 임시저장 자동 불러오기 + 최근 책 정보 자동 로드
   useEffect(() => {
@@ -369,6 +382,7 @@ function Step2Content() {
     setSelectedBook(book);
     setSearchQuery('');
     setShowDropdown(false);
+    // 전자책 모드인 경우 이미지 URL은 handleNext에서 Firebase Storage 업로드 후 설정
   };
 
   const handleEditBook = () => {
@@ -382,6 +396,11 @@ function Step2Content() {
       }
       setSelectedBook(null);
       setManualTitle('');
+
+      // 전자책 모드인 경우 이미지 URL도 초기화 (책 변경 시)
+      if (isEBook) {
+        setImageStorageUrl(null);
+      }
     }
   };
 
@@ -404,7 +423,10 @@ function Step2Content() {
         bookCoverUrl?: string;
         bookDescription?: string;
         review?: string;
-      } = {};
+        isEBook?: boolean;
+      } = {
+        isEBook
+      };
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
       if (imageFile && imageFile instanceof File && !imageStorageUrl) {
@@ -412,6 +434,24 @@ function Step2Content() {
         draftData.bookImageUrl = uploadedUrl;
         setImageStorageUrl(uploadedUrl);
       } else if (imageStorageUrl) {
+        draftData.bookImageUrl = imageStorageUrl;
+      }
+
+      // 전자책이고 선택된 책 이미지가 있으면 Firebase Storage에 업로드
+      if (isEBook && selectedBook?.image && !imageStorageUrl) {
+        try {
+          const uploadedCoverUrl = await uploadImageFromUrl(selectedBook.image, participationCode, cohortId!);
+          draftData.bookImageUrl = uploadedCoverUrl;
+          draftData.bookCoverUrl = selectedBook.image; // 원본 네이버 URL도 유지 (참조용)
+          setImageStorageUrl(uploadedCoverUrl);
+        } catch (error) {
+          console.error('Failed to upload book cover image:', error);
+          // 업로드 실패 시 원본 URL 사용 (fallback)
+          draftData.bookImageUrl = selectedBook.image;
+          draftData.bookCoverUrl = selectedBook.image;
+        }
+      } else if (isEBook && imageStorageUrl) {
+        // 이미 업로드된 경우
         draftData.bookImageUrl = imageStorageUrl;
       }
 
@@ -471,6 +511,16 @@ function Step2Content() {
       return;
     }
 
+    // 전자책 모드인데 수동 입력인 경우 (표지 이미지가 없음)
+    if (isEBook && !selectedBook && manualTitle.trim()) {
+      toast({
+        title: '전자책 인증은 책 검색이 필요합니다',
+        description: '표지 사진을 가져오기 위해 책을 검색해서 선택해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!localReview.trim()) {
       toast({
         title: '감상평을 입력해주세요',
@@ -502,7 +552,10 @@ function Step2Content() {
           bookDescription?: string;
           review?: string;
           cohortId?: string;
-        } = {};
+          isEBook?: boolean;
+        } = {
+          isEBook
+        };
 
         // 이미지가 있으면 업로드 (File 객체인 경우만)
         if (imageFile && imageFile instanceof File && !imageStorageUrl) {
@@ -510,6 +563,24 @@ function Step2Content() {
           draftData.bookImageUrl = uploadedUrl;
           setImageStorageUrl(uploadedUrl);
         } else if (imageStorageUrl) {
+          draftData.bookImageUrl = imageStorageUrl;
+        }
+
+        // 전자책이고 선택된 책 이미지가 있으면 Firebase Storage에 업로드
+        if (isEBook && selectedBook?.image && !imageStorageUrl) {
+          try {
+            const uploadedCoverUrl = await uploadImageFromUrl(selectedBook.image, participationCode, cohortId!);
+            draftData.bookImageUrl = uploadedCoverUrl;
+            draftData.bookCoverUrl = selectedBook.image; // 원본 네이버 URL도 유지 (참조용)
+            setImageStorageUrl(uploadedCoverUrl);
+          } catch (error) {
+            console.error('Failed to upload book cover image:', error);
+            // 업로드 실패 시 원본 URL 사용 (fallback)
+            draftData.bookImageUrl = selectedBook.image;
+            draftData.bookCoverUrl = selectedBook.image;
+          }
+        } else if (isEBook && imageStorageUrl) {
+          // 이미 업로드된 경우
           draftData.bookImageUrl = imageStorageUrl;
         }
 

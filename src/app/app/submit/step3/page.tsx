@@ -61,7 +61,8 @@ function Step3Content() {
     setReview,
     setImageStorageUrl,
     setMetaInfo,
-    reset
+    reset,
+    isEBook,
   } = useSubmissionFlowStore();
 
   // ✅ Local state for performance (prevent global store updates on every keystroke)
@@ -117,6 +118,7 @@ function Step3Content() {
         dailyAnswer: currentAnswer,
         // 수정 모드인 경우 원본 submissionId 저장
         ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
+        isEBook,
       };
 
       if (participant?.cohortId) {
@@ -339,9 +341,11 @@ function Step3Content() {
         dailyAnswer?: string;
         cohortId?: string;
         editingSubmissionId?: string;
+        isEBook?: boolean;
       } = {
         // 수정 모드인 경우 원본 submissionId 저장
         ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
+        isEBook,
       };
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
@@ -476,6 +480,7 @@ function Step3Content() {
         status: 'approved' as const,
         // 🆕 cohortId 추가 (중복 참가자 구분용, participant 우선)
         ...((participant?.cohortId || cohortId) && { cohortId: participant?.cohortId || cohortId }),
+        isEBook,
       };
 
       // 단계 3: 제출물 저장

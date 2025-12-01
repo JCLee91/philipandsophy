@@ -297,6 +297,7 @@ export async function saveDraft(
     dailyAnswer?: string;
     dailyQuestion?: string;
     editingSubmissionId?: string; // 🆕 수정 모드에서 원본 제출물 ID 추적
+    isEBook?: boolean; // 🆕 전자책 여부
   },
   participantName?: string
 ): Promise<string> {

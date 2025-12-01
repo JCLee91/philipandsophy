@@ -116,5 +116,38 @@ export async function uploadApplicationPhoto(
   return uploadFileWithProgress(file, path, onProgress);
 }
 
+/**
+ * 외부 URL 이미지를 Firebase Storage에 업로드 (전자책 표지용)
+ *
+ * @param imageUrl - 외부 이미지 URL (예: 네이버 책 표지)
+ * @param participationCode - 참가 코드
+ * @param cohortId - 코호트 ID
+ * @param onProgress - 진행률 콜백
+ */
+export async function uploadImageFromUrl(
+  imageUrl: string,
+  participationCode: string,
+  cohortId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  // 1. 외부 URL에서 이미지 fetch
+  const response = await fetch(imageUrl);
+  if (!response.ok) {
+    throw new Error(`이미지를 가져올 수 없습니다: ${response.status}`);
+  }
+
+  // 2. Blob으로 변환
+  const blob = await response.blob();
+
+  // 3. File 객체로 변환 (확장자 추출)
+  const contentType = blob.type || 'image/jpeg';
+  const extension = contentType.split('/')[1] || 'jpg';
+  const fileName = `ebook_cover_${Date.now()}.${extension}`;
+  const file = new File([blob], fileName, { type: contentType });
+
+  // 4. 기존 업로드 함수 사용
+  return uploadReadingImage(file, participationCode, cohortId, onProgress);
+}
+
 // ❌ REMOVED: deleteFile - 미사용 함수 제거 (이미지 삭제 기능 미구현)
 // ❌ REMOVED: deleteMultipleFiles - 미사용 함수 제거

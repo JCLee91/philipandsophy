@@ -33,6 +33,10 @@ interface SubmissionFlowState {
   setDailyAnswer: (answer: string) => void;
   setMetaInfo: (participantId: string, participationCode: string, cohortId: string, existingSubmissionId?: string) => void;
   setImageStorageUrl: (url: string | null) => void;
+
+  isEBook: boolean;
+  setIsEBook: (isEBook: boolean) => void;
+
   reset: () => void;
 }
 
@@ -48,6 +52,7 @@ const initialState = {
   participationCode: null,
   cohortId: null,
   existingSubmissionId: null,
+  isEBook: false,
 };
 
 export const useSubmissionFlowStore = create<SubmissionFlowState>((set) => ({
@@ -70,6 +75,9 @@ export const useSubmissionFlowStore = create<SubmissionFlowState>((set) => ({
     set({ participantId, participationCode, cohortId, existingSubmissionId }),
 
   setImageStorageUrl: (url) => set({ imageStorageUrl: url }),
+
+  isEBook: false,
+  setIsEBook: (isEBook: boolean) => set({ isEBook }),
 
   reset: () => set(initialState),
 }));

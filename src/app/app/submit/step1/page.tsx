@@ -18,6 +18,9 @@ import Image from 'next/image';
 import { appRoutes } from '@/lib/navigation';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+
 export const dynamic = 'force-dynamic';
 
 function Step1Content() {
@@ -44,13 +47,15 @@ function Step1Content() {
     setImageFile,
     setMetaInfo,
     setImageStorageUrl,
-    clearImagePreview, // 🆕
+    clearImagePreview,
     setSelectedBook,
     setManualTitle,
     setReview,
     setDailyAnswer,
     participantId,
     participationCode,
+    isEBook,
+    setIsEBook,
   } = useSubmissionFlowStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
@@ -59,8 +64,6 @@ function Step1Content() {
   // 메타 정보 설정
   useEffect(() => {
     if (participant && cohortId) {
-      // participationCode는 participant의 participationCode 필드를 사용, 없으면 participant.id를 사용
-      // Storage 경로: cohorts/cohort{N}/submissions/{participantId}/ (기수별로 분리)
       const participationCode = participant.participationCode || participant.id;
       setMetaInfo(participant.id, participationCode, cohortId, existingSubmissionId || undefined);
     }
@@ -76,18 +79,23 @@ function Step1Content() {
       const { getDraftSubmission } = await import('@/lib/firebase/submissions');
       const draft = await getDraftSubmission(participant.id, cohortId);
 
-      if (draft?.bookImageUrl) {
-        // URL에서 File 객체 생성 (다음 단계 진행 가능하도록)
-        const file = await createFileFromUrl(draft.bookImageUrl);
-        setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
-        setImageStorageUrl(draft.bookImageUrl);
+      if (draft) {
+        if (draft.bookImageUrl) {
+          const file = await createFileFromUrl(draft.bookImageUrl);
+          setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
+          setImageStorageUrl(draft.bookImageUrl);
+        }
+
+        if (draft.isEBook) {
+          setIsEBook(true);
+        }
       }
 
       setIsLoadingDraft(false);
     };
 
     loadDraft();
-  }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, toast]);
+  }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, setIsEBook]);
 
   const hasLoadedExistingRef = useRef(false);
 
@@ -111,6 +119,10 @@ function Step1Content() {
             setImageFile(null, submission.bookImageUrl, submission.bookImageUrl);
           }
           setImageStorageUrl(submission.bookImageUrl);
+        }
+
+        if (submission.isEBook) {
+          setIsEBook(true);
         }
 
         if (submission.bookTitle) {
@@ -152,7 +164,7 @@ function Step1Content() {
     };
 
     loadExistingSubmission();
-  }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, toast]);
+  }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, setIsEBook, toast]);
 
   // 인증 확인
   useEffect(() => {
@@ -186,6 +198,7 @@ function Step1Content() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImageFile(processedFile, reader.result as string);
+        setIsEBook(false); // 이미지가 업로드되면 전자책 체크 해제
       };
       reader.onerror = () => {
         toast({
@@ -212,10 +225,10 @@ function Step1Content() {
   };
 
   const handleNext = async () => {
-    if (!imageFile && !imageStorageUrl) {
+    if (!imageFile && !imageStorageUrl && !isEBook) {
       toast({
         title: '이미지를 선택해주세요',
-        description: '책의 마지막 페이지를 촬영해주세요.',
+        description: '책의 마지막 페이지를 촬영하거나 전자책 옵션을 선택해주세요.',
         variant: 'destructive',
       });
       return;
@@ -233,7 +246,9 @@ function Step1Content() {
     setIsProcessing(true);
     try {
       let bookImageUrl = imageStorageUrl;
-      if (!bookImageUrl) {
+
+      // 전자책이 아니고 이미지가 있는 경우 업로드
+      if (!isEBook && !bookImageUrl && imageFile) {
         bookImageUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
         setImageStorageUrl(bookImageUrl);
       }
@@ -245,7 +260,8 @@ function Step1Content() {
 
       // 🆕 cohortId 추가 (중복 참가자 구분용)
       await saveDraft(participantId, participationCode, {
-        bookImageUrl,
+        bookImageUrl: bookImageUrl || undefined,
+        isEBook,
         ...(cohortId && { cohortId }),
       });
 
@@ -253,7 +269,7 @@ function Step1Content() {
       router.push(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     } catch (error) {
       toast({
-        title: '이미지 업로드 실패',
+        title: '처리 실패',
         description: error instanceof Error ? error.message : '다시 시도해주세요.',
         variant: 'destructive',
       });
@@ -297,18 +313,23 @@ function Step1Content() {
             {!imagePreview ? (
               <label
                 htmlFor="book-image"
-                className="flex flex-col items-center justify-center aspect-[4/3] w-full border-2 border-dashed border-blue-200 rounded-2xl cursor-pointer hover:border-gray-400 transition-colors bg-blue-50/30"
+                className={`flex flex-col items-center justify-center aspect-[4/3] w-full border-2 border-dashed rounded-2xl transition-colors ${isEBook
+                    ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50'
+                    : 'border-blue-200 bg-blue-50/30 cursor-pointer hover:border-gray-400'
+                  }`}
               >
-                <Upload className="h-12 w-12 text-blue-400 mb-4" />
-                <p className="text-sm font-medium text-gray-700">이미지를 업로드하려면 클릭하세요</p>
-                <p className="text-xs text-gray-500 mt-2">최대 50MB, JPG/PNG/HEIC</p>
+                <Upload className={`h-12 w-12 mb-4 ${isEBook ? 'text-gray-300' : 'text-blue-400'}`} />
+                <p className={`text-sm font-medium ${isEBook ? 'text-gray-400' : 'text-gray-700'}`}>
+                  {isEBook ? '전자책은 표지 사진으로 대체됩니다' : '이미지를 업로드하려면 클릭하세요'}
+                </p>
+                {!isEBook && <p className="text-xs text-gray-500 mt-2">최대 50MB, JPG/PNG/HEIC</p>}
                 <input
                   id="book-image"
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
-                  disabled={isProcessing}
+                  disabled={isProcessing || isEBook}
                 />
               </label>
             ) : (
@@ -330,6 +351,26 @@ function Step1Content() {
                 </button>
               </div>
             )}
+
+            {/* 전자책 체크박스 */}
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="ebook-check"
+                checked={isEBook}
+                onCheckedChange={(checked) => {
+                  setIsEBook(checked === true);
+                  if (checked === true) {
+                    handleRemoveImage(); // 전자책 선택 시 이미지 제거
+                  }
+                }}
+              />
+              <Label
+                htmlFor="ebook-check"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                전자책으로 읽었어요 (표지 사진으로 대체)
+              </Label>
+            </div>
           </div>
         </main>
 
@@ -341,9 +382,9 @@ function Step1Content() {
           >
             <UnifiedButton
               onClick={handleNext}
-              disabled={!imageFile || isProcessing}
+              disabled={(!imageFile && !isEBook) || isProcessing}
               loading={isProcessing}
-              loadingText="업로드 중..."
+              loadingText="처리 중..."
             >
               다음
             </UnifiedButton>

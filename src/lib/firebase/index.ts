@@ -65,6 +65,7 @@ export {
 export {
   uploadFileWithProgress,
   uploadReadingImage,
+  uploadImageFromUrl,
 } from './storage';
 
 // Notice operations

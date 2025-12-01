@@ -302,6 +302,7 @@ export interface ReadingSubmission {
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
   metadata?: Record<string, any>; // 추가 메타데이터 (확장 가능)
+  isEBook?: boolean; // 🆕 전자책 여부 (2025-12-01 추가)
 }
 
 /**
