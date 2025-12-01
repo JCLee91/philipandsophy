@@ -55,7 +55,7 @@ export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext,
     >
       {/* 상단 텍스트 영역 */}
       <div className="pt-[10vh] pb-6 text-center">
-        <h2 className="whitespace-pre-line text-xl md:text-3xl font-semibold leading-snug tracking-tight">
+        <h2 className="whitespace-pre-line text-2xl md:text-4xl font-semibold leading-snug tracking-tight">
           {title}
         </h2>
       </div>
@@ -92,7 +92,7 @@ export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext,
         {/* 버튼 - cta-button-white 스타일 적용 */}
         <button
           onClick={onNext}
-          className="cta-button-white w-full"
+          className="cta-button-white w-full h-16 py-5 px-8 text-lg"
         >
           {buttonText}
         </button>
