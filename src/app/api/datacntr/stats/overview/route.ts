@@ -8,6 +8,7 @@ import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { hasAnyPushSubscription } from '@/lib/push/helpers';
+import { format } from 'date-fns';
 
 export async function GET(request: NextRequest) {
   try {
@@ -111,6 +112,26 @@ export async function GET(request: NextRequest) {
       db.collection(COLLECTIONS.MESSAGES).get(),
     ]);
 
+    // ✅ FIX: unique (participantId, submissionDate) 조합으로 카운트 (중복 제출 제거)
+    // 정책상 하루 1회 인증이므로 같은 날 같은 사람의 여러 제출은 1회로 카운트
+    const uniqueSubmissionKeys = new Set<string>();
+    allSubmissions.forEach((doc) => {
+      const data = doc.data();
+      let submissionDate = data.submissionDate;
+      if (!submissionDate) {
+        // submissionDate가 없는 경우 submittedAt fallback (레거시 데이터 호환)
+        const submittedAt = safeTimestampToDate(data.submittedAt);
+        if (submittedAt) {
+          submissionDate = format(submittedAt, 'yyyy-MM-dd');
+        }
+      }
+      if (submissionDate) {
+        // participantId + date 조합으로 unique key 생성
+        uniqueSubmissionKeys.add(`${data.participantId}_${submissionDate}`);
+      }
+    });
+    const uniqueSubmissionCount = uniqueSubmissionKeys.size;
+
     // 오늘 인증은 중복 제출을 방지하기 위해 참가자 기준으로 집계
     const nonSuperAdminTodaySubmissionIds = new Set<string>();
     todaySubmissions.forEach((doc) => {
@@ -193,9 +214,9 @@ export async function GET(request: NextRequest) {
       ? Math.round((weekParticipantIds.size / nonSuperAdminParticipants.length) * 100)
       : 0;
 
-    // 참가자당 평균 독서 인증 횟수 계산
+    // 참가자당 평균 독서 인증 횟수 계산 (unique 인증 기준)
     const averageSubmissionsPerParticipant = nonSuperAdminParticipants.length > 0
-      ? Math.round((allSubmissions.length / nonSuperAdminParticipants.length) * 10) / 10 // 소수점 1자리
+      ? Math.round((uniqueSubmissionCount / nonSuperAdminParticipants.length) * 10) / 10 // 소수점 1자리
       : 0;
 
     // 총 인증률 계산
@@ -204,9 +225,9 @@ export async function GET(request: NextRequest) {
     let totalSubmissionRate = 0;
 
     if (cohortId && elapsedDays > 0 && nonSuperAdminParticipants.length > 0) {
-      // 단일 코호트 선택 시: 기존 로직 유지
+      // 단일 코호트 선택 시 (unique 인증 기준)
       const maxPossibleSubmissions = nonSuperAdminParticipants.length * elapsedDays;
-      totalSubmissionRate = Math.round((allSubmissions.length / maxPossibleSubmissions) * 100);
+      totalSubmissionRate = Math.round((uniqueSubmissionCount / maxPossibleSubmissions) * 100);
     } else if (!cohortId && nonSuperAdminParticipants.length > 0) {
       // 전체 보기 시: 각 참가자의 코호트별 경과 일수를 합산하여 계산
       const allCohortsSnapshot = await db.collection(COLLECTIONS.COHORTS).get();
@@ -235,7 +256,7 @@ export async function GET(request: NextRequest) {
       });
 
       if (totalMaxSubmissions > 0) {
-        totalSubmissionRate = Math.round((allSubmissions.length / totalMaxSubmissions) * 100);
+        totalSubmissionRate = Math.round((uniqueSubmissionCount / totalMaxSubmissions) * 100);
       }
     }
 
@@ -243,7 +264,7 @@ export async function GET(request: NextRequest) {
       averageSubmissionsPerParticipant,
       totalParticipants: nonSuperAdminParticipants.length,
       todaySubmissions: nonSuperAdminTodaySubmissionIds.size,
-      totalSubmissions: allSubmissions.length,
+      totalSubmissions: uniqueSubmissionCount, // ✅ FIX: unique 인증 기준
       totalNotices: noticesSnapshot.size,
       totalMessages: messagesSnapshot.size,
       pushEnabledCount,
