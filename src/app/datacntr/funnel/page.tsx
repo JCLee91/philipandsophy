@@ -28,7 +28,6 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
 ];
 
 const MEMBER_TYPE_OPTIONS = [
-  { value: 'all', label: '전체' },
   { value: 'new', label: '신규 회원' },
   { value: 'existing', label: '기존 회원' },
 ] as const;
@@ -47,7 +46,7 @@ const BAR_COLORS = [
 
 export default function FunnelAnalyticsPage() {
   const [period, setPeriod] = useState<PeriodFilter>('7days');
-  const [memberType, setMemberType] = useState<'all' | 'new' | 'existing'>('all');
+  const [memberType, setMemberType] = useState<'new' | 'existing'>('new');
   const [funnelData, setFunnelData] = useState<FunnelStepData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

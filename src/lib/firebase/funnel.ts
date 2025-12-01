@@ -131,7 +131,7 @@ export interface FunnelStepData {
  */
 export async function getFunnelData(
   period: PeriodFilter,
-  memberType: 'new' | 'existing' | 'all' = 'all'
+  memberType: 'new' | 'existing' = 'new'
 ): Promise<FunnelStepData[]> {
   const db = getDb();
   const startDate = getStartDate(period);
@@ -152,20 +152,36 @@ export async function getFunnelData(
 
   const snapshot = await getDocs(q);
 
-  // 세션별로 그룹핑하여 각 단계 도달 수 계산
+  // 1단계: 각 세션의 memberType 결정 (null이 아닌 값 우선)
+  // intro, membership_status 단계에서는 memberType이 null이므로
+  // 이후 단계에서 결정된 memberType을 세션 전체에 적용
+  const sessionMemberTypes = new Map<string, 'new' | 'existing' | null>();
+
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const sessionId = data.sessionId as string;
+    const eventMemberType = data.memberType as 'new' | 'existing' | null;
+
+    // memberType이 있고, 아직 세션의 memberType이 결정되지 않았으면 저장
+    if (eventMemberType && !sessionMemberTypes.has(sessionId)) {
+      sessionMemberTypes.set(sessionId, eventMemberType);
+    }
+  });
+
+  // 2단계: 세션별로 그룹핑하여 각 단계 도달 수 계산
   // 같은 세션에서 같은 단계는 1번만 카운트
   const sessionSteps = new Map<string, Set<string>>();
 
   snapshot.docs.forEach(doc => {
     const data = doc.data();
-
-    // memberType 필터
-    if (memberType !== 'all' && data.memberType && data.memberType !== memberType) {
-      return;
-    }
-
     const sessionId = data.sessionId as string;
     const stepId = data.stepId as string;
+
+    // 세션의 memberType으로 필터링 (intro 등 null인 이벤트도 세션 기준으로 분류)
+    const sessionType = sessionMemberTypes.get(sessionId) || null;
+    if (sessionType !== memberType) {
+      return;
+    }
 
     if (!sessionSteps.has(sessionId)) {
       sessionSteps.set(sessionId, new Set());
