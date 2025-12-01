@@ -12,7 +12,7 @@ interface FileUploadProps {
     onError?: (error: string) => void;
 }
 
-const MAX_FILE_SIZE_MB = 20;
+const MAX_FILE_SIZE_MB = 50;
 
 export function FileUpload({ onFileSelect, onUploadComplete, currentFile, onError }: FileUploadProps) {
     const inputRef = useRef<HTMLInputElement>(null);

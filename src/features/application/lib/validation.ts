@@ -95,11 +95,21 @@ export function isValidFileSize(file: File, maxSizeMB: number = 20): boolean {
 
 /**
  * 이미지 파일 타입 검증
+ * HEIC/HEIF (iPhone 기본 포맷) 지원 추가
  */
 export function isValidImageType(file: File): boolean {
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const validTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/heic',
+        'image/heif',
+    ];
     return validTypes.includes(file.type);
 }
+
 
 
 
