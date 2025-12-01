@@ -19,6 +19,7 @@ import { httpsCallable } from 'firebase/functions';
 import { signInWithCustomToken } from 'firebase/auth';
 import { getFirebaseFunctions, getFirebaseAuth } from '@/lib/firebase/client';
 import { useRouter, usePathname } from 'next/navigation';
+import { APP_CONSTANTS } from '@/constants/app';
 
 export interface ParticipantCardProps {
   participant: Participant;
@@ -91,13 +92,19 @@ export function ParticipantCard({
       if (adminToken) {
         sessionStorage.setItem('pns_admin_token', adminToken);
       }
-      
+
       // 2. 배너 표시 플래그 및 복귀 경로 저장
       // 모바일 앱에서는 현재 경로를 저장해두고 복귀 시 해당 경로로 이동
       sessionStorage.setItem('pns_admin_impersonation', 'true');
       sessionStorage.setItem('pns_impersonation_return_url', pathname);
 
-      // 3. 타겟 유저로 로그인
+      // 3. 현재 viewMode 저장 (복귀 시 관리자 모드 복원용)
+      const currentViewMode = localStorage.getItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE);
+      if (currentViewMode) {
+        sessionStorage.setItem('pns_impersonation_view_mode', currentViewMode);
+      }
+
+      // 4. 타겟 유저로 로그인
       const auth = getFirebaseAuth();
       await signInWithCustomToken(auth, customToken);
       

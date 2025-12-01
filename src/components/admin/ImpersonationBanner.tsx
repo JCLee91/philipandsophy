@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Eye, LogOut } from 'lucide-react';
 import { signInWithCustomToken } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase/client';
+import { APP_CONSTANTS } from '@/constants/app';
 
 export default function ImpersonationBanner() {
   const { user, participant, logout } = useAuth();
@@ -34,10 +35,17 @@ export default function ImpersonationBanner() {
           // 2. 관리자 토큰으로 재로그인 시도
           await signInWithCustomToken(auth, adminToken);
 
-          // 3. 성공 시 스토리지 정리 및 이동
+          // 3. 저장된 viewMode 복원 (관리자 모드 복원)
+          const savedViewMode = sessionStorage.getItem('pns_impersonation_view_mode');
+          if (savedViewMode) {
+            localStorage.setItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE, savedViewMode);
+          }
+
+          // 4. 성공 시 스토리지 정리 및 이동
           sessionStorage.removeItem('pns_admin_impersonation');
           sessionStorage.removeItem('pns_admin_token');
           sessionStorage.removeItem('pns_impersonation_return_url');
+          sessionStorage.removeItem('pns_impersonation_view_mode');
 
           // 원래 진입했던 경로(데이터센터 or 앱)로 복귀
           router.replace(returnUrl);
@@ -48,11 +56,12 @@ export default function ImpersonationBanner() {
         }
       }
 
-      // 4. 토큰 없거나 실패 시 일반 로그아웃
+      // 5. 토큰 없거나 실패 시 일반 로그아웃
       await logout();
       sessionStorage.removeItem('pns_admin_impersonation');
       sessionStorage.removeItem('pns_admin_token');
       sessionStorage.removeItem('pns_impersonation_return_url');
+      sessionStorage.removeItem('pns_impersonation_view_mode');
 
       // 관리자 로그인 페이지로 이동
       router.replace('/datacntr/login');
