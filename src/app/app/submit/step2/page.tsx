@@ -87,9 +87,8 @@ function Step2Content() {
       // 1. Update Global Store
       setGlobalReview(localReview);
 
-      // 2. Auto-save if conditions met
+      // 2. Auto-save if conditions met (신규/수정 모두 동일하게 자동저장)
       if (
-        !existingSubmissionId &&
         participantId &&
         participationCode &&
         localReview.length > 5 &&
@@ -110,6 +109,8 @@ function Step2Content() {
     try {
       const draftData: any = {
         review: currentReview,
+        // 수정 모드인 경우 원본 submissionId 저장
+        ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
       };
 
       if (selectedBook?.title || manualTitle) {

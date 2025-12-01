@@ -93,9 +93,8 @@ function Step3Content() {
       // 1. Update Global Store
       setGlobalDailyAnswer(localDailyAnswer);
 
-      // 2. Auto-save if conditions met
+      // 2. Auto-save if conditions met (신규/수정 모두 동일하게 자동저장)
       if (
-        !existingSubmissionId &&
         participantId &&
         participationCode &&
         localDailyAnswer.length > 10 &&
@@ -116,6 +115,8 @@ function Step3Content() {
     try {
       const draftData: any = {
         dailyAnswer: currentAnswer,
+        // 수정 모드인 경우 원본 submissionId 저장
+        ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
       };
 
       if (participant?.cohortId) {
@@ -314,14 +315,7 @@ function Step3Content() {
   }, [cohortId, existingSubmissionId, imageStorageUrl, review, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setGlobalDailyAnswer, toast]);
 
   const handleSaveDraft = async () => {
-    if (existingSubmissionId) {
-      toast({
-        title: '임시 저장을 사용할 수 없습니다',
-        description: '제출물 수정 시에는 임시 저장을 지원하지 않습니다.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    // 수정 모드에서도 임시저장 허용 (신규/수정 모두 동일한 UX)
 
     if (!participantId || !participationCode) {
       toast({
@@ -344,7 +338,11 @@ function Step3Content() {
         dailyQuestion?: string;
         dailyAnswer?: string;
         cohortId?: string;
-      } = {};
+        editingSubmissionId?: string;
+      } = {
+        // 수정 모드인 경우 원본 submissionId 저장
+        ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
+      };
 
       // 이미지가 있으면 업로드 (File 객체인 경우만)
       if (imageFile && imageFile instanceof File && !imageStorageUrl) {
