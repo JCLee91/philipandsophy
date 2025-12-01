@@ -1,4 +1,4 @@
-import type { DailyMatchingEntry, DailyParticipantAssignment } from '@/types/database';
+import type { DailyMatchingEntry, DailyParticipantAssignment, Cluster } from '@/types/database';
 
 /**
  * 정규화된 매칭 데이터 구조
@@ -6,6 +6,7 @@ import type { DailyMatchingEntry, DailyParticipantAssignment } from '@/types/dat
 export interface NormalizedMatching {
   assignments: Record<string, DailyParticipantAssignment>;
   matchingVersion?: 'ai' | 'random' | 'cluster'; // 매칭 방식 (ai: AI 매칭, random: 랜덤 매칭, cluster: 클러스터 매칭)
+  clusters?: Record<string, Cluster>; // v3.0 클러스터 정보
 }
 
 export interface MatchingLookupResult {
@@ -53,6 +54,7 @@ export function normalizeMatchingData(
     return {
       assignments: rawMatching.assignments,
       matchingVersion: rawMatching.matchingVersion, // 매칭 버전 전달
+      clusters: rawMatching.clusters, // 클러스터 정보 전달
     };
   }
 

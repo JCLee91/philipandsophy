@@ -45,6 +45,17 @@ export const appRoutes = {
   },
 
   /**
+   * 다른 모임 구경하기 페이지
+   * @param cohortId - 기수 ID
+   */
+  todayLibraryOtherClusters: (cohortId: string) => {
+    const params = new URLSearchParams({
+      cohort: cohortId,
+    });
+    return `/app/chat/today-library/other-clusters?${params}`;
+  },
+
+  /**
    * 참가자 목록 전용 페이지 (iOS PWA fallback)
    * @param cohortId - 기수 ID
    */
