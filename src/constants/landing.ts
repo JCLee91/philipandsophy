@@ -6,8 +6,8 @@
  * 랜딩페이지 공통 상수
  */
 export const LANDING_CONSTANTS = {
-  /** 사전 신청 폼 URL */
-  FORM_URL: '/application',
+  /** 사전 신청 폼 URL (온보딩 페이지로 연결) */
+  FORM_URL: '/onboarding',
 
   /** 이미지 캐시 버스팅 버전 */
   IMAGE_VERSION: '1762739366900',
