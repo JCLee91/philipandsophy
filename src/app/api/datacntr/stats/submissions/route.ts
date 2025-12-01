@@ -3,7 +3,8 @@ import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
-import { timestampToKST } from '@/lib/datacntr/timestamp';
+import { timestampToKST, safeTimestampToDate } from '@/lib/datacntr/timestamp';
+import { format } from 'date-fns';
 
 /**
  * 독서 인증 분석 통계 API
@@ -94,7 +95,30 @@ export async function GET(request: NextRequest) {
       return data.status !== 'draft';
     });
 
+    // ✅ FIX: unique (participantId, submissionDate) 조합으로 중복 제거
+    // 정책상 하루 1회 인증이므로 같은 날 같은 사람의 여러 제출은 1회로 카운트
+    const uniqueSubmissionKeys = new Set<string>();
+    const deduplicatedSubmissions: any[] = [];
+
     validSubmissions.forEach((doc) => {
+      const data = doc.data();
+      let submissionDate = data.submissionDate;
+      if (!submissionDate) {
+        const submittedAt = safeTimestampToDate(data.submittedAt);
+        if (submittedAt) {
+          submissionDate = format(submittedAt, 'yyyy-MM-dd');
+        }
+      }
+      if (submissionDate) {
+        const uniqueKey = `${data.participantId}_${submissionDate}`;
+        if (!uniqueSubmissionKeys.has(uniqueKey)) {
+          uniqueSubmissionKeys.add(uniqueKey);
+          deduplicatedSubmissions.push(doc);
+        }
+      }
+    });
+
+    deduplicatedSubmissions.forEach((doc) => {
       const data = doc.data();
 
       // 시간대별 분포
@@ -159,8 +183,8 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // draft 제외한 실제 제출 수
-    const totalSubmissions = validSubmissions.length;
+    // ✅ FIX: 중복 제거된 실제 인증 수 (unique 기준)
+    const totalSubmissions = deduplicatedSubmissions.length;
 
     // 시간대별 백분율 계산
     const timeDistributionPercent = Object.entries(timeDistribution).map(([timeRange, count]) => ({

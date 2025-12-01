@@ -9,6 +9,7 @@ import { sanitizeParticipantForClient } from '@/lib/datacntr/sanitize';
 import { getParticipantStatus } from '@/lib/datacntr/status';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 import type { DataCenterParticipant } from '@/types/datacntr';
+import { format } from 'date-fns';
 
 function hasAnyPushSubscription(data: any): boolean {
   const hasMultiDeviceToken =
@@ -72,8 +73,9 @@ export async function GET(request: NextRequest) {
     // 모든 참가자 ID 수집
     const participantIds = nonAdminParticipants.map(doc => doc.id);
 
-    // 인증 횟수를 한 번에 조회하여 Map으로 집계 (N+1 문제 해결)
-    const submissionCountMap = new Map<string, number>();
+    // ✅ FIX: 인증 횟수를 unique (participantId, submissionDate) 기준으로 집계
+    // Map<participantId, Set<submissionDate>> 구조로 중복 제거
+    const submissionDatesMap = new Map<string, Set<string>>();
     if (participantIds.length > 0) {
       // Firestore IN 제약: 최대 10개씩 분할 쿼리
       const chunkSize = 10;
@@ -90,7 +92,21 @@ export async function GET(request: NextRequest) {
           if (data.status === 'draft') return;
 
           const participantId = data.participantId;
-          submissionCountMap.set(participantId, (submissionCountMap.get(participantId) || 0) + 1);
+          let submissionDate = data.submissionDate;
+          if (!submissionDate) {
+            // submissionDate가 없는 경우 submittedAt fallback (레거시 데이터 호환)
+            const submittedAt = safeTimestampToDate(data.submittedAt);
+            if (submittedAt) {
+              submissionDate = format(submittedAt, 'yyyy-MM-dd');
+            }
+          }
+
+          if (submissionDate) {
+            if (!submissionDatesMap.has(participantId)) {
+              submissionDatesMap.set(participantId, new Set());
+            }
+            submissionDatesMap.get(participantId)!.add(submissionDate);
+          }
         });
       }
     }
@@ -100,8 +116,8 @@ export async function GET(request: NextRequest) {
     const participantsWithStats: DataCenterParticipant[] = nonAdminParticipants.map((doc) => {
       const participantData = doc.data();
 
-      // Map에서 인증 횟수 조회
-      const submissionCount = submissionCountMap.get(doc.id) || 0;
+      // ✅ FIX: unique 날짜 수로 인증 횟수 조회
+      const submissionCount = submissionDatesMap.get(doc.id)?.size || 0;
 
       // 코호트 정보 가져오기
       const cohort = cohortsMap.get(participantData.cohortId);
