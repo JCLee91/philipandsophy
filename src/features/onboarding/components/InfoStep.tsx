@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, PanInfo } from 'framer-motion';
 import { ONBOARDING_STEPS } from '../constants';
 
 interface InfoStepProps {
@@ -11,16 +11,36 @@ interface InfoStepProps {
   title: string;
   buttonText: string;
   onNext: () => void;
+  onPrev?: () => void;
 }
 
-export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext }: InfoStepProps) {
+const SWIPE_THRESHOLD = 50; // 스와이프 감지 최소 거리 (px)
+
+export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext, onPrev }: InfoStepProps) {
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const { offset } = info;
+
+    // 왼쪽 스와이프 → 다음
+    if (offset.x < -SWIPE_THRESHOLD) {
+      onNext();
+    }
+    // 오른쪽 스와이프 → 이전 (1번 스텝이 아닐 때만)
+    else if (offset.x > SWIPE_THRESHOLD && onPrev && id > 1) {
+      onPrev();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="application-container flex h-[100dvh] flex-col text-white"
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.2}
+      onDragEnd={handleDragEnd}
+      className="application-container flex h-[100dvh] flex-col text-white cursor-grab active:cursor-grabbing"
     >
       {/* 상단 텍스트 영역 */}
       <div className="pt-[10vh] pb-6 text-center">

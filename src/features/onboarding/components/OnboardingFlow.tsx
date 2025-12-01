@@ -77,6 +77,11 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     }
   };
 
+  const handlePrevStep = () => {
+    if (typeof step !== 'number' || step <= 1) return;
+    setStep(step - 1);
+  };
+
   const handleExitComplete = () => {
     if (step === 'done') {
       onComplete();
@@ -99,6 +104,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
             key={`step-${step}`}
             {...ONBOARDING_STEPS[step - 1]}
             onNext={handleNextStep}
+            onPrev={handlePrevStep}
           />
         )}
       </AnimatePresence>
