@@ -15,13 +15,14 @@ interface InfoStepProps {
 }
 
 const SWIPE_THRESHOLD = 50; // 스와이프 감지 최소 거리 (px)
+const MAX_SWIPE_STEP = 3; // 스와이프로 이동 가능한 최대 스텝
 
 export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext, onPrev }: InfoStepProps) {
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const { offset } = info;
 
-    // 왼쪽 스와이프 → 다음
-    if (offset.x < -SWIPE_THRESHOLD) {
+    // 왼쪽 스와이프 → 다음 (마지막 스텝이 아닐 때만)
+    if (offset.x < -SWIPE_THRESHOLD && id < MAX_SWIPE_STEP) {
       onNext();
     }
     // 오른쪽 스와이프 → 이전 (1번 스텝이 아닐 때만)
