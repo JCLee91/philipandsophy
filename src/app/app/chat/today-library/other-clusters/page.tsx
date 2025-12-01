@@ -167,7 +167,7 @@ export default function OtherClustersPage() {
                                         <div className="flex items-center gap-2">
                                             <span className="text-2xl">{cluster.emoji}</span>
                                             <h3 className="font-bold text-lg text-gray-900">
-                                                {cluster.name}
+                                                {cluster.theme}
                                             </h3>
                                             {cluster.id === myClusterId && (
                                                 <span className="bg-black text-white text-[10px] px-2 py-1 rounded-full font-medium">
@@ -181,13 +181,10 @@ export default function OtherClustersPage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <div>
-                                            <span className="text-xs font-semibold text-blue-600 mb-1 block">
-                                                모임 테마
+                                        <div className="flex items-center gap-2">
+                                            <span className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px]">
+                                                {cluster.category || '감상평'}
                                             </span>
-                                            <p className="text-sm text-gray-700 font-medium">
-                                                {cluster.theme}
-                                            </p>
                                         </div>
 
                                         {cluster.reasoning && (
