@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { getSubmissionDate } from '@/lib/date-utils';
+import { getSubmissionDate, isMatchingInProgress } from '@/lib/date-utils';
 import { findLatestClusterMatching } from '@/lib/matching-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { getFirstName } from '@/lib/utils';
@@ -132,6 +132,36 @@ export default function OtherClustersPage() {
     }
 
     if (!participant || !cohort) return null;
+
+    // 매칭 진행 중 (새벽 2시 0분 ~ 2시 29분)
+    if (isMatchingInProgress()) {
+        return (
+            <PageTransition>
+                <div className="app-shell flex flex-col h-screen bg-gray-50">
+                    <TopBar
+                        title="다른 모임 구경하기"
+                        onBack={() => router.push(appRoutes.todayLibrary(cohortId!))}
+                        position="fixed"
+                    />
+                    <main className="flex-1 overflow-y-auto pt-16 pb-20 px-4 flex items-center justify-center">
+                        <div className="mx-auto max-w-md px-6">
+                            <div className="text-center space-y-6">
+                                <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-gray-900" />
+                                </div>
+                                <h3 className="font-bold text-lg text-gray-900">
+                                    오늘의 독서모임을 준비 중이에요
+                                </h3>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                    잠시 후 다시 확인해 주세요
+                                </p>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </PageTransition>
+        );
+    }
 
     return (
         <PageTransition>

@@ -60,6 +60,7 @@ function Step2Content() {
     setImageStorageUrl,
     setMetaInfo,
     isEBook,
+    submissionDate: storedSubmissionDate, // Step 1에서 결정된 날짜 (2시 전환 엣지케이스 대응)
   } = useSubmissionFlowStore();
 
   // ✅ Local state for performance
@@ -130,7 +131,7 @@ function Step2Content() {
         draftData.cohortId = cohortId;
       }
 
-      await saveDraft(participantId, participationCode, draftData);
+      await saveDraft(participantId, participationCode, draftData, undefined, storedSubmissionDate || undefined);
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('Auto-save failed', error);
@@ -193,7 +194,8 @@ function Step2Content() {
       setIsLoadingDraft(true);
       try {
         const { getDraftSubmission, getSubmissionsByParticipant } = await import('@/lib/firebase/submissions');
-        const draft = await getDraftSubmission(participant.id, cohortId);
+        // Step 1에서 결정된 날짜로 draft 조회 (2시 전환 엣지케이스 대응)
+        const draft = await getDraftSubmission(participant.id, cohortId, storedSubmissionDate || undefined);
 
         // Draft 처리 - 책 정보가 있을 때만 사용
         let bookDataLoaded = false;
@@ -477,7 +479,7 @@ function Step2Content() {
         (draftData as any).cohortId = cohortId;
       }
 
-      await saveDraft(participantId, participationCode, draftData);
+      await saveDraft(participantId, participationCode, draftData, undefined, storedSubmissionDate || undefined);
 
       toast({
         title: '임시 저장되었습니다',
@@ -606,7 +608,7 @@ function Step2Content() {
           (draftData as any).cohortId = cohortId;
         }
 
-        await saveDraft(participantId, participationCode, draftData);
+        await saveDraft(participantId, participationCode, draftData, undefined, storedSubmissionDate || undefined);
       } catch (error) {
         logger.error('[Step2] Draft save failed (continuing)', error);
         // 임시저장 실패는 무시하고 진행

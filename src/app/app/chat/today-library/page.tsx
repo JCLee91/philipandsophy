@@ -25,7 +25,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Participant, Cluster, ReadingSubmission } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
 import { getFirstName } from '@/lib/utils';
-import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified } from '@/lib/date-utils';
+import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified, isMatchingInProgress } from '@/lib/date-utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { Lock, Heart, ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { findLatestMatchingForParticipant, findLatestClusterMatching, ClusterMatchingData } from '@/lib/matching-utils';
@@ -1212,6 +1212,51 @@ function TodayLibraryV3Content() {
                 </div>
 
                 {/* CTA */}
+                <button
+                  type="button"
+                  onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}
+                  className="bg-black text-white rounded-lg px-6 py-3 font-semibold text-base transition-colors hover:bg-gray-800 active:bg-gray-900"
+                >
+                  내 프로필 북 보기
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // ========================================
+  // 1.5단계: 매칭 진행 중 (새벽 2시 0분 ~ 2시 29분)
+  // ========================================
+  if (isMatchingInProgress()) {
+    return (
+      <PageTransition>
+        <div className="app-shell flex flex-col overflow-hidden">
+          <TopBar title="오늘의 서재" onBack={() => router.back()} align="left" />
+
+          <main className="app-main-content flex flex-1 overflow-y-auto items-center justify-center bg-background">
+            <div className="mx-auto max-w-md px-6">
+              <div className="text-center space-y-6">
+                <div className="flex justify-center">
+                  <div className="size-20 rounded-full bg-blue-50 flex items-center justify-center">
+                    <svg className="size-10 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="font-bold text-lg text-gray-900">
+                    오늘의 독서모임을 준비 중이에요
+                  </h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    잠시 후 다시 확인해 주세요
+                  </p>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId))}

@@ -34,9 +34,11 @@ const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
 });
 
 /**
- * 스케줄된 클러스터 매칭 (매일 새벽 2시)
+ * 스케줄된 클러스터 매칭 (매일 새벽 2시 30분)
  *
- * 매일 새벽 2시 (KST)에 자동으로 실행
+ * 매일 새벽 2시 30분 (KST)에 자동으로 실행
+ * - 30분 유예: 2시 직전에 시작해서 2시 이후에 제출하는 엣지케이스 대응
+ *
  * 1. 어제 인증한 참가자의 감상평 + 답변 조회
  *    - 비즈니스 로직: 어제 00:00 ~ 오늘 02:00 까지의 인증은 이미 '어제' 날짜로 저장되어 있음 (createSubmission 참조)
  * 2. AI 클러스터 생성
@@ -45,7 +47,7 @@ const internalSecretParam = defineString("INTERNAL_SERVICE_SECRET", {
  */
 export const scheduledClusterMatching = onSchedule(
   {
-    schedule: "0 2 * * *", // 매일 새벽 2시 (KST)
+    schedule: "30 2 * * *", // 매일 새벽 2시 30분 (KST) - 30분 유예
     timeZone: "Asia/Seoul",
     timeoutSeconds: 540, // 9분
     memory: "1GiB",

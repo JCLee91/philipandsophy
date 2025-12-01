@@ -63,6 +63,7 @@ function Step3Content() {
     setMetaInfo,
     reset,
     isEBook,
+    submissionDate: storedSubmissionDate,
   } = useSubmissionFlowStore();
 
   // ✅ Local state for performance (prevent global store updates on every keystroke)
@@ -125,7 +126,7 @@ function Step3Content() {
         draftData.cohortId = participant.cohortId;
       }
 
-      await saveDraft(participantId, participationCode, draftData, participant?.name);
+      await saveDraft(participantId, participationCode, draftData, participant?.name, storedSubmissionDate || undefined);
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('Auto-save failed', error);
@@ -179,18 +180,18 @@ function Step3Content() {
       setLoadError(null);
 
       try {
-        // 1. 임시저장 불러오기
+        // 1. 임시저장 불러오기 (Step 1에서 결정된 날짜로 조회)
         const { getDraftSubmission } = await import('@/lib/firebase/submissions');
-        const draft = await getDraftSubmission(participantId, cohortId);
+        const draft = await getDraftSubmission(participantId, cohortId, storedSubmissionDate || undefined);
 
         if (draft?.dailyAnswer) {
           setGlobalDailyAnswer(draft.dailyAnswer); // Update global
           setLocalDailyAnswer(draft.dailyAnswer); // Update local
         }
 
-        // 2. 일일 질문 로드
-        const submissionDate = getSubmissionDate();
-        const question = await getDailyQuestion(cohortId, submissionDate);
+        // 2. 일일 질문 로드 (Step 1에서 결정된 날짜 사용)
+        const dateToUse = storedSubmissionDate || getSubmissionDate();
+        const question = await getDailyQuestion(cohortId, dateToUse);
         if (question) {
           setDailyQuestion(question);
         }
@@ -208,7 +209,7 @@ function Step3Content() {
     };
 
     loadDraftAndQuestion();
-  }, [cohortId, existingSubmissionId, participantId, setGlobalDailyAnswer, toast]);
+  }, [cohortId, existingSubmissionId, participantId, setGlobalDailyAnswer, storedSubmissionDate, toast]);
 
   useEffect(() => {
     if (!cohortId || !existingSubmissionId || hasLoadedExistingRef.current) {
@@ -386,7 +387,7 @@ function Step3Content() {
         draftData.cohortId = participant.cohortId;
       }
 
-      await saveDraft(participantId, participationCode, draftData, participant?.name);
+      await saveDraft(participantId, participationCode, draftData, participant?.name, storedSubmissionDate || undefined);
       setLastSavedAt(new Date());
 
       toast({
@@ -498,6 +499,8 @@ function Step3Content() {
             participationCode,
             ...submissionPayload,
             submittedAt: Timestamp.now(),
+            // Step 1에서 결정된 날짜 전달 (2시 전환 엣지케이스 대응)
+            ...(storedSubmissionDate && { submissionDate: storedSubmissionDate }),
           },
           participantName: participant?.name || '익명',
         });
@@ -506,7 +509,7 @@ function Step3Content() {
       // 신규/수정 모두 draft 삭제 (자동저장된 임시저장 정리)
       try {
         const { getDraftSubmission, deleteDraft } = await import('@/lib/firebase/submissions');
-        const draft = await getDraftSubmission(participantId, cohortId!);
+        const draft = await getDraftSubmission(participantId, cohortId!, storedSubmissionDate || undefined);
         if (draft) {
           await deleteDraft(draft.id);
         }

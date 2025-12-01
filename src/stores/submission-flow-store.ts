@@ -22,6 +22,7 @@ interface SubmissionFlowState {
   participationCode: string | null;
   cohortId: string | null;
   existingSubmissionId: string | null; // 수정 모드일 때
+  submissionDate: string | null; // Step 1 진입 시 결정된 제출 날짜 (2시 마감 기준)
 
   // Actions
   setImageFile: (file: File | null, preview: string | null, storageUrl?: string | null) => void;
@@ -33,6 +34,7 @@ interface SubmissionFlowState {
   setDailyAnswer: (answer: string) => void;
   setMetaInfo: (participantId: string, participationCode: string, cohortId: string, existingSubmissionId?: string) => void;
   setImageStorageUrl: (url: string | null) => void;
+  setSubmissionDate: (date: string | null) => void;
 
   isEBook: boolean;
   setIsEBook: (isEBook: boolean) => void;
@@ -52,6 +54,7 @@ const initialState = {
   participationCode: null,
   cohortId: null,
   existingSubmissionId: null,
+  submissionDate: null,
   isEBook: false,
 };
 
@@ -75,6 +78,8 @@ export const useSubmissionFlowStore = create<SubmissionFlowState>((set) => ({
     set({ participantId, participationCode, cohortId, existingSubmissionId }),
 
   setImageStorageUrl: (url) => set({ imageStorageUrl: url }),
+
+  setSubmissionDate: (date) => set({ submissionDate: date }),
 
   isEBook: false,
   setIsEBook: (isEBook: boolean) => set({ isEBook }),

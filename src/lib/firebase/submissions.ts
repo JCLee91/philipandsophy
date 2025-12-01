@@ -57,14 +57,17 @@ function generateSubmissionId(participantName: string): string {
  *
  * 같은 참가자가 같은 날짜에 이미 approved 제출물이 있으면 기존 ID 반환 (중복 방지)
  * 문서 ID 형식: 참가자이름_MMDD_HHmm (예: 김철수_1129_1330)
+ *
+ * @param data.submissionDate - Step 1에서 결정된 날짜 (2시 전환 엣지케이스 대응). 없으면 현재 시점 기준 계산
  */
 export async function createSubmission(
-  data: Omit<ReadingSubmission, 'id' | 'createdAt' | 'updatedAt' | 'submissionDate'>,
+  data: Omit<ReadingSubmission, 'id' | 'createdAt' | 'updatedAt'> & { submissionDate?: string },
   participantName: string
 ): Promise<string> {
   const db = getDb();
   const now = Timestamp.now();
-  const submissionDate = getSubmissionDate(); // 새벽 2시 마감 정책 적용
+  // Step 1에서 전달된 날짜 우선, 없으면 현재 시점 기준 계산
+  const submissionDate = data.submissionDate || getSubmissionDate();
 
   // 중복 제출 방지: 같은 날짜에 이미 approved 제출물이 있는지 확인
   const existingQuery = query(
@@ -249,15 +252,20 @@ export function subscribeTodayVerified(
 
 /**
  * 임시저장된 제출물 조회 (참가자별)
+ *
+ * @param participantId - 참가자 ID
+ * @param cohortId - 기수 ID (현재 미사용, 일관성 유지용)
+ * @param targetSubmissionDate - 조회할 날짜 (Step 1에서 결정된 날짜). 없으면 현재 시점 기준 계산
  */
 export async function getDraftSubmission(
   participantId: string,
-  cohortId: string
+  cohortId: string,
+  targetSubmissionDate?: string
 ): Promise<ReadingSubmission | null> {
   const db = getDb();
 
-  // 해당 참가자의 오늘 날짜 draft 찾기
-  const submissionDate = getSubmissionDate();
+  // Step 1에서 전달된 날짜 우선, 없으면 현재 시점 기준 계산
+  const submissionDate = targetSubmissionDate || getSubmissionDate();
   const q = query(
     collection(db, COLLECTIONS.READING_SUBMISSIONS),
     where('participantId', '==', participantId),
@@ -282,6 +290,8 @@ export async function getDraftSubmission(
 /**
  * 임시저장 (새로 생성 또는 업데이트)
  * 문서 ID 형식: 참가자이름_MMDD_HHmm (예: 김철수_1129_1330)
+ *
+ * @param targetSubmissionDate - Step 1에서 결정된 날짜 (2시 전환 엣지케이스 대응). 없으면 현재 시점 기준 계산
  */
 export async function saveDraft(
   participantId: string,
@@ -299,15 +309,16 @@ export async function saveDraft(
     editingSubmissionId?: string; // 🆕 수정 모드에서 원본 제출물 ID 추적
     isEBook?: boolean; // 🆕 전자책 여부
   },
-  participantName?: string
+  participantName?: string,
+  targetSubmissionDate?: string
 ): Promise<string> {
   const db = getDb();
   const now = Timestamp.now();
-  const submissionDate = getSubmissionDate();
+  // Step 1에서 전달된 날짜 우선, 없으면 현재 시점 기준 계산
+  const submissionDate = targetSubmissionDate || getSubmissionDate();
 
-  // 기존 draft 확인 - getDraftSubmission의 두 번째 인자는 사용하지 않지만, 일관성을 위해 cohortId 형태로 전달
-  // 실제로는 participantId로 검색하므로 문제 없음
-  const existingDraft = await getDraftSubmission(participantId, participationCode);
+  // 기존 draft 확인 - 동일한 날짜로 조회
+  const existingDraft = await getDraftSubmission(participantId, participationCode, submissionDate);
 
   // Firebase는 undefined 값을 허용하지 않으므로 필터링
   const cleanData = Object.fromEntries(

@@ -89,6 +89,25 @@ export function getMatchingTargetDate(): string {
 }
 
 /**
+ * 매칭이 진행 중인 시간대인지 확인 (새벽 2시 0분 ~ 2시 29분)
+ *
+ * 매칭 스케줄이 2시 30분에 실행되므로, 2시~2시 29분 사이에는
+ * 아직 오늘의 매칭 데이터가 생성되지 않은 상태입니다.
+ * 이 시간대에는 "매칭 준비 중" UI를 표시해야 합니다.
+ *
+ * @returns true면 매칭 진행 중 (2시 0분 ~ 2시 29분)
+ */
+export function isMatchingInProgress(): boolean {
+  const nowUTC = new Date();
+  const nowKST = toZonedTime(nowUTC, KOREA_TIMEZONE);
+  const hour = nowKST.getHours();
+  const minute = nowKST.getMinutes();
+
+  // 2시 0분 ~ 2시 29분: 매칭 진행 중
+  return hour === 2 && minute < 30;
+}
+
+/**
  * 한국 시간(KST) 기준 어제 날짜를 YYYY-MM-DD 형식으로 반환
  *
  * 프로필북 매칭은 어제 제출된 독서 인증을 기반으로 실행됩니다.

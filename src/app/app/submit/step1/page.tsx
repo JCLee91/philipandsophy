@@ -8,6 +8,7 @@ import { validateImageFile, compressImageIfNeeded, createFileFromUrl } from '@/l
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { useToast } from '@/hooks/use-toast';
 import { saveDraft, uploadReadingImage } from '@/lib/firebase';
+import { getSubmissionDate } from '@/lib/date-utils';
 import TopBar from '@/components/TopBar';
 import ProgressIndicator from '@/components/submission/ProgressIndicator';
 import PageTransition from '@/components/PageTransition';
@@ -56,18 +57,27 @@ function Step1Content() {
     participationCode,
     isEBook,
     setIsEBook,
+    submissionDate,
+    setSubmissionDate,
   } = useSubmissionFlowStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const hasLoadedDraftRef = useRef(false);
 
-  // 메타 정보 설정
+  // 메타 정보 설정 + 제출 날짜 결정
   useEffect(() => {
     if (participant && cohortId) {
       const participationCode = participant.participationCode || participant.id;
       setMetaInfo(participant.id, participationCode, cohortId, existingSubmissionId || undefined);
+
+      // 새로운 제출이고 아직 날짜가 설정되지 않은 경우에만 날짜 설정
+      // (수정 모드에서는 기존 submission의 날짜를 사용)
+      if (!existingSubmissionId && !submissionDate) {
+        const date = getSubmissionDate();
+        setSubmissionDate(date);
+      }
     }
-  }, [participant, cohortId, existingSubmissionId, setMetaInfo]);
+  }, [participant, cohortId, existingSubmissionId, setMetaInfo, submissionDate, setSubmissionDate]);
 
   // 임시저장 자동 불러오기
   useEffect(() => {
@@ -77,7 +87,8 @@ function Step1Content() {
     const loadDraft = async () => {
       setIsLoadingDraft(true);
       const { getDraftSubmission } = await import('@/lib/firebase/submissions');
-      const draft = await getDraftSubmission(participant.id, cohortId);
+      // Step 1에서 결정된 날짜로 draft 조회 (2시 전환 엣지케이스 대응)
+      const draft = await getDraftSubmission(participant.id, cohortId, submissionDate || undefined);
 
       if (draft) {
         if (draft.bookImageUrl) {
@@ -152,6 +163,11 @@ function Step1Content() {
         if (submission.dailyAnswer) {
           setDailyAnswer(submission.dailyAnswer);
         }
+
+        // 수정 모드: 기존 submission의 날짜 유지
+        if (submission.submissionDate) {
+          setSubmissionDate(submission.submissionDate);
+        }
       } catch (error) {
         toast({
           title: '제출물 불러오기 실패',
@@ -164,7 +180,7 @@ function Step1Content() {
     };
 
     loadExistingSubmission();
-  }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, setIsEBook, toast]);
+  }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, setIsEBook, setSubmissionDate, toast]);
 
   // 인증 확인
   useEffect(() => {
@@ -264,7 +280,7 @@ function Step1Content() {
         ...(bookImageUrl && { bookImageUrl }),
         isEBook,
         ...(cohortId && { cohortId }),
-      });
+      }, participant?.name, submissionDate || undefined);
 
       // 이미지 업로드 완료되면 바로 다음 페이지로
       router.push(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
