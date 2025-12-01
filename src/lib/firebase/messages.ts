@@ -8,7 +8,6 @@
 import {
   collection,
   doc,
-  addDoc,
   getDoc,
   getDocs,
   updateDoc,
@@ -25,9 +24,12 @@ import {
 import { getDb } from './client';
 import type { DirectMessage, Conversation } from '@/types/database';
 import { COLLECTIONS } from '@/types/database';
+import { generateMessageId } from './id-generator';
 
 /**
  * Create a new direct message
+ * ID 형식: msg_{senderId}_{MMDD}_{HHmmss}
+ * 예: msg_cohort4-은지_1201_143025, msg_admin_1201_143025
  */
 export const createMessage = async (data: {
   conversationId: string;
@@ -37,7 +39,9 @@ export const createMessage = async (data: {
   imageUrl?: string;
 }): Promise<string> => {
   const db = getDb();
-  const messagesRef = collection(db, COLLECTIONS.MESSAGES);
+
+  // 커스텀 ID 생성 (senderId 기반)
+  const customId = generateMessageId(data.senderId);
 
   const newMessage: Omit<DirectMessage, 'id'> = {
     conversationId: data.conversationId,
@@ -49,7 +53,8 @@ export const createMessage = async (data: {
     ...(data.imageUrl && { imageUrl: data.imageUrl }),
   };
 
-  const docRef = await addDoc(messagesRef, newMessage);
+  const docRef = doc(db, COLLECTIONS.MESSAGES, customId);
+  await setDoc(docRef, newMessage);
 
   // Update conversation metadata for Admin Inbox
   try {
@@ -105,7 +110,7 @@ export const createMessage = async (data: {
     }
   }
 
-  return docRef.id;
+  return customId;
 };
 
 /**

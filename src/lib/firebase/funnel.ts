@@ -2,7 +2,8 @@
 
 import {
   collection,
-  addDoc,
+  doc,
+  setDoc,
   query,
   where,
   getDocs,
@@ -10,6 +11,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { getDb } from './client';
+import { generateFunnelEventId } from './id-generator';
 
 /**
  * 퍼널 이벤트 데이터 타입
@@ -81,11 +83,18 @@ export function getStepIndex(stepId: string, memberType: 'new' | 'existing' | nu
 
 /**
  * 퍼널 이벤트 저장
+ * ID 형식: {stepId}_{timestamp}
+ * 예: onboarding_step_1_1733145600000
  */
 export async function logFunnelEvent(data: FunnelEventData): Promise<void> {
   try {
     const db = getDb();
-    await addDoc(collection(db, 'funnel_events'), {
+
+    // 커스텀 ID 생성
+    const customId = generateFunnelEventId(data.stepId);
+
+    const docRef = doc(db, 'funnel_events', customId);
+    await setDoc(docRef, {
       ...data,
       timestamp: Timestamp.now(),
       metadata: {

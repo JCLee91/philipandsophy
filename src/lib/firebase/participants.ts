@@ -5,7 +5,7 @@ import {
   doc,
   getDoc,
   getDocs,
-  addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -20,6 +20,7 @@ import {
 import { getDb } from './client';
 import { logger } from '@/lib/logger';
 import { Participant, BookHistoryEntry, COLLECTIONS, Cohort } from '@/types/database';
+import { generateUniqueParticipantId } from './id-generator';
 
 /**
  * Participant CRUD Operations
@@ -27,6 +28,8 @@ import { Participant, BookHistoryEntry, COLLECTIONS, Cohort } from '@/types/data
 
 /**
  * 참가자 생성
+ * ID 형식: cohort{기수}-{이름} (예: cohort4-은지, cohort6-종찬)
+ * 동명이인 처리: 숫자 suffix (cohort4-은지, cohort4-은지2)
  */
 export async function createParticipant(
   data: Omit<Participant, 'id' | 'createdAt' | 'updatedAt'>
@@ -34,13 +37,21 @@ export async function createParticipant(
   const db = getDb();
   const now = Timestamp.now();
 
-  const docRef = await addDoc(collection(db, COLLECTIONS.PARTICIPANTS), {
+  // 동명이인 체크를 위해 기존 참가자 조회
+  const existingParticipants = await getParticipantsByCohort(data.cohortId);
+  const existingIds = existingParticipants.map(p => p.id);
+
+  // 커스텀 ID 생성 (cohort{기수}-{이름})
+  const customId = generateUniqueParticipantId(data.cohortId, data.name, existingIds);
+
+  const docRef = doc(db, COLLECTIONS.PARTICIPANTS, customId);
+  await setDoc(docRef, {
     ...data,
     createdAt: now,
     updatedAt: now,
   });
 
-  return docRef.id;
+  return customId;
 }
 
 /**

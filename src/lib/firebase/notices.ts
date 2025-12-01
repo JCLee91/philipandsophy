@@ -5,7 +5,7 @@ import {
   doc,
   getDoc,
   getDocs,
-  addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -19,6 +19,7 @@ import { getDb } from './client';
 import { Notice, COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import { isPublishedNotice } from './notice-utils';
+import { generateNoticeId } from './id-generator';
 
 /**
  * Notice CRUD Operations
@@ -26,12 +27,17 @@ import { isPublishedNotice } from './notice-utils';
 
 /**
  * 공지 생성
+ * ID 형식: notice_{cohortId}_{MMDD}_{HHmm}
+ * 예: notice_4_1201_1430
  */
 export async function createNotice(
   data: Omit<Notice, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<string> {
   const db = getDb();
   const now = Timestamp.now();
+
+  // 커스텀 ID 생성
+  const customId = generateNoticeId(data.cohortId);
 
   const noticeData = {
     cohortId: data.cohortId,
@@ -45,9 +51,10 @@ export async function createNotice(
     ...(data.order !== undefined && { order: data.order }),
   };
 
-  const docRef = await addDoc(collection(db, COLLECTIONS.NOTICES), noticeData);
+  const docRef = doc(db, COLLECTIONS.NOTICES, customId);
+  await setDoc(docRef, noticeData);
 
-  return docRef.id;
+  return customId;
 }
 
 /**
