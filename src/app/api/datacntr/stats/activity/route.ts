@@ -123,6 +123,7 @@ export async function GET(request: NextRequest) {
       totalReviewLength: number;
       totalAnswerLength: number;
       submissionCount: number;
+      participantIds: Set<string>; // ✅ FIX: unique 참가자 추적
     }>();
 
     // 날짜 초기화 (startDate ~ endDate 기간)
@@ -156,25 +157,30 @@ export async function GET(request: NextRequest) {
         totalReviewLength: 0,
         totalAnswerLength: 0,
         submissionCount: 0,
+        participantIds: new Set<string>(), // ✅ FIX: unique 참가자 추적
       });
     }
 
     // 독서 인증 집계 (어드민, 슈퍼어드민, 고스트 제외)
+    // ✅ FIX: submittedAt 대신 submissionDate 필드 사용 (새벽 2시 마감 정책 일관성)
     submissionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
       // 어드민, 슈퍼어드민, 고스트 제외
       if (excludedIds.has(data.participantId)) return;
 
-      const submittedAt = safeTimestampToDate(data.submittedAt);
-      if (!submittedAt) {
-
-        return;
+      // submissionDate 필드 사용 (새벽 2시 마감 정책이 적용된 날짜)
+      let date = data.submissionDate;
+      if (!date) {
+        // submissionDate가 없는 경우 submittedAt fallback (레거시 데이터 호환)
+        const submittedAt = safeTimestampToDate(data.submittedAt);
+        if (!submittedAt) return;
+        date = format(submittedAt, 'yyyy-MM-dd');
       }
-      const date = format(submittedAt, 'yyyy-MM-dd');
       const activity = activityMap.get(date);
 
       if (activity) {
-        activity.submissions += 1;
+        // ✅ FIX: unique participantId로 카운트 (Overview API와 일관성)
+        activity.participantIds.add(data.participantId);
         activity.submissionCount += 1;
 
         // 리뷰 길이 집계
@@ -192,7 +198,7 @@ export async function GET(request: NextRequest) {
       .map((activity) => ({
         date: activity.date,
         pushEnabled: activity.pushEnabled,
-        submissions: activity.submissions,
+        submissions: activity.participantIds.size, // ✅ FIX: unique 참가자 수
         avgReviewLength: activity.submissionCount > 0
           ? Math.round(activity.totalReviewLength / activity.submissionCount)
           : 0,
