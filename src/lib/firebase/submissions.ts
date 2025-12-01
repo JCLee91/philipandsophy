@@ -309,11 +309,15 @@ export async function saveDraft(
   // 실제로는 participantId로 검색하므로 문제 없음
   const existingDraft = await getDraftSubmission(participantId, participationCode);
 
+  // Firebase는 undefined 값을 허용하지 않으므로 필터링
+  const cleanData = Object.fromEntries(
+    Object.entries(data).filter(([, v]) => v !== undefined)
+  );
+
   const draftData = {
     participantId,
     participationCode,
-    cohortId: data.cohortId, // 🆕 cohortId 포함 (제공된 경우)
-    ...data,
+    ...cleanData,
     submissionDate,
     status: 'draft' as const,
     updatedAt: now,
