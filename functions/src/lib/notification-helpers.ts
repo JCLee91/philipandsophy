@@ -36,6 +36,7 @@ export interface PushTokenEntry {
   deviceId: string;
   token: string;
   updatedAt: admin.firestore.Timestamp;
+  lastUsedAt?: admin.firestore.Timestamp;
 }
 
 /**
@@ -218,6 +219,77 @@ export async function getPushTokens(participantId: string): Promise<{
 }
 
 /**
+ * Update lastUsedAt for successful push notifications
+ * Web Push와 FCM 공통 사용
+ */
+async function updateLastUsedAt(
+  participantId: string,
+  type: 'fcm' | 'webpush',
+  deviceIds: string[]
+): Promise<void> {
+  if (deviceIds.length === 0) {
+    return;
+  }
+
+  try {
+    const db = getSeoulDB();
+    const participantRef = db
+      .collection("participants")
+      .doc(participantId);
+
+    const participantSnap = await participantRef.get();
+    if (!participantSnap.exists) {
+      return;
+    }
+
+    const participantData = participantSnap.data();
+    const now = admin.firestore.Timestamp.now();
+    const deviceIdSet = new Set(deviceIds);
+
+    if (type === 'webpush') {
+      const subscriptions: WebPushSubscriptionData[] =
+        participantData?.webPushSubscriptions || [];
+
+      const updatedSubscriptions = subscriptions.map((sub) => {
+        if (deviceIdSet.has(sub.deviceId)) {
+          return { ...sub, lastUsedAt: now };
+        }
+        return sub;
+      });
+
+      await participantRef.update({
+        webPushSubscriptions: updatedSubscriptions,
+      });
+    } else {
+      // FCM tokens
+      const tokens: PushTokenEntry[] = participantData?.pushTokens || [];
+
+      const updatedTokens = tokens.map((entry) => {
+        if (deviceIdSet.has(entry.deviceId)) {
+          return { ...entry, lastUsedAt: now };
+        }
+        return entry;
+      });
+
+      await participantRef.update({
+        pushTokens: updatedTokens,
+      });
+    }
+
+    logger.debug(`Updated lastUsedAt for ${type} devices`, {
+      participantId,
+      deviceCount: deviceIds.length,
+    });
+  } catch (error) {
+    // lastUsedAt 갱신 실패는 치명적이지 않으므로 경고만 로깅
+    logger.warn(`Failed to update lastUsedAt for ${type}`, {
+      participantId,
+      error: (error as Error).message,
+    });
+  }
+}
+
+/**
  * Send Web Push notifications
  */
 async function sendWebPushNotifications(
@@ -242,6 +314,7 @@ async function sendWebPushNotifications(
 
   let successCount = 0;
   const failedSubscriptions: WebPushSubscriptionData[] = [];
+  const successfulSubscriptions: WebPushSubscriptionData[] = [];
 
   await Promise.all(
     subscriptions.map(async (subscription) => {
@@ -282,6 +355,7 @@ async function sendWebPushNotifications(
         );
 
         successCount++;
+        successfulSubscriptions.push(subscription);
         logger.info(`Web Push sent successfully (iOS PWA)`, {
           participantId,
           deviceId: subscription.deviceId,
@@ -289,15 +363,20 @@ async function sendWebPushNotifications(
       } catch (error: any) {
         const statusCode = error?.statusCode;
 
-        if (statusCode === 410 || statusCode === 404) {
+        // 4xx 에러는 모두 구독 문제 (삭제 대상)
+        // 400: Bad Request (손상된 구독 데이터)
+        // 404: Not Found (구독 없음)
+        // 410: Gone (구독 만료)
+        if (statusCode >= 400 && statusCode < 500) {
           failedSubscriptions.push(subscription);
-          logger.warn(`Web Push subscription expired/invalid`, {
+          logger.warn(`Web Push subscription invalid (4xx error)`, {
             participantId,
             deviceId: subscription.deviceId,
             statusCode,
           });
         } else {
-          logger.error(`Web Push send failed`, {
+          // 5xx 서버 에러는 삭제하지 않음 (일시적 문제일 수 있음)
+          logger.error(`Web Push send failed (server error)`, {
             participantId,
             deviceId: subscription.deviceId,
             error: error.message,
@@ -308,8 +387,15 @@ async function sendWebPushNotifications(
     })
   );
 
+  // 실패한 구독 삭제
   if (failedSubscriptions.length > 0) {
     await removeExpiredWebPushSubscriptions(participantId, failedSubscriptions);
+  }
+
+  // 성공한 구독의 lastUsedAt 갱신
+  if (successfulSubscriptions.length > 0) {
+    const successfulDeviceIds = successfulSubscriptions.map(s => s.deviceId);
+    await updateLastUsedAt(participantId, 'webpush', successfulDeviceIds);
   }
 
   return successCount;
@@ -317,6 +403,7 @@ async function sendWebPushNotifications(
 
 /**
  * Remove expired Web Push subscriptions
+ * deviceId 기반 필터링으로 객체 비교 문제 회피
  */
 async function removeExpiredWebPushSubscriptions(
   participantId: string,
@@ -328,20 +415,33 @@ async function removeExpiredWebPushSubscriptions(
       .collection("participants")
       .doc(participantId);
 
+    const participantSnap = await participantRef.get();
+    if (!participantSnap.exists) {
+      return;
+    }
+
+    const participantData = participantSnap.data();
+    const currentSubscriptions: WebPushSubscriptionData[] =
+      participantData?.webPushSubscriptions || [];
+
+    // deviceId로 필터링 (Timestamp 객체 비교 문제 회피)
+    const failedDeviceIds = new Set(failedSubscriptions.map(s => s.deviceId));
+    const remainingSubscriptions = currentSubscriptions.filter(
+      (s: WebPushSubscriptionData) => !failedDeviceIds.has(s.deviceId)
+    );
+
     await participantRef.update({
-      webPushSubscriptions: admin.firestore.FieldValue.arrayRemove(...failedSubscriptions),
+      webPushSubscriptions: remainingSubscriptions,
     });
 
     logger.info(`Removed ${failedSubscriptions.length} expired Web Push subscriptions`, {
       participantId,
+      removedDeviceIds: Array.from(failedDeviceIds),
     });
 
-    const participantSnap = await participantRef.get();
-    const participantData = participantSnap.data();
-    const remainingWebPush = participantData?.webPushSubscriptions || [];
     const remainingFCM = participantData?.pushTokens || [];
 
-    if (remainingWebPush.length === 0 && remainingFCM.length === 0) {
+    if (remainingSubscriptions.length === 0 && remainingFCM.length === 0) {
       await participantRef.update({
         pushNotificationEnabled: false,
       });
@@ -408,6 +508,22 @@ export async function sendPushNotificationMulticast(
         failureCount: response.failureCount,
       });
 
+      // 성공한 토큰의 lastUsedAt 갱신
+      if (response.successCount > 0) {
+        const successfulDeviceIds: string[] = [];
+        response.responses.forEach((resp, index) => {
+          if (resp.success) {
+            const entry = entriesMap.get(tokens[index]);
+            if (entry?.deviceId) {
+              successfulDeviceIds.push(entry.deviceId);
+            }
+          }
+        });
+        if (successfulDeviceIds.length > 0) {
+          await updateLastUsedAt(participantId, 'fcm', successfulDeviceIds);
+        }
+      }
+
       if (response.failureCount > 0) {
         const failedTokens: string[] = [];
 
@@ -469,6 +585,7 @@ export async function sendPushNotificationMulticast(
 
 /**
  * Remove expired push tokens
+ * token 문자열 기반 필터링으로 객체 비교 문제 회피
  */
 async function removeExpiredTokens(
   participantId: string,
@@ -490,27 +607,28 @@ async function removeExpiredTokens(
     const pushTokens: Array<{ deviceId: string; token: string; updatedAt: admin.firestore.Timestamp }> =
       participantData?.pushTokens || [];
 
-    const tokensToRemove = pushTokens.filter((entry) =>
-      failedTokens.includes(entry.token)
+    // token 문자열로 필터링 (Timestamp 객체 비교 문제 회피)
+    const failedTokenSet = new Set(failedTokens);
+    const remainingTokens = pushTokens.filter(
+      (entry) => !failedTokenSet.has(entry.token)
     );
 
-    if (tokensToRemove.length === 0) {
+    const removedCount = pushTokens.length - remainingTokens.length;
+    if (removedCount === 0) {
       return;
     }
 
     await participantRef.update({
-      pushTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove),
+      pushTokens: remainingTokens,
     });
 
     logger.info(`Removed expired tokens for participant: ${participantId}`, {
-      arrayTokensRemoved: tokensToRemove.length,
+      tokensRemoved: removedCount,
     });
 
-    const remainingTokens = pushTokens.filter(
-      (entry) => !tokensToRemove.some((failed) => failed.token === entry.token)
-    );
+    const remainingWebPush = participantData?.webPushSubscriptions || [];
 
-    if (remainingTokens.length === 0) {
+    if (remainingTokens.length === 0 && remainingWebPush.length === 0) {
       await participantRef.update({
         pushNotificationEnabled: false,
       });
