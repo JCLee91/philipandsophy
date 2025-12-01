@@ -20,47 +20,48 @@ export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext 
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="flex h-[100dvh] flex-col bg-black text-white"
+      className="application-container flex h-[100dvh] flex-col text-white"
     >
       {/* 상단 텍스트 영역 */}
-      <div className="pt-[10vh] px-8 pb-8 text-center">
-        <h2 className="whitespace-pre-line text-3xl font-bold leading-tight tracking-tight">
+      <div className="pt-[10vh] pb-6 text-center">
+        <h2 className="whitespace-pre-line text-xl md:text-3xl font-semibold leading-snug tracking-tight">
           {title}
         </h2>
       </div>
 
       {/* 이미지 영역 (중앙 정렬) */}
-      <div className="relative flex-1 w-full px-8 pb-8 flex items-center justify-center overflow-hidden">
-        <div className="relative w-full h-full max-h-[60vh]">
-           {/* 이미지 비율 유지하며 꽉 차게 */}
-           <Image
+      <div className="relative flex-1 w-full px-12 pb-6 flex items-center justify-center overflow-hidden">
+        <div className="relative w-full h-full max-h-[50vh]">
+          <Image
             src={imageSrc}
             alt={alt}
             fill
-            className="object-contain" 
+            className="object-contain"
             priority
           />
         </div>
       </div>
 
       {/* 하단 영역 (인디케이터 + 버튼) */}
-      <div className="w-full px-8 pb-10 space-y-8">
+      <div className="w-full pb-10 space-y-6">
         {/* 페이지네이션 인디케이터 */}
         <div className="flex justify-center gap-2">
           {ONBOARDING_STEPS.map((step) => (
             <div
               key={step.id}
-              className={`h-2 w-2 rounded-full transition-colors duration-300 ${
-                step.id === id ? 'bg-[#3b82f6]' : 'bg-gray-600'
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                step.id === id
+                  ? 'w-6 bg-white'
+                  : 'w-1.5 bg-white/30'
               }`}
             />
           ))}
         </div>
 
-        {/* 버튼 */}
+        {/* 버튼 - cta-button-white 스타일 적용 */}
         <button
           onClick={onNext}
-          className="w-full rounded-2xl bg-white py-4 text-lg font-bold text-black transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          className="cta-button-white w-full"
         >
           {buttonText}
         </button>
