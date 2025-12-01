@@ -259,8 +259,9 @@ function Step1Content() {
       }
 
       // 🆕 cohortId 추가 (중복 참가자 구분용)
+      // Firebase는 undefined를 허용하지 않으므로 조건부로 필드 추가
       await saveDraft(participantId, participationCode, {
-        bookImageUrl: bookImageUrl || undefined,
+        ...(bookImageUrl && { bookImageUrl }),
         isEBook,
         ...(cohortId && { cohortId }),
       });
