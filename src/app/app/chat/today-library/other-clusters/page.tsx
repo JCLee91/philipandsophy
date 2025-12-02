@@ -193,21 +193,23 @@ export default function OtherClustersPage() {
                                     className={`bg-white rounded-xl p-5 shadow-sm border text-left transition-all hover:shadow-md active:scale-[0.98] ${cluster.id === myClusterId ? 'border-black ring-1 ring-black' : 'border-gray-100'
                                         }`}
                                 >
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-2xl">{cluster.emoji}</span>
+                                    <div className="flex justify-between items-start gap-3 mb-3">
+                                        <div className="flex items-start gap-2 min-w-0">
+                                            <span className="text-2xl shrink-0">{cluster.emoji}</span>
                                             <h3 className="font-bold text-lg text-gray-900">
                                                 {cluster.theme}
                                             </h3>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
                                             {cluster.id === myClusterId && (
-                                                <span className="bg-black text-white text-[10px] px-2 py-1 rounded-full font-medium">
+                                                <span className="bg-black text-white text-[10px] px-2 py-1 rounded-full font-medium whitespace-nowrap">
                                                     내 모임
                                                 </span>
                                             )}
+                                            <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md whitespace-nowrap">
+                                                {cluster.memberIds.length}명
+                                            </span>
                                         </div>
-                                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                                            {cluster.memberIds.length}명
-                                        </span>
                                     </div>
 
                                     <div className="space-y-3">

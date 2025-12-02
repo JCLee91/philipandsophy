@@ -1384,7 +1384,7 @@ function TodayLibraryV3Content() {
 
             <div className="flex flex-col gap-2 max-w-full">
               <div className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px] inline-block self-center">
-                {isViewingOtherCluster ? '다른 모임 구경 중' : (cluster.category || '감상평')}
+                {cluster.category || '감상평'}
               </div>
               <h3 className="text-[18px] font-bold text-black">
                 {cluster.theme}
