@@ -412,7 +412,14 @@ function Step3Content() {
   };
 
   const handleSubmit = async () => {
-    if ((!imageFile && !imageStorageUrl) || !participantId || !participationCode) {
+    // Store 초기화 대비 fallback (앱 렉/메모리 이슈로 store가 초기화될 수 있음)
+    const finalParticipantId = participantId || participant?.id;
+    const finalParticipationCode = participationCode || participant?.participationCode || participant?.id;
+
+    // 전자책이면 이미지 없어도 됨
+    const hasImage = imageFile || imageStorageUrl || isEBook;
+
+    if (!hasImage || !finalParticipantId || !finalParticipationCode) {
       toast({
         title: '필수 정보가 누락되었습니다',
         variant: 'destructive',
@@ -455,7 +462,7 @@ function Step3Content() {
       // 단계 1: 책 정보 저장
       setUploadStep('책 정보 저장 중...');
       await updateParticipantBookInfo(
-        participantId,
+        finalParticipantId,
         finalTitle,
         selectedBook?.author || undefined,
         selectedBook?.image || undefined
@@ -465,7 +472,7 @@ function Step3Content() {
       let bookImageUrl = imageStorageUrl;
       if (!bookImageUrl && imageFile) {
         setUploadStep('이미지 업로드 중...');
-        bookImageUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
+        bookImageUrl = await uploadReadingImage(imageFile, finalParticipationCode, cohortId);
         setImageStorageUrl(bookImageUrl);
       }
 
@@ -495,8 +502,8 @@ function Step3Content() {
       } else {
         await createSubmission.mutateAsync({
           data: {
-            participantId,
-            participationCode,
+            participantId: finalParticipantId,
+            participationCode: finalParticipationCode,
             ...submissionPayload,
             submittedAt: Timestamp.now(),
             // Step 1에서 결정된 날짜 전달 (2시 전환 엣지케이스 대응)
@@ -509,7 +516,7 @@ function Step3Content() {
       // 신규/수정 모두 draft 삭제 (자동저장된 임시저장 정리)
       try {
         const { getDraftSubmission, deleteDraft } = await import('@/lib/firebase/submissions');
-        const draft = await getDraftSubmission(participantId, cohortId!, storedSubmissionDate || undefined);
+        const draft = await getDraftSubmission(finalParticipantId, cohortId!, storedSubmissionDate || undefined);
         if (draft) {
           await deleteDraft(draft.id);
         }
