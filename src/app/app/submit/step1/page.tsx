@@ -18,6 +18,7 @@ import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
 import { appRoutes } from '@/lib/navigation';
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
+import { logger } from '@/lib/logger';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -86,23 +87,34 @@ function Step1Content() {
     hasLoadedDraftRef.current = true;
     const loadDraft = async () => {
       setIsLoadingDraft(true);
-      const { getDraftSubmission } = await import('@/lib/firebase/submissions');
-      // Step 1에서 결정된 날짜로 draft 조회 (2시 전환 엣지케이스 대응)
-      const draft = await getDraftSubmission(participant.id, cohortId, submissionDate || undefined);
+      try {
+        const { getDraftSubmission } = await import('@/lib/firebase/submissions');
+        // Step 1에서 결정된 날짜로 draft 조회 (2시 전환 엣지케이스 대응)
+        const draft = await getDraftSubmission(participant.id, cohortId, submissionDate || undefined);
 
-      if (draft) {
-        if (draft.bookImageUrl) {
-          const file = await createFileFromUrl(draft.bookImageUrl);
-          setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
-          setImageStorageUrl(draft.bookImageUrl);
-        }
+        if (draft) {
+          if (draft.bookImageUrl) {
+            try {
+              const file = await createFileFromUrl(draft.bookImageUrl);
+              setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
+              setImageStorageUrl(draft.bookImageUrl);
+            } catch {
+              // 이미지 복원 실패 시 URL만 설정 (File 없이 진행)
+              setImageFile(null, draft.bookImageUrl, draft.bookImageUrl);
+              setImageStorageUrl(draft.bookImageUrl);
+            }
+          }
 
-        if (draft.isEBook) {
-          setIsEBook(true);
+          if (draft.isEBook) {
+            setIsEBook(true);
+          }
         }
+      } catch (error) {
+        // draft 로드 실패해도 진행 가능하도록 처리
+        logger.error('Draft 로드 실패:', error);
+      } finally {
+        setIsLoadingDraft(false);
       }
-
-      setIsLoadingDraft(false);
     };
 
     loadDraft();
