@@ -617,8 +617,8 @@ function Step3Content() {
             {/* 질문 답변 입력 */}
             <div className="space-y-3">
               <div className="flex justify-end h-5">
-                {/* Auto-save indicator */}
-                <div className="flex items-center gap-1.5">
+                {/* Auto-save indicator + 글자수 카운팅 */}
+                <div className="flex items-center gap-2">
                   {isAutoSaving ? (
                     <>
                       <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
@@ -630,6 +630,12 @@ function Step3Content() {
                       <span className="text-[10px] text-green-600 font-medium">저장됨</span>
                     </>
                   ) : null}
+                  <span className={`text-[10px] font-medium transition-colors ${localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
+                    ? 'text-red-500'
+                    : 'text-blue-500'
+                    }`}>
+                    {localDailyAnswer.length}/{SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자
+                  </span>
                 </div>
               </div>
               <div className="relative">
@@ -642,17 +648,11 @@ function Step3Content() {
                 />
               </div>
 
-              <div className="flex justify-between items-center px-1">
-                <span className="text-xs text-gray-400">
-                  {localDailyAnswer.length > 0 && '작성 중인 내용은 자동으로 저장됩니다'}
-                </span>
-                <p className={`text-xs transition-colors ${localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
-                  ? 'text-red-500 font-medium'
-                  : 'text-blue-500'
-                  }`}>
-                  {localDailyAnswer.length} / {SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자
+              {localDailyAnswer.length > 0 && (
+                <p className="text-xs text-gray-400 px-1">
+                  작성 중인 내용은 자동으로 저장됩니다
                 </p>
-              </div>
+              )}
             </div>
 
             {uploadStep && (
