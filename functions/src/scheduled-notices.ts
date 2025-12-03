@@ -5,11 +5,11 @@ import { getSeoulDB } from "./lib/db-helper";
 
 /**
  * Scheduled function to publish notices that are scheduled for release.
- * Runs every 30 minutes.
+ * Runs every 10 minutes.
  */
 export const publishScheduledNotices = onSchedule(
   {
-    schedule: "*/30 * * * *", // Every 30 minutes
+    schedule: "*/10 * * * *", // Every 10 minutes
     timeZone: "Asia/Seoul",
     region: "asia-northeast3",
   },

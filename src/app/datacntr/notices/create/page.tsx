@@ -401,11 +401,12 @@ export default function NoticeCreatePage() {
                 type="datetime-local"
                 value={scheduledAt}
                 onChange={(e) => setScheduledAt(e.target.value)}
+                step="600"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 min={new Date().toISOString().slice(0, 16)}
               />
               <p className="text-xs text-gray-500 mt-2">
-                * 설정한 시간에 자동으로 발행되고 푸시 알림이 전송됩니다. (30분 단위 체크)
+                * 설정한 시간에 자동으로 발행되고 푸시 알림이 전송됩니다. (10분 단위)
               </p>
             </div>
           )}
