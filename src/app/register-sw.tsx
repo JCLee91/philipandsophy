@@ -21,9 +21,11 @@ import { logger } from '@/lib/logger';
  * Wait for Service Worker to control the page (non-blocking)
  *
  * iOS PWA에서 컨트롤러 전환이 느릴 수 있으므로
- * controllerchange 이벤트를 대기하되, 짧은 타임아웃으로 앱 블로킹 방지
+ * controllerchange 이벤트를 대기하되, 적절한 타임아웃으로 앱 블로킹 방지
+ *
+ * 타임아웃 변경: 300ms → 1000ms (iOS PWA 백그라운드 복귀 시 SW 재활성화 시간 고려)
  */
-async function waitForController(timeoutMs: number = 300): Promise<void> {
+async function waitForController(timeoutMs: number = 1000): Promise<void> {
   // 이미 컨트롤러가 있으면 즉시 반환
   if (navigator.serviceWorker.controller) {
     return;
@@ -114,8 +116,8 @@ export default function RegisterServiceWorker() {
 
         }
 
-        // Step 3: 컨트롤러 확보 대기 (비차단, 300ms 타임아웃)
-        await waitForController(300);
+        // Step 3: 컨트롤러 확보 대기 (비차단, 1초 타임아웃)
+        await waitForController(1000);
 
         navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
 
