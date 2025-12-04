@@ -121,8 +121,13 @@ export default function OtherClustersPage() {
 
     // 클러스터 카드 클릭 핸들러 - today-library로 이동 (인증 체크 없음, 맛보기 허용)
     const handleClusterClick = (clusterId: string) => {
-        // cluster 파라미터와 함께 today-library로 이동
-        router.push(`${appRoutes.todayLibrary(cohortId!)}&cluster=${clusterId}`);
+        // cluster 파라미터와 matchingDate를 함께 today-library로 이동
+        const matchingDate = clusterMatching?.matchingDate;
+        if (matchingDate) {
+            router.push(`${appRoutes.todayLibrary(cohortId!)}&cluster=${clusterId}&matchingDate=${encodeURIComponent(matchingDate)}`);
+        } else {
+            router.push(`${appRoutes.todayLibrary(cohortId!)}&cluster=${clusterId}`);
+        }
     };
 
     if (sessionLoading || cohortLoading || viewerSubmissionLoading) {
@@ -140,7 +145,14 @@ export default function OtherClustersPage() {
                 <div className="app-shell flex flex-col h-screen bg-gray-50">
                     <TopBar
                         title="다른 모임 구경하기"
-                        onBack={() => router.push(appRoutes.todayLibrary(cohortId!))}
+                        onBack={() => {
+                            const matchingDate = clusterMatching?.matchingDate;
+                            if (matchingDate) {
+                                router.push(`${appRoutes.todayLibrary(cohortId!)}&matchingDate=${encodeURIComponent(matchingDate)}`);
+                            } else {
+                                router.push(appRoutes.todayLibrary(cohortId!));
+                            }
+                        }}
                         position="fixed"
                     />
                     <main className="flex-1 overflow-y-auto pt-16 pb-20 px-4 flex items-center justify-center">
@@ -168,7 +180,14 @@ export default function OtherClustersPage() {
             <div className="app-shell flex flex-col h-screen bg-gray-50">
                 <TopBar
                     title="다른 모임 구경하기"
-                    onBack={() => router.push(appRoutes.todayLibrary(cohortId!))}
+                    onBack={() => {
+                        const matchingDate = clusterMatching?.matchingDate;
+                        if (matchingDate) {
+                            router.push(`${appRoutes.todayLibrary(cohortId!)}&matchingDate=${encodeURIComponent(matchingDate)}`);
+                        } else {
+                            router.push(appRoutes.todayLibrary(cohortId!));
+                        }
+                    }}
                     position="fixed"
                 />
 

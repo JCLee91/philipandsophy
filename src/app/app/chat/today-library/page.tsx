@@ -26,6 +26,7 @@ import type { Participant, Cluster, ReadingSubmission } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
 import { getFirstName } from '@/lib/utils';
 import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified, isMatchingInProgress } from '@/lib/date-utils';
+import { format, parseISO } from 'date-fns';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { Lock, Heart, ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { findLatestMatchingForParticipant, findLatestClusterMatching, ClusterMatchingData } from '@/lib/matching-utils';
@@ -908,7 +909,7 @@ function AccordionContent({
   return (
     <div className="flex justify-between items-start gap-2">
       <div
-        className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px]' : 'max-h-[1.6em]'
+        className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[2000px]' : 'max-h-[1.6em]'
           }`}
       >
         <p className="text-[14px] text-[#333D4B] leading-[1.6] break-all whitespace-pre-wrap">
@@ -928,6 +929,7 @@ function TodayLibraryV3Content() {
   const searchParams = useSearchParams();
   const cohortId = searchParams.get('cohort');
   const targetClusterIdParam = searchParams.get('cluster'); // 다른 모임 구경가기용
+  const urlMatchingDate = searchParams.get('matchingDate'); // 다른 모임에서 전달받은 매칭 날짜
 
   const { participant, isLoading: sessionLoading } = useAuth();
   const currentUserId = participant?.id;
@@ -966,17 +968,21 @@ function TodayLibraryV3Content() {
   }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate]);
 
   // 다른 클러스터 구경 시 해당 클러스터 데이터 조회
+  // URL에서 받은 matchingDate를 우선 사용 (다른 모임 선택 시 어제 매칭 유지)
   const targetClusterMatching = useMemo(() => {
     if (!targetClusterIdParam || !cohort?.dailyFeaturedParticipants) {
       return null;
     }
 
+    // URL의 matchingDate가 있으면 우선 사용 (다른 모임에서 전달받은 날짜)
+    const effectiveDate = urlMatchingDate || preferredMatchingDate;
+
     return findClusterById(
       cohort.dailyFeaturedParticipants,
       targetClusterIdParam,
-      preferredMatchingDate
+      effectiveDate
     );
-  }, [cohort?.dailyFeaturedParticipants, targetClusterIdParam, preferredMatchingDate]);
+  }, [cohort?.dailyFeaturedParticipants, targetClusterIdParam, urlMatchingDate, preferredMatchingDate]);
 
   // 최종 사용할 클러스터 매칭 데이터
   const clusterMatching = targetClusterIdParam ? targetClusterMatching : myClusterMatching;
@@ -1358,7 +1364,15 @@ function TodayLibraryV3Content() {
             {/* 내 모임으로 돌아가기 - 왼쪽 */}
             {isViewingOtherCluster ? (
               <button
-                onClick={() => router.push(appRoutes.todayLibrary(cohortId!))}
+                onClick={() => {
+                  // matchingDate 유지하여 어제 매칭 데이터 표시
+                  const matchingDate = clusterMatching?.matchingDate;
+                  if (matchingDate) {
+                    router.push(`${appRoutes.todayLibrary(cohortId!)}&matchingDate=${encodeURIComponent(matchingDate)}`);
+                  } else {
+                    router.push(appRoutes.todayLibrary(cohortId!));
+                  }
+                }}
                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
               >
                 <ChevronLeft className="size-4" />
@@ -1383,8 +1397,21 @@ function TodayLibraryV3Content() {
             </div>
 
             <div className="flex flex-col gap-2 max-w-full">
-              <div className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px] inline-block self-center">
-                {cluster.category || '감상평'}
+              <div className="flex items-center gap-2 justify-center">
+                {/* 날짜 배지 - 이전 날짜면 회색, 오늘이면 검정 */}
+                <div className={`text-[12px] font-bold px-3 py-1 rounded-[12px] ${
+                  clusterMatching?.matchingDate === todayDate
+                    ? 'bg-black text-white'
+                    : 'bg-gray-400 text-white'
+                }`}>
+                  {clusterMatching?.matchingDate === todayDate
+                    ? '오늘 모임'
+                    : `${clusterMatching?.matchingDate ? format(parseISO(clusterMatching.matchingDate), 'M/d') : ''} 모임`}
+                </div>
+                {/* 카테고리 배지 */}
+                <div className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px]">
+                  {cluster.category || '감상평'}
+                </div>
               </div>
               <h3 className="text-[18px] font-bold text-black">
                 {cluster.theme}
