@@ -21,7 +21,9 @@ export default function NoticeCreatePage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isScheduled, setIsScheduled] = useState(false);
-  const [scheduledAt, setScheduledAt] = useState('');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledHour, setScheduledHour] = useState('09');
+  const [scheduledMinute, setScheduledMinute] = useState('00');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [templateImageUrl, setTemplateImageUrl] = useState<string>('');
@@ -137,8 +139,8 @@ export default function NoticeCreatePage() {
       return;
     }
 
-    if (isScheduled && !scheduledAt) {
-      alert('예약 발행 시간을 설정해주세요.');
+    if (isScheduled && !scheduledDate) {
+      alert('예약 발행 날짜를 설정해주세요.');
       return;
     }
 
@@ -161,7 +163,8 @@ export default function NoticeCreatePage() {
 
       if (isScheduled && !isDraft) {
         formData.append('status', 'scheduled');
-        formData.append('scheduledAt', new Date(scheduledAt).toISOString());
+        const scheduledDateTime = `${scheduledDate}T${scheduledHour}:${scheduledMinute}:00`;
+        formData.append('scheduledAt', new Date(scheduledDateTime).toISOString());
       } else {
         formData.append('status', isDraft ? 'draft' : 'published');
       }
@@ -374,16 +377,13 @@ export default function NoticeCreatePage() {
                 checked={isScheduled}
                 onChange={(e) => {
                   setIsScheduled(e.target.checked);
-                  if (e.target.checked && !scheduledAt) {
+                  if (e.target.checked && !scheduledDate) {
                     const nextHour = new Date();
                     nextHour.setHours(nextHour.getHours() + 1);
                     nextHour.setMinutes(0);
-                    const localIso = new Date(
-                      nextHour.getTime() - nextHour.getTimezoneOffset() * 60000
-                    )
-                      .toISOString()
-                      .slice(0, 16);
-                    setScheduledAt(localIso);
+                    setScheduledDate(nextHour.toISOString().slice(0, 10));
+                    setScheduledHour(String(nextHour.getHours()).padStart(2, '0'));
+                    setScheduledMinute('00');
                   }
                 }}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -395,18 +395,44 @@ export default function NoticeCreatePage() {
           </div>
 
           {isScheduled && (
-            <div className="mt-2">
-              <label className="block text-sm text-gray-600 mb-1">발행 예정 시간</label>
-              <input
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={(e) => setScheduledAt(e.target.value)}
-                step="600"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min={new Date().toISOString().slice(0, 16)}
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                * 설정한 시간에 자동으로 발행되고 푸시 알림이 전송됩니다. (10분 단위)
+            <div className="mt-2 space-y-2">
+              <label className="block text-sm text-gray-600">발행 예정 시간</label>
+              <div className="flex gap-2">
+                {/* 날짜 선택 */}
+                <input
+                  type="date"
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  min={new Date().toISOString().slice(0, 10)}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {/* 시 선택 */}
+                <select
+                  value={scheduledHour}
+                  onChange={(e) => setScheduledHour(e.target.value)}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={String(i).padStart(2, '0')}>
+                      {i}시
+                    </option>
+                  ))}
+                </select>
+                {/* 분 선택 (10분 단위) */}
+                <select
+                  value={scheduledMinute}
+                  onChange={(e) => setScheduledMinute(e.target.value)}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {['00', '10', '20', '30', '40', '50'].map((m) => (
+                    <option key={m} value={m}>
+                      {m}분
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-xs text-gray-500">
+                * 10분 단위로 예약 발행됩니다.
               </p>
             </div>
           )}
