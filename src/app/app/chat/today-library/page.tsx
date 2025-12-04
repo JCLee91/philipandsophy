@@ -26,7 +26,7 @@ import type { Participant, Cluster, ReadingSubmission } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
 import { getFirstName } from '@/lib/utils';
 import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified, isMatchingInProgress } from '@/lib/date-utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, addDays } from 'date-fns';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { Lock, Heart, ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { findLatestMatchingForParticipant, findLatestClusterMatching, ClusterMatchingData } from '@/lib/matching-utils';
@@ -1398,16 +1398,24 @@ function TodayLibraryV3Content() {
 
             <div className="flex flex-col gap-2 max-w-full">
               <div className="flex items-center gap-2 justify-center">
-                {/* 날짜 배지 - 이전 날짜면 회색, 오늘이면 검정 */}
-                <div className={`text-[12px] font-bold px-3 py-1 rounded-[12px] ${
-                  clusterMatching?.matchingDate === todayDate
-                    ? 'bg-black text-white'
-                    : 'bg-gray-400 text-white'
-                }`}>
-                  {clusterMatching?.matchingDate === todayDate
-                    ? '오늘 모임'
-                    : `${clusterMatching?.matchingDate ? format(parseISO(clusterMatching.matchingDate), 'M/d') : ''} 모임`}
-                </div>
+                {/* 날짜 배지 - 매칭 날짜(인증일) + 1일 = 실제 모임 날짜 */}
+                {(() => {
+                  // 매칭 날짜(인증일) + 1일 = 유저가 보는 모임 날짜
+                  const meetingDate = clusterMatching?.matchingDate
+                    ? format(addDays(parseISO(clusterMatching.matchingDate), 1), 'yyyy-MM-dd')
+                    : null;
+                  const isToday = meetingDate === todayDate;
+
+                  return (
+                    <div className={`text-[12px] font-bold px-3 py-1 rounded-[12px] ${
+                      isToday ? 'bg-black text-white' : 'bg-gray-400 text-white'
+                    }`}>
+                      {isToday
+                        ? '오늘 모임'
+                        : `${meetingDate ? format(parseISO(meetingDate), 'M/d') : ''} 모임`}
+                    </div>
+                  );
+                })()}
                 {/* 카테고리 배지 */}
                 <div className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px]">
                   {cluster.category || '감상평'}
