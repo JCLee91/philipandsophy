@@ -8,6 +8,9 @@
     "build:sw": "echo '✅ Service Worker is already at public/sw.js (manual maintenance)'",
     "start": "./node_modules/.bin/next start",
     "lint": "./node_modules/.bin/next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "fix:duplicate-submissions": "tsx src/scripts/fix-duplicate-submissions.ts",
     "migrate:storage": "tsx src/scripts/migrate-storage-structure.ts",
     "migrate:notices-submissions": "tsx src/scripts/migrate-notices-and-fix-submissions.ts",
@@ -89,6 +92,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.1",
     "baseline-browser-mapping": "^2.8.32",
     "eslint-config-next": "^16.0.3",
     "postcss": "^8",
@@ -97,6 +101,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
+    "vitest": "^4.0.15",
     "web-push": "^3.6.7",
     "yargs": "^18.0.0"
   }

@@ -158,3 +158,48 @@ NAVER_CLIENT_SECRET=...
 - **docs/design/** - Notice UX improvements
 
 See README.md for full feature documentation in Korean.
+
+## Refactoring Safety Checklist
+
+리팩토링 완료 후 **반드시** 확인해야 하는 항목들:
+
+### 1. 필수 필드 누락 체크
+```bash
+npm run test  # 필수 필드 검증 테스트 실행
+```
+
+특히 Firestore 쿼리에 사용되는 필드 주의:
+- `submittedAt` - orderBy 쿼리에 사용 (없으면 쿼리 결과에서 제외!)
+- `submissionDate` - where 조건에 사용
+- `participantId` - where 조건에 사용
+
+### 2. Import 삭제 시 확인
+삭제하려는 import가 실제로 사용되지 않는지 확인:
+```typescript
+// ⚠️ 이런 import 삭제 시 주의
+import { Timestamp } from 'firebase/firestore';  // Timestamp.now() 사용 여부 확인
+```
+
+### 3. Spread Operator 리팩토링 주의
+```typescript
+// Before: 명시적으로 필드 설정
+await createSubmission({
+  ...data,
+  submittedAt: Timestamp.now(),  // ⚠️ 이 줄이 빠지면 버그!
+});
+
+// After: spread만 사용 시 필드 누락 위험
+await createSubmission(submissionData);  // submittedAt이 data에 있는지 확인!
+```
+
+### 4. 시점 의존 코드 체크
+다음 패턴이 리팩토링 후에도 유지되는지 확인:
+- `Timestamp.now()` - 현재 시각 저장
+- `getSubmissionDate()` - 새벽 2시 마감 정책 적용
+- `Date.now()` - 타임스탬프 생성
+
+### 5. 실제 사례 (2025-12-05 버그)
+리팩토링 중 `submittedAt: Timestamp.now()` 코드가 빠져서:
+- 프로필북에서 인증 내역이 안 보이는 버그 발생
+- Firestore `orderBy('submittedAt')` 쿼리에서 해당 문서 제외됨
+- 4명의 사용자 데이터 수동 복구 필요했음
