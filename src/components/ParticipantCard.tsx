@@ -107,9 +107,9 @@ export function ParticipantCard({
       // 4. 타겟 유저로 로그인
       const auth = getFirebaseAuth();
       await signInWithCustomToken(auth, customToken);
-      
-      // 메인 앱으로 이동 (새로고침 효과를 위해 window.location 사용 고려 가능하지만 router.push가 더 부드러움)
-      router.push('/app');
+
+      // 메인 앱으로 이동 (전체 새로고침으로 React Query 캐시 초기화)
+      window.location.href = '/app';
       
     } catch (error) {
       console.error('Impersonation failed:', error);

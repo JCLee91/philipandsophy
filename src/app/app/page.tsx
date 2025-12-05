@@ -19,7 +19,13 @@ export default function Home() {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [minSplashElapsed, setMinSplashElapsed] = useState(false);
-  const [isImpersonating, setIsImpersonating] = useState(false);
+  // Impersonate 모드 확인 (초기값에서 바로 설정하여 타이밍 이슈 방지)
+  const [isImpersonating] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('pns_admin_impersonation') === 'true';
+    }
+    return false;
+  });
 
   const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
   const {
@@ -40,11 +46,6 @@ export default function Home() {
     }, MIN_SPLASH_TIME);
 
     return () => clearTimeout(timer);
-  }, []);
-
-  // Impersonate 모드 확인 (유저 시점으로 보기)
-  useEffect(() => {
-    setIsImpersonating(sessionStorage.getItem('pns_admin_impersonation') === 'true');
   }, []);
 
   useEffect(() => {

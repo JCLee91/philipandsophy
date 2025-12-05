@@ -710,6 +710,7 @@ export function ChatClientView({
               hasSubmittedToday={hasSubmittedToday}
               isSocializingActive={isSocializingActive}
               cohortName={cohort?.name}
+              participantName={participant?.name}
               useClusterMatching={cohort?.useClusterMatching}
               onRequestSubmission={handleOpenSubmissionFlow}
               onNavigateDashboard={handleNavigateDashboard}

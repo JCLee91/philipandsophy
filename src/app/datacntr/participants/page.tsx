@@ -91,7 +91,9 @@ export default function ParticipantsPage() {
 
       const auth = getFirebaseAuth();
       await signInWithCustomToken(auth, customToken);
-      router.push('/app');
+
+      // 전체 새로고침으로 React Query 캐시 초기화
+      window.location.href = '/app';
     } catch (error) {
       console.error('Impersonation failed:', error);
       alert('유저로 로그인하기 실패했습니다. 권한을 확인해주세요.');

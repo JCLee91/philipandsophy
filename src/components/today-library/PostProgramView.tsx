@@ -42,7 +42,7 @@ function MiniStatCard({
 }) {
     return (
         <div className="flex-1 bg-white rounded-[12px] p-4 shadow-sm min-h-[88px] flex flex-col">
-            <p className="text-[15px] font-bold text-[#333D4B] mb-2">{title}</p>
+            <p className="text-[13px] font-bold text-[#333D4B] mb-2">{title}</p>
             <p className="text-[22px] font-bold text-[#333D4B] mt-auto text-right">{mainValue}</p>
         </div>
     );
@@ -66,7 +66,7 @@ function CompanionCard({
 
     return (
         <div className="bg-white rounded-[12px] p-4 shadow-sm flex flex-col h-full">
-            <p className="text-[15px] font-bold text-[#333D4B] mb-3">{title}</p>
+            <p className="text-[13px] font-bold text-[#333D4B] mb-3">{title}</p>
             {/* 프로필 목록 */}
             <div className="flex flex-wrap gap-2 flex-1 justify-center">
                 {companions.map((companion, idx) => (
@@ -129,7 +129,7 @@ function ClusterCard({
             </div>
 
             {/* Cluster Name */}
-            <h3 className="text-[16px] font-bold text-[#333D4B] mb-2">{item.clusterName}</h3>
+            <h3 className="text-[14px] font-bold text-[#333D4B] mb-2">{item.clusterName}</h3>
 
             {/* Theme */}
             <p className="text-[13px] text-[#6B7684] mb-4 line-clamp-2">{item.clusterTheme}</p>
@@ -389,7 +389,7 @@ export default function PostProgramView({
                         activityRecap && activityRecap.myClusterJourney.length > 0 && (
                             <section className="px-6 mb-3">
                                 <div className="bg-white rounded-[12px] p-4 shadow-sm">
-                                    <p className="text-[15px] font-bold text-[#333D4B] mb-3">나의 클러스터 여정</p>
+                                    <p className="text-[13px] font-bold text-[#333D4B] mb-3">나의 모임 히스토리</p>
                                     {/* Carousel */}
                                     <div className="relative -mx-1">
                                         <div
@@ -446,7 +446,7 @@ export default function PostProgramView({
                         activityRecap && (
                             <section className="px-6 pb-32">
                                 <div className="bg-white rounded-[12px] p-4 shadow-sm">
-                                    <p className="text-[15px] font-bold text-[#333D4B] mb-1">전체 멤버</p>
+                                    <p className="text-[13px] font-bold text-[#333D4B] mb-1">전체 멤버</p>
                                     <p className="text-[12px] text-[#8B95A1] mb-3">
                                         모든 프로필북이 개방됐어요. 파티 전에 미리 살펴보세요!
                                     </p>
