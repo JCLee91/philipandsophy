@@ -114,20 +114,21 @@ export const useSubmissionFlowStore = create<SubmissionFlowState>()(
         },
       },
       // File 객체는 직렬화할 수 없으므로 제외
-      partialize: (state) => ({
-        selectedBook: state.selectedBook,
-        manualTitle: state.manualTitle,
-        review: state.review,
-        dailyAnswer: state.dailyAnswer,
-        participantId: state.participantId,
-        participationCode: state.participationCode,
-        cohortId: state.cohortId,
-        existingSubmissionId: state.existingSubmissionId,
-        submissionDate: state.submissionDate,
-        isEBook: state.isEBook,
-        imageStorageUrl: state.imageStorageUrl,
-        // imageFile, imagePreview는 File/base64라서 제외
-      }),
+      partialize: (state) =>
+        ({
+          selectedBook: state.selectedBook,
+          manualTitle: state.manualTitle,
+          review: state.review,
+          dailyAnswer: state.dailyAnswer,
+          participantId: state.participantId,
+          participationCode: state.participationCode,
+          cohortId: state.cohortId,
+          existingSubmissionId: state.existingSubmissionId,
+          submissionDate: state.submissionDate,
+          isEBook: state.isEBook,
+          imageStorageUrl: state.imageStorageUrl,
+          // imageFile, imagePreview는 File/base64라서 제외
+        }) as SubmissionFlowState,
       onRehydrateStorage: () => (state) => {
         console.log('[Zustand] Hydration 시작, 복원된 상태:', {
           isEBook: state?.isEBook,
