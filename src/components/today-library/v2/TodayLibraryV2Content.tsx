@@ -48,8 +48,8 @@ export default function TodayLibraryV2Content() {
     return <LoadingSkeleton />;
   }
 
-  // 세션 검증 실패
-  if (!isValidSession) {
+  // 세션 검증 실패 또는 currentUserId 없음
+  if (!isValidSession || !currentUserId) {
     return null;
   }
 
@@ -58,7 +58,7 @@ export default function TodayLibraryV2Content() {
     return (
       <EmptyStateFirstAuth
         cohortId={cohortId!}
-        currentUserId={currentUserId || ''}
+        currentUserId={currentUserId}
         variant="v2"
       />
     );
@@ -156,7 +156,7 @@ export default function TodayLibraryV2Content() {
             <div className="grid grid-cols-2 gap-2">
               <UnifiedButton
                 variant="secondary"
-                onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId!))}
+                onClick={() => router.push(appRoutes.profile(currentUserId, cohortId!))}
                 className="flex-1"
               >
                 내 프로필 북 보기
@@ -172,7 +172,7 @@ export default function TodayLibraryV2Content() {
           ) : (
             <UnifiedButton
               variant="primary"
-              onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId!))}
+              onClick={() => router.push(appRoutes.profile(currentUserId, cohortId!))}
               className="w-full"
             >
               내 프로필 북 보기

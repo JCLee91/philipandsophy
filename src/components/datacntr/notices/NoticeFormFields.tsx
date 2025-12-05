@@ -89,9 +89,15 @@ export function NoticeFormFields({
             <input type="file" accept="image/*" onChange={onImageChange} className="hidden" />
           </label>
         ) : (
-          <div className="relative">
-            <Image src={imagePreview} alt="미리보기" width={600} height={400} className="rounded-lg border border-gray-200 w-full h-auto" />
-            <button type="button" onClick={onRemoveImage} className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
+          <div className="relative aspect-[3/2] w-full">
+            <Image
+              src={imagePreview}
+              alt="미리보기"
+              fill
+              sizes="(max-width: 768px) 100vw, 600px"
+              className="rounded-lg border border-gray-200 object-contain"
+            />
+            <button type="button" onClick={onRemoveImage} className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10">
               <X className="h-4 w-4" />
             </button>
           </div>

@@ -10,13 +10,17 @@ interface UseFetchWithAuthOptions<T> {
   url: string;
   /** fetch 활성화 여부 (기본: true) */
   enabled?: boolean;
-  /** 성공 콜백 */
+  /** 성공 콜백 - useCallback으로 래핑 권장 */
   onSuccess?: (data: T) => void;
-  /** 에러 콜백 */
+  /** 에러 콜백 - useCallback으로 래핑 권장 */
   onError?: (error: Error) => void;
   /** 초기 데이터 */
   initialData?: T;
-  /** 의존성 배열 - 변경 시 자동 refetch */
+  /**
+   * 의존성 배열 - 변경 시 자동 refetch
+   * ⚠️ 주의: 원시값(string, number, boolean)만 사용 권장
+   * 객체/배열은 매번 새로운 참조가 생성되어 무한 refetch 가능
+   */
   deps?: unknown[];
 }
 
@@ -73,6 +77,7 @@ export function useFetchWithAuth<T>({
   }, [user, url, enabled, onSuccess, onError]);
 
   // 초기 fetch 및 deps 변경 시 refetch
+  // ⚠️ deps는 호출자가 안정적인 원시값만 전달해야 함
   useEffect(() => {
     if (!enabled || !user) {
       fetchedRef.current = false;
@@ -81,6 +86,7 @@ export function useFetchWithAuth<T>({
 
     fetchData();
     fetchedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, enabled, url, fetchData, ...deps]);
 
   return {

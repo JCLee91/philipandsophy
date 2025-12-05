@@ -53,6 +53,7 @@ export default function ClusterThemeSection({
                 src={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage || '/image/default-profile.svg'}
                 alt={member.name}
                 fill
+                sizes="40px"
                 className="object-cover"
               />
             </div>

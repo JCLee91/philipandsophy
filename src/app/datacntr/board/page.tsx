@@ -5,7 +5,7 @@ import { format, eachDayOfInterval, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
-import { ReadingSubmission, Participant, Cohort } from '@/types/database';
+import { ReadingSubmission, Participant, Cohort, COLLECTIONS } from '@/types/database';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -42,7 +42,7 @@ export default function DataCenterBoardPage() {
         if (!db) return;
 
         // 1. Get all cohorts and find selected
-        const cohortsRef = collection(db, 'cohorts');
+        const cohortsRef = collection(db, COLLECTIONS.COHORTS);
         const cohortsSnapshot = await getDocs(cohortsRef);
         const cohortsList = cohortsSnapshot.docs.map((doc) => {
           const data = doc.data() as Cohort;
@@ -63,7 +63,7 @@ export default function DataCenterBoardPage() {
         setDates(dateStrings);
 
         // 3. Get all participants (exclude admins and ghosts)
-        const participantsRef = collection(db, 'participants');
+        const participantsRef = collection(db, COLLECTIONS.PARTICIPANTS);
         const participantsQuery = query(
           participantsRef,
           where('cohortId', '==', targetCohort.id),
@@ -81,7 +81,7 @@ export default function DataCenterBoardPage() {
 
         // 4. Get all submissions
         const participantIds = participants.map((p) => p.id);
-        const submissionsRef = collection(db, 'reading_submissions');
+        const submissionsRef = collection(db, COLLECTIONS.READING_SUBMISSIONS);
         const submissions: ReadingSubmission[] = [];
 
         const chunkSize = 10;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   useSensor,
   useSensors,
@@ -45,7 +45,7 @@ export function useClosingParty() {
   );
 
   // Stats 가져오기
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     if (!user || !selectedCohortId) return;
 
     try {
@@ -66,10 +66,10 @@ export function useClosingParty() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, selectedCohortId]);
 
   // Groups 가져오기
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     if (!user || !selectedCohortId) return;
 
     try {
@@ -90,7 +90,7 @@ export function useClosingParty() {
     } finally {
       setGroupsLoading(false);
     }
-  };
+  }, [user, selectedCohortId]);
 
   // 통계 계산
   const handleCalculate = async () => {
@@ -223,13 +223,13 @@ export function useClosingParty() {
   // Effects
   useEffect(() => {
     fetchStats();
-  }, [user, selectedCohortId]);
+  }, [fetchStats]);
 
   useEffect(() => {
     if (activeTab === 'groups' && data?.isCalculated) {
       fetchGroups();
     }
-  }, [activeTab, data?.isCalculated]);
+  }, [activeTab, data?.isCalculated, fetchGroups]);
 
   return {
     // 상태

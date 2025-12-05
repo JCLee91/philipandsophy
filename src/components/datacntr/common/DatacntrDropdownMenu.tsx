@@ -58,8 +58,8 @@ export function DatacntrDropdownMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
-        {items.map((item, index) => (
-          <div key={index}>
+        {items.map((item) => (
+          <div key={item.label}>
             {item.separator && <DropdownMenuSeparator />}
             <DropdownMenuItem
               onClick={item.onClick}

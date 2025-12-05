@@ -82,7 +82,7 @@ export function IconButton({
       disabled={disabled}
       className={cn(
         // Base styles
-        'relative flex items-center justify-center rounded-lg transition-colors duration-150',
+        'relative flex items-center justify-center rounded-lg transition-colors duration-150 overflow-visible',
         // Size
         sizeClasses[size],
         // Variant

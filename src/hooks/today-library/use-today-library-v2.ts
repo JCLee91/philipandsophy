@@ -90,10 +90,11 @@ export function useTodayLibraryV2() {
   const yesterdayIdsKey = yesterdayIdsArray.join(',');
 
   // 참가자 데이터 쿼리
+  const allFeaturedIdsKey = allFeaturedIds.join(',');
   const { data: featuredParticipants = [], isLoading: participantsLoading } = useQuery<FeaturedParticipant[]>({
     queryKey: showAllProfiles
       ? ['all-participants-final-day', cohortId, currentUserId, todayDate, yesterdayIdsKey]
-      : ['featured-participants-v3', activeMatchingDate, allFeaturedIds],
+      : ['featured-participants-v3', activeMatchingDate, allFeaturedIdsKey],
     queryFn: async () => {
       const db = getDb();
       const participantsRef = collection(db, 'participants');

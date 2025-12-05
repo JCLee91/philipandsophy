@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
@@ -114,6 +115,25 @@ export function FullScreenDialog({
   const keyboardHeight = useKeyboardHeight();
   const isKeyboardOpen = keyboardHeight > 0;
 
+  // 스타일 객체 메모이제이션
+  const dialogStyle = useMemo(() => {
+    const style: React.CSSProperties = { zIndex: Z_INDEX.MODAL_CONTENT };
+
+    if (typeof window === 'undefined') return style;
+
+    // 모바일 키보드 대응
+    if (isKeyboardOpen && window.innerWidth < 640) {
+      style.height = `calc(100vh - ${keyboardHeight}px)`;
+      style.top = 0;
+    }
+    // 데스크톱 고정 높이
+    else if (window.innerWidth >= 640) {
+      style.height = desktopHeight;
+    }
+
+    return style;
+  }, [isKeyboardOpen, keyboardHeight, desktopHeight]);
+
   // Radix UI body 스타일 정리
   useModalCleanup(open);
 
@@ -140,17 +160,7 @@ export function FullScreenDialog({
           'sm:w-full sm:rounded-xl sm:border sm:shadow-lg',
           sizeClasses[desktopSize]
         )}
-        style={{
-          zIndex: Z_INDEX.MODAL_CONTENT,
-          // 모바일 키보드 대응
-          ...(isKeyboardOpen && typeof window !== 'undefined' && window.innerWidth < 640
-            ? { height: `calc(100vh - ${keyboardHeight}px)`, top: 0 }
-            : {}),
-          // 데스크톱 고정 높이
-          ...(typeof window !== 'undefined' && window.innerWidth >= 640
-            ? { height: desktopHeight }
-            : {}),
-        }}
+        style={dialogStyle}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

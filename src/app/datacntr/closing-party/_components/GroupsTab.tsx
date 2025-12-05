@@ -6,6 +6,9 @@ import {
   closestCenter,
   type SensorDescriptor,
   type SensorOptions,
+  type DragStartEvent,
+  type DragOverEvent,
+  type DragEndEvent,
 } from '@dnd-kit/core';
 import { RefreshCw, Shuffle, UsersRound } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,9 +28,9 @@ interface GroupsTabProps {
   overGroupId: string | null;
   sensors: SensorDescriptor<SensorOptions>[];
   onFormGroups: () => void;
-  onDragStart: (event: any) => void;
-  onDragOver: (event: any) => void;
-  onDragEnd: (event: any) => void;
+  onDragStart: (event: DragStartEvent) => void;
+  onDragOver: (event: DragOverEvent) => void;
+  onDragEnd: (event: DragEndEvent) => void;
 }
 
 export default function GroupsTab({
