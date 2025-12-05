@@ -393,6 +393,22 @@ function handleRemainingParticipants(
   }
 
   // 4명 이하면 기존 조에 분배 (7명까지 허용)
+  // ✅ FIX: groups가 비어있으면 새 조 생성 (edge case: 총 참가자 4명 이하)
+  if (groups.length === 0) {
+    const memberNames = remaining.map((id) => participantMap.get(id)?.name || 'Unknown');
+    const averageAffinity = calculateAverageAffinity(remaining, matrix);
+
+    groups.push({
+      groupId: `group-${nextGroupNumber}`,
+      groupNumber: nextGroupNumber,
+      memberIds: remaining,
+      memberNames,
+      tier: 'mixed',
+      averageAffinity,
+    });
+    return;
+  }
+
   for (const pid of remaining) {
     let bestGroup = groups[0];
     let bestScore = -1;
