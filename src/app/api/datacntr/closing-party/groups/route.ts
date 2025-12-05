@@ -746,13 +746,24 @@ function trySwapForBalance(
     for (const otherGroup of allGroups) {
       if (otherGroup.groupId === imbalancedGroup.groupId) continue;
 
-      // 다른 그룹에서 소수 성별 멤버 찾기
-      const swapCandidates = otherGroup.members.filter((m) => {
-        const info = participantInfoMap.get(m.participantId);
-        return info?.gender === minorityGender;
-      });
+      // 다른 그룹에서 소수 성별 멤버 찾기 (불균형 그룹과의 친밀도 높은 순)
+      const swapCandidates = otherGroup.members
+        .filter((m) => {
+          const info = participantInfoMap.get(m.participantId);
+          return info?.gender === minorityGender;
+        })
+        .map((m) => ({
+          member: m,
+          // 불균형 그룹 멤버들과의 친밀도 합 (교환 후 친밀도 유지를 위해)
+          affinityWithTarget: calculateMemberAffinity(
+            m.participantId,
+            imbalancedGroup.members,
+            matrix
+          ),
+        }))
+        .sort((a, b) => b.affinityWithTarget - a.affinityWithTarget); // 친밀도 높은 순
 
-      for (const swapTarget of swapCandidates) {
+      for (const { member: swapTarget } of swapCandidates) {
         // 교환 후 양쪽 그룹 모두 균형이 유지되는지 확인
         if (
           canSwapMaintainBalance(
