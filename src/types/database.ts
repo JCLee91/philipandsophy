@@ -392,6 +392,7 @@ export const COLLECTIONS = {
   CONVERSATIONS: 'conversations', // 대화방
   MATCHING_JOBS: 'matching_jobs',
   MEETUP_MESSAGES: 'meetup_messages', // 소셜링 모임 채팅
+  CLOSING_PARTY_STATS: 'closing_party_stats', // 클로징 파티 통계
 } as const;
 
 /**
@@ -425,5 +426,103 @@ export interface MatchingJob {
   progress?: number; // 진행률 (0-100, 선택적)
   createdAt: Timestamp;
   completedAt: Timestamp | null;
+}
+
+/**
+ * 클로징 파티 통계
+ * - 프로그램 종료 후 자동 생성 (새벽 3시)
+ * - 클로징 파티에서 발표용 데이터
+ */
+export interface ClosingPartyStats {
+  id: string; // cohortId와 동일
+  cohortId: string;
+  cohortName: string; // 예: "4기"
+  programPeriod: {
+    startDate: string; // YYYY-MM-DD
+    endDate: string; // YYYY-MM-DD
+    totalDays: number; // 13 (OT 제외)
+  };
+
+  // 얼리버드상: 새벽 3시 이후 가장 빠른 인증 (2~3시 제외)
+  earliestSubmitter: {
+    participantId: string;
+    participantName: string;
+    submissionTime: string; // HH:mm:ss (KST)
+    submissionDate: string; // YYYY-MM-DD
+  } | null;
+
+  // 올빼미상: 마감 직전 가장 늦은 인증
+  latestSubmitter: {
+    participantId: string;
+    participantName: string;
+    submissionTime: string; // HH:mm:ss (KST)
+    submissionDate: string; // YYYY-MM-DD
+  } | null;
+
+  // 다독왕: 가장 많은 종류의 책
+  mostBooksReader: {
+    participantId: string;
+    participantName: string;
+    uniqueBookCount: number;
+    bookTitles: string[];
+  } | null;
+
+  // 감상평왕: 평균 감상평 길이
+  longestReviewWriter: {
+    participantId: string;
+    participantName: string;
+    averageLength: number; // 평균 글자수
+    totalSubmissions: number;
+  } | null;
+
+  // 가치관왕: 평균 가치관 답변 길이
+  longestAnswerWriter: {
+    participantId: string;
+    participantName: string;
+    averageLength: number; // 평균 글자수
+    totalSubmissions: number;
+  } | null;
+
+  // 개근상: 13일 전부 인증
+  perfectAttendance: Array<{
+    participantId: string;
+    participantName: string;
+  }>;
+
+  // 준개근상: 12일 인증 (하루만 빠짐)
+  almostPerfectAttendance: Array<{
+    participantId: string;
+    participantName: string;
+    missedDate: string; // 빠진 날짜
+  }>;
+
+  // 메타 정보
+  calculatedAt: Timestamp;
+  calculatedBy: 'scheduled' | 'manual';
+  totalParticipants: number; // 관리자 제외
+  totalSubmissions: number;
+
+  // 조 편성 결과 (v2)
+  groups?: ClosingPartyGroup[];
+  groupFormationAt?: Timestamp;
+}
+
+/**
+ * 클로징 파티 조 편성 그룹
+ * 클러스터 매칭 히스토리 기반으로 친밀도가 높은 사람들끼리 묶음
+ */
+export interface ClosingPartyGroupMember {
+  participantId: string;
+  name: string;
+  profileImageCircle?: string;
+  submissionCount: number; // 클러스터 매칭에 참여한 횟수
+}
+
+export interface ClosingPartyGroup {
+  groupId: string;
+  groupNumber: number; // 1, 2, 3, ...
+  members: ClosingPartyGroupMember[];
+  tier: 'active' | 'moderate' | 'inactive' | 'mixed';
+  averageAffinity: number; // 그룹 내 평균 친밀도
 }
 

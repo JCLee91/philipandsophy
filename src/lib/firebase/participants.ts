@@ -161,9 +161,9 @@ export async function getParticipantByPhoneNumber(
  *
  * Firebase Phone Auth로 로그인한 사용자의 UID로 참가자 조회
  *
- * UID 중복 처리:
- * - 동일 UID를 가진 문서가 여러 개면 최신 cohort 문서를 선택
- * - 나머지 문서의 firebaseUid는 null로 정리 (재발 방지)
+ * 자동 마이그레이션:
+ * - firebaseUid로 찾은 문서와 phoneNumber로 찾은 올바른 문서가 다르면
+ * - firebaseUid를 올바른 문서로 자동 이동 (활성 코호트 우선, 최신 코호트 순)
  */
 export async function getParticipantByFirebaseUid(
   firebaseUid: string
@@ -180,68 +180,63 @@ export async function getParticipantByFirebaseUid(
     return null;
   }
 
-  // Map docs to participant objects
-  const participantsWithDocs = querySnapshot.docs.map((docSnapshot) => ({
-    docSnapshot,
-    participant: {
-      id: docSnapshot.id,
-      ...docSnapshot.data(),
-    } as Participant,
-  }));
+  // firebaseUid로 찾은 participant
+  const currentParticipant = {
+    id: querySnapshot.docs[0].id,
+    ...querySnapshot.docs[0].data(),
+  } as Participant;
 
-  // If only one, return it
-  if (participantsWithDocs.length === 1) {
-    return participantsWithDocs[0].participant;
+  // phoneNumber가 없으면 마이그레이션 불가, 현재 문서 반환
+  if (!currentParticipant.phoneNumber) {
+    return currentParticipant;
   }
 
-  // 여러 기수에 등록된 경우 최적의 참가자 정보 선택
-  // 1. 활성 코호트 우선 (isActive: true)
-  // 2. 최신 기수 우선 (startDate 기준 내림차순)
-  // 3. 생성일 기준 최신순 (createdAt 기준 내림차순)
-  
-  const cohortIds = [...new Set(participantsWithDocs.map(p => p.participant.cohortId).filter(Boolean))];
-  
-  // 코호트 정보 일괄 조회
-  const cohortDocs = await Promise.all(
-    cohortIds.map(id => getDoc(doc(db, COLLECTIONS.COHORTS, id)))
-  );
+  // phoneNumber 기준으로 올바른 participant 조회
+  // (활성 코호트 우선 → 최신 코호트 순)
+  const correctParticipant = await getParticipantByPhoneNumber(currentParticipant.phoneNumber);
 
-  const cohortMap = new Map<string, Cohort>();
-  cohortDocs.forEach(docSnap => {
-    if (docSnap.exists()) {
-      cohortMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Cohort);
-    }
+  // 올바른 문서가 없거나 같은 문서면 현재 문서 반환
+  if (!correctParticipant || correctParticipant.id === currentParticipant.id) {
+    return currentParticipant;
+  }
+
+  // 다른 문서면 firebaseUid 자동 마이그레이션
+  logger.info('[Auto Migration] Moving firebaseUid', {
+    from: currentParticipant.id,
+    to: correctParticipant.id,
+    phoneNumber: currentParticipant.phoneNumber,
   });
 
-  // 정렬
-  participantsWithDocs.sort((a, b) => {
-    const pA = a.participant;
-    const pB = b.participant;
-    
-    const cA = cohortMap.get(pA.cohortId);
-    const cB = cohortMap.get(pB.cohortId);
+  try {
+    // 트랜잭션으로 원자적 업데이트
+    await runTransaction(db, async (transaction) => {
+      const oldDocRef = doc(db, COLLECTIONS.PARTICIPANTS, currentParticipant.id);
+      const newDocRef = doc(db, COLLECTIONS.PARTICIPANTS, correctParticipant.id);
+      const now = Timestamp.now();
 
-    // Priority 1: 활성 코호트 우선
-    const isActiveA = cA?.isActive ?? false;
-    const isActiveB = cB?.isActive ?? false;
-    if (isActiveA !== isActiveB) {
-      return isActiveA ? -1 : 1; // Active first
-    }
+      // 이전 문서의 firebaseUid 제거
+      transaction.update(oldDocRef, {
+        firebaseUid: null,
+        updatedAt: now,
+      });
 
-    // Priority 2: 기수 시작일 (최신순)
-    const dateA = cA?.startDate || '';
-    const dateB = cB?.startDate || '';
-    if (dateA !== dateB) {
-      return dateB.localeCompare(dateA); // Descending string comparison (ISO dates)
-    }
+      // 새 문서에 firebaseUid 설정
+      transaction.update(newDocRef, {
+        firebaseUid,
+        updatedAt: now,
+      });
+    });
 
-    // Priority 3: 생성일 (최신순) - Tie breaker
-    const timeA = pA.createdAt?.toMillis() || 0;
-    const timeB = pB.createdAt?.toMillis() || 0;
-    return timeB - timeA;
-  });
-
-  return participantsWithDocs[0].participant;
+    // 마이그레이션 후 올바른 participant 반환 (firebaseUid 포함)
+    return {
+      ...correctParticipant,
+      firebaseUid,
+    };
+  } catch (error) {
+    logger.error('[Auto Migration] Failed to migrate firebaseUid', error);
+    // 마이그레이션 실패 시 기존 문서 반환 (서비스 중단 방지)
+    return currentParticipant;
+  }
 }
 
 /**

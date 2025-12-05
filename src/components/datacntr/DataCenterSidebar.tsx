@@ -22,6 +22,7 @@ import {
   UserCog,
   Megaphone,
   Cog,
+  Trophy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -113,6 +114,11 @@ const navGroups: NavGroup[] = [
         href: '/datacntr/notices',
         label: '공지사항',
         icon: <Bell className="h-5 w-5" />,
+      },
+      {
+        href: '/datacntr/closing-party',
+        label: '클로징 파티',
+        icon: <Trophy className="h-5 w-5" />,
       },
     ],
   },

@@ -34,6 +34,9 @@ export { publishScheduledNotices } from "./scheduled-notices";
 // ✅ AI SDK는 이미 lazy import로 구현되어 배포 타임아웃 해결됨
 export { scheduledClusterMatching } from "./scheduled-cluster-matching";
 
+// 클로징 파티 통계 자동 계산 (매일 새벽 3시)
+export { scheduledClosingPartyStats } from "./scheduled-closing-party-stats";
+
 // ============================================================
 // HTTP Functions
 // ============================================================

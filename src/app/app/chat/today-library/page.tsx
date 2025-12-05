@@ -25,8 +25,9 @@ import { useQuery } from '@tanstack/react-query';
 import type { Participant, Cluster, ReadingSubmission } from '@/types/database';
 import { appRoutes } from '@/lib/navigation';
 import { getFirstName } from '@/lib/utils';
-import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified, isMatchingInProgress } from '@/lib/date-utils';
-import { format, parseISO, addDays } from 'date-fns';
+import { getSubmissionDate, canViewAllProfiles, canViewAllProfilesWithoutAuth, shouldShowAllYesterdayVerified, isMatchingInProgress, isAfterProgram } from '@/lib/date-utils';
+import PostProgramView from '@/components/today-library/PostProgramView';
+import { format, parseISO, addDays, differenceInDays } from 'date-fns';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { Lock, Heart, ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { findLatestMatchingForParticipant, findLatestClusterMatching, ClusterMatchingData } from '@/lib/matching-utils';
@@ -930,6 +931,7 @@ function TodayLibraryV3Content() {
   const cohortId = searchParams.get('cohort');
   const targetClusterIdParam = searchParams.get('cluster'); // 다른 모임 구경가기용
   const urlMatchingDate = searchParams.get('matchingDate'); // 다른 모임에서 전달받은 매칭 날짜
+  const fromRecap = searchParams.get('from') === 'recap'; // PostProgramView에서 진입
 
   const { participant, isLoading: sessionLoading } = useAuth();
   const currentUserId = participant?.id;
@@ -955,17 +957,33 @@ function TodayLibraryV3Content() {
   const isFirstTimeUser = totalSubmissionCount === 0;
 
   // 내 클러스터 매칭 데이터 조회 (기본)
+  // urlMatchingDate가 있으면 해당 날짜의 매칭 우선 사용 (PostProgramView에서 진입 시)
   const myClusterMatching = useMemo(() => {
     if (!cohort?.dailyFeaturedParticipants || !currentUserId) {
       return null;
     }
 
+    // URL에서 받은 matchingDate 우선 사용 (PostProgramView 또는 다른 경로에서 전달)
+    const effectiveDate = urlMatchingDate || preferredMatchingDate;
+
     return findLatestClusterMatching(
       cohort.dailyFeaturedParticipants,
       currentUserId,
-      preferredMatchingDate
+      effectiveDate
     );
-  }, [cohort?.dailyFeaturedParticipants, currentUserId, preferredMatchingDate]);
+  }, [cohort?.dailyFeaturedParticipants, currentUserId, urlMatchingDate, preferredMatchingDate]);
+
+  // DEBUG: PostProgramView 진입 시 데이터 확인
+  if (fromRecap) {
+    console.log('[DEBUG fromRecap]', {
+      fromRecap,
+      urlMatchingDate,
+      currentUserId,
+      hasDailyFeatured: !!cohort?.dailyFeaturedParticipants,
+      myClusterMatching,
+      availableDates: cohort?.dailyFeaturedParticipants ? Object.keys(cohort.dailyFeaturedParticipants) : [],
+    });
+  }
 
   // 다른 클러스터 구경 시 해당 클러스터 데이터 조회
   // URL에서 받은 matchingDate를 우선 사용 (다른 모임 선택 시 어제 매칭 유지)
@@ -1180,6 +1198,154 @@ function TodayLibraryV3Content() {
   }
 
   // ========================================
+  // 프로그램 종료 후: Post-Program View
+  // (matchingDate 파라미터가 있으면 해당 날짜의 일반 뷰 표시)
+  // ========================================
+  const isPostProgram = isAfterProgram(cohort);
+  if (isPostProgram && !urlMatchingDate) {
+    return (
+      <PostProgramView
+        cohort={cohort}
+        cohortId={cohortId}
+        currentUserId={currentUserId || ''}
+      />
+    );
+  }
+
+  // ========================================
+  // PostProgramView에서 진입: 심플한 읽기 전용 뷰
+  // (복잡한 조건 체크 없이 바로 클러스터 표시)
+  // ========================================
+  if (fromRecap && clusterMatching) {
+    const cluster = clusterMatching.cluster;
+    const meetingDate = addDays(parseISO(clusterMatching.matchingDate), 1);
+    const programStartDate = cohort.startDate ? parseISO(cohort.startDate) : null;
+    const dayNumber = programStartDate ? differenceInDays(meetingDate, programStartDate) : 0;
+
+    return (
+      <PageTransition>
+        <div className="app-shell flex flex-col overflow-hidden bg-[#F6F6F6]">
+          <TopBar
+            title={`Day ${dayNumber} 모임`}
+            onBack={() => router.push(appRoutes.todayLibrary(cohortId!))}
+            align="center"
+            className="bg-white border-b-0"
+          />
+
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            {/* Theme Section */}
+            <section className="flex flex-col items-center text-center gap-3 pt-6 pb-6 px-6 bg-[#F6F6F6]">
+              <div className="w-16 h-16 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-[32px]">
+                {cluster.emoji || '🥂'}
+              </div>
+
+              <div className="flex flex-col gap-2 max-w-full">
+                <div className="flex items-center gap-2 justify-center">
+                  <div className="bg-gray-400 text-white text-[12px] font-bold px-3 py-1 rounded-[12px]">
+                    Day {dayNumber}
+                  </div>
+                  <div className="bg-black text-white text-[12px] font-bold px-3 py-1 rounded-[12px]">
+                    {cluster.category || '감상평'}
+                  </div>
+                </div>
+                <h3 className="text-[18px] font-bold text-black">{cluster.theme}</h3>
+                <p className="text-[14px] text-[#575E68] whitespace-pre-wrap leading-[1.4]">
+                  {cluster.reasoning}
+                </p>
+              </div>
+
+              {/* Member List */}
+              <div className="flex flex-wrap items-start justify-center gap-4 mt-2">
+                {clusterMembersWithSubmissions.map((member) => (
+                  <div key={member.id} className="flex flex-col items-center gap-1.5">
+                    <div
+                      className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 cursor-pointer"
+                      onClick={() => router.push(appRoutes.profile(member.id, cohortId))}
+                    >
+                      <Image
+                        src={getResizedImageUrl(member.profileImageCircle || member.profileImage) || '/image/default-profile.svg'}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <span className="text-[11px] text-[#8B95A1]">{member.name}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Reviews Section */}
+            <div className="bg-white rounded-t-[24px] px-6 pt-8 pb-32 min-h-[calc(100vh-300px)]">
+              <section className="mb-10">
+                <h2 className="text-[18px] font-bold text-[#31363E] mb-4">오늘의 감상평</h2>
+                <div className="flex flex-col">
+                  {clusterMembersWithSubmissions.map(member => (
+                    <div key={member.id} className="flex gap-3 border-b border-[#F2F4F6] py-4 first:pt-0 items-start">
+                      <div
+                        className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+                        onClick={() => router.push(appRoutes.profile(member.id, cohortId))}
+                      >
+                        <Image
+                          src={getResizedImageUrl(member.profileImageCircle || member.profileImage) || '/image/default-profile.svg'}
+                          alt={member.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-[14px] text-[#31363E]">{member.name}</span>
+                        </div>
+                        {member.submission?.bookTitle && (
+                          <p className="text-[12px] text-[#8B95A1] mb-2">{member.submission.bookTitle}</p>
+                        )}
+                        <p className="text-[14px] text-[#575E68] leading-[1.5] whitespace-pre-wrap">
+                          {member.submission?.review || '감상평이 없습니다.'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Daily Answers Section */}
+              <section>
+                <h2 className="text-[18px] font-bold text-[#31363E] mb-4">오늘의 가치관</h2>
+                <div className="flex flex-col">
+                  {clusterMembersWithSubmissions.map(member => (
+                    <div key={member.id} className="flex gap-3 border-b border-[#F2F4F6] py-4 first:pt-0 items-start">
+                      <div
+                        className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+                        onClick={() => router.push(appRoutes.profile(member.id, cohortId))}
+                      >
+                        <Image
+                          src={getResizedImageUrl(member.profileImageCircle || member.profileImage) || '/image/default-profile.svg'}
+                          alt={member.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-[14px] text-[#31363E]">{member.name}</span>
+                        </div>
+                        <p className="text-[14px] text-[#575E68] leading-[1.5] whitespace-pre-wrap">
+                          {member.submission?.dailyAnswer || '답변이 없습니다.'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </main>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // ========================================
   // 1단계: 최초 인증자 (누적 0회)
   // ========================================
   if (isFirstTimeUser) {
@@ -1333,23 +1499,51 @@ function TodayLibraryV3Content() {
   // ... (skipping imports for now, will do in next step)
 
   // 뒤로가기 핸들러
+  // - PostProgramView에서 진입: PostProgramView로 복귀
   // - 내 모임: 메인 화면(채팅)으로 이동 (히스토리 무관하게 명확한 동선)
   // - 다른 모임 구경 중: 클러스터 목록으로 이동
   const handleBack = () => {
-    if (isViewingOtherCluster) {
+    if (fromRecap) {
+      // PostProgramView로 돌아가기 (matchingDate 파라미터 없이)
+      router.push(appRoutes.todayLibrary(cohortId!));
+    } else if (isViewingOtherCluster) {
       router.push(appRoutes.todayLibraryOtherClusters(cohortId!));
     } else {
       router.push(appRoutes.chat(cohortId!));
     }
   };
 
+  // TopBar 타이틀 결정
+  const getTopBarTitle = () => {
+    if (isViewingOtherCluster) return "다른 모임 구경 중";
+
+    const matchingDate = clusterMatching?.matchingDate;
+    if (!matchingDate) return "오늘의 서재";
+
+    // 모임일 = 인증일(matchingDate) + 1일
+    const meetingDate = addDays(parseISO(matchingDate), 1);
+    const meetingDateStr = format(meetingDate, 'yyyy-MM-dd');
+    const isToday = meetingDateStr === todayDate;
+
+    if (fromRecap && cohort?.startDate) {
+      // PostProgramView에서 진입: Day N 모임
+      const programStartDate = parseISO(cohort.startDate);
+      const dayNumber = differenceInDays(meetingDate, programStartDate);
+      return `Day ${dayNumber} 모임`;
+    }
+
+    if (isToday) return "오늘의 서재";
+
+    // 과거 날짜: M/D 모임
+    return `${format(meetingDate, 'M/d')} 모임`;
+  };
 
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-[#F6F6F6]">
-        {/* Custom Header using TopBar - Changed to bg-white as per feedback */}
+        {/* Custom Header using TopBar */}
         <TopBar
-          title={isViewingOtherCluster ? "다른 모임 구경 중" : "오늘의 서재"}
+          title={getTopBarTitle()}
           onBack={handleBack}
           align="center"
           className="bg-white border-b-0"
@@ -1378,15 +1572,15 @@ function TodayLibraryV3Content() {
                 <ChevronLeft className="size-4" />
                 내 모임으로 돌아가기
               </button>
-            ) : (
-              /* 다른 모임 구경하기 - 오른쪽 */
+            ) : !fromRecap ? (
+              /* 다른 모임 구경하기 - 오른쪽 (PostProgramView에서 진입 시 숨김) */
               <button
                 onClick={() => router.push(appRoutes.todayLibraryOtherClusters(cohortId!))}
                 className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
               >
                 다른 모임 구경하기 <ChevronRight className="size-4" />
               </button>
-            )}
+            ) : null}
           </div>
 
           {/* 1. Theme Section (Top) */}
@@ -1407,9 +1601,8 @@ function TodayLibraryV3Content() {
                   const isToday = meetingDate === todayDate;
 
                   return (
-                    <div className={`text-[12px] font-bold px-3 py-1 rounded-[12px] ${
-                      isToday ? 'bg-black text-white' : 'bg-gray-400 text-white'
-                    }`}>
+                    <div className={`text-[12px] font-bold px-3 py-1 rounded-[12px] ${isToday ? 'bg-black text-white' : 'bg-gray-400 text-white'
+                      }`}>
                       {isToday
                         ? '오늘 모임'
                         : `${meetingDate ? format(parseISO(meetingDate), 'M/d') : ''} 모임`}

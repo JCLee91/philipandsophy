@@ -12,6 +12,7 @@ type ChatFooterSectionProps = {
   hasSubmittedToday: boolean;
   isSocializingActive?: boolean;
   cohortName?: string; // 기수 이름 (예: "2기")
+  useClusterMatching?: boolean; // V3 클러스터 매칭 여부
   onRequestSubmission: () => void;
   onNavigateDashboard: () => void;
   onNavigateTodayLibrary: () => void;
@@ -25,6 +26,7 @@ export function ChatFooterSection({
   hasSubmittedToday,
   isSocializingActive,
   cohortName,
+  useClusterMatching,
   onRequestSubmission,
   onNavigateDashboard,
   onNavigateTodayLibrary,
@@ -69,7 +71,14 @@ export function ChatFooterSection({
                     !isSocializingActive && "col-span-2"
                   )}
                 >
-                  {cohortName ? (
+                  {useClusterMatching ? (
+                    // V3: 클러스터 매칭 - 파티 준비 컨셉
+                    <span className="flex flex-col items-center">
+                      <span>{cohortName || ''}</span>
+                      <span>우리의 여정</span>
+                    </span>
+                  ) : cohortName ? (
+                    // V2: 멤버의 서재
                     <span className="flex flex-col items-center">
                       <span>{cohortName}</span>
                       <span>멤버의 서재</span>

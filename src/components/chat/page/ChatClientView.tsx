@@ -387,7 +387,29 @@ export function ChatClientView({
     }
   }, [cohort?.programStartDate]);
   const isDay1 = currentDay === 1;
-  const isAfterDay14 = currentDay !== null && currentDay > 14;
+
+  // ✅ FIX: 프로그램 종료 여부는 endDate 기준으로 판단 (14일 하드코딩 제거)
+  const isProgramEnded = useMemo(() => {
+    if (!cohort?.endDate) return false;
+
+    try {
+      const endDate = parseISO(cohort.endDate);
+      const today = parseISO(getSubmissionDate());
+
+      if (isNaN(endDate.getTime()) || isNaN(today.getTime())) {
+        return false;
+      }
+
+      // 오늘이 종료일 이후면 프로그램 종료
+      return differenceInDays(today, endDate) > 0;
+    } catch (error) {
+      logger.error('Error calculating isProgramEnded', error);
+      return false;
+    }
+  }, [cohort?.endDate]);
+
+  // isAfterDay14는 isProgramEnded로 대체
+  const isAfterDay14 = isProgramEnded;
 
   const noticeActions = useNoticeActions();
 
@@ -688,6 +710,7 @@ export function ChatClientView({
               hasSubmittedToday={hasSubmittedToday}
               isSocializingActive={isSocializingActive}
               cohortName={cohort?.name}
+              useClusterMatching={cohort?.useClusterMatching}
               onRequestSubmission={handleOpenSubmissionFlow}
               onNavigateDashboard={handleNavigateDashboard}
               onNavigateTodayLibrary={handleNavigateTodayLibrary}
