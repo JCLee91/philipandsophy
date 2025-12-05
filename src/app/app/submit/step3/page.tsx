@@ -138,8 +138,9 @@ function Step3Content() {
   }, [selectedBook, manualTitle, review, cohortId, existingSubmissionId, router, toast, isSubmitting, isSubmitSuccess, _hasHydrated]);
 
   // 일일 질문 로드 (Firestore cohort별 daily_questions에서)
+  // 수정 모드에서는 기존 제출물의 질문을 사용하므로 스킵
   useEffect(() => {
-    if (!cohortId) return;
+    if (!cohortId || existingSubmissionId) return;
 
     const loadQuestion = async () => {
       setIsLoadingQuestion(true);
@@ -156,7 +157,7 @@ function Step3Content() {
     };
 
     loadQuestion();
-  }, [cohortId, submissionDate]);
+  }, [cohortId, submissionDate, existingSubmissionId]);
 
   // 임시저장 답변 로드 (새 제출 시)
   useEffect(() => {
@@ -180,11 +181,12 @@ function Step3Content() {
     loadDraft();
   }, [participant, cohortId, existingSubmissionId, submissionDate, setGlobalDailyAnswer]);
 
-  // 기존 제출물 답변 로드 (수정 모드)
+  // 기존 제출물 답변 및 질문 로드 (수정 모드)
   useEffect(() => {
     if (!existingSubmissionId || loadedExistingDailyAnswerRef.current) return;
 
     const loadExistingAnswer = async () => {
+      setIsLoadingQuestion(true);
       try {
         const { getSubmissionById } = await import('@/lib/firebase/submissions');
         const submission = await getSubmissionById(existingSubmissionId);
@@ -192,10 +194,19 @@ function Step3Content() {
         if (submission?.dailyAnswer) {
           setGlobalDailyAnswer(submission.dailyAnswer);
           setLocalDailyAnswer(submission.dailyAnswer);
-          loadedExistingDailyAnswerRef.current = true;
         }
+        // 수정 모드에서는 기존 제출물의 질문을 표시 (답변과 일치하도록)
+        if (submission?.dailyQuestion) {
+          setDailyQuestion(submission.dailyQuestion);
+        } else {
+          setDailyQuestion('오늘 하루는 어떠셨나요?');
+        }
+        loadedExistingDailyAnswerRef.current = true;
       } catch (error) {
         logger.error('[Step3] Existing submission load error:', error);
+        setDailyQuestion('오늘 하루는 어떠셨나요?');
+      } finally {
+        setIsLoadingQuestion(false);
       }
     };
 
