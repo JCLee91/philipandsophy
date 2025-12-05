@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
 import { saveDraft, createSubmission, updateParticipantBookInfo } from '@/lib/firebase';
-import { getDailyQuestion } from '@/constants/daily-questions';
+import { getDailyQuestion } from '@/lib/firebase/daily-questions';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { useSubmissionCommon } from '@/hooks/use-submission-common';
 import SubmissionLayout from '@/components/submission/SubmissionLayout';
@@ -105,21 +105,25 @@ function Step3Content() {
     }
   }, [selectedBook, manualTitle, review, cohortId, existingSubmissionId, router, toast, isSubmitting]);
 
-  // 일일 질문 로드 (constants에서)
+  // 일일 질문 로드 (Firestore cohort별 daily_questions에서)
   useEffect(() => {
     if (!cohortId) return;
 
-    setIsLoadingQuestion(true);
-    try {
-      const dateForQuestion = submissionDate || getSubmissionDate();
-      const questionObj = getDailyQuestion(dateForQuestion, true);
-      setDailyQuestion(questionObj.question);
-    } catch (error) {
-      logger.error('[Step3] getDailyQuestion error:', error);
-      setDailyQuestion('오늘 하루는 어떠셨나요?');
-    } finally {
-      setIsLoadingQuestion(false);
-    }
+    const loadQuestion = async () => {
+      setIsLoadingQuestion(true);
+      try {
+        const dateForQuestion = submissionDate || getSubmissionDate();
+        const questionObj = await getDailyQuestion(cohortId, dateForQuestion);
+        setDailyQuestion(questionObj?.question || '오늘 하루는 어떠셨나요?');
+      } catch (error) {
+        logger.error('[Step3] getDailyQuestion error:', error);
+        setDailyQuestion('오늘 하루는 어떠셨나요?');
+      } finally {
+        setIsLoadingQuestion(false);
+      }
+    };
+
+    loadQuestion();
   }, [cohortId, submissionDate]);
 
   // 임시저장 답변 로드 (새 제출 시)
