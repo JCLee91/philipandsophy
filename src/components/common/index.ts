@@ -11,4 +11,4 @@ export { TopBar } from './headers';
 export { EmptyState, LoadingSpinner } from './states';
 
 // Layouts
-// export { PageShell } from './layouts';
+export { FooterActions } from './layouts';

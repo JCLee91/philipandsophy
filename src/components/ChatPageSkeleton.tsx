@@ -1,5 +1,7 @@
 'use client';
 
+import FooterActions from '@/components/FooterActions';
+
 /**
  * ChatPage 스켈레톤 컴포넌트
  * 헤더와 공지사항 리스트 로딩 상태 표시 (접근성 개선)
@@ -66,18 +68,14 @@ export function NoticeListSkeleton() {
 
 export function FooterActionsSkeleton() {
   return (
-    <div
-      className="shrink-0 border-t bg-white"
-      role="status"
-      aria-label="하단 버튼 로딩 중"
-    >
-      <div className="mx-auto max-w-md px-6 app-footer">
+    <FooterActions>
+      <div role="status" aria-label="하단 버튼 로딩 중">
         <div className="grid grid-cols-2 gap-2" aria-hidden="true">
           <div className="h-14 rounded-lg shimmer" />
           <div className="h-14 rounded-lg shimmer" />
         </div>
         <span className="sr-only">액션 버튼을 불러오는 중입니다...</span>
       </div>
-    </div>
+    </FooterActions>
   );
 }

@@ -10,6 +10,7 @@ import ProfileImageDialog from '@/components/ProfileImageDialog';
 import ImageViewerDialog from '@/components/ImageViewerDialog';
 import { ParticipantCard } from '@/components/ParticipantCard';
 import UnifiedButton from '@/components/UnifiedButton';
+import FooterActions from '@/components/FooterActions';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useViewMode } from '@/contexts/ViewModeContext';
@@ -198,21 +199,19 @@ function ParticipantsPageContent() {
           </div>
         </main>
 
-        <div className="border-t bg-white">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 pt-4 pb-[30px]">
-            <UnifiedButton
-              variant="destructive"
-              onClick={async () => {
-                await logout();
-                // Next.js 캐시를 무시하고 완전히 새로 로드
-                window.location.href = '/app';
-              }}
-              icon={<LogOut className="h-5 w-5" />}
-            >
-              로그아웃
-            </UnifiedButton>
-          </div>
-        </div>
+        <FooterActions maxWidth="xl">
+          <UnifiedButton
+            variant="destructive"
+            onClick={async () => {
+              await logout();
+              // Next.js 캐시를 무시하고 완전히 새로 로드
+              window.location.href = '/app';
+            }}
+            icon={<LogOut className="h-5 w-5" />}
+          >
+            로그아웃
+          </UnifiedButton>
+        </FooterActions>
 
         <DirectMessageDialog
           open={dmDialogOpen}
