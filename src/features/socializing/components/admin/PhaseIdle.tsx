@@ -117,7 +117,7 @@ export default function PhaseIdle({
                         size="sm"
                         onClick={() => toggleLocation(place)}
                         className={cn(
-                          'h-8 px-3 text-xs transition-all font-normal',
+                          'h-8 px-3 text-xs transition-all',
                           isSelected ? 'ring-2 ring-primary/20' : 'hover:bg-gray-100'
                         )}
                       >

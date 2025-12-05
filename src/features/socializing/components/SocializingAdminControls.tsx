@@ -35,7 +35,7 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
               size="sm"
               onClick={admin.handleReset}
               disabled={admin.isPending}
-              className="text-muted-foreground h-8 font-normal"
+              className="text-muted-foreground h-8"
               icon={<RefreshCw className="w-3 h-3" />}
             >
               초기화

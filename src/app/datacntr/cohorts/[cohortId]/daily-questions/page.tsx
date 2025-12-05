@@ -407,7 +407,7 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
             type="button"
             variant="outline"
             fullWidth
-            className="border-dashed h-12 font-normal"
+            className="border-dashed h-12"
             onClick={handleAddQuestion}
             icon={<Plus className="h-4 w-4" />}
           >

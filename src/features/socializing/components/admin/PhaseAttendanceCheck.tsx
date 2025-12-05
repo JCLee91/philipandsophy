@@ -33,7 +33,7 @@ export default function PhaseAttendanceCheck({
           size="sm"
           onClick={onRefreshStats}
           disabled={isPending}
-          className="h-7 text-xs font-normal"
+          className="h-7 text-xs"
           icon={<RefreshCw className={cn('w-3 h-3', isPending && 'animate-spin')} />}
         >
           새로고침
