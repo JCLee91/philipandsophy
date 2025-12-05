@@ -91,6 +91,7 @@ export async function createSubmission(
   await setDoc(docRef, {
     ...data,
     submissionDate,
+    submittedAt: now,
     createdAt: now,
     updatedAt: now,
   });
