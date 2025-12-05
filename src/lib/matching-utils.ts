@@ -196,3 +196,49 @@ export function findLatestClusterMatching(
 
   return null;
 }
+
+/**
+ * 특정 clusterId로 클러스터 정보 찾기 (다른 모임 구경가기용)
+ *
+ * @param dailyFeaturedParticipants - 날짜별 매칭 결과 맵
+ * @param targetClusterId - 찾고자 하는 클러스터 ID
+ * @param preferredDate - 우선적으로 확인할 날짜
+ * @returns 클러스터 매칭 데이터, 없으면 null
+ */
+export function findClusterById(
+  dailyFeaturedParticipants: Record<string, any>,
+  targetClusterId: string,
+  preferredDate?: string
+): ClusterMatchingData | null {
+  const dates = Object.keys(dailyFeaturedParticipants).sort().reverse();
+
+  // 1차: preferredDate 우선
+  if (preferredDate && dailyFeaturedParticipants[preferredDate]) {
+    const dayData = dailyFeaturedParticipants[preferredDate];
+    if (dayData.matchingVersion === 'cluster' && dayData.clusters?.[targetClusterId]) {
+      const cluster = dayData.clusters[targetClusterId];
+      return {
+        clusterId: targetClusterId,
+        cluster,
+        assignedIds: cluster.memberIds || [],
+        matchingDate: preferredDate
+      };
+    }
+  }
+
+  // 2차: 가장 최근 클러스터 매칭에서 찾기
+  for (const date of dates) {
+    const dayData = dailyFeaturedParticipants[date];
+    if (dayData.matchingVersion === 'cluster' && dayData.clusters?.[targetClusterId]) {
+      const cluster = dayData.clusters[targetClusterId];
+      return {
+        clusterId: targetClusterId,
+        cluster,
+        assignedIds: cluster.memberIds || [],
+        matchingDate: date
+      };
+    }
+  }
+
+  return null;
+}

@@ -8,6 +8,7 @@ import { useActivityChart } from '@/hooks/datacntr/use-activity-chart';
 import { useDatacntrStore } from '@/stores/datacntr-store';
 import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
+import CohortDateBanner from '@/components/datacntr/dashboard/CohortDateBanner';
 import AIChatPanel from '@/components/datacntr/AIChatPanel';
 import { Users, BookOpen, FileText, BellRing, TrendingUp } from 'lucide-react';
 
@@ -65,6 +66,17 @@ export default function DataCenterPage() {
           {selectedCohort ? `${selectedCohort.name} 기수 현황` : '기수별 서비스 현황을 한눈에 확인하세요'}
         </p>
       </div>
+
+      {/* 기수 일정 배너 */}
+      {selectedCohort && (
+        <CohortDateBanner
+          startDate={selectedCohort.startDate}
+          endDate={selectedCohort.endDate}
+          programStartDate={selectedCohort.programStartDate}
+          cohortName={selectedCohort.name}
+          isLoading={cohortsLoading}
+        />
+      )}
 
       {/* 메트릭 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

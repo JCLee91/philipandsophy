@@ -1,179 +1,74 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, XCircle, Filter, MoreVertical, BookOpen, Eye, Edit, Users } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, BookOpen, Eye, Edit } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
-import { useDatacntrStore } from '@/stores/datacntr-store';
-import DataTable, { Column, SortDirection } from '@/components/datacntr/table/DataTable';
+import { useDatacntrAuth, useFetchWithAuth, useTableState } from '@/hooks/datacntr';
+import { DatacntrPageShell } from '@/components/datacntr/layout';
+import { DatacntrDropdownMenu, type DropdownMenuItem } from '@/components/datacntr/common';
+import DataTable, { Column } from '@/components/datacntr/table/DataTable';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TablePagination from '@/components/datacntr/table/TablePagination';
 import { dataCenterParticipantSchema, type DataCenterParticipant } from '@/types/datacntr';
 import FormSelect from '@/components/datacntr/form/FormSelect';
 import ParticipantEditDialog from '@/components/datacntr/participants/ParticipantEditDialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
 import { httpsCallable } from 'firebase/functions';
 import { signInWithCustomToken } from 'firebase/auth';
 import { getFirebaseFunctions, getFirebaseAuth } from '@/lib/firebase/client';
 
-// ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
+
 type ParticipantRow = DataCenterParticipant;
 
 type FilterState = {
   pushToken: 'all' | 'enabled' | 'disabled';
-  activityStatus?: 'all' | 'active' | 'moderate' | 'dormant';
-  engagementLevel?: 'all' | 'high' | 'medium' | 'low';
 };
 
 export default function ParticipantsPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
-  const { selectedCohortId } = useDatacntrStore();
-  const [participants, setParticipants] = useState<ParticipantRow[]>([]);
-  const [filteredParticipants, setFilteredParticipants] = useState<ParticipantRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortKey, setSortKey] = useState<string>('');
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filters, setFilters] = useState<FilterState>({
-    pushToken: 'all',
-    activityStatus: 'all',
-    engagementLevel: 'all',
-  });
+  const { user, isLoading: authLoading, needsCohortSelection, selectedCohortId } = useDatacntrAuth();
   const [showFilters, setShowFilters] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<ParticipantRow | null>(null);
-  const itemsPerPage = 50;
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
-  // 로그인 체크
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/datacntr/login');
-    }
-  }, [authLoading, user, router]);
+  // 데이터 fetch
+  const { data: rawData, isLoading: dataLoading, refetch } = useFetchWithAuth<unknown[]>({
+    url: `/api/datacntr/participants?cohortId=${selectedCohortId}`,
+    enabled: !!selectedCohortId,
+    deps: [selectedCohortId],
+  });
 
-  // 참가자 데이터 로드 (기수별 필터링)
-  useEffect(() => {
-    if (!user || !selectedCohortId) return;
+  // 데이터 파싱
+  const participants = rawData
+    ? (dataCenterParticipantSchema.array().parse(rawData) as ParticipantRow[])
+    : [];
 
-    const fetchParticipants = async () => {
-      try {
-        setIsLoading(true);
-        const idToken = await user.getIdToken();
-        const url = `/api/datacntr/participants?cohortId=${selectedCohortId}`;
-
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('참가자 조회 실패');
-        }
-
-        const rawData = await response.json();
-        const parsedData = dataCenterParticipantSchema.array().parse(rawData) as ParticipantRow[];
-
-        setParticipants(parsedData);
-        setFilteredParticipants(parsedData);
-      } catch (error) {
-
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchParticipants();
-  }, [user, selectedCohortId]);
-
-  // 검색 및 필터링
-  useEffect(() => {
-    let filtered = [...participants];
-
-    // 텍스트 검색
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.phoneNumber.includes(searchQuery) ||
-          p.cohortName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // 푸시 알림 필터
-    if (filters.pushToken !== 'all') {
-      if (filters.pushToken === 'enabled') {
-        filtered = filtered.filter((p) => !!p.hasPushToken);
-      } else {
-        filtered = filtered.filter((p) => !p.hasPushToken);
-      }
-    }
-
-    // 정렬
-    if (sortKey && sortDirection) {
-      filtered.sort((a, b) => {
-        const aValue = a[sortKey as keyof ParticipantRow];
-        const bValue = b[sortKey as keyof ParticipantRow];
-
-        // Null 처리
-        if (aValue === undefined || aValue === null) return 1;
-        if (bValue === undefined || bValue === null) return -1;
-
-        // Timestamp 타입 처리 (createdAt)
-        if (sortKey === 'createdAt') {
-          // Firebase Timestamp 객체 직접 비교 (Client SDK: seconds, Admin SDK: _seconds)
-          const getTimestamp = (val: any): number => {
-            if (!val || typeof val !== 'object') return 0;
-
-            // Client SDK Timestamp: { seconds, nanoseconds }
-            if ('seconds' in val) return val.seconds;
-
-            // Admin SDK Timestamp: { _seconds, _nanoseconds }
-            if ('_seconds' in val) return val._seconds;
-
-            return 0;
-          };
-
-          const aTime = getTimestamp(aValue);
-          const bTime = getTimestamp(bValue);
-
-          return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
-        }
-
-        // 불리언 타입 처리 (푸시 허용 여부 등)
-        if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
-          return sortDirection === 'asc'
-            ? Number(aValue) - Number(bValue)
-            : Number(bValue) - Number(aValue);
-        }
-
-        // 숫자 타입 처리 (submissionCount)
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-        }
-
-        // 문자열 타입 처리 (name, cohortName 등)
-        const aStr = String(aValue).toLowerCase();
-        const bStr = String(bValue).toLowerCase();
-
-        return sortDirection === 'asc'
-          ? aStr.localeCompare(bStr, 'ko')
-          : bStr.localeCompare(aStr, 'ko');
-      });
-    }
-
-    setFilteredParticipants(filtered);
-    setCurrentPage(1); // 필터링 시 첫 페이지로
-  }, [searchQuery, filters, sortKey, sortDirection, participants]);
+  // 테이블 상태 관리
+  const {
+    paginatedData,
+    filteredData,
+    searchQuery,
+    setSearchQuery,
+    sortKey,
+    sortDirection,
+    handleSort,
+    filters,
+    setFilters,
+    currentPage,
+    totalPages,
+    setCurrentPage,
+    itemsPerPage,
+  } = useTableState<ParticipantRow, FilterState>({
+    data: participants,
+    initialFilters: { pushToken: 'all' },
+    searchFields: ['name', 'phoneNumber', 'cohortName'],
+    filterFn: (item, filters) => {
+      if (filters.pushToken === 'enabled') return !!item.hasPushToken;
+      if (filters.pushToken === 'disabled') return !item.hasPushToken;
+      return true;
+    },
+  });
 
   const handleImpersonate = async (targetUid: string, name: string) => {
     if (!confirm(`정말 '${name}' 님으로 로그인하시겠습니까?\n관리자 세션은 종료되며 해당 유저의 화면을 보게 됩니다.`)) {
@@ -181,91 +76,67 @@ export default function ParticipantsPage() {
     }
 
     try {
-      setIsLoading(true);
+      setIsImpersonating(true);
       const functions = getFirebaseFunctions();
       const getImpersonationToken = httpsCallable(functions, 'getImpersonationToken');
 
       const result = await getImpersonationToken({ targetUid });
       const { customToken, adminToken } = result.data as { customToken: string; adminToken: string };
 
-      // 1. 관리자 복귀용 토큰 저장
       if (adminToken) {
         sessionStorage.setItem('pns_admin_token', adminToken);
       }
-      
-      // 2. 배너 표시 플래그 및 복귀 경로 저장
       sessionStorage.setItem('pns_admin_impersonation', 'true');
       sessionStorage.setItem('pns_impersonation_return_url', '/datacntr/participants');
 
-      // 3. 타겟 유저로 로그인
       const auth = getFirebaseAuth();
       await signInWithCustomToken(auth, customToken);
-      
-      // 메인 앱으로 이동
       router.push('/app');
-      
     } catch (error) {
       console.error('Impersonation failed:', error);
       alert('유저로 로그인하기 실패했습니다. 권한을 확인해주세요.');
-      setIsLoading(false);
+      setIsImpersonating(false);
     }
   };
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  const getDropdownItems = (p: ParticipantRow): DropdownMenuItem[] => {
+    const items: DropdownMenuItem[] = [
+      {
+        label: '정보 수정',
+        icon: Edit,
+        onClick: () => setEditingParticipant(p),
+      },
+      {
+        label: '프로필북 보기',
+        icon: BookOpen,
+        onClick: () => window.open(`/app/profile/${p.id}`, '_blank'),
+      },
+    ];
 
-  if (!user) return null;
+    // 본인(관리자)이 아닌 경우에만 표시
+    if (p.firebaseUid !== user?.uid) {
+      items.push({
+        label: '이 유저로 보기',
+        icon: Eye,
+        onClick: () => handleImpersonate(p.firebaseUid, p.name),
+        variant: 'warning',
+        separator: true,
+      });
+    }
 
-  // 기수가 선택되지 않은 경우
-  if (!selectedCohortId) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">참가자 관리</h1>
-        </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
-          <Users className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">기수를 먼저 선택해주세요</h2>
-          <p className="text-gray-600">상단 헤더에서 기수를 선택해야 합니다.</p>
-        </div>
-      </div>
-    );
-  }
+    return items;
+  };
 
   const columns: Column<ParticipantRow>[] = [
-    {
-      key: 'name',
-      header: '이름',
-      sortable: true,
-      width: '12%',
-    },
+    { key: 'name', header: '이름', sortable: true, width: '12%' },
     {
       key: 'gender',
       header: '성별',
-      render: (p) => {
-        if (p.gender === 'male') return '남성';
-        if (p.gender === 'female') return '여성';
-        return '-';
-      },
+      render: (p) => (p.gender === 'male' ? '남성' : p.gender === 'female' ? '여성' : '-'),
       width: '8%',
     },
-    {
-      key: 'occupation',
-      header: '직업',
-      render: (p) => p.occupation || '-',
-      width: '12%',
-    },
-    {
-      key: 'cohortName',
-      header: '코호트',
-      sortable: true,
-      width: '12%',
-    },
+    { key: 'occupation', header: '직업', render: (p) => p.occupation || '-', width: '12%' },
+    { key: 'cohortName', header: '코호트', sortable: true, width: '12%' },
     {
       key: 'submissionCount',
       header: '인증',
@@ -273,31 +144,23 @@ export default function ParticipantsPage() {
       render: (p) => `${p.submissionCount}회`,
       width: '10%',
     },
-    {
-      key: 'phoneNumber',
-      header: '전화번호',
-      width: '15%',
-    },
+    { key: 'phoneNumber', header: '전화번호', width: '15%' },
     {
       key: 'hasPushToken',
       header: '푸시 알림',
       sortable: true,
-      render: (p) => {
-        if (p.hasPushToken) {
-          return (
-            <span className="inline-flex items-center gap-1 text-green-600 text-sm">
-              <CheckCircle className="h-4 w-4" />
-              허용
-            </span>
-          );
-        }
-        return (
+      render: (p) =>
+        p.hasPushToken ? (
+          <span className="inline-flex items-center gap-1 text-green-600 text-sm">
+            <CheckCircle className="h-4 w-4" />
+            허용
+          </span>
+        ) : (
           <span className="inline-flex items-center gap-1 text-gray-400 text-sm">
             <XCircle className="h-4 w-4" />
             거부
           </span>
-        );
-      },
+        ),
       width: '12%',
     },
     {
@@ -311,61 +174,22 @@ export default function ParticipantsPage() {
       key: 'actions',
       header: '액션',
       width: '8%',
-      render: (p) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <MoreVertical className="h-4 w-4 text-gray-600" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setEditingParticipant(p)}>
-              <Edit className="h-4 w-4 mr-2" />
-              정보 수정
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                window.open(`/app/profile/${p.id}`, '_blank');
-              }}
-            >
-              <BookOpen className="h-4 w-4 mr-2" />
-              프로필북 보기
-            </DropdownMenuItem>
-            {/* 본인(관리자)이 아닌 경우에만 표시 */}
-            {p.firebaseUid !== user.uid && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-amber-600 focus:text-amber-700 focus:bg-amber-50"
-                  onClick={() => handleImpersonate(p.firebaseUid, p.name)}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  이 유저로 보기
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      render: (p) => <DatacntrDropdownMenu items={getDropdownItems(p)} />,
     },
   ];
 
-  // 페이지네이션
-  const totalPages = Math.ceil(filteredParticipants.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedData = filteredParticipants.slice(startIndex, endIndex);
+  const isLoading = authLoading || dataLoading || isImpersonating;
+
+  if (!user && !authLoading) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">참가자 관리</h1>
-        <p className="text-gray-600 mt-2">전체 참가자 목록 및 활동 현황</p>
-      </div>
-
+    <DatacntrPageShell
+      title="참가자 관리"
+      description="전체 참가자 목록 및 활동 현황"
+      isLoading={isLoading}
+      requiresCohort
+      hasCohortSelected={!!selectedCohortId}
+    >
       {/* 검색 및 필터 */}
       <div className="mb-6 space-y-4">
         <div className="flex gap-3">
@@ -388,9 +212,7 @@ export default function ParticipantsPage() {
             <Filter className="h-4 w-4" />
             필터
             {filters.pushToken !== 'all' && (
-              <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
-                1
-              </span>
+              <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">1</span>
             )}
           </button>
         </div>
@@ -398,23 +220,16 @@ export default function ParticipantsPage() {
         {/* 필터 패널 */}
         {showFilters && (
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div>
-              {/* 푸시 알림 */}
-              <FormSelect
-                label="푸시 알림"
-                value={filters.pushToken}
-                onChange={(value) =>
-                  setFilters({ pushToken: value as FilterState['pushToken'] })
-                }
-                options={[
-                  { value: 'all', label: '전체' },
-                  { value: 'enabled', label: '허용' },
-                  { value: 'disabled', label: '거부' },
-                ]}
-              />
-            </div>
-
-            {/* 필터 초기화 */}
+            <FormSelect
+              label="푸시 알림"
+              value={filters.pushToken}
+              onChange={(value) => setFilters({ pushToken: value as FilterState['pushToken'] })}
+              options={[
+                { value: 'all', label: '전체' },
+                { value: 'enabled', label: '허용' },
+                { value: 'disabled', label: '거부' },
+              ]}
+            />
             {filters.pushToken !== 'all' && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <button
@@ -437,10 +252,13 @@ export default function ParticipantsPage() {
         sortKey={sortKey}
         sortDirection={sortDirection}
         onSort={(key, direction) => {
-          setSortKey(key);
-          setSortDirection(direction);
+          if (direction === null) {
+            handleSort(key); // toggle to next state
+          } else {
+            handleSort(key);
+          }
         }}
-        isLoading={isLoading}
+        isLoading={dataLoading}
         emptyMessage="참가자가 없습니다"
       />
 
@@ -450,7 +268,7 @@ export default function ParticipantsPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          totalItems={filteredParticipants.length}
+          totalItems={filteredData.length}
           itemsPerPage={itemsPerPage}
         />
       )}
@@ -461,12 +279,9 @@ export default function ParticipantsPage() {
         participant={editingParticipant}
         onSuccess={() => {
           setEditingParticipant(null);
-          // Refresh list - trigger re-fetch by toggling filter or specialized refresh logic
-          // For simplicity, we'll just rely on the fact that the user can refresh or we can force a reload
-          // A better way is to expose a refresh function from the useEffect, but for now:
-          window.location.reload();
+          refetch();
         }}
       />
-    </div>
+    </DatacntrPageShell>
   );
 }

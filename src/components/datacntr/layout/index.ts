@@ -1,0 +1,1 @@
+export { DatacntrPageShell } from './DatacntrPageShell';

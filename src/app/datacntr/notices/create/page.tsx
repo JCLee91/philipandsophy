@@ -1,211 +1,43 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Upload, X, ArrowLeft, Users } from 'lucide-react';
-import Image from 'next/image';
-import { logger } from '@/lib/logger';
-import { useDatacntrStore } from '@/stores/datacntr-store';
-import type { Cohort } from '@/types/database';
+import { Loader2, ArrowLeft, Users } from 'lucide-react';
+import { useDatacntrAuth, useNoticeForm } from '@/hooks/datacntr';
+import { NoticeFormFields } from '@/components/datacntr/notices';
 
 export const dynamic = 'force-dynamic';
 
-export default function NoticeCreatePage() {
+function NoticeCreateContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isLoading: authLoading } = useAuth();
-  const { selectedCohortId } = useDatacntrStore();
+  const templateId = searchParams.get('templateId') || undefined;
+  const { isLoading: authLoading } = useDatacntrAuth();
 
-  const [cohorts, setCohorts] = useState<Cohort[]>([]);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isScheduled, setIsScheduled] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledHour, setScheduledHour] = useState('09');
-  const [scheduledMinute, setScheduledMinute] = useState('00');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-  const [templateImageUrl, setTemplateImageUrl] = useState<string>('');
-  const [isDrafting, setIsDrafting] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // templateId가 있으면 템플릿 데이터 로드
-  useEffect(() => {
-    const templateId = searchParams.get('templateId');
-    if (!templateId || !user) return;
-
-    const fetchTemplate = async () => {
-      try {
-        const idToken = await user.getIdToken();
-        const response = await fetch(`/api/datacntr/notice-templates/${templateId}`, {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('템플릿 조회 실패');
-        }
-
-        const template = await response.json();
-        setContent(template.content);
-        if (template.imageUrl) {
-          setImagePreview(template.imageUrl);
-          setTemplateImageUrl(template.imageUrl);
-        }
-      } catch (error) {
-        logger.error('템플릿 로드 실패:', error);
-        alert('템플릿을 불러오는데 실패했습니다.');
-      }
-    };
-
-    fetchTemplate();
-  }, [searchParams, user]);
-
-  // 코호트 목록 조회 (선택된 코호트 이름을 표시하기 위함)
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchCohorts = async () => {
-      try {
-        const idToken = await user.getIdToken();
-        const response = await fetch('/api/datacntr/cohorts', {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('코호트 조회 실패');
-        }
-
-        const data = await response.json();
-        setCohorts(data);
-      } catch (error) {
-        alert('코호트 목록을 불러오는데 실패했습니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCohorts();
-  }, [user]);
-
-  // 이미지 파일 선택 핸들러
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('이미지 크기는 5MB 이하여야 합니다.');
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 업로드 가능합니다.');
-      return;
-    }
-
-    setImageFile(file);
-    setTemplateImageUrl('');
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // 이미지 제거
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview('');
-    setTemplateImageUrl('');
-  };
-
-  // 공지 작성/임시저장 제출
-  const handleSubmit = async (e: React.FormEvent, isDraft: boolean = false) => {
-    e.preventDefault();
-
-    if (!selectedCohortId) {
-      alert('기수를 먼저 선택해주세요. 상단 헤더에서 기수를 선택할 수 있습니다.');
-      return;
-    }
-
-    if (!content.trim()) {
-      alert('공지 내용을 입력해주세요.');
-      return;
-    }
-
-    if (isScheduled && !scheduledDate) {
-      alert('예약 발행 날짜를 설정해주세요.');
-      return;
-    }
-
-    if (!user) return;
-
-    if (isDraft) {
-      setIsDrafting(true);
-    } else {
-      setIsPublishing(true);
-    }
-
-    try {
-      const idToken = await user.getIdToken();
-      const formData = new FormData();
-      formData.append('cohortId', selectedCohortId);
-      if (title.trim()) {
-        formData.append('title', title.trim());
-      }
-      formData.append('content', content.trim());
-
-      if (isScheduled && !isDraft) {
-        formData.append('status', 'scheduled');
-        const scheduledDateTime = `${scheduledDate}T${scheduledHour}:${scheduledMinute}:00`;
-        formData.append('scheduledAt', new Date(scheduledDateTime).toISOString());
-      } else {
-        formData.append('status', isDraft ? 'draft' : 'published');
-      }
-
-      if (imageFile) {
-        formData.append('image', imageFile);
-      } else if (templateImageUrl) {
-        formData.append('templateImageUrl', templateImageUrl);
-      }
-
-      const response = await fetch('/api/datacntr/notices/create', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '공지 작성 실패');
-      }
-
-      if (isDraft) {
-        alert('공지가 임시저장되었습니다.');
-      } else if (isScheduled) {
-        alert('공지가 예약되었습니다.');
-      } else {
-        alert('공지가 발행되었습니다.');
-      }
-      router.push('/datacntr/notices');
-    } catch (error) {
-      alert(error instanceof Error ? error.message : '공지 작성 중 오류가 발생했습니다.');
-    } finally {
-      if (isDraft) {
-        setIsDrafting(false);
-      } else {
-        setIsPublishing(false);
-      }
-    }
-  };
+  const {
+    title,
+    setTitle,
+    content,
+    setContent,
+    imagePreview,
+    handleImageChange,
+    handleRemoveImage,
+    isScheduled,
+    handleScheduleToggle,
+    scheduledDate,
+    setScheduledDate,
+    scheduledHour,
+    setScheduledHour,
+    scheduledMinute,
+    setScheduledMinute,
+    handleSubmit,
+    isSubmitting,
+    isDrafting,
+    isLoading,
+    needsCohortSelection,
+    selectedCohort,
+    selectedCohortId,
+  } = useNoticeForm({ mode: 'create', templateId });
 
   if (authLoading || isLoading) {
     return (
@@ -215,10 +47,7 @@ export default function NoticeCreatePage() {
     );
   }
 
-  if (!user) return null;
-
-  // 코호트가 선택되지 않은 경우
-  if (!selectedCohortId) {
+  if (needsCohortSelection) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
@@ -252,12 +81,9 @@ export default function NoticeCreatePage() {
     );
   }
 
-  const selectedCohort = cohorts.find((c) => c.id === selectedCohortId);
-  const isSubmitting = isDrafting || isPublishing;
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* 헤더 */}
+      {/* Header */}
       <div className="mb-8">
         <button
           type="button"
@@ -271,177 +97,33 @@ export default function NoticeCreatePage() {
         <p className="text-gray-600 mt-2">참여자들에게 공지사항을 전달합니다.</p>
       </div>
 
-      {/* 공지 작성 폼 */}
-      <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
-        {/* 기수 표시 (고정, 변경 불가) */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-blue-600 font-medium">작성 대상 기수</p>
-              <p className="text-lg font-bold text-gray-900">
-                {selectedCohort?.name || selectedCohortId}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-blue-500 mt-2">
-            * 다른 기수에 공지를 작성하려면 상단 헤더에서 기수를 변경하세요.
-          </p>
-        </div>
+      {/* Form */}
+      <form onSubmit={(e) => handleSubmit(e, false)}>
+        <NoticeFormFields
+          title={title}
+          setTitle={setTitle}
+          content={content}
+          setContent={setContent}
+          imagePreview={imagePreview}
+          onImageChange={handleImageChange}
+          onRemoveImage={handleRemoveImage}
+          isScheduled={isScheduled}
+          onScheduleToggle={handleScheduleToggle}
+          scheduledDate={scheduledDate}
+          setScheduledDate={setScheduledDate}
+          scheduledHour={scheduledHour}
+          setScheduledHour={setScheduledHour}
+          scheduledMinute={scheduledMinute}
+          setScheduledMinute={setScheduledMinute}
+          selectedCohort={selectedCohort}
+          cohortId={selectedCohortId}
+          cohortLabel="작성 대상 기수"
+          cohortHelpText="* 다른 기수에 공지를 작성하려면 상단 헤더에서 기수를 변경하세요."
+        />
 
-        {/* 푸시 알림 제목 (선택) */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            푸시 알림 제목 (선택)
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="푸시 알림에 표시될 제목을 입력하세요 (미입력 시 기본값 사용)"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <p className="text-sm text-gray-500 mt-2">
-            * 채팅방에는 표시되지 않으며, 푸시 알림과 관리자 목록에서만 확인 가능합니다.
-          </p>
-        </div>
-
-        {/* 공지 내용 */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            공지 내용 <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="공지 내용을 입력하세요..."
-            rows={10}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            required
-          />
-          <p className="text-sm text-gray-500 mt-2">현재 {content.length}자</p>
-        </div>
-
-        {/* 이미지 업로드 */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            이미지 첨부 (선택)
-          </label>
-
-          {!imagePreview ? (
-            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
-              <div className="flex flex-col items-center justify-center py-6">
-                <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600 font-medium">
-                  클릭하여 이미지 업로드
-                </p>
-                <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP (최대 5MB)</p>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-            </label>
-          ) : (
-            <div className="relative">
-              <Image
-                src={imagePreview}
-                alt="미리보기"
-                width={600}
-                height={400}
-                className="rounded-lg border border-gray-200 w-full h-auto"
-              />
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 예약 발행 설정 */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <label className="text-sm font-medium text-gray-900">예약 발행 설정</label>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isScheduled"
-                checked={isScheduled}
-                onChange={(e) => {
-                  setIsScheduled(e.target.checked);
-                  if (e.target.checked && !scheduledDate) {
-                    const nextHour = new Date();
-                    nextHour.setHours(nextHour.getHours() + 1);
-                    nextHour.setMinutes(0);
-                    setScheduledDate(nextHour.toISOString().slice(0, 10));
-                    setScheduledHour(String(nextHour.getHours()).padStart(2, '0'));
-                    setScheduledMinute('00');
-                  }
-                }}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isScheduled" className="ml-2 text-sm text-gray-700">
-                나중에 발행하기
-              </label>
-            </div>
-          </div>
-
-          {isScheduled && (
-            <div className="mt-2 space-y-2">
-              <label className="block text-sm text-gray-600">발행 예정 시간</label>
-              <div className="flex gap-2">
-                {/* 날짜 선택 */}
-                <input
-                  type="date"
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                  min={new Date().toISOString().slice(0, 10)}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                {/* 시 선택 */}
-                <select
-                  value={scheduledHour}
-                  onChange={(e) => setScheduledHour(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={String(i).padStart(2, '0')}>
-                      {i}시
-                    </option>
-                  ))}
-                </select>
-                {/* 분 선택 (10분 단위) */}
-                <select
-                  value={scheduledMinute}
-                  onChange={(e) => setScheduledMinute(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {['00', '10', '20', '30', '40', '50'].map((m) => (
-                    <option key={m} value={m}>
-                      {m}분
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="text-xs text-gray-500">
-                * 10분 단위로 예약 발행됩니다.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* 제출 버튼 */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 -mx-4 px-4 py-4 sm:static sm:border-t-0 sm:mx-0 sm:px-0 sm:py-0">
+        {/* Submit buttons */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 -mx-4 px-4 py-4 sm:static sm:border-t-0 sm:mx-0 sm:px-0 sm:py-0 mt-6">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            {/* 취소 버튼 */}
             <button
               type="button"
               onClick={() => router.back()}
@@ -450,7 +132,6 @@ export default function NoticeCreatePage() {
               취소
             </button>
 
-            {/* 오른쪽 버튼 그룹 */}
             <div className="flex items-center gap-3">
               {!isScheduled && (
                 <button
@@ -476,7 +157,7 @@ export default function NoticeCreatePage() {
                   isScheduled ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
-                {isPublishing ? (
+                {isSubmitting && !isDrafting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     {isScheduled ? '예약 중...' : '작성 중...'}
@@ -492,5 +173,19 @@ export default function NoticeCreatePage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NoticeCreatePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      }
+    >
+      <NoticeCreateContent />
+    </Suspense>
   );
 }

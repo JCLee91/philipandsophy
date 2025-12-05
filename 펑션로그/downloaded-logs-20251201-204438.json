@@ -1,0 +1,2767 @@
+[
+  {
+    "insertId": "692d73340008fc028b16bff2",
+    "httpRequest": {
+      "requestMethod": "POST",
+      "requestUrl": "https://onnoticecreated-vliq2xsjqa-du.a.run.app/?__GCP_CloudEventsMode=CE_PUBSUB_BINDING",
+      "requestSize": "3494",
+      "status": 200,
+      "responseSize": "82",
+      "userAgent": "APIs-Google; (+https://developers.google.com/webmasters/APIs-Google.html)",
+      "remoteIp": "34.64.6.97",
+      "serverIp": "34.143.76.2",
+      "latency": "2.324763459s",
+      "protocol": "HTTP/1.1"
+    },
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:30.014943Z",
+    "severity": "INFO",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/cloud_event_source": "//firestore.googleapis.com/projects/philipandsophy/databases/seoul",
+      "run.googleapis.com/cloud_event_id": "083e6aa2-585e-43e2-b671-a9445cfd5610",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Frequests",
+    "trace": "projects/philipandsophy/traces/34e03570838c76e95ab0790619de94af",
+    "receiveTimestamp": "2025-12-01T10:51:32.591066032Z",
+    "spanId": "30236e7ef5602036",
+    "traceSampled": true
+  },
+  {
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "insertId": "692d73320000bb39dbefdcad",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:30.047929Z",
+    "severity": "INFO",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "scaling_reason": "AUTOSCALING"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2025-12-01T10:51:30.050061401Z"
+  },
+  {
+    "textPayload": "Web Push VAPID keys configured in custom notifications",
+    "insertId": "692d7333000409f8ec92b2f6",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.264696Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.267229910Z"
+  },
+  {
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "insertId": "692d733300043cc4ca3efa48",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.277700Z",
+    "severity": "INFO",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2025-12-01T10:51:31.383218032Z"
+  },
+  {
+    "textPayload": "Notice recipients {\"cohortParticipants\":29,\"administrators\":4,\"totalRecipients\":33}\n",
+    "insertId": "692d7333000bc3c60e48f0f1",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.771014Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.933281101Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"admin\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000d62a4b8672686",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.877220Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n148d3zjblnw",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.933281101Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-지효\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000d8b9e9206e104",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.887710Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n148d3zjblnw",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.933281101Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-석원\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000dbfe6baa3b5a7",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.901094Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.933281101Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-가연\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000de57d6318a228",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.910717Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n148d3zjblnw",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.933281101Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-혜란\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000dfd87a5104ae1",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.916871Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n148d3zjblnw",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.933281101Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"HJ\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000e12aa23ec4db8",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.922282Z",
+    "labels": {
+      "execution_id": "n148d3zjblnw",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.933281101Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-희승\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000e3181abb7a5d1",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.930177Z",
+    "labels": {
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n148d3zjblnw",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:31.933281101Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-동순\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000e52862bb9b116",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.938630Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-하현\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000e6a3eef23259f",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.944702Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n148d3zjblnw",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-정윤\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000e81d87070942a",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.950744Z",
+    "labels": {
+      "execution_id": "n148d3zjblnw",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-세온\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000e98fe98d66fe8",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.956670Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Push notifications disabled for participant: testadmin\n",
+    "insertId": "692d7333000eb1707297291a",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.962928Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-태경\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000eba59eb915e96",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.965209Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Push notifications disabled for participant: cohort4-1-진우\n",
+    "insertId": "692d7333000edb974c5869a0",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.973719Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n148d3zjblnw",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-선화\",\"subscriptionCount\":1}\n",
+    "insertId": "692d7333000f215290b66e45",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:31.991570Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n148d3zjblnw",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-1-주현\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73340003c6f23c2370bc",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.247538Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.265488026Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-1-성혁\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d733400041734ce8bf8ae",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.268084Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n148d3zjblnw",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"JY\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d7334000427031f8fd0cc",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.272131Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n148d3zjblnw",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-1-혜진\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73340004922e5b498922",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.299566Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n148d3zjblnw",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-지효\",\"deviceId\":\"1763964122451-147800518-1mgx1mq\"}\n",
+    "insertId": "692d7334000663fef46cbb78",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.418814Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n148d3zjblnw",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-혜란\",\"deviceId\":\"1763790582293-116837582-8irv9ej\"}\n",
+    "insertId": "692d7334000670835b15189d",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.422019Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-동순\",\"deviceId\":\"1763802259448-101562633-ms3qhnp\"}\n",
+    "insertId": "692d7334000678cea42202d0",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.424142Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n148d3zjblnw",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-희승\",\"deviceId\":\"1763789227562-3011304-nvykjj0\"}\n",
+    "insertId": "692d73340006838dc9d00c6e",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.426893Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"HJ\",\"deviceId\":\"1760917937914-1192428363-ksmyu87\"}\n",
+    "insertId": "692d733400068db868bfa101",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.429496Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-선화\",\"deviceId\":\"1764341854284-99440248-2ak344x\"}\n",
+    "insertId": "692d733400069789addfb206",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.432009Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-하현\",\"deviceId\":\"1763861615667-433002582-a31kd4v\"}\n",
+    "insertId": "692d73340006ab274813239f",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.437031Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-세온\",\"deviceId\":\"1763798607537-242362858-4q6g2ze\"}\n",
+    "insertId": "692d73340006b7c660673fa7",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.440262Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n148d3zjblnw",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-정윤\",\"deviceId\":\"1763875963170-99440248-2zpol9h\"}\n",
+    "insertId": "692d73340006be8b2fc6278a",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.441995Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-태경\",\"deviceId\":\"1763817942044-3011304-0hs2cxq\"}\n",
+    "insertId": "692d73340006cdbb7b470e43",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.445883Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n148d3zjblnw",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-가연\",\"deviceId\":\"1763882952996-3011304-ps27ejv\"}\n",
+    "insertId": "692d733400089e355aa8ba48",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.564789Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n148d3zjblnw",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push send failed {\"participantId\":\"cohort4-1-석원\",\"deviceId\":\"1761371461829-99440248-kkfh09g\",\"error\":\"Received unexpected response code\",\"statusCode\":400}\n",
+    "insertId": "692d73340008c9e9d5962bfd",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.575977Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-01T10:51:32.578740962Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"admin\",\"deviceId\":\"1761041430556-379303402-xiejak1\"}\n",
+    "insertId": "692d73340008dd901b390577",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.581008Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n148d3zjblnw"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "textPayload": "Notice push notifications sent (dual-path) {\"noticeId\":\"dOv6LuggJ2azYdSicpgn\",\"totalParticipants\":29,\"totalFCM\":4,\"totalWebPush\":13,\"totalSuccess\":16}\n",
+    "insertId": "692d73340008de31db50998a",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:51:32.581169Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n148d3zjblnw",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:51:32.600528492Z",
+    "spanId": "3468737629567066166"
+  },
+  {
+    "insertId": "692d73b8000814599fd67a75",
+    "httpRequest": {
+      "requestMethod": "POST",
+      "requestUrl": "https://onnoticecreated-vliq2xsjqa-du.a.run.app/?__GCP_CloudEventsMode=CE_PUBSUB_BINDING",
+      "requestSize": "3526",
+      "status": 200,
+      "responseSize": "82",
+      "userAgent": "APIs-Google; (+https://developers.google.com/webmasters/APIs-Google.html)",
+      "remoteIp": "34.64.6.3",
+      "serverIp": "34.143.78.2",
+      "latency": "0.950059513s",
+      "protocol": "HTTP/1.1"
+    },
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.571154Z",
+    "severity": "INFO",
+    "labels": {
+      "run.googleapis.com/cloud_event_source": "//firestore.googleapis.com/projects/philipandsophy/databases/seoul",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/cloud_event_id": "d7991286-7c7a-493b-b3ce-cfabed747436",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Frequests",
+    "trace": "projects/philipandsophy/traces/da4077604a53240e1e4907b84ac70b85",
+    "receiveTimestamp": "2025-12-01T10:53:44.532213113Z",
+    "spanId": "f392df36095e379a",
+    "traceSampled": true
+  },
+  {
+    "textPayload": "Notice recipients {\"cohortParticipants\":29,\"administrators\":4,\"totalRecipients\":33}\n",
+    "insertId": "692d73b7000a07c38ba2883d",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.657347Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n172g0f0nh24",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.658956139Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-가연\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000b9242865238d7",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.758338Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n172g0f0nh24",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-동순\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000bab65c13e7497",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.764773Z",
+    "labels": {
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-혜란\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000c2ff2a2e4fb6c",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.798706Z",
+    "labels": {
+      "execution_id": "n172g0f0nh24",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-지효\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000c503467848416",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.806964Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n172g0f0nh24",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"admin\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000c853c5fa08559",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.820540Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n172g0f0nh24",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-세온\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000c99b479dec4c7",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.825780Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-석원\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000cb01f26e43ae4",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.831519Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n172g0f0nh24",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-선화\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000cc6753f9cbbab",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.837237Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n172g0f0nh24",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Push notifications disabled for participant: cohort4-1-진우\n",
+    "insertId": "692d73b7000cd661749ec720",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.841313Z",
+    "labels": {
+      "execution_id": "n172g0f0nh24",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-태경\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000cdc2c922e2fd4",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.842796Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-하현\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000cfc4c96541e40",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.851020Z",
+    "labels": {
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-정윤\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000da77c82c58558",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.894844Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n172g0f0nh24"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-1-희승\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000ddcd54b21b204",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.908501Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n172g0f0nh24",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Push notifications disabled for participant: testadmin\n",
+    "insertId": "692d73b7000dee895620b44b",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.913033Z",
+    "labels": {
+      "execution_id": "n172g0f0nh24",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"HJ\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73b7000df3c6cc7ff6df",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:43.914374Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:43.994071244Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-1-혜진\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73b800025a1bae7e77bd",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.154139Z",
+    "labels": {
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.326113427Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-1-주현\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73b80002b5c86f96db87",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.177608Z",
+    "labels": {
+      "execution_id": "n172g0f0nh24",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.326113427Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"JY\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73b800031876d030d2de",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.202870Z",
+    "labels": {
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.326113427Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-1-성혁\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73b800032ba87ff74a91",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.207784Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n172g0f0nh24"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.326113427Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push send failed {\"participantId\":\"cohort4-1-석원\",\"deviceId\":\"1761371461829-99440248-kkfh09g\",\"error\":\"Received unexpected response code\",\"statusCode\":400}\n",
+    "insertId": "692d73b8000759ebe76d2042",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.481771Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n172g0f0nh24",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-01T10:53:44.483563103Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-선화\",\"deviceId\":\"1764341854284-99440248-2ak344x\"}\n",
+    "insertId": "692d73b800076fc45bd8243c",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.487364Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n172g0f0nh24",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-가연\",\"deviceId\":\"1763882952996-3011304-ps27ejv\"}\n",
+    "insertId": "692d73b800078ccc6efc5c0e",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.494796Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n172g0f0nh24"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-동순\",\"deviceId\":\"1763802259448-101562633-ms3qhnp\"}\n",
+    "insertId": "692d73b80007920d9a1a9d1a",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.496141Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n172g0f0nh24"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-희승\",\"deviceId\":\"1763789227562-3011304-nvykjj0\"}\n",
+    "insertId": "692d73b800079d29fb0362f3",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.498985Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n172g0f0nh24"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"HJ\",\"deviceId\":\"1760917937914-1192428363-ksmyu87\"}\n",
+    "insertId": "692d73b80007af5cfe6ccc33",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.503644Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n172g0f0nh24"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-태경\",\"deviceId\":\"1763817942044-3011304-0hs2cxq\"}\n",
+    "insertId": "692d73b80007b60e5176c2c2",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.505358Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n172g0f0nh24"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-지효\",\"deviceId\":\"1763964122451-147800518-1mgx1mq\"}\n",
+    "insertId": "692d73b80007c469500c4cdc",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.509033Z",
+    "labels": {
+      "execution_id": "n172g0f0nh24",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-정윤\",\"deviceId\":\"1763875963170-99440248-2zpol9h\"}\n",
+    "insertId": "692d73b80007d6743c4ee569",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.513652Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n172g0f0nh24",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-세온\",\"deviceId\":\"1763798607537-242362858-4q6g2ze\"}\n",
+    "insertId": "692d73b80007e517ae9d2e8e",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.517399Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n172g0f0nh24",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-하현\",\"deviceId\":\"1763861615667-433002582-a31kd4v\"}\n",
+    "insertId": "692d73b80007f90048bc294d",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.522496Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"admin\",\"deviceId\":\"1761041430556-379303402-xiejak1\"}\n",
+    "insertId": "692d73b80007fbccd050a3cd",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.523212Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n172g0f0nh24",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-1-혜란\",\"deviceId\":\"1763790582293-116837582-8irv9ej\"}\n",
+    "insertId": "692d73b800080f17fc617ec6",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.528151Z",
+    "labels": {
+      "execution_id": "n172g0f0nh24",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "textPayload": "Notice push notifications sent (dual-path) {\"noticeId\":\"SXcBr8sL3ENfxQrnFUA0\",\"totalParticipants\":29,\"totalFCM\":4,\"totalWebPush\":13,\"totalSuccess\":16}\n",
+    "insertId": "692d73b800080f8b0176f626",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:53:44.528267Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n172g0f0nh24",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:53:44.658804098Z",
+    "spanId": "17551336120994641818"
+  },
+  {
+    "insertId": "692d73e400027aaf117a85e2",
+    "httpRequest": {
+      "requestMethod": "POST",
+      "requestUrl": "https://onnoticecreated-vliq2xsjqa-du.a.run.app/?__GCP_CloudEventsMode=CE_PUBSUB_BINDING",
+      "requestSize": "3492",
+      "status": 200,
+      "responseSize": "82",
+      "userAgent": "APIs-Google; (+https://developers.google.com/webmasters/APIs-Google.html)",
+      "remoteIp": "34.64.6.99",
+      "serverIp": "34.143.77.2",
+      "latency": "0.715787731s",
+      "protocol": "HTTP/1.1"
+    },
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.440359Z",
+    "severity": "INFO",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/cloud_event_source": "//firestore.googleapis.com/projects/philipandsophy/databases/seoul",
+      "run.googleapis.com/cloud_event_id": "5251f27d-87a5-43f5-af24-006930a9bf00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Frequests",
+    "trace": "projects/philipandsophy/traces/3953934c839eef8f73072c9e3dba3c82",
+    "receiveTimestamp": "2025-12-01T10:54:28.164598295Z",
+    "spanId": "5e0f56fe2ddd95a9",
+    "traceSampled": true
+  },
+  {
+    "textPayload": "Notice recipients {\"cohortParticipants\":29,\"administrators\":4,\"totalRecipients\":33}\n",
+    "insertId": "692d73e30007bfb98aa35ccd",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.507833Z",
+    "labels": {
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n180aidane9n",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.509628811Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-2-선화\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73e30008e049333a004c",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.581705Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n180aidane9n",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-2-아영\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73e300091b3100eb1da6",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.596785Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n180aidane9n",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-2-재학\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73e300092fe4f854f3ec",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.602084Z",
+    "labels": {
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Push notifications disabled for participant: cohort4-2-양원\n",
+    "insertId": "692d73e3000964fdaddcaf22",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.615677Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n180aidane9n",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Push notifications disabled for participant: cohort4-2-선민\n",
+    "insertId": "692d73e3000998c2390c093a",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.628930Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n180aidane9n",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-2-지혜\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73e30009c26ed9d5c44e",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.639598Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n180aidane9n"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-2-선우\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73e3000a9398847f9e60",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.693144Z",
+    "labels": {
+      "execution_id": "n180aidane9n",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"cohort4-2-숙연\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73e3000aa8333743df48",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.698419Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"HJ\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73e3000abdd8a7889bb5",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.703960Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n180aidane9n",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Sending via Web Push (FCM not available) {\"participantId\":\"admin\",\"subscriptionCount\":1}\n",
+    "insertId": "692d73e3000add5af2b17861",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.712026Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n180aidane9n"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Push notifications disabled for participant: testadmin\n",
+    "insertId": "692d73e3000af211e9084973",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.717329Z",
+    "labels": {
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:27.842485736Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-2-건식\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73e3000e62cee44796ee",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.942798Z",
+    "labels": {
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n180aidane9n",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-2-인찬\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73e3000f0ecfa802e3ea",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.986831Z",
+    "labels": {
+      "execution_id": "n180aidane9n",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-2-지현\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73e3000f130daf44dd5f",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "location": "asia-northeast3",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:27.987917Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "execution_id": "n180aidane9n",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"JY\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73e4000016ad45a0edd9",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.005805Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n180aidane9n",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-2-예진\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73e4000023236c18ac73",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.008995Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "execution_id": "n180aidane9n",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "FCM push notification multicast sent {\"participantId\":\"cohort4-2-우경\",\"totalDevices\":1,\"successCount\":1,\"failureCount\":0}\n",
+    "insertId": "692d73e40000b9d19e397350",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.047569Z",
+    "labels": {
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "execution_id": "n180aidane9n",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-2-아영\",\"deviceId\":\"1763801923226-776928073-4uj2c27\"}\n",
+    "insertId": "692d73e4000215a83ae39ad8",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.136616Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n",
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-2-선화\",\"deviceId\":\"1763804909188-99440248-o9lbr8z\"}\n",
+    "insertId": "692d73e4000223678ae0f785",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "project_id": "philipandsophy",
+        "configuration_name": "onnoticecreated",
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.140135Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"admin\",\"deviceId\":\"1761041430556-379303402-xiejak1\"}\n",
+    "insertId": "692d73e400022cda2e73cb2c",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.142554Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-2-선우\",\"deviceId\":\"1763823744217-362211744-j4ia9jf\"}\n",
+    "insertId": "692d73e400023665acef74e6",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.144997Z",
+    "labels": {
+      "execution_id": "n180aidane9n",
+      "goog-managed-by": "cloudfunctions",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"HJ\",\"deviceId\":\"1760917937914-1192428363-ksmyu87\"}\n",
+    "insertId": "692d73e400024a897e2ffcca",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "location": "asia-northeast3",
+        "configuration_name": "onnoticecreated"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.150153Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-2-재학\",\"deviceId\":\"1763818149624-3011304-uhqhc4g\"}\n",
+    "insertId": "692d73e40002552bccae7f20",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.152875Z",
+    "labels": {
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-2-숙연\",\"deviceId\":\"1763902598975-896776959-zkgidnr\"}\n",
+    "insertId": "692d73e400026a940f483669",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "project_id": "philipandsophy",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.158356Z",
+    "labels": {
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "execution_id": "n180aidane9n",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "goog-managed-by": "cloudfunctions"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Web Push sent successfully (iOS PWA) {\"participantId\":\"cohort4-2-지혜\",\"deviceId\":\"1763901374731-1058162885-tlfus8w\"}\n",
+    "insertId": "692d73e4000275794a958f22",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "project_id": "philipandsophy",
+        "revision_name": "onnoticecreated-00016-zuw",
+        "location": "asia-northeast3"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.161145Z",
+    "labels": {
+      "goog-managed-by": "cloudfunctions",
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "execution_id": "n180aidane9n",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-drz-cloudfunctions-location": "asia-northeast3",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  },
+  {
+    "textPayload": "Notice push notifications sent (dual-path) {\"noticeId\":\"FPksE5aducAUR2IdPwJo\",\"totalParticipants\":29,\"totalFCM\":6,\"totalWebPush\":8,\"totalSuccess\":14}\n",
+    "insertId": "692d73e4000275ef4ca5717e",
+    "resource": {
+      "type": "cloud_run_revision",
+      "labels": {
+        "revision_name": "onnoticecreated-00016-zuw",
+        "service_name": "onnoticecreated",
+        "configuration_name": "onnoticecreated",
+        "location": "asia-northeast3",
+        "project_id": "philipandsophy"
+      }
+    },
+    "timestamp": "2025-12-01T10:54:28.161263Z",
+    "labels": {
+      "instanceId": "00147782963486dcda486d20c7afe08fcca047eae7e209e666b5e6ab4ee11c9abe29dce9449cd2bfb4f2526c0f737848c861b166bf79b3a5fee494b2b0123fb7b9836dc5a81c1a7365d15cf98e0a445a716730",
+      "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251109_20_19_5_RC00",
+      "goog-drz-cloudfunctions-id": "onnoticecreated",
+      "firebase-functions-hash": "a0bdca94014b79a3f2087f795ff0d488e5d3f54d",
+      "goog-managed-by": "cloudfunctions",
+      "execution_id": "n180aidane9n",
+      "goog-drz-cloudfunctions-location": "asia-northeast3"
+    },
+    "logName": "projects/philipandsophy/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-01T10:54:28.176246301Z",
+    "spanId": "6777731613907064233"
+  }
+]

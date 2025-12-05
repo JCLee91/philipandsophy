@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, BarChart3, ChevronRight, Users } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { BarChart3, ChevronRight } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,18 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent } from '@/components/ui/card';
 import TableSearch from '@/components/datacntr/table/TableSearch';
 import TimeDistributionChart from '@/components/datacntr/dashboard/TimeDistributionChart';
 import ParticipationPanel from '@/components/datacntr/dashboard/ParticipationPanel';
 import ReviewQualityPanel from '@/components/datacntr/dashboard/ReviewQualityPanel';
 import AllBooksPanel from '@/components/datacntr/dashboard/AllBooksPanel';
 import SubmissionDetailDialog from '@/components/datacntr/submissions/SubmissionDetailDialog';
-import { useDatacntrStore } from '@/stores/datacntr-store';
+import { useDatacntrAuth, useFetchWithAuth } from '@/hooks/datacntr';
+import { DatacntrPageShell } from '@/components/datacntr/layout';
 import type { ReadingSubmission } from '@/types/database';
 import type { SubmissionAnalytics } from '@/types/datacntr';
 
-// ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
 
 interface SubmissionWithParticipant extends ReadingSubmission {
@@ -35,110 +32,41 @@ interface SubmissionWithParticipant extends ReadingSubmission {
 }
 
 export default function SubmissionsPage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
-  const { selectedCohortId } = useDatacntrStore();
-  const [submissions, setSubmissions] = useState<SubmissionWithParticipant[]>([]);
-  const [filteredSubmissions, setFilteredSubmissions] = useState<SubmissionWithParticipant[]>([]);
-  const [analytics, setAnalytics] = useState<SubmissionAnalytics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const { user, isLoading: authLoading, selectedCohortId } = useDatacntrAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAnalytics, setShowAnalytics] = useState(true);
-
-  // Detail Dialog State
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionWithParticipant | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // 로그인 체크
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/datacntr/login');
-    }
-  }, [authLoading, user, router]);
+  // 인증 데이터 로드
+  const { data: submissions, isLoading: submissionsLoading } = useFetchWithAuth<SubmissionWithParticipant[]>({
+    url: `/api/datacntr/submissions?cohortId=${selectedCohortId}`,
+    enabled: !!selectedCohortId,
+    deps: [selectedCohortId],
+    initialData: [],
+  });
 
-  // 인증 데이터 로드 (기수별 필터링)
-  useEffect(() => {
-    if (!user || !selectedCohortId) return;
+  // 분석 데이터 로드
+  const { data: analytics, isLoading: analyticsLoading } = useFetchWithAuth<SubmissionAnalytics>({
+    url: `/api/datacntr/stats/submissions?cohortId=${selectedCohortId}`,
+    enabled: !!selectedCohortId,
+    deps: [selectedCohortId],
+  });
 
-    const fetchSubmissions = async () => {
-      try {
-        setIsLoading(true);
-        const idToken = await user.getIdToken();
-        const url = `/api/datacntr/submissions?cohortId=${selectedCohortId}`;
+  // 검색 필터링
+  const filteredSubmissions = useMemo(() => {
+    if (!submissions) return [];
+    if (!searchQuery) return submissions;
 
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('독서 인증 조회 실패');
-        }
-
-        const data = await response.json();
-        setSubmissions(data);
-        setFilteredSubmissions(data);
-      } catch (error) {
-        console.error('Error fetching submissions:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSubmissions();
-  }, [user, selectedCohortId]);
-
-  // 분석 데이터 로드 (기수별 필터링)
-  useEffect(() => {
-    if (!user || !selectedCohortId) return;
-
-    const fetchAnalytics = async () => {
-      try {
-        setAnalyticsLoading(true);
-        const idToken = await user.getIdToken();
-        const url = `/api/datacntr/stats/submissions?cohortId=${selectedCohortId}`;
-
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('독서 인증 분석 조회 실패');
-        }
-
-        const data = await response.json();
-        setAnalytics(data);
-      } catch (error) {
-        console.error('Error fetching analytics:', error);
-      } finally {
-        setAnalyticsLoading(false);
-      }
-    };
-
-    fetchAnalytics();
-  }, [user, selectedCohortId]);
-
-  // 검색 필터링 (가치관 답변 포함)
-  useEffect(() => {
-    if (!searchQuery) {
-      setFilteredSubmissions(submissions);
-      return;
-    }
-
-    const filtered = submissions.filter(
+    const query = searchQuery.toLowerCase();
+    return submissions.filter(
       (s) =>
-        s.participantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.bookTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.cohortName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.dailyAnswer && s.dailyAnswer.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (s.review && s.review.toLowerCase().includes(searchQuery.toLowerCase()))
+        s.participantName.toLowerCase().includes(query) ||
+        s.bookTitle?.toLowerCase().includes(query) ||
+        s.cohortName.toLowerCase().includes(query) ||
+        s.dailyAnswer?.toLowerCase().includes(query) ||
+        s.review?.toLowerCase().includes(query)
     );
-
-    setFilteredSubmissions(filtered);
   }, [searchQuery, submissions]);
 
   const handleRowClick = (submission: SubmissionWithParticipant) => {
@@ -146,78 +74,35 @@ export default function SubmissionsPage() {
     setIsDialogOpen(true);
   };
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const isLoading = authLoading || submissionsLoading;
 
-  if (!user) return null;
-
-  // 기수가 선택되지 않은 경우
-  if (!selectedCohortId) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">독서 인증 관리</h1>
-        </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
-          <Users className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">기수를 먼저 선택해주세요</h2>
-          <p className="text-gray-600">상단 헤더에서 기수를 선택해야 합니다.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!user && !authLoading) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8 flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">독서 인증 관리</h1>
-          <p className="text-muted-foreground">전체 독서 인증 내역 및 분석</p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowAnalytics(!showAnalytics)}
-        >
+    <DatacntrPageShell
+      title="독서 인증 관리"
+      description="전체 독서 인증 내역 및 분석"
+      isLoading={isLoading}
+      requiresCohort
+      hasCohortSelected={!!selectedCohortId}
+      headerActions={
+        <Button variant="outline" onClick={() => setShowAnalytics(!showAnalytics)}>
           <BarChart3 className="h-4 w-4 mr-2" />
           {showAnalytics ? '분석 숨기기' : '분석 보기'}
         </Button>
-      </div>
-
+      }
+    >
       {/* 분석 섹션 */}
       {showAnalytics && analytics && (
         <div className="mb-8 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 시간대별 분포 차트 */}
             <div className="lg:col-span-2">
-              <TimeDistributionChart
-                data={analytics.timeDistribution}
-                isLoading={analyticsLoading}
-              />
+              <TimeDistributionChart data={analytics.timeDistribution} isLoading={analyticsLoading} />
             </div>
-
-            {/* 참여 지표 */}
-            <ParticipationPanel
-              data={analytics.participation}
-              isLoading={analyticsLoading}
-            />
-
-            {/* 리뷰 품질 */}
-            <ReviewQualityPanel
-              data={analytics.reviewQuality}
-              isLoading={analyticsLoading}
-            />
-
-            {/* 전체 책 목록 */}
+            <ParticipationPanel data={analytics.participation} isLoading={analyticsLoading} />
+            <ReviewQualityPanel data={analytics.reviewQuality} isLoading={analyticsLoading} />
             <div className="lg:col-span-2">
-              <AllBooksPanel
-                data={analytics.allBooks}
-                isLoading={analyticsLoading}
-              />
+              <AllBooksPanel data={analytics.allBooks} isLoading={analyticsLoading} />
             </div>
           </div>
         </div>
@@ -260,18 +145,14 @@ export default function SubmissionsPage() {
                     {submission.cohortName}
                   </Badge>
                 </TableCell>
-                <TableCell className="font-medium">
-                  {submission.participantName}
-                </TableCell>
+                <TableCell className="font-medium">{submission.participantName}</TableCell>
                 <TableCell className="font-medium truncate max-w-[200px]" title={submission.bookTitle}>
                   {submission.bookTitle}
                 </TableCell>
                 <TableCell className="max-w-[400px]">
                   <div className="space-y-1">
                     {submission.review && (
-                      <p className="text-sm text-muted-foreground truncate">
-                        {submission.review}
-                      </p>
+                      <p className="text-sm text-muted-foreground truncate">{submission.review}</p>
                     )}
                     {submission.dailyQuestion && (
                       <div className="flex items-center gap-1 text-xs text-primary/80">
@@ -286,7 +167,7 @@ export default function SubmissionsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {filteredSubmissions.length === 0 && !isLoading && (
+            {filteredSubmissions.length === 0 && !submissionsLoading && (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   {searchQuery ? '검색 결과가 없습니다' : '등록된 독서 인증이 없습니다'}
@@ -297,12 +178,11 @@ export default function SubmissionsPage() {
         </Table>
       </div>
 
-      {/* 상세 보기 다이얼로그 */}
       <SubmissionDetailDialog
         submission={selectedSubmission}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
       />
-    </div>
+    </DatacntrPageShell>
   );
 }

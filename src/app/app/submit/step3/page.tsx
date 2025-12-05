@@ -1,132 +1,91 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Timestamp } from 'firebase/firestore';
-import { useAuth } from '@/contexts/AuthContext';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
-import { useCreateSubmission, useUpdateSubmission } from '@/hooks/use-submissions';
-import { uploadReadingImage, updateParticipantBookInfo, saveDraft } from '@/lib/firebase';
-import { getDailyQuestion } from '@/lib/firebase/daily-questions';
+import { saveDraft, createSubmission, updateParticipantBookInfo } from '@/lib/firebase';
+import { getDailyQuestion } from '@/constants/daily-questions';
 import { getSubmissionDate } from '@/lib/date-utils';
-import { useToast } from '@/hooks/use-toast';
-import { createFileFromUrl } from '@/lib/image-validation';
-import TopBar from '@/components/TopBar';
-import ProgressIndicator from '@/components/submission/ProgressIndicator';
-import PageTransition from '@/components/PageTransition';
+import { useSubmissionCommon } from '@/hooks/use-submission-common';
+import SubmissionLayout from '@/components/submission/SubmissionLayout';
 import UnifiedButton from '@/components/UnifiedButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Textarea } from '@/components/ui/textarea';
+import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { appRoutes } from '@/lib/navigation';
-import type { DailyQuestion as DailyQuestionType } from '@/types/database';
-import { SUBMISSION_VALIDATION } from '@/constants/validation';
-import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
-import { logger } from '@/lib/logger';
 import { useDebounce } from 'react-use';
-import { Loader2, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { SUBMISSION_VALIDATION } from '@/constants/validation';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 function Step3Content() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const cohortId = searchParams.get('cohort');
-  const existingSubmissionId = searchParams.get('edit');
-
-  const { participant, isLoading: sessionLoading } = useAuth();
-  const { toast } = useToast();
-  const keyboardHeight = useKeyboardHeight();
-  const footerPaddingBottom = useMemo(
-    () =>
-      keyboardHeight > 0
-        ? `calc(16px + env(safe-area-inset-bottom, 0px))`
-        : `calc(60px + env(safe-area-inset-bottom, 0px))`,
-    [keyboardHeight]
-  );
+  const {
+    router,
+    cohortId,
+    existingSubmissionId,
+    participant,
+    sessionLoading,
+    participantId,
+    participationCode,
+    submissionDate,
+    mainPaddingBottom,
+    footerPaddingBottom,
+    toast,
+    handleBack,
+  } = useSubmissionCommon();
 
   const {
-    imageFile,
     imageStorageUrl,
     selectedBook,
     manualTitle,
     review,
     dailyAnswer: globalDailyAnswer,
-    participantId,
-    participationCode,
-    setImageFile,
     setDailyAnswer: setGlobalDailyAnswer,
-    setSelectedBook,
-    setManualTitle,
-    setReview,
-    setImageStorageUrl,
-    setMetaInfo,
     reset,
     isEBook,
-    submissionDate: storedSubmissionDate,
   } = useSubmissionFlowStore();
 
-  // ✅ Local state for performance (prevent global store updates on every keystroke)
   const [localDailyAnswer, setLocalDailyAnswer] = useState(globalDailyAnswer);
+  const [dailyQuestion, setDailyQuestion] = useState<string | null>(null);
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const loadedExistingDailyAnswerRef = useRef(false);
+  const loadedDraftRef = useRef(false);
 
-  // Sync local state with global state when global state changes (initial load)
+  const bookTitle = selectedBook?.title || manualTitle;
+
+  // Sync local state with global
   useEffect(() => {
     setLocalDailyAnswer(globalDailyAnswer);
   }, [globalDailyAnswer]);
 
-  const [dailyQuestion, setDailyQuestion] = useState<DailyQuestionType | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadStep, setUploadStep] = useState<string>('');
-  const [isSaving, setIsSaving] = useState(false); // Manual save state
-  const [isAutoSaving, setIsAutoSaving] = useState(false); // Auto save state
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const isSubmittingRef = useRef(false);
-
-  const createSubmission = useCreateSubmission();
-  const updateSubmission = useUpdateSubmission();
-
-  // ✅ Debounce global state update and auto-save
+  // Debounce auto-save
   useDebounce(
     async () => {
       if (localDailyAnswer === globalDailyAnswer) return;
-
-      // 1. Update Global Store
       setGlobalDailyAnswer(localDailyAnswer);
 
-      // 2. Auto-save if conditions met (신규/수정 모두 동일하게 자동저장)
-      if (
-        participantId &&
-        participationCode &&
-        localDailyAnswer.length > 10 &&
-        !isSubmittingRef.current
-      ) {
+      if (participantId && participationCode && localDailyAnswer.length > 5 && !isSubmitting) {
         await performAutoSave(localDailyAnswer);
       }
     },
-    1000, // 1 second debounce
+    1000,
     [localDailyAnswer]
   );
 
-  // Auto-save function
   const performAutoSave = async (currentAnswer: string) => {
     if (!participantId || !participationCode) return;
-
     setIsAutoSaving(true);
     try {
       const draftData: any = {
         dailyAnswer: currentAnswer,
-        // 수정 모드인 경우 원본 submissionId 저장
-        ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
+        dailyQuestion: dailyQuestion,
         isEBook,
       };
-
-      if (participant?.cohortId) {
-        draftData.cohortId = participant.cohortId;
-      }
-
-      await saveDraft(participantId, participationCode, draftData, participant?.name, storedSubmissionDate || undefined);
+      if (cohortId) draftData.cohortId = cohortId;
+      await saveDraft(participantId, participationCode, draftData, undefined, submissionDate || undefined);
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('Auto-save failed', error);
@@ -135,555 +94,246 @@ function Step3Content() {
     }
   };
 
-  // Step 2 검증 (제출 중일 때는 검증 건너뛰기)
+  // Step 2 validation
   useEffect(() => {
-    if (isSubmittingRef.current) return; // 제출 중이면 검증 안 함
-
-    const finalTitle = selectedBook?.title || manualTitle.trim();
-    if (!finalTitle && !existingSubmissionId) {
-      toast({
-        title: '책 제목을 먼저 입력해주세요',
-        variant: 'destructive',
-      });
+    const hasBook = selectedBook || manualTitle.trim();
+    if (!hasBook || !review.trim() || review.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
+      toast({ title: '감상평을 먼저 작성해주세요', description: '2단계에서 책 정보와 감상평을 입력해주세요.', variant: 'destructive' });
       router.replace(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     }
-  }, [selectedBook, manualTitle, existingSubmissionId, cohortId, router, toast]);
+  }, [selectedBook, manualTitle, review, cohortId, existingSubmissionId, router, toast]);
 
-  // 인증 확인
+  // 일일 질문 로드 (constants에서)
   useEffect(() => {
-    if (!sessionLoading && (!participant || !cohortId)) {
-      router.replace('/app');
+    if (!cohortId) return;
+
+    setIsLoadingQuestion(true);
+    try {
+      const dateForQuestion = submissionDate || getSubmissionDate();
+      const questionObj = getDailyQuestion(dateForQuestion, true);
+      setDailyQuestion(questionObj.question);
+    } catch (error) {
+      logger.error('[Step3] getDailyQuestion error:', error);
+      setDailyQuestion('오늘 하루는 어떠셨나요?');
+    } finally {
+      setIsLoadingQuestion(false);
     }
-  }, [sessionLoading, participant, cohortId, router]);
+  }, [cohortId, submissionDate]);
 
-  // 메타 정보 보강 (Step2를 거치지 않았을 경우 대비)
+  // 임시저장 답변 로드 (새 제출 시)
   useEffect(() => {
-    if (!participant || !cohortId || participantId) return; // 이미 세팅된 경우는 건너뜀
+    if (!participant || !cohortId || existingSubmissionId || loadedDraftRef.current) return;
 
-    const participationCodeValue = participant.participationCode || participant.id;
-    setMetaInfo(participant.id, participationCodeValue, cohortId, existingSubmissionId || undefined);
-  }, [participant, participantId, cohortId, existingSubmissionId, setMetaInfo]);
-
-  const hasLoadedDraftRef = useRef(false);
-  const hasLoadedExistingRef = useRef(false);
-
-  // 임시저장 자동 불러오기 + 일일 질문 로드
-  useEffect(() => {
-    if (!cohortId || existingSubmissionId || !participantId || hasLoadedDraftRef.current) {
-      return;
-    }
-
-    hasLoadedDraftRef.current = true;
-
-    const loadDraftAndQuestion = async () => {
-      setIsLoadingDraft(true);
-      setLoadError(null);
-
+    const loadDraft = async () => {
       try {
-        // 1. 임시저장 불러오기 (Step 1에서 결정된 날짜로 조회)
         const { getDraftSubmission } = await import('@/lib/firebase/submissions');
-        const draft = await getDraftSubmission(participantId, cohortId, storedSubmissionDate || undefined);
+        const draft = await getDraftSubmission(participant.id, cohortId, submissionDate || undefined);
 
         if (draft?.dailyAnswer) {
-          setGlobalDailyAnswer(draft.dailyAnswer); // Update global
-          setLocalDailyAnswer(draft.dailyAnswer); // Update local
+          setGlobalDailyAnswer(draft.dailyAnswer);
+          setLocalDailyAnswer(draft.dailyAnswer);
         }
-
-        // 2. 일일 질문 로드 (Step 1에서 결정된 날짜 사용)
-        const dateToUse = storedSubmissionDate || getSubmissionDate();
-        const question = await getDailyQuestion(cohortId, dateToUse);
-        if (question) {
-          setDailyQuestion(question);
-        }
+        loadedDraftRef.current = true;
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-        setLoadError(errorMessage);
-        toast({
-          title: '불러오기 실패',
-          description: '임시저장된 내용을 불러올 수 없습니다. 다시 시도해주세요.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoadingDraft(false);
+        logger.error('[Step3] Draft load error:', error);
       }
     };
 
-    loadDraftAndQuestion();
-  }, [cohortId, existingSubmissionId, participantId, setGlobalDailyAnswer, storedSubmissionDate, toast]);
+    loadDraft();
+  }, [participant, cohortId, existingSubmissionId, submissionDate, setGlobalDailyAnswer]);
 
+  // 기존 제출물 답변 로드 (수정 모드)
   useEffect(() => {
-    if (!cohortId || !existingSubmissionId || hasLoadedExistingRef.current) {
-      return;
-    }
+    if (!existingSubmissionId || loadedExistingDailyAnswerRef.current) return;
 
-    let cancelled = false;
-
-    const loadExistingSubmission = async () => {
-      setIsLoadingDraft(true);
+    const loadExistingAnswer = async () => {
       try {
         const { getSubmissionById } = await import('@/lib/firebase/submissions');
         const submission = await getSubmissionById(existingSubmissionId);
-        if (!submission || cancelled) return;
 
-        hasLoadedExistingRef.current = true;
-
-        if (submission.bookImageUrl && !imageStorageUrl) {
-          try {
-            const file = await createFileFromUrl(submission.bookImageUrl);
-            if (!cancelled) {
-              setImageFile(file, submission.bookImageUrl, submission.bookImageUrl);
-            }
-          } catch (error) {
-            if (!cancelled) {
-              setImageFile(null, submission.bookImageUrl, submission.bookImageUrl);
-            }
-          }
-          if (!cancelled) {
-            setImageStorageUrl(submission.bookImageUrl);
-          }
-        }
-
-        if (submission.bookTitle) {
-          if (submission.bookAuthor || submission.bookCoverUrl || submission.bookDescription) {
-            setSelectedBook({
-              title: submission.bookTitle,
-              author: submission.bookAuthor || '',
-              image: submission.bookCoverUrl || '',
-              description: submission.bookDescription || '',
-              isbn: '',
-              publisher: '',
-              pubdate: '',
-              link: '',
-              discount: '',
-            });
-            setManualTitle('');
-          } else {
-            setSelectedBook(null);
-            setManualTitle(submission.bookTitle);
-          }
-        }
-
-        // review는 Step2에서 이미 수정했을 수 있으므로, store에 값이 없을 때만 로드
-        if (submission.review && !review) {
-          setReview(submission.review);
-        }
-
-        // dailyAnswer는 Step3에서 입력하므로 항상 DB 값 로드
-        if (submission.dailyAnswer) {
+        if (submission?.dailyAnswer) {
           setGlobalDailyAnswer(submission.dailyAnswer);
           setLocalDailyAnswer(submission.dailyAnswer);
-        }
-
-        const questionDate = submission.submissionDate || getSubmissionDate();
-        const question = await getDailyQuestion(cohortId, questionDate);
-        if (!cancelled) {
-          setDailyQuestion(
-            question ||
-            (submission.dailyQuestion
-              ? {
-                id: 'custom',
-                dayNumber: 0,
-                date: questionDate,
-                question: submission.dailyQuestion,
-                category: '가치관 & 삶',
-                order: 0,
-                createdAt: null as any,
-                updatedAt: null as any,
-              }
-              : null)
-          );
+          loadedExistingDailyAnswerRef.current = true;
         }
       } catch (error) {
-        if (!cancelled) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          setLoadError(errorMessage);
-          toast({
-            title: '제출물 불러오기 실패',
-            description: '이전 제출을 불러오지 못했습니다. 다시 시도해주세요.',
-            variant: 'destructive',
-          });
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoadingDraft(false);
-        }
+        logger.error('[Step3] Existing submission load error:', error);
       }
     };
 
-    loadExistingSubmission();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cohortId, existingSubmissionId, imageStorageUrl, review, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setGlobalDailyAnswer, toast]);
-
-  const handleSaveDraft = async () => {
-    // 수정 모드에서도 임시저장 허용 (신규/수정 모두 동일한 UX)
-
-    if (!participantId || !participationCode) {
-      toast({
-        title: '세션 정보가 없습니다',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const draftData: {
-        bookImageUrl?: string;
-        bookTitle?: string;
-        bookAuthor?: string;
-        bookCoverUrl?: string;
-        bookDescription?: string;
-        review?: string;
-        dailyQuestion?: string;
-        dailyAnswer?: string;
-        cohortId?: string;
-        editingSubmissionId?: string;
-        isEBook?: boolean;
-      } = {
-        // 수정 모드인 경우 원본 submissionId 저장
-        ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
-        isEBook,
-      };
-
-      // 이미지가 있으면 업로드 (File 객체인 경우만)
-      if (imageFile && imageFile instanceof File && !imageStorageUrl) {
-        const uploadedUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
-        draftData.bookImageUrl = uploadedUrl;
-        setImageStorageUrl(uploadedUrl);
-      } else if (imageStorageUrl) {
-        draftData.bookImageUrl = imageStorageUrl;
-      }
-
-      // 각 필드는 값이 있을 때만 포함 (undefined로 덮어쓰기 방지)
-      if (selectedBook?.title || manualTitle) {
-        draftData.bookTitle = selectedBook?.title || manualTitle;
-      }
-      if (selectedBook?.author) {
-        draftData.bookAuthor = selectedBook.author;
-      }
-      if (selectedBook?.image) {
-        draftData.bookCoverUrl = selectedBook.image;
-      }
-      if (selectedBook?.description) {
-        draftData.bookDescription = selectedBook.description;
-      }
-      if (review) {
-        draftData.review = review;
-      }
-      if (dailyQuestion?.question) {
-        draftData.dailyQuestion = dailyQuestion.question;
-      }
-      // Use local answer for explicit save
-      if (localDailyAnswer) {
-        draftData.dailyAnswer = localDailyAnswer;
-      }
-
-      // 🆕 cohortId 추가 (중복 참가자 구분용)
-      if (participant?.cohortId) {
-        draftData.cohortId = participant.cohortId;
-      }
-
-      await saveDraft(participantId, participationCode, draftData, participant?.name, storedSubmissionDate || undefined);
-      setLastSavedAt(new Date());
-
-      toast({
-        title: '임시 저장되었습니다',
-        description: '언제든 다시 돌아와서 작성을 이어갈 수 있습니다.',
-      });
-
-      // 페이지 이동 제거 - 현재 페이지에 머물기
-    } catch (error) {
-      toast({
-        title: '임시 저장 실패',
-        description: error instanceof Error ? error.message : '다시 시도해주세요.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleBack = () => {
-    router.back();
-  };
+    loadExistingAnswer();
+  }, [existingSubmissionId, setGlobalDailyAnswer]);
 
   const handleSubmit = async () => {
-    // Store 초기화 대비 fallback (앱 렉/메모리 이슈로 store가 초기화될 수 있음)
-    const finalParticipantId = participantId || participant?.id;
-    const finalParticipationCode = participationCode || participant?.participationCode || participant?.id;
-
-    // 전자책이면 이미지 없어도 됨
-    const hasImage = imageFile || imageStorageUrl || isEBook;
-
-    if (!hasImage || !finalParticipantId || !finalParticipationCode) {
-      toast({
-        title: '필수 정보가 누락되었습니다',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const finalTitle = selectedBook?.title || manualTitle.trim();
-    if (!finalTitle) {
-      toast({
-        title: '책 제목을 입력해주세요',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!localDailyAnswer.trim()) {
-      toast({
-        title: '오늘의 질문에 답변해주세요',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH) {
-      toast({
-        title: `최소 ${SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자 이상 작성해주세요`,
-        description: `현재 ${localDailyAnswer.length}자 입력됨`,
-        variant: 'destructive',
-      });
+      toast({ title: `최소 ${SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자 이상 작성해주세요`, description: `현재 ${localDailyAnswer.length}자 입력됨`, variant: 'destructive' });
       return;
     }
 
-    const isEditing = Boolean(existingSubmissionId);
+    if (!participantId || !participationCode || !cohortId || !bookTitle) {
+      toast({ title: '필수 정보가 누락되었습니다', variant: 'destructive' });
+      return;
+    }
 
-    setUploading(true);
-    isSubmittingRef.current = true; // 제출 시작 - 검증 useEffect 비활성화
+    setIsSubmitting(true);
 
     try {
-      // 단계 1: 책 정보 저장
-      setUploadStep('책 정보 저장 중...');
-      await updateParticipantBookInfo(
-        finalParticipantId,
-        finalTitle,
-        selectedBook?.author || undefined,
-        selectedBook?.image || undefined
-      );
-
-      // 단계 2: 이미지 업로드
-      let bookImageUrl = imageStorageUrl;
-      if (!bookImageUrl && imageFile) {
-        setUploadStep('이미지 업로드 중...');
-        bookImageUrl = await uploadReadingImage(imageFile, finalParticipationCode, cohortId);
-        setImageStorageUrl(bookImageUrl);
-      }
-
-      const submissionPayload = {
-        bookTitle: finalTitle,
-        ...(selectedBook?.author && { bookAuthor: selectedBook.author }),
-        ...(selectedBook?.image && { bookCoverUrl: selectedBook.image }),
-        ...(selectedBook?.description && { bookDescription: selectedBook.description }),
-        ...(bookImageUrl && { bookImageUrl }),
-        review: review.trim(),
-        dailyQuestion: dailyQuestion?.question || '',
-        dailyAnswer: localDailyAnswer.trim(),
-        status: 'approved' as const,
-        // 🆕 cohortId 추가 (중복 참가자 구분용, participant 우선)
-        ...((participant?.cohortId || cohortId) && { cohortId: participant?.cohortId || cohortId }),
+      const submissionData = {
+        participantId,
+        participationCode,
+        cohortId,
+        submissionDate: submissionDate || getSubmissionDate(),
+        bookTitle: bookTitle || '',
+        bookAuthor: selectedBook?.author || null,
+        bookCoverUrl: selectedBook?.image || null,
+        bookDescription: selectedBook?.description || null,
+        bookImageUrl: imageStorageUrl || null,
+        review,
+        dailyQuestion: dailyQuestion || '',
+        dailyAnswer: localDailyAnswer,
         isEBook,
+        status: 'approved' as const,
       };
 
-      // 단계 3: 제출물 저장
-      setUploadStep('제출물 저장 중...');
-
-      if (isEditing && existingSubmissionId) {
-        await updateSubmission.mutateAsync({
-          id: existingSubmissionId,
-          data: submissionPayload,
-        });
+      if (existingSubmissionId) {
+        // 수정 모드: 기존 제출물 업데이트
+        const { updateSubmission } = await import('@/lib/firebase/submissions');
+        await updateSubmission(existingSubmissionId, submissionData);
       } else {
-        await createSubmission.mutateAsync({
-          data: {
-            participantId: finalParticipantId,
-            participationCode: finalParticipationCode,
-            ...submissionPayload,
-            submittedAt: Timestamp.now(),
-            // Step 1에서 결정된 날짜 전달 (2시 전환 엣지케이스 대응)
-            ...(storedSubmissionDate && { submissionDate: storedSubmissionDate }),
-          },
-          participantName: participant?.name || '익명',
-        });
+        // 새 제출: 새 문서 생성
+        await createSubmission(submissionData, participant?.name || '');
       }
 
-      // 신규/수정 모두 draft 삭제 (자동저장된 임시저장 정리)
-      try {
-        const { getDraftSubmission, deleteDraft } = await import('@/lib/firebase/submissions');
-        const draft = await getDraftSubmission(finalParticipantId, cohortId!, storedSubmissionDate || undefined);
-        if (draft) {
-          await deleteDraft(draft.id);
+      // participant 책 정보 업데이트
+      if (participantId && bookTitle) {
+        await updateParticipantBookInfo(
+          participantId,
+          bookTitle,
+          selectedBook?.author || undefined,
+          selectedBook?.image || undefined
+        );
+      }
+
+      // Draft 삭제
+      if (participantId && participationCode) {
+        try {
+          const { getDraftSubmission } = await import('@/lib/firebase/submissions');
+          const draft = await getDraftSubmission(participantId, cohortId, submissionDate || undefined);
+          if (draft?.id) {
+            const { deleteDraft } = await import('@/lib/firebase/submissions');
+            await deleteDraft(draft.id);
+          }
+        } catch (error) {
+          logger.error('[Step3] Draft deletion error:', error);
         }
-      } catch (error) {
-        logger.error('[Step3] Draft deletion failed', error);
       }
 
-      // 토스트는 메인 화면에서 표시하기 위해 쿼리 파라미터로 전달
-      const successMessage = isEditing ? 'edit' : 'submit';
-      router.push(`${appRoutes.chat(cohortId!)}?success=${successMessage}`);
-      // reset() 제거 - 다음 제출 시작 시 자동으로 초기화됨
-      return;
-    } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : '독서 인증 제출 중 오류가 발생했습니다.';
+      reset();
 
-      toast({
-        title: '제출 실패',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: existingSubmissionId ? '수정 완료!' : '제출 완료!', description: '독서 인증이 성공적으로 제출되었습니다.' });
+
+      router.replace(`${appRoutes.chat(cohortId)}?t=${Date.now()}&fresh=true`);
+    } catch (error) {
+      toast({ title: '제출 실패', description: error instanceof Error ? error.message : '다시 시도해주세요.', variant: 'destructive' });
     } finally {
-      setUploading(false);
-      setUploadStep('');
-      isSubmittingRef.current = false; // 항상 해제
+      setIsSubmitting(false);
     }
   };
 
-  if (sessionLoading || !participant || !cohortId || isLoadingDraft) {
+  if (sessionLoading || !participant || !cohortId || isLoadingQuestion) {
     return <LoadingSpinner message="로딩 중..." />;
   }
 
-  // 로드 실패 시 재시도 화면
-  if (loadError && !dailyQuestion) {
-    return (
-      <PageTransition>
-        <div className="app-shell flex flex-col overflow-hidden bg-background">
-          <TopBar onBack={handleBack} title="독서 인증하기" align="left" />
-          <div className="fixed top-14 left-0 right-0 z-[998]">
-            <ProgressIndicator currentStep={3} />
-          </div>
-
-          <main className="app-main-content flex-1 flex items-center justify-center pt-4">
-            <div className="text-center space-y-4 px-6">
-              <div className="text-4xl">⚠️</div>
-              <h3 className="text-lg font-bold text-gray-900">
-                질문을 불러올 수 없습니다
-              </h3>
-              <p className="text-sm text-gray-600">
-                네트워크 연결을 확인하고 다시 시도해주세요
-              </p>
-              <UnifiedButton
-                onClick={() => {
-                  hasLoadedDraftRef.current = false;
-                  setLoadError(null);
-                  window.location.reload();
-                }}
-                className="mt-4"
-              >
-                다시 시도
-              </UnifiedButton>
-            </div>
-          </main>
-        </div>
-      </PageTransition>
-    );
-  }
-
   return (
-    <PageTransition>
-      <div className="app-shell flex flex-col overflow-hidden bg-background">
-        <TopBar onBack={handleBack} title="독서 인증하기" align="left" />
-        <div className="fixed top-14 left-0 right-0 z-[998]">
-          <ProgressIndicator currentStep={3} />
-        </div>
-
-        <main
-          className="app-main-content flex-1 overflow-y-auto pt-4"
-          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 32 : 32 }}
+    <SubmissionLayout
+      currentStep={3}
+      onBack={handleBack}
+      mainPaddingBottom={mainPaddingBottom}
+      footerPaddingBottom={footerPaddingBottom}
+      footer={
+        <UnifiedButton
+          onClick={handleSubmit}
+          disabled={isSubmitting || localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}
+          loading={isSubmitting}
+          loadingText="제출 중..."
+          className={localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH ? 'opacity-50' : ''}
         >
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6">
-            <div className="space-y-1">
-              <h2 className="text-lg font-bold">오늘의 질문</h2>
-            </div>
+          {existingSubmissionId ? '수정 완료' : '제출하기'}
+        </UnifiedButton>
+      }
+    >
+      <div className="space-y-3">
+        <h2 className="text-lg font-bold">마지막으로<br />오늘의 질문에 답해 주세요</h2>
+        <p className="text-sm text-muted-foreground">매일 새로운 질문이 제공됩니다</p>
+      </div>
 
-            {dailyQuestion && (
-              <div className="relative rounded-xl bg-blue-50 border border-blue-200 px-4 py-4">
-                <span className="inline-block px-3 py-1 mb-2 text-xs font-semibold text-white bg-blue-500 rounded-full">
-                  {dailyQuestion.category}
-                </span>
-                <p className="text-sm font-medium text-gray-900 leading-relaxed">
-                  {dailyQuestion.question}
-                </p>
-              </div>
-            )}
+      {/* 오늘의 질문 */}
+      <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+        <p className="text-sm text-blue-800 font-medium leading-relaxed">
+          💬 {dailyQuestion || '오늘 하루는 어떠셨나요?'}
+        </p>
+      </div>
 
-            {/* 질문 답변 입력 */}
-            <div className="space-y-3">
-              <div className="flex justify-end h-5">
-                {/* Auto-save indicator + 글자수 카운팅 */}
-                <div className="flex items-center gap-2">
-                  {isAutoSaving ? (
-                    <>
-                      <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
-                      <span className="text-[10px] text-blue-500 font-medium">저장 중</span>
-                    </>
-                  ) : lastSavedAt ? (
-                    <>
-                      <Check className="w-3 h-3 text-green-500" />
-                      <span className="text-[10px] text-green-600 font-medium">저장됨</span>
-                    </>
-                  ) : null}
-                  <span className={`text-[10px] font-medium transition-colors ${localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH
-                    ? 'text-red-500'
-                    : 'text-blue-500'
-                    }`}>
-                    {localDailyAnswer.length}/{SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자
-                  </span>
-                </div>
-              </div>
-              <div className="relative">
-                <Textarea
-                  value={localDailyAnswer}
-                  onChange={(e) => setLocalDailyAnswer(e.target.value)}
-                  placeholder="질문에 대한 답변을 자유롭게 작성해 주세요"
-                  className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
-                  disabled={uploading}
-                />
-              </div>
-
-              {localDailyAnswer.length > 0 && (
-                <p className="text-xs text-gray-400 px-1">
-                  작성 중인 내용은 자동으로 저장됩니다
-                </p>
-              )}
-            </div>
-
-            {uploadStep && (
-              <div className="rounded-xl bg-blue-50 border border-blue-100 p-4">
-                <p className="text-sm font-medium text-blue-900">{uploadStep}</p>
-              </div>
-            )}
+      {/* 답변 입력 */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-end">
+          <p className="text-sm text-gray-600">나의 답변</p>
+          <div className="flex items-center gap-2">
+            {isAutoSaving ? (
+              <>
+                <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+                <span className="text-[10px] text-blue-500 font-medium">저장 중</span>
+              </>
+            ) : lastSavedAt ? (
+              <>
+                <Check className="w-3 h-3 text-green-500" />
+                <span className="text-[10px] text-green-600 font-medium">저장됨</span>
+              </>
+            ) : null}
+            <span className={`text-[10px] font-medium transition-colors ${localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH ? 'text-red-500' : 'text-blue-500'}`}>
+              {localDailyAnswer.length}/{SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자
+            </span>
           </div>
-        </main>
+        </div>
+        <Textarea
+          value={localDailyAnswer}
+          onChange={(e) => setLocalDailyAnswer(e.target.value)}
+          placeholder="오늘의 질문에 대한 생각을 자유롭게 작성해주세요..."
+          className="min-h-[200px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
+        />
+        {localDailyAnswer.length > 0 && <p className="text-xs text-gray-400 px-1">작성 중인 내용은 자동으로 저장됩니다</p>}
+      </div>
 
-        {/* 하단 버튼 */}
-        <div className="border-t bg-white">
-          <div
-            className="mx-auto flex w-full max-w-xl gap-2 px-6 pt-4"
-            style={{ paddingBottom: footerPaddingBottom }}
-          >
-            <UnifiedButton
-              onClick={handleSubmit}
-              className={cn(
-                existingSubmissionId ? 'w-full' : 'flex-1',
-                // 유효성 검사 실패 시 시각적으로만 비활성화 처리
-                (uploading || isSaving || !localDailyAnswer.trim() || localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH) && "opacity-50"
-              )}
-              disabled={uploading || isSaving}
-            >
-              {uploading ? uploadStep || '제출 중...' : existingSubmissionId ? '수정하기' : '제출하기'}
-            </UnifiedButton>
+      {/* 제출 전 요약 */}
+      <div className="rounded-xl bg-gray-50 p-4 space-y-3 mt-4">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-500" />
+          제출 전 확인
+        </h3>
+        <div className="space-y-2 text-xs text-gray-600">
+          <div className="flex items-start gap-2">
+            <span className="text-green-500">✓</span>
+            <span>책 제목: <span className="font-medium text-gray-800">{bookTitle || '미입력'}</span></span>
           </div>
+          <div className="flex items-start gap-2">
+            <span className="text-green-500">✓</span>
+            <span>감상평: <span className="font-medium text-gray-800">{review.length}자 작성</span></span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className={localDailyAnswer.length >= SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH ? 'text-green-500' : 'text-red-500'}>
+              {localDailyAnswer.length >= SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH ? '✓' : '✗'}
+            </span>
+            <span>오늘의 답변: <span className="font-medium text-gray-800">{localDailyAnswer.length}자 작성</span></span>
+          </div>
+          {isEBook && (
+            <div className="flex items-start gap-2">
+              <span className="text-blue-500">📱</span>
+              <span>전자책 인증</span>
+            </div>
+          )}
         </div>
       </div>
-    </PageTransition>
+    </SubmissionLayout>
   );
 }
 
