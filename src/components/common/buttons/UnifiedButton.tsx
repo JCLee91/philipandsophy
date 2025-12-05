@@ -59,18 +59,18 @@ export default function UnifiedButton({
       disabled={isDisabled}
       onClick={isDisabled ? undefined : onClick}
       className={cn(
-        // Base styles - shadcn Button과 일치시킴
-        'rounded-md font-medium transition-colors text-sm',
-        // Size styles - shadcn Button과 일치시킴
-        size === 'default' && 'h-10 px-4 py-2',
-        size === 'sm' && 'h-9 px-3',
-        size === 'lg' && 'h-11 px-8',
+        // Base styles - 앱 전용 스타일 (두꺼운 버튼)
+        'rounded-lg font-bold transition-colors',
+        // Size styles - 앱 전용 (py-4로 두꺼운 높이)
+        size === 'default' && 'px-4 py-4',
+        size === 'sm' && 'px-3 py-2 text-sm',
+        size === 'lg' && 'px-6 py-4 text-lg',
         size === 'icon' && 'h-10 w-10 p-0',
         // Variant styles
         (variant === 'primary' || variant === 'default') && 'bg-black text-white hover:bg-gray-800 focus-visible:ring-white',
         variant === 'secondary' && 'bg-white border border-gray-200 text-black hover:bg-gray-50 focus-visible:ring-gray-200',
         variant === 'destructive' && 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600',
-        variant === 'outline' && 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-300',
+        variant === 'outline' && 'border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-300',
         variant === 'ghost' && 'bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-300',
         // Layout
         fullWidth && 'w-full',

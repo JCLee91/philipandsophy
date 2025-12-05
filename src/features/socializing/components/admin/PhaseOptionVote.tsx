@@ -47,7 +47,7 @@ export default function PhaseOptionVote({
           size="sm"
           onClick={onRefreshStats}
           disabled={isPending}
-          className="h-7 text-xs"
+          className="h-7 text-xs font-normal"
           icon={<RefreshCw className={cn('w-3 h-3', isPending && 'animate-spin')} />}
         >
           새로고침
