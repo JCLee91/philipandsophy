@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDailyQuestionText } from '@/constants/daily-questions';
+import { getDailyQuestion } from '@/lib/firebase/daily-questions';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -29,11 +29,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 해당 날짜의 질문 가져오기
-    const question = getDailyQuestionText(date);
-
     // Firebase Admin 초기화 및 DB 가져오기
     const db = getAdminDb();
+
+    // cohort별 daily question 조회
+    const questionObj = await getDailyQuestion(cohortId, date);
+    const question = questionObj?.question || '';
 
     // 오늘 제출한 참가자 수 조회
     const submissionsSnapshot = await db

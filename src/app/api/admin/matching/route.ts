@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDailyQuestionText } from '@/constants/daily-questions';
+import { getDailyQuestion } from '@/lib/firebase/daily-questions';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
@@ -218,10 +218,13 @@ export async function GET(request: NextRequest) {
       assignments: matchingEntry.assignments ?? {},
     };
 
+    // cohort별 daily question 조회
+    const questionObj = await getDailyQuestion(cohortId, date);
+
     return NextResponse.json({
       success: true,
       date,
-      question: getDailyQuestionText(date),
+      question: questionObj?.question || '',
       matching: normalizedMatching,
     });
 
