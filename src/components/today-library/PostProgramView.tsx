@@ -307,8 +307,8 @@ export default function PostProgramView({
             <div className="app-shell flex flex-col overflow-hidden">
                 {/* Header */}
                 <TopBar
-                    title="오늘의 서재"
-                    onBack={() => router.back()}
+                    title="우리의 여정"
+                    onBack={() => router.push(appRoutes.chat(cohortId))}
                     align="center"
                     className="bg-[#F6F6F6] border-b-0"
                 />
