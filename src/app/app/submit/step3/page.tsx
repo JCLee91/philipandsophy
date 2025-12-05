@@ -53,26 +53,32 @@ function Step3Content() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const loadedExistingDailyAnswerRef = useRef(false);
   const loadedDraftRef = useRef(false);
+  const updatingGlobalRef = useRef(false);
 
   const bookTitle = selectedBook?.title || manualTitle;
 
-  // Sync local state with global
+  // Sync local state with global (외부 변경 시에만 - 순환 렌더링 방지)
   useEffect(() => {
+    if (updatingGlobalRef.current) {
+      updatingGlobalRef.current = false;
+      return;
+    }
     setLocalDailyAnswer(globalDailyAnswer);
   }, [globalDailyAnswer]);
 
   // Debounce auto-save
   useDebounce(
     async () => {
-      if (localDailyAnswer === globalDailyAnswer) return;
+      if (localDailyAnswer === globalDailyAnswer || isSubmitting) return;
+      updatingGlobalRef.current = true;
       setGlobalDailyAnswer(localDailyAnswer);
 
-      if (participantId && participationCode && localDailyAnswer.length > 5 && !isSubmitting) {
+      if (participantId && participationCode && localDailyAnswer.length > 5) {
         await performAutoSave(localDailyAnswer);
       }
     },
     1000,
-    [localDailyAnswer]
+    [localDailyAnswer, isSubmitting]
   );
 
   const performAutoSave = async (currentAnswer: string) => {
@@ -88,7 +94,7 @@ function Step3Content() {
       await saveDraft(participantId, participationCode, draftData, participant?.name, submissionDate || undefined);
       setLastSavedAt(new Date());
     } catch (error) {
-      console.error('Auto-save failed', error);
+      logger.error('[Step3] Auto-save failed', error);
     } finally {
       setIsAutoSaving(false);
     }

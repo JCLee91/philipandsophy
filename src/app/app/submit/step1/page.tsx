@@ -59,88 +59,100 @@ function Step1Content() {
     if (!participant || !cohortId || existingSubmissionId || imageFile || hasLoadedDraftRef.current) return;
 
     hasLoadedDraftRef.current = true;
+    let cancelled = false;
+
     const loadDraft = async () => {
       setIsLoadingDraft(true);
       try {
         const { getDraftSubmission } = await import('@/lib/firebase/submissions');
         const draft = await getDraftSubmission(participant.id, cohortId, submissionDate || undefined);
+        if (cancelled) return;
 
         if (draft) {
           if (draft.bookImageUrl) {
             try {
               const file = await createFileFromUrl(draft.bookImageUrl);
-              setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
-              setImageStorageUrl(draft.bookImageUrl);
+              if (!cancelled) {
+                setImageFile(file, draft.bookImageUrl, draft.bookImageUrl);
+                setImageStorageUrl(draft.bookImageUrl);
+              }
             } catch {
-              setImageFile(null, draft.bookImageUrl, draft.bookImageUrl);
-              setImageStorageUrl(draft.bookImageUrl);
+              if (!cancelled) {
+                setImageFile(null, draft.bookImageUrl, draft.bookImageUrl);
+                setImageStorageUrl(draft.bookImageUrl);
+              }
             }
           }
-          if (draft.isEBook) {
+          if (draft.isEBook && !cancelled) {
             setIsEBook(true);
           }
         }
       } catch (error) {
-        logger.error('Draft 로드 실패:', error);
+        if (!cancelled) logger.error('Draft 로드 실패:', error);
       } finally {
-        setIsLoadingDraft(false);
+        if (!cancelled) setIsLoadingDraft(false);
       }
     };
 
     loadDraft();
+    return () => { cancelled = true; };
   }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, setIsEBook, submissionDate]);
 
   // 기존 제출물 불러오기 (수정 모드)
   useEffect(() => {
     if (!participant || !cohortId || !existingSubmissionId || hasLoadedExistingRef.current) return;
 
+    hasLoadedExistingRef.current = true; // 무한 재시도 방지: 먼저 설정
+    let cancelled = false;
+
     const loadExistingSubmission = async () => {
       setIsLoadingDraft(true);
       try {
         const { getSubmissionById } = await import('@/lib/firebase/submissions');
         const submission = await getSubmissionById(existingSubmissionId);
-        if (!submission) return;
-
-        hasLoadedExistingRef.current = true;
+        if (!submission || cancelled) return;
 
         if (submission.bookImageUrl) {
           try {
             const file = await createFileFromUrl(submission.bookImageUrl);
-            setImageFile(file, submission.bookImageUrl, submission.bookImageUrl);
+            if (!cancelled) setImageFile(file, submission.bookImageUrl, submission.bookImageUrl);
           } catch {
-            setImageFile(null, submission.bookImageUrl, submission.bookImageUrl);
+            if (!cancelled) setImageFile(null, submission.bookImageUrl, submission.bookImageUrl);
           }
-          setImageStorageUrl(submission.bookImageUrl);
+          if (!cancelled) setImageStorageUrl(submission.bookImageUrl);
         }
 
-        if (submission.isEBook) setIsEBook(true);
+        if (!cancelled) {
+          if (submission.isEBook) setIsEBook(true);
 
-        if (submission.bookTitle) {
-          if (submission.bookAuthor || submission.bookCoverUrl || submission.bookDescription) {
-            setSelectedBook({
-              title: submission.bookTitle,
-              author: submission.bookAuthor || '',
-              image: submission.bookCoverUrl || '',
-              description: submission.bookDescription || '',
-              isbn: '', publisher: '', pubdate: '', link: '', discount: '',
-            });
-            setManualTitle('');
-          } else {
-            setSelectedBook(null);
-            setManualTitle(submission.bookTitle);
+          if (submission.bookTitle) {
+            if (submission.bookAuthor || submission.bookCoverUrl || submission.bookDescription) {
+              setSelectedBook({
+                title: submission.bookTitle,
+                author: submission.bookAuthor || '',
+                image: submission.bookCoverUrl || '',
+                description: submission.bookDescription || '',
+                isbn: '', publisher: '', pubdate: '', link: '', discount: '',
+              });
+              setManualTitle('');
+            } else {
+              setSelectedBook(null);
+              setManualTitle(submission.bookTitle);
+            }
           }
-        }
 
-        if (submission.review) setReview(submission.review);
-        if (submission.dailyAnswer) setDailyAnswer(submission.dailyAnswer);
+          if (submission.review) setReview(submission.review);
+          if (submission.dailyAnswer) setDailyAnswer(submission.dailyAnswer);
+        }
       } catch {
-        toast({ title: '제출물 불러오기 실패', description: '다시 시도해주세요.', variant: 'destructive' });
+        if (!cancelled) toast({ title: '제출물 불러오기 실패', description: '다시 시도해주세요.', variant: 'destructive' });
       } finally {
-        setIsLoadingDraft(false);
+        if (!cancelled) setIsLoadingDraft(false);
       }
     };
 
     loadExistingSubmission();
+    return () => { cancelled = true; };
   }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, setIsEBook, toast]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,6 +174,7 @@ function Step1Content() {
         setIsEBook(false);
       };
       reader.onerror = () => {
+        setIsProcessing(false);
         toast({ title: '이미지 로드 실패', description: '이미지를 불러올 수 없습니다.', variant: 'destructive' });
       };
       reader.readAsDataURL(processedFile);

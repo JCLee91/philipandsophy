@@ -73,15 +73,15 @@ function Step2Content() {
   // Debounce auto-save
   useDebounce(
     async () => {
-      if (localReview === globalReview) return;
+      if (localReview === globalReview || isProcessing) return;
       setGlobalReview(localReview);
 
-      if (participantId && participationCode && localReview.length > 5 && !isProcessing) {
+      if (participantId && participationCode && localReview.length > 5) {
         await performAutoSave(localReview);
       }
     },
     1000,
-    [localReview]
+    [localReview, isProcessing]
   );
 
   const performAutoSave = async (currentReview: string) => {
@@ -102,7 +102,7 @@ function Step2Content() {
       await saveDraft(participantId, participationCode, draftData, participant?.name, submissionDate || undefined);
       setLastSavedAt(new Date());
     } catch (error) {
-      console.error('Auto-save failed', error);
+      logger.error('[Step2] Auto-save failed', error);
     } finally {
       setIsAutoSaving(false);
     }
@@ -425,7 +425,7 @@ function Step2Content() {
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <div className="flex items-center gap-1">
                 <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] tracking-[-0.14px]">{manualTitle}</p>
-                <button type="button" onClick={() => { setSearchQuery(manualTitle); setManualTitle(''); }} className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors">
+                <button type="button" onClick={() => { setSearchQuery(manualTitle); setManualTitle(''); setSearchResults([]); }} className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors">
                   <Image src="/image/today-library/ri_pencil-fill.svg" alt="제목 수정" width={18} height={18} />
                 </button>
               </div>

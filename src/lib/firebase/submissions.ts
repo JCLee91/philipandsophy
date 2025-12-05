@@ -47,9 +47,10 @@ function generateSubmissionId(participantName: string): string {
   const day = String(now.getDate()).padStart(2, '0');
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
   // 이름에서 공백 제거하고 안전한 문자만 사용
   const safeName = participantName.replace(/\s+/g, '').replace(/[\/\\?%*:|"<>]/g, '');
-  return `${safeName}_${month}${day}_${hours}${minutes}`;
+  return `${safeName}_${month}${day}_${hours}${minutes}${seconds}`;
 }
 
 /**
@@ -69,12 +70,12 @@ export async function createSubmission(
   // Step 1에서 전달된 날짜 우선, 없으면 현재 시점 기준 계산
   const submissionDate = data.submissionDate || getSubmissionDate();
 
-  // 중복 제출 방지: 같은 날짜에 이미 approved 제출물이 있는지 확인
+  // 중복 제출 방지: 같은 날짜에 이미 approved 또는 pending 제출물이 있는지 확인
   const existingQuery = query(
     collection(db, COLLECTIONS.READING_SUBMISSIONS),
     where('participantId', '==', data.participantId),
     where('submissionDate', '==', submissionDate),
-    where('status', '==', 'approved'),
+    where('status', 'in', ['approved', 'pending']),
     limit(1)
   );
   const existingSnapshot = await getDocs(existingQuery);
