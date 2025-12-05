@@ -94,14 +94,16 @@ function Step3Content() {
     }
   };
 
-  // Step 2 validation
+  // Step 2 validation (제출 중에는 스킵 - reset() 후 race condition 방지)
   useEffect(() => {
+    if (isSubmitting) return;
+
     const hasBook = selectedBook || manualTitle.trim();
     if (!hasBook || !review.trim() || review.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
       toast({ title: '감상평을 먼저 작성해주세요', description: '2단계에서 책 정보와 감상평을 입력해주세요.', variant: 'destructive' });
       router.replace(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     }
-  }, [selectedBook, manualTitle, review, cohortId, existingSubmissionId, router, toast]);
+  }, [selectedBook, manualTitle, review, cohortId, existingSubmissionId, router, toast, isSubmitting]);
 
   // 일일 질문 로드 (constants에서)
   useEffect(() => {
