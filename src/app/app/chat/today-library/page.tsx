@@ -972,19 +972,6 @@ function TodayLibraryV3Content() {
       effectiveDate
     );
   }, [cohort?.dailyFeaturedParticipants, currentUserId, urlMatchingDate, preferredMatchingDate]);
-
-  // DEBUG: PostProgramView 진입 시 데이터 확인
-  if (fromRecap) {
-    console.log('[DEBUG fromRecap]', {
-      fromRecap,
-      urlMatchingDate,
-      currentUserId,
-      hasDailyFeatured: !!cohort?.dailyFeaturedParticipants,
-      myClusterMatching,
-      availableDates: cohort?.dailyFeaturedParticipants ? Object.keys(cohort.dailyFeaturedParticipants) : [],
-    });
-  }
-
   // 다른 클러스터 구경 시 해당 클러스터 데이터 조회
   // URL에서 받은 matchingDate를 우선 사용 (다른 모임 선택 시 어제 매칭 유지)
   const targetClusterMatching = useMemo(() => {
