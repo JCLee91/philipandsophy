@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
-import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{
@@ -38,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const updateData: Record<string, any> = {
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     if (name !== undefined) updateData.name = name;
@@ -57,7 +58,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     });
 
   } catch (error) {
-    console.error('Error updating participant:', error);
+    logger.error('Error updating participant:', error);
     return NextResponse.json(
       { error: 'Failed to update participant' },
       { status: 500 }

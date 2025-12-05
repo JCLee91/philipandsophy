@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase/admin-init';
 import { requireAuthToken } from '@/lib/api-auth';
 import { APP_CONSTANTS } from '@/constants/app';
-import * as admin from 'firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/datacntr/notices/create
@@ -74,8 +75,8 @@ export async function POST(request: NextRequest) {
       content: content.trim(),
       status: status || 'published',
       isCustom: true,
-      createdAt: admin.firestore.Timestamp.now(),
-      updatedAt: admin.firestore.Timestamp.now(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
       ...(imageUrl && { imageUrl }),
     };
 
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     // 예약 발행 처리
     if (status === 'scheduled' && scheduledAtStr) {
-      noticeData.scheduledAt = admin.firestore.Timestamp.fromDate(new Date(scheduledAtStr));
+      noticeData.scheduledAt = Timestamp.fromDate(new Date(scheduledAtStr));
     }
 
     const noticeRef = await db.collection('notices').add(noticeData);
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
       noticeId: noticeRef.id,
     });
   } catch (error) {
-    console.error('Error creating notice:', error);
+    logger.error('Error creating notice:', error);
     return NextResponse.json(
       { error: '공지 작성 중 오류가 발생했습니다' },
       { status: 500 }

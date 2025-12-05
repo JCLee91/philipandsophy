@@ -75,9 +75,15 @@ export async function fetchWithTokenRefresh(
     throw new Error('인증이 필요합니다.');
   }
 
+  // FormData인 경우 Content-Type 헤더 제거 (브라우저가 자동으로 multipart/form-data 설정)
+  const finalHeaders = { ...headers };
+  if (options?.body instanceof FormData) {
+    delete finalHeaders['Content-Type'];
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers,
+    headers: finalHeaders,
   });
 
   // 토큰 만료 체크

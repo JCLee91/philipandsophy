@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase/admin-init';
 import { requireAuthToken } from '@/lib/api-auth';
 import { APP_CONSTANTS } from '@/constants/app';
-import * as admin from 'firebase-admin';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 /**
  * GET /api/datacntr/notices/[noticeId]
@@ -133,19 +133,19 @@ export async function PUT(
       author: APP_CONSTANTS.ADMIN_NAME, // 항상 "필립앤소피"로 고정
       content: content.trim(),
       status: newStatus,
-      updatedAt: new Date(),
+      updatedAt: Timestamp.now(),
     };
 
     // 예약 발행 처리
     if (newStatus === 'scheduled' && scheduledAtStr) {
-      updateData.scheduledAt = admin.firestore.Timestamp.fromDate(new Date(scheduledAtStr));
+      updateData.scheduledAt = Timestamp.fromDate(new Date(scheduledAtStr));
     }
 
     if (title) {
       updateData.title = title.trim();
     } else {
       // 제목을 지운 경우 (빈 문자열) -> 필드 삭제
-      updateData.title = admin.firestore.FieldValue.delete();
+      updateData.title = FieldValue.delete();
     }
 
     if (imageUrl) {
