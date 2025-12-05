@@ -17,6 +17,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PushNotificationRefresher } from '@/components/PushNotificationRefresher';
 import ImpersonationBanner from '@/components/admin/ImpersonationBanner';
+import { GlobalErrorBoundary } from '@/components/GlobalErrorBoundary';
+import { AppLifecycleManager } from '@/components/AppLifecycleManager';
 
 // ✅ Firebase 즉시 초기화 (모듈 로드 시점, React 마운트 대기 불필요)
 if (typeof window !== 'undefined') {
@@ -27,10 +29,10 @@ if (typeof window !== 'undefined') {
 const ReactQueryDevtools =
   process.env.NODE_ENV === 'development'
     ? lazy(() =>
-        import('@tanstack/react-query-devtools').then((mod) => ({
-          default: mod.ReactQueryDevtools,
-        }))
-      )
+      import('@tanstack/react-query-devtools').then((mod) => ({
+        default: mod.ReactQueryDevtools,
+      }))
+    )
     : () => null;
 
 function makeQueryClient() {
@@ -56,9 +58,9 @@ let browserQueryClient: QueryClient | undefined = undefined;
 // localStorage persister 생성 (브라우저 전용)
 const persister = typeof window !== 'undefined'
   ? createSyncStoragePersister({
-      storage: window.localStorage,
-      key: 'philipandsophy-cache', // 캐시 저장 키
-    })
+    storage: window.localStorage,
+    key: 'philipandsophy-cache', // 캐시 저장 키
+  })
   : undefined;
 
 function getQueryClient() {
@@ -104,18 +106,22 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      {persister ? (
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
-        >
-          {content}
-        </PersistQueryClientProvider>
-      ) : (
-        <QueryClientProvider client={queryClient}>
-          {content}
-        </QueryClientProvider>
-      )}
+      <GlobalErrorBoundary>
+        {persister ? (
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+          >
+            <AppLifecycleManager />
+            {content}
+          </PersistQueryClientProvider>
+        ) : (
+          <QueryClientProvider client={queryClient}>
+            <AppLifecycleManager />
+            {content}
+          </QueryClientProvider>
+        )}
+      </GlobalErrorBoundary>
     </ThemeProvider>
   );
 }

@@ -75,10 +75,18 @@ export async function getParticipantById(
 }
 
 /**
+ * Firestore 쿼리 타임아웃 (네트워크 무한 대기 방지)
+ */
+const FIRESTORE_TIMEOUT_MS = 10000; // 10초
+
+/**
  * 전화번호로 모든 참가자 조회 (여러 코호트 참가 지원)
  *
  * @param phoneNumber - 전화번호
  * @returns 해당 전화번호로 등록된 모든 참가자 배열
+ *
+ * 백그라운드 복귀 시 네트워크 재연결 지연으로 인한 무한 대기 방지를 위해
+ * 10초 타임아웃을 적용합니다.
  */
 export async function getAllParticipantsByPhoneNumber(
   phoneNumber: string
@@ -90,7 +98,16 @@ export async function getAllParticipantsByPhoneNumber(
     where('phoneNumber', '==', cleanNumber)
   );
 
-  const querySnapshot = await getDocs(q);
+  // 타임아웃 Promise - 네트워크 무한 대기 방지
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(
+      () => reject(new Error('Firestore query timeout: getAllParticipantsByPhoneNumber')),
+      FIRESTORE_TIMEOUT_MS
+    );
+  });
+
+  const queryPromise = getDocs(q);
+  const querySnapshot = await Promise.race([queryPromise, timeoutPromise]);
 
   if (querySnapshot.empty) {
     return [];

@@ -117,6 +117,37 @@ export default function Home() {
     targetCohortId,
   ]);
 
+  // 로딩 타임아웃 시 재시도 UI 표시 (스플래시 무한 표시 방지)
+  if (loadingTimeout && (isLoading || isCohortLoading)) {
+    return (
+      <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-gray-50">
+        <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-sm text-center space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">로딩이 오래 걸리고 있습니다</h2>
+          <p className="text-gray-600">
+            네트워크 연결이 느리거나 일시적인 문제가 있을 수 있습니다.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoadingTimeout(false);
+              retryParticipantFetch();
+            }}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            다시 시도
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm"
+          >
+            앱 새로고침
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading || !minSplashElapsed || isCohortLoading) {
     return <SplashScreen />;
   }
