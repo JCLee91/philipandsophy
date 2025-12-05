@@ -51,7 +51,7 @@ export default function FooterActions({
 }: FooterActionsProps) {
   return (
     <div className={cn('shrink-0 bg-white', !noBorder && 'border-t', className)}>
-      <div className={cn('mx-auto px-6 app-footer', maxWidthClasses[maxWidth])}>
+      <div className={cn('mx-auto flex w-full flex-col gap-2 px-6 app-footer', maxWidthClasses[maxWidth])}>
         {children}
       </div>
     </div>
