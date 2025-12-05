@@ -54,18 +54,44 @@ function Step1Content() {
   const hasLoadedDraftRef = useRef(false);
   const hasLoadedExistingRef = useRef(false);
 
+  const { _hasHydrated } = useSubmissionFlowStore();
+
+  // 🔍 DEBUG: 로딩 상태 추적
+  useEffect(() => {
+    console.log('[Step1 DEBUG] 상태 변경:', {
+      _hasHydrated,
+      sessionLoading,
+      participant: participant ? `${participant.id} (${participant.name})` : null,
+      cohortId,
+      isLoadingDraft,
+      imageFile: imageFile ? 'exists' : null,
+      imageStorageUrl,
+      isEBook,
+    });
+  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingDraft, imageFile, imageStorageUrl, isEBook]);
+
   // 임시저장 자동 불러오기
   useEffect(() => {
+    console.log('[Step1 DEBUG] Draft 로드 조건 체크:', {
+      participant: !!participant,
+      cohortId,
+      existingSubmissionId,
+      imageFile: !!imageFile,
+      hasLoadedDraftRef: hasLoadedDraftRef.current,
+    });
     if (!participant || !cohortId || existingSubmissionId || imageFile || hasLoadedDraftRef.current) return;
 
     hasLoadedDraftRef.current = true;
     let cancelled = false;
 
     const loadDraft = async () => {
+      console.log('[Step1 DEBUG] Draft 로드 시작');
       setIsLoadingDraft(true);
       try {
         const { getDraftSubmission } = await import('@/lib/firebase/submissions');
+        console.log('[Step1 DEBUG] getDraftSubmission 호출:', { participantId: participant.id, cohortId, submissionDate });
         const draft = await getDraftSubmission(participant.id, cohortId, submissionDate || undefined);
+        console.log('[Step1 DEBUG] Draft 로드 결과:', draft);
         if (cancelled) return;
 
         if (draft) {
@@ -90,7 +116,9 @@ function Step1Content() {
       } catch (error) {
         if (!cancelled) logger.error('Draft 로드 실패:', error);
       } finally {
-        if (!cancelled) setIsLoadingDraft(false);
+        // cancelled 여부와 관계없이 로딩 상태는 해제해야 함
+        setIsLoadingDraft(false);
+        console.log('[Step1 DEBUG] Draft 로드 완료, isLoadingDraft: false');
       }
     };
 

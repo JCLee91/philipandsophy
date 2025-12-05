@@ -1,9 +1,14 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { NaverBook } from '@/lib/naver-book-api';
 
 interface SubmissionFlowState {
+  // Hydration 상태
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
+
   // Step 1: 이미지 업로드
   imageFile: File | null;
   imagePreview: string | null;
@@ -43,6 +48,7 @@ interface SubmissionFlowState {
 }
 
 const initialState = {
+  _hasHydrated: false,
   imageFile: null,
   imagePreview: null,
   imageStorageUrl: null,
@@ -58,31 +64,82 @@ const initialState = {
   isEBook: false,
 };
 
-export const useSubmissionFlowStore = create<SubmissionFlowState>((set) => ({
-  ...initialState,
+export const useSubmissionFlowStore = create<SubmissionFlowState>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setImageFile: (file, preview, storageUrl = null) =>
-    set({ imageFile: file, imagePreview: preview, imageStorageUrl: storageUrl ?? null }),
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
-  clearImagePreview: () => set({ imagePreview: null }),
+      setImageFile: (file, preview, storageUrl = null) =>
+        set({ imageFile: file, imagePreview: preview, imageStorageUrl: storageUrl ?? null }),
 
-  setSelectedBook: (book) => set({ selectedBook: book }),
+      clearImagePreview: () => set({ imagePreview: null }),
 
-  setManualTitle: (title) => set({ manualTitle: title }),
+      setSelectedBook: (book) => set({ selectedBook: book }),
 
-  setReview: (review) => set({ review }),
+      setManualTitle: (title) => set({ manualTitle: title }),
 
-  setDailyAnswer: (answer) => set({ dailyAnswer: answer }),
+      setReview: (review) => set({ review }),
 
-  setMetaInfo: (participantId, participationCode, cohortId, existingSubmissionId) =>
-    set({ participantId, participationCode, cohortId, existingSubmissionId }),
+      setDailyAnswer: (answer) => set({ dailyAnswer: answer }),
 
-  setImageStorageUrl: (url) => set({ imageStorageUrl: url }),
+      setMetaInfo: (participantId, participationCode, cohortId, existingSubmissionId) =>
+        set({ participantId, participationCode, cohortId, existingSubmissionId }),
 
-  setSubmissionDate: (date) => set({ submissionDate: date }),
+      setImageStorageUrl: (url) => set({ imageStorageUrl: url }),
 
-  isEBook: false,
-  setIsEBook: (isEBook: boolean) => set({ isEBook }),
+      setSubmissionDate: (date) => set({ submissionDate: date }),
 
-  reset: () => set(initialState),
-}));
+      isEBook: false,
+      setIsEBook: (isEBook: boolean) => set({ isEBook }),
+
+      reset: () => set({ ...initialState, _hasHydrated: true }), // hydration 상태는 유지
+    }),
+    {
+      name: 'submission-flow-storage',
+      storage: {
+        getItem: (name) => {
+          if (typeof window === 'undefined') return null;
+          const str = sessionStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          if (typeof window === 'undefined') return;
+          sessionStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => {
+          if (typeof window === 'undefined') return;
+          sessionStorage.removeItem(name);
+        },
+      },
+      // File 객체는 직렬화할 수 없으므로 제외
+      partialize: (state) => ({
+        selectedBook: state.selectedBook,
+        manualTitle: state.manualTitle,
+        review: state.review,
+        dailyAnswer: state.dailyAnswer,
+        participantId: state.participantId,
+        participationCode: state.participationCode,
+        cohortId: state.cohortId,
+        existingSubmissionId: state.existingSubmissionId,
+        submissionDate: state.submissionDate,
+        isEBook: state.isEBook,
+        imageStorageUrl: state.imageStorageUrl,
+        // imageFile, imagePreview는 File/base64라서 제외
+      }),
+      onRehydrateStorage: () => (state) => {
+        console.log('[Zustand] Hydration 시작, 복원된 상태:', {
+          isEBook: state?.isEBook,
+          selectedBook: state?.selectedBook?.title,
+          manualTitle: state?.manualTitle,
+          review: state?.review?.length,
+          imageStorageUrl: state?.imageStorageUrl,
+          submissionDate: state?.submissionDate,
+        });
+        state?.setHasHydrated(true);
+        console.log('[Zustand] Hydration 완료, _hasHydrated:', true);
+      },
+    }
+  )
+);

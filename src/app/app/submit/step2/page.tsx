@@ -50,6 +50,7 @@ function Step2Content() {
     setImageFile,
     setImageStorageUrl,
     isEBook,
+    _hasHydrated,
   } = useSubmissionFlowStore();
 
   // Local state for performance
@@ -64,6 +65,23 @@ function Step2Content() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const loadedSubmissionId = useRef<string | null>(null);
+
+  // 🔍 DEBUG: 로딩 상태 추적
+  useEffect(() => {
+    console.log('[Step2 DEBUG] 상태 변경:', {
+      _hasHydrated,
+      sessionLoading,
+      participant: participant ? `${participant.id} (${participant.name})` : null,
+      cohortId,
+      isLoadingDraft,
+      imageFile: imageFile ? 'exists' : null,
+      imageStorageUrl,
+      isEBook,
+      selectedBook: selectedBook?.title,
+      manualTitle,
+      review: globalReview?.length,
+    });
+  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingDraft, imageFile, imageStorageUrl, isEBook, selectedBook, manualTitle, globalReview]);
 
   // Sync local state with global
   useEffect(() => {
@@ -108,13 +126,15 @@ function Step2Content() {
     }
   };
 
-  // Step 1 검증
+  // Step 1 검증 (hydration 완료 후에만 실행)
   useEffect(() => {
-    if (!imageFile && !existingSubmissionId && !isEBook) {
+    if (!_hasHydrated) return; // hydration 대기
+    if (!imageFile && !imageStorageUrl && !existingSubmissionId && !isEBook) {
+      console.log('[Step2 DEBUG] Step1 검증 실패:', { imageFile: !!imageFile, imageStorageUrl, existingSubmissionId, isEBook, _hasHydrated });
       toast({ title: '이미지를 먼저 업로드해주세요', variant: 'destructive' });
       router.replace(`${appRoutes.submitStep1(cohortId!)}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     }
-  }, [imageFile, existingSubmissionId, cohortId, router, toast, isEBook]);
+  }, [imageFile, imageStorageUrl, existingSubmissionId, cohortId, router, toast, isEBook, _hasHydrated]);
 
   // 새로운 제출 시작 시 책 관련 상태 초기화
   useEffect(() => {

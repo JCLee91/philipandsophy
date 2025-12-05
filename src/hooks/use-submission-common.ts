@@ -20,6 +20,17 @@ export function useSubmissionCommon() {
   const existingSubmissionId = searchParams.get('edit');
 
   const { participant, isLoading: sessionLoading } = useAuth();
+
+  // 🔍 DEBUG: 공통 훅 상태
+  useEffect(() => {
+    console.log('[useSubmissionCommon DEBUG]', {
+      cohortId,
+      existingSubmissionId,
+      sessionLoading,
+      participant: participant ? `${participant.id} (${participant.name})` : null,
+      searchParams: searchParams.toString(),
+    });
+  }, [cohortId, existingSubmissionId, sessionLoading, participant, searchParams]);
   const { toast } = useToast();
   const keyboardHeight = useKeyboardHeight();
 

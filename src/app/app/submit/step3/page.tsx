@@ -1,11 +1,13 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSubmissionFlowStore } from '@/stores/submission-flow-store';
 import { saveDraft, createSubmission, updateParticipantBookInfo } from '@/lib/firebase';
 import { getDailyQuestion } from '@/lib/firebase/daily-questions';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { useSubmissionCommon } from '@/hooks/use-submission-common';
+import { SUBMISSION_KEYS } from '@/hooks/use-submissions';
 import SubmissionLayout from '@/components/submission/SubmissionLayout';
 import UnifiedButton from '@/components/UnifiedButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -34,6 +36,8 @@ function Step3Content() {
     handleBack,
   } = useSubmissionCommon();
 
+  const queryClient = useQueryClient();
+
   const {
     imageStorageUrl,
     selectedBook,
@@ -43,12 +47,14 @@ function Step3Content() {
     setDailyAnswer: setGlobalDailyAnswer,
     reset,
     isEBook,
+    _hasHydrated,
   } = useSubmissionFlowStore();
 
   const [localDailyAnswer, setLocalDailyAnswer] = useState(globalDailyAnswer);
   const [dailyQuestion, setDailyQuestion] = useState<string | null>(null);
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitSuccess, setIsSubmitSuccess] = useState(false); // 제출 성공 후 validation 스킵용
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const loadedExistingDailyAnswerRef = useRef(false);
@@ -56,6 +62,23 @@ function Step3Content() {
   const updatingGlobalRef = useRef(false);
 
   const bookTitle = selectedBook?.title || manualTitle;
+
+  // 🔍 DEBUG: 로딩 상태 추적
+  useEffect(() => {
+    console.log('[Step3 DEBUG] 상태 변경:', {
+      _hasHydrated,
+      sessionLoading,
+      participant: participant ? `${participant.id} (${participant.name})` : null,
+      cohortId,
+      isLoadingQuestion,
+      isSubmitting,
+      selectedBook: selectedBook?.title,
+      manualTitle,
+      review: review?.length,
+      imageStorageUrl,
+      isEBook,
+    });
+  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingQuestion, isSubmitting, selectedBook, manualTitle, review, imageStorageUrl, isEBook]);
 
   // Sync local state with global (외부 변경 시에만 - 순환 렌더링 방지)
   useEffect(() => {
@@ -100,17 +123,19 @@ function Step3Content() {
     }
   };
 
-  // Step 2 validation (제출 중/수정 모드에서는 스킵)
+  // Step 2 validation (hydration 완료 후, 제출 중/수정 모드에서는 스킵)
   // 수정 모드: 기존 submission에 이미 review가 있으므로 store 로드 전 validation 불필요
   useEffect(() => {
-    if (isSubmitting || existingSubmissionId) return;
+    if (!_hasHydrated) return; // hydration 대기
+    if (isSubmitting || isSubmitSuccess || existingSubmissionId) return; // 제출 성공 후에도 스킵
 
     const hasBook = selectedBook || manualTitle.trim();
     if (!hasBook || !review.trim() || review.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
+      console.log('[Step3 DEBUG] Step2 검증 실패:', { hasBook, reviewLength: review?.length, _hasHydrated });
       toast({ title: '감상평을 먼저 작성해주세요', description: '2단계에서 책 정보와 감상평을 입력해주세요.', variant: 'destructive' });
       router.replace(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     }
-  }, [selectedBook, manualTitle, review, cohortId, existingSubmissionId, router, toast, isSubmitting]);
+  }, [selectedBook, manualTitle, review, cohortId, existingSubmissionId, router, toast, isSubmitting, isSubmitSuccess, _hasHydrated]);
 
   // 일일 질문 로드 (Firestore cohort별 daily_questions에서)
   useEffect(() => {
@@ -178,12 +203,25 @@ function Step3Content() {
   }, [existingSubmissionId, setGlobalDailyAnswer]);
 
   const handleSubmit = async () => {
+    console.log('[Step3 DEBUG] 제출 시작:', {
+      localDailyAnswer: localDailyAnswer.length,
+      participantId,
+      participationCode,
+      cohortId,
+      bookTitle,
+      selectedBook: selectedBook?.title,
+      review: review?.length,
+      imageStorageUrl,
+      isEBook,
+    });
+
     if (localDailyAnswer.length < SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH) {
       toast({ title: `최소 ${SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH}자 이상 작성해주세요`, description: `현재 ${localDailyAnswer.length}자 입력됨`, variant: 'destructive' });
       return;
     }
 
     if (!participantId || !participationCode || !cohortId || !bookTitle) {
+      console.log('[Step3 DEBUG] 필수 정보 누락:', { participantId, participationCode, cohortId, bookTitle });
       toast({ title: '필수 정보가 누락되었습니다', variant: 'destructive' });
       return;
     }
@@ -241,14 +279,26 @@ function Step3Content() {
         }
       }
 
+      console.log('[Step3 DEBUG] 제출 성공, store reset 호출');
+      setIsSubmitSuccess(true); // validation 스킵 플래그 설정 (reset 전에!)
       reset();
 
+      // React Query 캐시 무효화 → 채팅 화면에서 "수정하기" 버튼으로 바뀜
+      await queryClient.invalidateQueries({
+        queryKey: SUBMISSION_KEYS.all,
+        refetchType: 'all',
+      });
+      console.log('[Step3 DEBUG] 쿼리 캐시 무효화 완료');
+
       toast({ title: existingSubmissionId ? '수정 완료!' : '제출 완료!', description: '독서 인증이 성공적으로 제출되었습니다.' });
+      console.log('[Step3 DEBUG] 채팅 화면으로 이동');
 
       router.replace(`${appRoutes.chat(cohortId)}?t=${Date.now()}&fresh=true`);
     } catch (error) {
+      console.error('[Step3 DEBUG] 제출 실패:', error);
       toast({ title: '제출 실패', description: error instanceof Error ? error.message : '다시 시도해주세요.', variant: 'destructive' });
     } finally {
+      console.log('[Step3 DEBUG] 제출 완료, isSubmitting: false');
       setIsSubmitting(false);
     }
   };
