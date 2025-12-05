@@ -19,6 +19,7 @@ export default function Home() {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [minSplashElapsed, setMinSplashElapsed] = useState(false);
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
   const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
   const {
@@ -39,6 +40,11 @@ export default function Home() {
     }, MIN_SPLASH_TIME);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  // Impersonate 모드 확인 (유저 시점으로 보기)
+  useEffect(() => {
+    setIsImpersonating(sessionStorage.getItem('pns_admin_impersonation') === 'true');
   }, []);
 
   useEffect(() => {
@@ -85,7 +91,10 @@ export default function Home() {
 
       let targetCohortIdToNavigate: string | null = null;
 
-      if (isAdminUser) {
+      // Impersonate 모드가 아닌 관리자만 최신 활성 코호트로 이동
+      const shouldUseAdminLogic = isAdminUser && !isImpersonating;
+
+      if (shouldUseAdminLogic) {
         const activeCohort = activeCohorts[0];
 
         if (activeCohort) {
@@ -94,6 +103,7 @@ export default function Home() {
           targetCohortIdToNavigate = participant.cohortId;
         }
       } else {
+        // 일반 유저 또는 Impersonate 모드: 타겟 유저의 cohortId 사용
         targetCohortIdToNavigate = participant.cohortId;
       }
 
@@ -111,6 +121,7 @@ export default function Home() {
     loadingTimeout,
     hasNavigated,
     isAdminUser,
+    isImpersonating,
     router,
     isCohortLoading,
     targetCohort,
