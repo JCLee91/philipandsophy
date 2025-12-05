@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { requireAuthToken } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
+import { COLLECTIONS } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   // 🔒 관리자 인증 확인
@@ -27,9 +28,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = await getAdminDb();
+    const db = getAdminDb();
     const participantsSnapshot = await db
-      .collection('participants')
+      .collection(COLLECTIONS.PARTICIPANTS)
       .where('cohortId', '==', cohortId)
       .orderBy('name', 'asc')
       .get();

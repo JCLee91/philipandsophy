@@ -175,6 +175,6 @@ export function useNoticeForm({ mode, noticeId, templateId }: UseNoticeFormOptio
     title, setTitle, content, setContent, imagePreview, handleImageChange, handleRemoveImage,
     isScheduled, setIsScheduled, scheduledDate, setScheduledDate, scheduledHour, setScheduledHour,
     scheduledMinute, setScheduledMinute, handleScheduleToggle, handleSubmit, isSubmitting, isDrafting,
-    status, isLoading, needsCohortSelection, selectedCohort, selectedCohortId,
+    status, setStatus, isLoading, needsCohortSelection, selectedCohort, selectedCohortId,
   };
 }

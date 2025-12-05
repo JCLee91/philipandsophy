@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { requireAuthToken } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
+import { COLLECTIONS } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   // 🔒 관리자 인증 확인
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = await getAdminDb();
+    const db = getAdminDb();
 
     // Get today's date string (Korea time, YYYY-MM-DD format)
     const now = new Date();
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Get all participants in the cohort
     const participantsSnapshot = await db
-      .collection('participants')
+      .collection(COLLECTIONS.PARTICIPANTS)
       .where('cohortId', '==', cohortId)
       .get();
 
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // Get today's submissions for these participants
     const submissionsSnapshot = await db
-      .collection('reading_submissions')
+      .collection(COLLECTIONS.READING_SUBMISSIONS)
       .where('submissionDate', '==', todayDateString)
       .get();
 

@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { ReadingSubmission } from '@/types/database';
+import { ReadingSubmission, COLLECTIONS } from '@/types/database';
 
 /**
  * 클러스터 멤버들의 특정 날짜 인증 데이터 조회
@@ -26,7 +26,7 @@ export function useClusterSubmissions(
             }
 
             const db = getDb();
-            const submissionsRef = collection(db, 'reading_submissions');
+            const submissionsRef = collection(db, COLLECTIONS.READING_SUBMISSIONS);
 
             // Firestore 'in' 쿼리 제한 (최대 10개) → 청크로 나눠서 조회
             const submissions: ReadingSubmission[] = [];

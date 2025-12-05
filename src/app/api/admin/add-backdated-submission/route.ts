@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
+import { COLLECTIONS } from '@/types/database';
 import * as admin from 'firebase-admin';
 
 /**
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
       updatedAt: admin.firestore.Timestamp.now(),
     };
 
-    const docRef = await db.collection('reading_submissions').add(submissionData);
+    const docRef = await db.collection(COLLECTIONS.READING_SUBMISSIONS).add(submissionData);
 
     return NextResponse.json({
       success: true,

@@ -74,6 +74,7 @@ export function useClosingParty() {
 
     try {
       setGroupsLoading(true);
+      setError(null);
       const idToken = await user.getIdToken();
       const response = await fetch(
         `/api/datacntr/closing-party/groups?cohortId=${selectedCohortId}`,
@@ -85,7 +86,7 @@ export function useClosingParty() {
       const result = await response.json();
       setGroupsData(result);
     } catch (err) {
-      console.error('Groups fetch error:', err);
+      setError(err instanceof Error ? err.message : '조 편성 로드 오류');
     } finally {
       setGroupsLoading(false);
     }
@@ -124,6 +125,7 @@ export function useClosingParty() {
 
     try {
       setFormingGroups(true);
+      setError(null);
       const idToken = await user.getIdToken();
       const response = await fetch('/api/datacntr/closing-party/groups', {
         method: 'POST',
@@ -138,7 +140,7 @@ export function useClosingParty() {
 
       await fetchGroups();
     } catch (err) {
-      console.error('Form groups error:', err);
+      setError(err instanceof Error ? err.message : '조 편성 오류');
     } finally {
       setFormingGroups(false);
     }
@@ -210,9 +212,11 @@ export function useClosingParty() {
       if (response.ok) {
         const result = await response.json();
         setGroupsData((prev) => (prev ? { ...prev, groups: result.groups } : prev));
+      } else {
+        setError('멤버 이동에 실패했습니다.');
       }
     } catch (err) {
-      console.error('Move member error:', err);
+      setError(err instanceof Error ? err.message : '멤버 이동 오류');
     }
   };
 

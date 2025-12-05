@@ -4,6 +4,7 @@ import { getSubmissionDate } from '@/lib/date-utils';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { logger } from '@/lib/logger';
+import { COLLECTIONS } from '@/types/database';
 
 /**
  * GET /api/admin/matching/status?cohortId=xxx&date=yyyy-mm-dd
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // 오늘 제출한 참가자 수 조회
     const submissionsSnapshot = await db
-      .collection('reading_submissions')
+      .collection(COLLECTIONS.READING_SUBMISSIONS)
       .where('submissionDate', '==', date)
       .where('dailyQuestion', '==', question)
       .get();
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
     for (let i = 0; i < participantIdsArray.length; i += 10) {
       const batchIds = participantIdsArray.slice(i, i + 10);
       const batchDocs = await db
-        .collection('participants')
+        .collection(COLLECTIONS.PARTICIPANTS)
         .where('__name__', 'in', batchIds)
         .get();
 

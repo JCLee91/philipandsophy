@@ -81,8 +81,7 @@ export function useFetchWithAuth<T>({
 
     fetchData();
     fetchedRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, enabled, ...deps]);
+  }, [user, enabled, url, fetchData, ...deps]);
 
   return {
     data,

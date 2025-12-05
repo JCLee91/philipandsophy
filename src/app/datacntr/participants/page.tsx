@@ -27,7 +27,7 @@ type FilterState = {
 
 export default function ParticipantsPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, needsCohortSelection, selectedCohortId } = useDatacntrAuth();
+  const { user, isLoading: authLoading, selectedCohortId } = useDatacntrAuth();
   const [showFilters, setShowFilters] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<ParticipantRow | null>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);

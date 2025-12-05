@@ -143,6 +143,11 @@ export function useTodayLibraryV3() {
   // 답변 확장 상태
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
 
+  // 클러스터 변경 시 expandedAnswers 초기화
+  useEffect(() => {
+    setExpandedAnswers(new Set());
+  }, [targetClusterIdParam, clusterMatching?.clusterId]);
+
   const toggleAnswer = (participantId: string) => {
     const isMe = participantId === currentUserId;
 

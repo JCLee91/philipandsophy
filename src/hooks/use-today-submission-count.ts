@@ -6,6 +6,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getSubmissionDate } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
 import { filterParticipantsByCohort } from '@/lib/firestore-utils';
+import { COLLECTIONS } from '@/types/database';
 
 /**
  * 오늘 제출 현황 실시간 카운트 Hook
@@ -41,7 +42,7 @@ export function useTodaySubmissionCount(cohortId?: string) {
     // 실시간 리스너 설정
     const db = getDb();
     const q = query(
-      collection(db, 'reading_submissions'),
+      collection(db, COLLECTIONS.READING_SUBMISSIONS),
       where('submissionDate', '==', submissionDate),
       where('status', '!=', 'draft') // draft 제외 (임시저장은 카운트 안 함)
     );
