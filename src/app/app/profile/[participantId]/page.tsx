@@ -235,6 +235,15 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 랜덤 매칭: 매칭 날짜가 있으면 항상 접근 가능 (인증 여부 무관)
   const viewerHasAccessForDate = isSuperAdmin || !!effectiveMatchingDate;
 
+  // 해당 매칭 날짜에 인증했는지 체크 (어제 인증 안 한 유저가 옛날 클러스터 받은 경우)
+  const viewerSubmissionDates = useMemo(
+    () => new Set(viewerSubmissions.map(s => s.submissionDate)),
+    [viewerSubmissions]
+  );
+  const isVerifiedForMatchingDate = effectiveMatchingDate
+    ? viewerSubmissionDates.has(effectiveMatchingDate)
+    : false;
+
   // 접근 권한 체크 (submissions useMemo보다 먼저 선언)
   const isSelf = checkIsSelf(participantId);
 
@@ -403,14 +412,14 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // - 14일차 + 인증 완료: 모든 프로필 접근 가능
   // - 15일차 이후: 인증 없이도 모든 프로필 접근 가능
   // - 새 규칙: profileUnlockDate 이상 + 오늘 인증 + 어제 인증한 사람 → 접근 가능
-  // - 기존: 매칭된 4명만 (인증 완료 + 추천 멤버)
+  // - 매칭 날짜에 인증 완료: 해당 날짜의 모든 프로필북 접근 가능
   const hasAccess = isSelf ||
     isSuperAdmin ||
     (isAfterProgramWithoutAuth) ||  // 15일차 이후 (인증 불필요)
     (isFinalDayAccess && isVerifiedToday) ||  // 14일차 (인증 필요)
-    (isFinalDayAccess && searchParams.get('freeAccess') === 'true') || // ✅ FIX: 마지막 날 무료 공개 프로필 (인증 불필요)
-    (isUnlockDayOrAfter && isVerifiedToday && isYesterdayVerified) ||  // 새 규칙: profileUnlockDate 이상
-    (isVerifiedToday && viewerHasAccessForDate && isFeatured) ||  // 기존: 매칭된 4명만
+    (isFinalDayAccess && searchParams.get('freeAccess') === 'true') ||
+    (isUnlockDayOrAfter && isVerifiedToday && isYesterdayVerified) ||
+    (isVerifiedForMatchingDate && viewerHasAccessForDate) ||  // 매칭 날짜에 인증 → 해당 프로필북 접근 가능
     canPreviewAccess;  // 랜덤 매칭 미인증자: 제한된 미리 보기 허용
 
   // 로딩 상태
