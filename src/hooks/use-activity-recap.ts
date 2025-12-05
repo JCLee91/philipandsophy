@@ -181,28 +181,31 @@ export function useActivityRecap({
         // Top 3 계산
         const participantMap = new Map(allParticipants.map(p => [p.id, p]));
 
+        // 관리자/고스트 제외 (participantMap에 있는 참가자만)
         const mostFrequentCompanions = Object.entries(sameClusterCount)
+            .filter(([id]) => participantMap.has(id))
             .sort((a, b) => b[1] - a[1])
             .slice(0, 3)
             .map(([id, count]) => {
-                const p = participantMap.get(id);
+                const p = participantMap.get(id)!;
                 return {
                     participantId: id,
-                    name: p?.name || '알 수 없음',
-                    profileImage: p?.profileImage,
+                    name: p.name,
+                    profileImage: p.profileImage,
                     count,
                 };
             });
 
         const mostDifferentCompanions = Object.entries(differentClusterCount)
+            .filter(([id]) => participantMap.has(id))
             .sort((a, b) => b[1] - a[1])
             .slice(0, 3)
             .map(([id, count]) => {
-                const p = participantMap.get(id);
+                const p = participantMap.get(id)!;
                 return {
                     participantId: id,
-                    name: p?.name || '알 수 없음',
-                    profileImage: p?.profileImage,
+                    name: p.name,
+                    profileImage: p.profileImage,
                     count,
                 };
             });

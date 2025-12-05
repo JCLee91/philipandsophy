@@ -92,6 +92,9 @@ export default function ParticipantsPage() {
       const auth = getFirebaseAuth();
       await signInWithCustomToken(auth, customToken);
 
+      // Firebase Auth 세션 저장 대기 후 이동
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // 전체 새로고침으로 React Query 캐시 초기화
       window.location.href = '/app';
     } catch (error) {

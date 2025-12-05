@@ -47,6 +47,11 @@ export default function ImpersonationBanner() {
           sessionStorage.removeItem('pns_impersonation_return_url');
           sessionStorage.removeItem('pns_impersonation_view_mode');
 
+          // /app 경로로 복귀 시 활성 코호트 리디렉션 방지 플래그
+          if (returnUrl.startsWith('/app')) {
+            sessionStorage.setItem('pns_admin_returning_from_impersonation', 'true');
+          }
+
           // 원래 진입했던 경로(데이터센터 or 앱)로 복귀
           router.replace(returnUrl);
           return;

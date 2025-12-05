@@ -27,6 +27,19 @@ export default function Home() {
     return false;
   });
 
+  // Impersonation에서 복귀한 관리자인지 확인 (활성 코호트 리디렉션 방지)
+  const [isReturningFromImpersonation] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const flag = sessionStorage.getItem('pns_admin_returning_from_impersonation') === 'true';
+      if (flag) {
+        // 플래그 사용 후 즉시 제거 (1회성)
+        sessionStorage.removeItem('pns_admin_returning_from_impersonation');
+      }
+      return flag;
+    }
+    return false;
+  });
+
   const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
   const {
     data: activeCohorts = [],
@@ -93,7 +106,8 @@ export default function Home() {
       let targetCohortIdToNavigate: string | null = null;
 
       // Impersonate 모드가 아닌 관리자만 최신 활성 코호트로 이동
-      const shouldUseAdminLogic = isAdminUser && !isImpersonating;
+      // (단, impersonation에서 막 복귀한 경우는 제외 - 원래 보던 화면 유지)
+      const shouldUseAdminLogic = isAdminUser && !isImpersonating && !isReturningFromImpersonation;
 
       if (shouldUseAdminLogic) {
         const activeCohort = activeCohorts[0];
@@ -123,6 +137,7 @@ export default function Home() {
     hasNavigated,
     isAdminUser,
     isImpersonating,
+    isReturningFromImpersonation,
     router,
     isCohortLoading,
     targetCohort,
