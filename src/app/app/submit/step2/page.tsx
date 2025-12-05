@@ -99,7 +99,7 @@ function Step2Content() {
         draftData.bookCoverUrl = selectedBook.image;
       }
       if (cohortId) draftData.cohortId = cohortId;
-      await saveDraft(participantId, participationCode, draftData, undefined, submissionDate || undefined);
+      await saveDraft(participantId, participationCode, draftData, participant?.name, submissionDate || undefined);
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('Auto-save failed', error);
@@ -326,7 +326,7 @@ function Step2Content() {
         if (localReview) draftData.review = localReview;
         if (cohortId) draftData.cohortId = cohortId;
 
-        await saveDraft(participantId, participationCode, draftData, undefined, submissionDate || undefined);
+        await saveDraft(participantId, participationCode, draftData, participant?.name, submissionDate || undefined);
       } catch (error) {
         logger.error('[Step2] Draft save failed (continuing)', error);
       }

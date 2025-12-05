@@ -85,7 +85,7 @@ function Step3Content() {
         isEBook,
       };
       if (cohortId) draftData.cohortId = cohortId;
-      await saveDraft(participantId, participationCode, draftData, undefined, submissionDate || undefined);
+      await saveDraft(participantId, participationCode, draftData, participant?.name, submissionDate || undefined);
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('Auto-save failed', error);
