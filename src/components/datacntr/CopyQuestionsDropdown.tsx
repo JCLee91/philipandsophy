@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { Copy, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -58,14 +58,15 @@ export default function CopyQuestionsDropdown({ onCopy }: CopyQuestionsDropdownP
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isLoading || isCopying}>
-          {isCopying ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Copy className="h-4 w-4 mr-2" />
-          )}
+        <UnifiedButton
+          variant="outline"
+          size="sm"
+          disabled={isLoading || isCopying}
+          loading={isCopying}
+          icon={!isCopying ? <Copy className="h-4 w-4" /> : undefined}
+        >
           다른 기수에서 복사
-        </Button>
+        </UnifiedButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         {isLoading ? (

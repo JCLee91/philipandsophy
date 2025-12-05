@@ -1,7 +1,7 @@
 'use client';
 
-import { Calendar as CalendarIcon, Clock, MapPin, CheckCircle, UserCheck, UserX, Link, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calendar as CalendarIcon, Clock, MapPin, CheckCircle, UserCheck, UserX, Link } from 'lucide-react';
+import { UnifiedButton } from '@/components/common';
 import { Input } from '@/components/ui/input';
 import type { Cohort } from '@/types/database';
 
@@ -71,9 +71,9 @@ export default function PhaseConfirmed({
               value={openChatUrl}
               onChange={(e) => setOpenChatUrl(e.target.value)}
             />
-            <Button onClick={onUpdateUrl} disabled={isPending}>
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : '저장'}
-            </Button>
+            <UnifiedButton onClick={onUpdateUrl} disabled={isPending} loading={isPending} size="sm">
+              저장
+            </UnifiedButton>
           </div>
           <p className="text-xs text-muted-foreground">
             * 입력한 URL은 모임 하루 전부터 사용자에게 입장하기 버튼으로 노출됩니다.

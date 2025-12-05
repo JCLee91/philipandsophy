@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Upload, X, Image as ImageIcon, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -369,13 +369,17 @@ export default function BulkImageUploadModal({
                             {isUploading && ' (업로드 중...)'}
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={onClose} disabled={isUploading}>
+                            <UnifiedButton variant="outline" onClick={onClose} disabled={isUploading} size="sm">
                                 닫기
-                            </Button>
-                            <Button onClick={handleUploadAll} disabled={isUploading || Object.keys(pendingUploads).length === 0}>
-                                {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            </UnifiedButton>
+                            <UnifiedButton
+                                onClick={handleUploadAll}
+                                disabled={isUploading || Object.keys(pendingUploads).length === 0}
+                                loading={isUploading}
+                                size="sm"
+                            >
                                 일괄 업로드
-                            </Button>
+                            </UnifiedButton>
                         </div>
                     </div>
                 </DialogFooter>

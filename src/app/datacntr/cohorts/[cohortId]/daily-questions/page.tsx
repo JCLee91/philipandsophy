@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { Loader2, ArrowLeft, Save, Copy, Plus } from 'lucide-react';
@@ -403,32 +403,30 @@ export default function DailyQuestionsPage({ params }: DailyQuestionsPageProps) 
         </div>
 
         <div className="mt-4">
-          <Button
+          <UnifiedButton
             type="button"
             variant="outline"
-            className="w-full border-dashed h-12"
+            fullWidth
+            className="border-dashed h-12 font-normal"
             onClick={handleAddQuestion}
+            icon={<Plus className="h-4 w-4" />}
           >
-            <Plus className="h-4 w-4 mr-2" />
             질문 추가하기
-          </Button>
+          </UnifiedButton>
         </div>
 
       {/* 하단 저장 버튼 */}
       <div className="mt-8 flex justify-end">
-        <Button onClick={handleSave} disabled={isSaving} size="lg">
-          {isSaving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              저장 중...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              저장하기
-            </>
-          )}
-        </Button>
+        <UnifiedButton
+          onClick={handleSave}
+          disabled={isSaving}
+          loading={isSaving}
+          loadingText="저장 중..."
+          size="lg"
+          icon={!isSaving ? <Save className="h-4 w-4" /> : undefined}
+        >
+          저장하기
+        </UnifiedButton>
       </div>
     </div>
   </>

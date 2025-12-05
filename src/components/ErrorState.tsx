@@ -1,7 +1,14 @@
 'use client';
 
-import { AlertCircle } from 'lucide-react';
-import UnifiedButton from '@/components/UnifiedButton';
+/**
+ * @deprecated Use `import { EmptyState } from '@/components/common'` instead
+ *
+ * This component is kept for backward compatibility.
+ * New code should use EmptyState with variant="error" or layout="fullPage"
+ */
+
+import { EmptyState } from '@/components/common/states/EmptyState';
+import UnifiedButton from '@/components/common/buttons/UnifiedButton';
 
 interface ErrorStateProps {
   title?: string;
@@ -17,22 +24,21 @@ export default function ErrorState({
   onBack,
 }: ErrorStateProps) {
   return (
-    <div className="app-shell flex flex-col items-center justify-center px-4">
-      <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-      <h2 className="text-xl font-bold mb-2 text-center">{title}</h2>
-      <p className="text-muted-foreground mb-6 text-center">{message}</p>
-      <div className="flex gap-3">
-        {onRetry && (
-          <UnifiedButton onClick={onRetry}>
-            다시 시도
-          </UnifiedButton>
-        )}
-        {onBack && (
-          <UnifiedButton onClick={onBack} variant="outline">
-            돌아가기
-          </UnifiedButton>
-        )}
-      </div>
-    </div>
+    <EmptyState
+      icon="error"
+      title={title}
+      description={message}
+      layout="fullPage"
+      actions={
+        <>
+          {onRetry && <UnifiedButton onClick={onRetry}>다시 시도</UnifiedButton>}
+          {onBack && (
+            <UnifiedButton onClick={onBack} variant="outline">
+              돌아가기
+            </UnifiedButton>
+          )}
+        </>
+      }
+    />
   );
 }

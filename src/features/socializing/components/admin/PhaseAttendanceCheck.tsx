@@ -1,7 +1,7 @@
 'use client';
 
-import { Calendar as CalendarIcon, Clock, MapPin, RefreshCw, UserCheck, UserX, Users, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calendar as CalendarIcon, Clock, MapPin, RefreshCw, UserCheck, UserX, Users } from 'lucide-react';
+import { UnifiedButton } from '@/components/common';
 import { cn } from '@/lib/utils';
 import type { VoterInfo } from '@/features/socializing/actions/socializing-actions';
 import type { Cohort } from '@/types/database';
@@ -28,15 +28,16 @@ export default function PhaseAttendanceCheck({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">참불 현황</span>
-        <Button
+        <UnifiedButton
           variant="ghost"
           size="sm"
           onClick={onRefreshStats}
           disabled={isPending}
-          className="h-7 text-xs"
+          className="h-7 text-xs font-normal"
+          icon={<RefreshCw className={cn('w-3 h-3', isPending && 'animate-spin')} />}
         >
-          <RefreshCw className={cn('w-3 h-3 mr-1', isPending && 'animate-spin')} /> 새로고침
-        </Button>
+          새로고침
+        </UnifiedButton>
       </div>
 
       {/* Confirmed Option Display */}
@@ -68,14 +69,14 @@ export default function PhaseAttendanceCheck({
               <p className="text-xs text-green-700">참석</p>
             </div>
             {stats.attendanceStats.attendingVoters.length > 0 && (
-              <Button
+              <UnifiedButton
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 rounded-full hover:bg-green-100 -mr-2"
                 onClick={(e) => openVoterDialog(e, '참석자 명단', stats.attendanceStats.attendingVoters)}
               >
                 <Users className="w-3 h-3 text-green-600" />
-              </Button>
+              </UnifiedButton>
             )}
           </div>
           <p className="text-2xl font-bold text-green-700">{stats.attendanceStats.attending}명</p>
@@ -87,7 +88,7 @@ export default function PhaseAttendanceCheck({
               <p className="text-xs text-gray-500">불참</p>
             </div>
             {stats.attendanceStats.notAttendingVoters.length > 0 && (
-              <Button
+              <UnifiedButton
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 rounded-full hover:bg-gray-200 -mr-2"
@@ -96,7 +97,7 @@ export default function PhaseAttendanceCheck({
                 }
               >
                 <Users className="w-3 h-3 text-gray-500" />
-              </Button>
+              </UnifiedButton>
             )}
           </div>
           <p className="text-2xl font-bold text-gray-600">{stats.attendanceStats.notAttending}명</p>
@@ -108,10 +109,9 @@ export default function PhaseAttendanceCheck({
           <p className="text-sm font-medium">모임 확정하기</p>
           <p className="text-xs text-muted-foreground">참불 조사를 마감하고 최종 확정합니다.</p>
         </div>
-        <Button onClick={onConfirm} disabled={isPending} size="sm">
-          {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        <UnifiedButton onClick={onConfirm} disabled={isPending} loading={isPending} size="sm">
           모임 확정
-        </Button>
+        </UnifiedButton>
       </div>
     </div>
   );

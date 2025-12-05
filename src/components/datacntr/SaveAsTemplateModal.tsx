@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { DialogBase } from '@/components/common/dialogs';
+import { UnifiedButton } from '@/components/common/buttons';
 import { CATEGORY_LABELS } from '@/lib/firebase/notice-templates';
 import type { NoticeTemplateCategory } from '@/types/database';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,7 +55,7 @@ export default function SaveAsTemplateModal({
           templateId,
           category,
           title: title.trim(),
-          order: 99, // 커스텀 템플릿은 맨 뒤에 배치
+          order: 99,
         }),
       });
 
@@ -74,85 +75,64 @@ export default function SaveAsTemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-        {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">템플릿으로 저장</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+    <DialogBase
+      open={true}
+      onOpenChange={(open) => !open && onClose()}
+      title="템플릿으로 저장"
+      size="md"
+      footer={
+        <div className="flex items-center justify-end gap-3">
+          <UnifiedButton variant="secondary" onClick={onClose}>
+            취소
+          </UnifiedButton>
+          <UnifiedButton
+            onClick={handleSubmit}
+            loading={isSubmitting}
+            loadingText="저장 중..."
           >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
+            템플릿 저장
+          </UnifiedButton>
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        {/* 템플릿 제목 */}
+        <div>
+          <label htmlFor="title" className="block text-sm font-semibold text-gray-900 mb-2">
+            템플릿 제목 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="예: 특별 이벤트 안내"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            autoFocus
+          />
         </div>
 
-        {/* 폼 */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* 템플릿 제목 */}
-          <div>
-            <label htmlFor="title" className="block text-sm font-semibold text-gray-900 mb-2">
-              템플릿 제목 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="예: 특별 이벤트 안내"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              autoFocus
-            />
+        {/* 카테고리 */}
+        <FormSelect
+          label="카테고리"
+          value={category}
+          onChange={(value) => setCategory(value as NoticeTemplateCategory)}
+          options={[
+            { value: 'onboarding', label: CATEGORY_LABELS.onboarding },
+            { value: 'guide', label: CATEGORY_LABELS.guide },
+            { value: 'milestone', label: CATEGORY_LABELS.milestone },
+            { value: 'event', label: CATEGORY_LABELS.event },
+          ]}
+          required
+        />
+
+        {/* 에러 메시지 */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-600">{error}</p>
           </div>
-
-          {/* 카테고리 */}
-          <FormSelect
-            label="카테고리"
-            value={category}
-            onChange={(value) => setCategory(value as NoticeTemplateCategory)}
-            options={[
-              { value: 'onboarding', label: CATEGORY_LABELS.onboarding },
-              { value: 'guide', label: CATEGORY_LABELS.guide },
-              { value: 'milestone', label: CATEGORY_LABELS.milestone },
-              { value: 'event', label: CATEGORY_LABELS.event },
-            ]}
-            required
-          />
-
-          {/* 에러 메시지 */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* 버튼 */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  저장 중...
-                </>
-              ) : (
-                '템플릿 저장'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </form>
+    </DialogBase>
   );
 }

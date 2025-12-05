@@ -3,17 +3,18 @@
 import { Users, PenSquare, Mail, Settings, Inbox } from 'lucide-react';
 import { useTotalUnreadCount } from '@/hooks/use-messages';
 import { useAuth } from '@/contexts/AuthContext';
-import TopBar from '@/components/TopBar';
+import { TopBar } from '@/components/common/headers';
+import { IconButton } from '@/components/common/buttons';
 
 interface HeaderProps {
   onParticipantsClick?: () => void;
   onWriteClick?: () => void;
-  onInquiryClick?: () => void; // Added
+  onInquiryClick?: () => void;
   onMessageAdminClick?: () => void;
   onSettingsClick?: () => void;
-  onBack?: () => void; // Added
+  onBack?: () => void;
   isAdmin?: boolean;
-  adminUnreadCount?: number; // Added
+  adminUnreadCount?: number;
   currentCohort?: { id: string; name: string } | null;
 }
 
@@ -29,14 +30,7 @@ export default function Header({
   currentCohort,
 }: HeaderProps) {
   const { participant } = useAuth();
-  // Only fetch user unread count if NOT admin (or if we want to show personal DMs for admin too? But requirement focuses on Inquiry Inbox)
-  // For users, we use their ID.
   const { data: userUnreadCount = 0 } = useTotalUnreadCount(participant?.id || '');
-
-  // If admin, use the passed adminUnreadCount. If user, use userUnreadCount.
-  // Actually, an admin might also be a participant in other contexts, but here we focus on "Inquiry Inbox" for admins.
-  // The 'Mail' button for users shows 'userUnreadCount'.
-  // The 'Inbox' button for admins shows 'adminUnreadCount'.
 
   return (
     <TopBar
@@ -47,64 +41,41 @@ export default function Header({
       onBack={onBack}
       leftAction={
         !onBack ? (
-          <button
-            type="button"
-            onClick={onSettingsClick}
-            className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+          <IconButton
+            icon={<Settings className="h-5 w-5" />}
             aria-label="설정"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
+            onClick={onSettingsClick}
+          />
         ) : null
       }
       rightAction={
         <>
           {isAdmin ? (
-            <button
-              type="button"
-              onClick={onInquiryClick}
-              className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+            <IconButton
+              icon={<Inbox className="h-5 w-5" />}
               aria-label="문의함"
-            >
-              <Inbox className="h-5 w-5" />
-              {adminUnreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                  {adminUnreadCount > 99 ? '99+' : adminUnreadCount}
-                </span>
-              )}
-            </button>
+              onClick={onInquiryClick}
+              badge={adminUnreadCount}
+            />
           ) : (
-            <button
-              type="button"
-              onClick={onMessageAdminClick}
-              className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+            <IconButton
+              icon={<Mail className="h-5 w-5" />}
               aria-label="운영자에게 메시지"
-            >
-              <Mail className="h-5 w-5" />
-              {userUnreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                  {userUnreadCount > 9 ? '9+' : userUnreadCount}
-                </span>
-              )}
-            </button>
+              onClick={onMessageAdminClick}
+              badge={userUnreadCount > 9 ? 9 : userUnreadCount}
+            />
           )}
-          <button
-            type="button"
-            onClick={onParticipantsClick}
-            className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+          <IconButton
+            icon={<Users className="h-5 w-5" />}
             aria-label="참가자 목록"
-          >
-            <Users className="h-5 w-5" />
-          </button>
+            onClick={onParticipantsClick}
+          />
           {onWriteClick && (
-            <button
-              type="button"
-              onClick={onWriteClick}
-              className="relative flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted transition-colors duration-normal"
+            <IconButton
+              icon={<PenSquare className="h-5 w-5" />}
               aria-label="글쓰기"
-            >
-              <PenSquare className="h-5 w-5" />
-            </button>
+              onClick={onWriteClick}
+            />
           )}
         </>
       }

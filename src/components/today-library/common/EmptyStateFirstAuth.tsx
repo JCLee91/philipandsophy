@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
-import TopBar from '@/components/TopBar';
+import { TopBar } from '@/components/common/headers';
 import { appRoutes } from '@/lib/navigation';
 
 interface EmptyStateFirstAuthProps {

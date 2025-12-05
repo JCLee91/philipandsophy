@@ -1,9 +1,8 @@
 'use client';
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogBase } from '@/components/common/dialogs';
+import { UnifiedButton } from '@/components/common/buttons';
 import { Textarea } from '@/components/ui/textarea';
-import UnifiedButton from '@/components/UnifiedButton';
-import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 
 interface NoticeEditDialogProps {
   open: boolean;
@@ -22,39 +21,36 @@ export default function NoticeEditDialog({
   onSave,
   saving = false,
 }: NoticeEditDialogProps) {
-  useModalCleanup(open);
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 flex flex-col gap-0">
-        <DialogHeader className="px-6 py-6 border-b">
-          <DialogTitle>공지 수정</DialogTitle>
-          <DialogDescription>
-            공지 내용을 수정하세요.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="px-6 py-4">
-          <Textarea
-            value={content}
-            onChange={(e) => onContentChange(e.target.value)}
-            className="min-h-[120px]"
-            placeholder="공지 내용을 입력하세요..."
-            autoFocus
-          />
-        </div>
-        <DialogFooter className="px-6 py-3 border-t flex-row items-center gap-2">
-          <UnifiedButton 
-            onClick={onSave} 
-            disabled={!content.trim()} 
+    <DialogBase
+      open={open}
+      onOpenChange={onOpenChange}
+      title="공지 수정"
+      description="공지 내용을 수정하세요."
+      size="md"
+      footer={
+        <div className="flex justify-end">
+          <UnifiedButton
+            onClick={onSave}
+            disabled={!content.trim()}
             loading={saving}
             loadingText="저장 중..."
             size="sm"
-            className="ml-auto"
           >
             저장
           </UnifiedButton>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      }
+    >
+      <div className="p-5">
+        <Textarea
+          value={content}
+          onChange={(e) => onContentChange(e.target.value)}
+          className="min-h-[120px]"
+          placeholder="공지 내용을 입력하세요..."
+          autoFocus
+        />
+      </div>
+    </DialogBase>
   );
 }

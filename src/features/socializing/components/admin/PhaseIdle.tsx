@@ -1,7 +1,7 @@
 'use client';
 
 import { Calendar as CalendarIcon, Clock, MapPin, AlertCircle, CheckCircle, Loader2, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -111,19 +111,19 @@ export default function PhaseIdle({
                   {category.places.map((place) => {
                     const isSelected = selectedLocations.includes(place);
                     return (
-                      <Button
+                      <UnifiedButton
                         key={place}
                         variant={isSelected ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => toggleLocation(place)}
                         className={cn(
-                          'h-8 px-3 text-xs transition-all',
+                          'h-8 px-3 text-xs transition-all font-normal',
                           isSelected ? 'ring-2 ring-primary/20' : 'hover:bg-gray-100'
                         )}
                       >
                         {place}
                         {isSelected && <CheckCircle className="w-3 h-3 ml-1.5" />}
-                      </Button>
+                      </UnifiedButton>
                     );
                   })}
                 </div>
@@ -144,9 +144,9 @@ export default function PhaseIdle({
                 placeholder="장소 직접 입력..."
                 className="h-9"
               />
-              <Button onClick={addCustomLocation} size="sm" className="h-9">
+              <UnifiedButton onClick={addCustomLocation} size="sm" className="h-9">
                 추가
-              </Button>
+              </UnifiedButton>
             </div>
           </div>
 
@@ -203,14 +203,15 @@ export default function PhaseIdle({
           </div>
         </div>
 
-        <Button
+        <UnifiedButton
           onClick={onStartVoting}
           disabled={isPending || totalCombinations === 0}
-          className="w-full h-11 text-base font-semibold shadow-lg shadow-primary/20"
+          loading={isPending}
+          fullWidth
+          className="h-11 text-base font-semibold shadow-lg shadow-primary/20"
         >
-          {isPending && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
           투표 시작하기
-        </Button>
+        </UnifiedButton>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { cn } from '@/lib/utils';
 import type { VoterInfo } from '@/features/socializing/actions/socializing-actions';
 import type { SocializingStats } from '../../hooks/use-socializing-admin';
@@ -84,7 +84,7 @@ export default function VoteRanking({
                     {option.count}표 ({percent}%)
                   </span>
                   {voters.length > 0 && (
-                    <Button
+                    <UnifiedButton
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 rounded-full hover:bg-blue-100"
@@ -97,7 +97,7 @@ export default function VoteRanking({
                       }
                     >
                       <Users className="w-3 h-3 text-gray-500" />
-                    </Button>
+                    </UnifiedButton>
                   )}
                 </div>
               </div>
@@ -120,14 +120,14 @@ export default function VoteRanking({
               <div className="flex items-center gap-2">
                 <span className="text-gray-400">{stats.cantAttendCount}명</span>
                 {stats.cantAttendVoters.length > 0 && (
-                  <Button
+                  <UnifiedButton
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 rounded-full hover:bg-gray-200"
                     onClick={(e) => onOpenVoterDialog(e, '불참', stats.cantAttendVoters)}
                   >
                     <Users className="w-3 h-3 text-gray-500" />
-                  </Button>
+                  </UnifiedButton>
                 )}
               </div>
             </div>

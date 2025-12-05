@@ -2,7 +2,7 @@
 
 import { Trophy, RefreshCw, Calendar, AlertCircle, UsersRound, Shuffle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useClosingParty } from './_hooks/use-closing-party';
 import StatsTab from './_components/StatsTab';
@@ -52,9 +52,9 @@ export default function ClosingPartyPage() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-destructive mb-4" />
             <p className="text-destructive">{party.error}</p>
-            <Button variant="outline" className="mt-4" onClick={party.fetchStats}>
+            <UnifiedButton variant="outline" size="sm" className="mt-4" onClick={party.fetchStats}>
               다시 시도
-            </Button>
+            </UnifiedButton>
           </CardContent>
         </Card>
       </div>
@@ -83,19 +83,15 @@ export default function ClosingPartyPage() {
               {party.data?.message || '통계가 아직 계산되지 않았습니다.'}
             </p>
             {party.data?.canCalculate && (
-              <Button onClick={party.handleCalculate} disabled={party.calculating}>
-                {party.calculating ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    계산 중...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    통계 계산하기
-                  </>
-                )}
-              </Button>
+              <UnifiedButton
+                onClick={party.handleCalculate}
+                disabled={party.calculating}
+                loading={party.calculating}
+                loadingText="계산 중..."
+                icon={<RefreshCw className="h-4 w-4" />}
+              >
+                통계 계산하기
+              </UnifiedButton>
             )}
           </CardContent>
         </Card>
@@ -137,44 +133,30 @@ export default function ClosingPartyPage() {
           {/* 액션 버튼 */}
           <div className="flex items-center gap-2">
             {party.activeTab === 'stats' && (
-              <Button
+              <UnifiedButton
                 variant="outline"
                 onClick={party.handleCalculate}
                 disabled={party.calculating}
+                loading={party.calculating}
+                loadingText="재계산 중..."
                 size="sm"
+                icon={<RefreshCw className="h-4 w-4" />}
               >
-                {party.calculating ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    재계산 중...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    수동 재계산
-                  </>
-                )}
-              </Button>
+                수동 재계산
+              </UnifiedButton>
             )}
             {party.activeTab === 'groups' && party.groupsData?.groups && (
-              <Button
+              <UnifiedButton
                 variant="outline"
                 onClick={party.handleFormGroups}
                 disabled={party.formingGroups}
+                loading={party.formingGroups}
+                loadingText="재편성 중..."
                 size="sm"
+                icon={<Shuffle className="h-4 w-4" />}
               >
-                {party.formingGroups ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    재편성 중...
-                  </>
-                ) : (
-                  <>
-                    <Shuffle className="h-4 w-4 mr-2" />
-                    다시 편성하기
-                  </>
-                )}
-              </Button>
+                다시 편성하기
+              </UnifiedButton>
             )}
           </div>
         </div>

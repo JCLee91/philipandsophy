@@ -9,7 +9,7 @@ import {
 } from '@dnd-kit/core';
 import { RefreshCw, Shuffle, UsersRound } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import type { ClosingPartyGroupMember } from '@/types/database';
 import type { GroupsResponse } from '../_lib/types';
 import { formatTimestamp } from '../_lib/types';
@@ -63,19 +63,15 @@ export default function GroupsTab({
               ? '클러스터 매칭 데이터를 기반으로 친밀도가 높은 사람들끼리 조가 편성됩니다.'
               : '인증 횟수가 비슷한 사람들끼리 조가 편성됩니다.'}
           </p>
-          <Button onClick={onFormGroups} disabled={formingGroups}>
-            {formingGroups ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                편성 중...
-              </>
-            ) : (
-              <>
-                <Shuffle className="h-4 w-4 mr-2" />
-                조 편성하기
-              </>
-            )}
-          </Button>
+          <UnifiedButton
+            onClick={onFormGroups}
+            disabled={formingGroups}
+            loading={formingGroups}
+            loadingText="편성 중..."
+            icon={<Shuffle className="h-4 w-4" />}
+          >
+            조 편성하기
+          </UnifiedButton>
         </CardContent>
       </Card>
     );

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { BarChart3, ChevronRight } from 'lucide-react';
 import { formatTimestampKST } from '@/lib/datacntr/timestamp';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -86,10 +86,9 @@ export default function SubmissionsPage() {
       requiresCohort
       hasCohortSelected={!!selectedCohortId}
       headerActions={
-        <Button variant="outline" onClick={() => setShowAnalytics(!showAnalytics)}>
-          <BarChart3 className="h-4 w-4 mr-2" />
+        <UnifiedButton variant="outline" size="sm" onClick={() => setShowAnalytics(!showAnalytics)} icon={<BarChart3 className="h-4 w-4" />}>
           {showAnalytics ? '분석 숨기기' : '분석 보기'}
-        </Button>
+        </UnifiedButton>
       }
     >
       {/* 분석 섹션 */}

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Send, Bot, User } from 'lucide-react';
 
@@ -164,23 +164,16 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
               <span className="text-xs text-gray-500">
                 {Math.floor((Date.now() - (lastUpdated?.getTime() || Date.now())) / 60000)}분 전 업데이트
               </span>
-              <Button
+              <UnifiedButton
                 variant="outline"
                 size="sm"
                 onClick={handleRefreshData}
                 disabled={isRefreshing}
+                loading={isRefreshing}
+                loadingText="로딩중"
               >
-                {isRefreshing ? (
-                  <>
-                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                    로딩중
-                  </>
-                ) : (
-                  <>
-                    🔄 새로고침
-                  </>
-                )}
-              </Button>
+                🔄 새로고침
+              </UnifiedButton>
             </div>
           )}
         </div>
@@ -197,23 +190,16 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
                   먼저 데이터를 불러와야 분석을 시작할 수 있어요
                 </p>
               </div>
-              <Button
+              <UnifiedButton
                 size="lg"
                 onClick={handleRefreshData}
                 disabled={isRefreshing}
+                loading={isRefreshing}
+                loadingText="데이터 로딩 중..."
                 className="px-8"
               >
-                {isRefreshing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    데이터 로딩 중...
-                  </>
-                ) : (
-                  <>
-                    📥 데이터 불러오기 (분석 시작)
-                  </>
-                )}
-              </Button>
+                📥 데이터 불러오기 (분석 시작)
+              </UnifiedButton>
               <p className="text-xs text-gray-400 mt-2">
                 전체 DB를 불러와서 질문에 답변합니다
               </p>
@@ -293,13 +279,9 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
             disabled={isLoading}
             className="flex-1"
           />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+          <UnifiedButton type="submit" disabled={isLoading || !input.trim()} size="icon" loading={isLoading}>
+            {!isLoading && <Send className="h-4 w-4" />}
+          </UnifiedButton>
         </form>
       </>
         )}

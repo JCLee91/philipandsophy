@@ -1,7 +1,7 @@
 'use client';
 
-import { RefreshCw, Users, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { RefreshCw, Users } from 'lucide-react';
+import { UnifiedButton } from '@/components/common';
 import { cn } from '@/lib/utils';
 import type { VoterInfo } from '@/features/socializing/actions/socializing-actions';
 import type { Cohort } from '@/types/database';
@@ -42,15 +42,16 @@ export default function PhaseOptionVote({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">실시간 투표 현황</span>
-        <Button
+        <UnifiedButton
           variant="ghost"
           size="sm"
           onClick={onRefreshStats}
           disabled={isPending}
-          className="h-7 text-xs"
+          className="h-7 text-xs font-normal"
+          icon={<RefreshCw className={cn('w-3 h-3', isPending && 'animate-spin')} />}
         >
-          <RefreshCw className={cn('w-3 h-3 mr-1', isPending && 'animate-spin')} /> 새로고침
-        </Button>
+          새로고침
+        </UnifiedButton>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -73,14 +74,14 @@ export default function PhaseOptionVote({
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">총 투표 참여</p>
             {stats.totalVoters.length > 0 && (
-              <Button
+              <UnifiedButton
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 rounded-full hover:bg-gray-100 -mr-2"
                 onClick={(e) => openVoterDialog(e, '전체 참여자 명단', stats.totalVoters)}
               >
                 <Users className="w-3 h-3 text-gray-500" />
-              </Button>
+              </UnifiedButton>
             )}
           </div>
           <p className="text-lg font-bold">{stats.totalVoterCount}명</p>
@@ -117,10 +118,9 @@ export default function PhaseOptionVote({
           <p className="text-sm font-medium">다음 단계로 진행</p>
           <p className="text-xs text-muted-foreground">1위 선택지로 참불 조사를 시작합니다.</p>
         </div>
-        <Button onClick={onStartAttendanceCheck} disabled={isPending} size="sm">
-          {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        <UnifiedButton onClick={onStartAttendanceCheck} disabled={isPending} loading={isPending} size="sm">
           참불 조사 시작 ({deadlineHours}시간)
-        </Button>
+        </UnifiedButton>
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { Loader2, Upload, Download, Plus, X } from 'lucide-react';
@@ -548,26 +548,23 @@ export default function CohortCreatePage() {
 
       {/* 액션 버튼 */}
       <div className="flex justify-end gap-4">
-        <Button
+        <UnifiedButton
           variant="outline"
           onClick={() => router.back()}
           disabled={isSubmitting}
+          size="sm"
         >
           취소
-        </Button>
-        <Button
+        </UnifiedButton>
+        <UnifiedButton
           onClick={handleSubmit}
           disabled={isSubmitting}
+          loading={isSubmitting}
+          loadingText="생성 중..."
+          size="sm"
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              생성 중...
-            </>
-          ) : (
-            '생성하기'
-          )}
-        </Button>
+          생성하기
+        </UnifiedButton>
       </div>
     </div>
   );

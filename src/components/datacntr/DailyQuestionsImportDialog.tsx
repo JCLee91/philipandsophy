@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { Textarea } from '@/components/ui/textarea';
 import { Clipboard, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -86,10 +86,9 @@ export default function DailyQuestionsImportDialog({ onImport }: DailyQuestionsI
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Clipboard className="h-4 w-4 mr-2" />
+        <UnifiedButton variant="outline" size="sm" icon={<Clipboard className="h-4 w-4" />}>
           엑셀 붙여넣기
-        </Button>
+        </UnifiedButton>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
@@ -108,13 +107,12 @@ export default function DailyQuestionsImportDialog({ onImport }: DailyQuestionsI
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <UnifiedButton variant="outline" size="sm" onClick={() => setIsOpen(false)}>
             취소
-          </Button>
-          <Button onClick={handleParse}>
-            <Upload className="h-4 w-4 mr-2" />
+          </UnifiedButton>
+          <UnifiedButton size="sm" onClick={handleParse} icon={<Upload className="h-4 w-4" />}>
             적용하기
-          </Button>
+          </UnifiedButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Users, type LucideIcon } from 'lucide-react';
+import { EmptyState } from '@/components/common/states';
 
 interface EmptyStateCohortSelectProps {
   /** 페이지 제목 */
@@ -24,11 +25,13 @@ export function EmptyStateCohortSelect({
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
       </div>
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
-        <Icon className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">기수를 먼저 선택해주세요</h2>
-        <p className="text-gray-600">{message}</p>
-      </div>
+      <EmptyState
+        icon={Icon}
+        title="기수를 먼저 선택해주세요"
+        description={message}
+        variant="warning"
+        layout="inline"
+      />
     </div>
   );
 }

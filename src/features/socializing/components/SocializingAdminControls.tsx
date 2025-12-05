@@ -2,7 +2,7 @@
 
 import { Trophy, RefreshCw, ChevronUp, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { UnifiedButton } from '@/components/common';
 import { Separator } from '@/components/ui/separator';
 import type { Cohort } from '@/types/database';
 import { useSocializingAdmin } from '../hooks/use-socializing-admin';
@@ -30,18 +30,19 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
             <CardTitle>애프터 다이닝 관리</CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <Button
+            <UnifiedButton
               variant="ghost"
               size="sm"
               onClick={admin.handleReset}
               disabled={admin.isPending}
-              className="text-muted-foreground h-8"
+              className="text-muted-foreground h-8 font-normal"
+              icon={<RefreshCw className="w-3 h-3" />}
             >
-              <RefreshCw className="w-3 h-3 mr-1" /> 초기화
-            </Button>
-            <Button
+              초기화
+            </UnifiedButton>
+            <UnifiedButton
               variant="ghost"
-              size="sm"
+              size="icon"
               className="h-8 w-8 p-0 hover:bg-gray-100 transition-colors"
               onClick={() => admin.setIsExpanded(!admin.isExpanded)}
             >
@@ -50,7 +51,7 @@ export default function SocializingAdminControls({ cohort, onUpdate }: Socializi
               ) : (
                 <ChevronDown className="w-4 h-4" />
               )}
-            </Button>
+            </UnifiedButton>
           </div>
         </div>
 
