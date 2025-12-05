@@ -94,8 +94,8 @@ export function useActivityRecap({
 
         const dailyFeaturedParticipants = cohort.dailyFeaturedParticipants || {};
 
-        // 프로그램 총 일수 계산
-        const totalDays = cohort.totalDays || 14;
+        // 프로그램 총 일수 계산 (OT 제외, 인증 가능한 일수)
+        const totalDays = cohort.totalDays || 13;
         const certifiedDays = mySubmissions.length;
         const certificationRate = totalDays > 0
             ? Math.round((certifiedDays / totalDays) * 100)
@@ -142,9 +142,10 @@ export function useActivityRecap({
             const matchingDate = parseISO(date);
             const meetingDate = addDays(matchingDate, 1);
 
-            // Day 번호 = 모임일 - 프로그램 시작일
+            // Day 번호 = 모임일 - 프로그램 시작일 - 1 (OT 제외)
+            // startDate가 OT 날짜이므로 1을 빼서 Day 1부터 시작하도록 함
             const dayNumber = programStartDate
-                ? differenceInDays(meetingDate, programStartDate)
+                ? differenceInDays(meetingDate, programStartDate) - 1
                 : 1;
 
             // 클러스터 여정에 추가
