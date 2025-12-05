@@ -94,9 +94,10 @@ function Step3Content() {
     }
   };
 
-  // Step 2 validation (제출 중에는 스킵 - reset() 후 race condition 방지)
+  // Step 2 validation (제출 중/수정 모드에서는 스킵)
+  // 수정 모드: 기존 submission에 이미 review가 있으므로 store 로드 전 validation 불필요
   useEffect(() => {
-    if (isSubmitting) return;
+    if (isSubmitting || existingSubmissionId) return;
 
     const hasBook = selectedBook || manualTitle.trim();
     if (!hasBook || !review.trim() || review.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
