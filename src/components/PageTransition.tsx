@@ -17,6 +17,7 @@ const pageVariants = {
   },
   exit: {
     opacity: 0,
+    pointerEvents: 'none' as const, // exit 중 클릭 이벤트 통과 (fixed 헤더 클릭 가능)
   },
 };
 
@@ -37,7 +38,6 @@ export default function PageTransition({ children }: PageTransitionProps) {
         exit="exit"
         variants={pageVariants}
         transition={pageTransition}
-        style={{ pointerEvents: 'auto' }} // 애니메이션 중에도 클릭 이벤트 허용
       >
         {children}
       </motion.div>
