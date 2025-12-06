@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
@@ -7,11 +8,43 @@ import CtaButton from '@/components/landing/CtaButton';
 import { getImageUrl } from '@/constants/landing';
 import { ORGANIZATION_SCHEMA } from '@/constants/seo';
 import { ANALYTICS_EVENTS } from '@/constants/landing';
+import { getLandingConfig } from '@/lib/firebase/landing';
+import { DEFAULT_LANDING_CONFIG, LandingConfig } from '@/types/landing';
 
 // ✅ Disable static generation - providers require runtime context
 export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
+  const [config, setConfig] = useState<LandingConfig>(DEFAULT_LANDING_CONFIG);
+
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const data = await getLandingConfig();
+        setConfig(data);
+      } catch (error) {
+        console.error('Failed to fetch landing config', error);
+      }
+    }
+    fetchConfig();
+  }, []);
+
+  // 설정에 따른 링크 결정
+  let href = '/application'; // 기본값: 자체 폼
+
+  if (config.status === 'OPEN') {
+    if (config.openFormType === 'EXTERNAL') {
+      href = config.externalUrl;
+    }
+  } else {
+    // CLOSED
+    if (config.closedFormType === 'EXTERNAL_WAITLIST') {
+      href = config.externalUrl;
+    } else if (config.closedFormType === 'NONE') {
+      href = '#'; // 이동 안 함
+    }
+  }
+
   return (
     <LandingLayout>
       {/* JSON-LD Structured Data - Organization */}
@@ -60,6 +93,9 @@ export default function HomePage() {
         <CtaButton
           analyticsName={ANALYTICS_EVENTS.HOME}
           ariaLabel="사전 신청 설문 열기"
+          text={config.ctaText}
+          floatingText={config.floatingText}
+          href={href}
         />
       </div>
     </LandingLayout>

@@ -47,7 +47,9 @@ export default function MessageGroup({
   // If current user is an administrator, treat 'admin' sender as 'Mine' (right side)
   // Or if senderId matches the current user's ID
   const isAdminUser = currentUser?.isSuperAdmin || currentUser?.isAdministrator;
-  const isMine = senderId === currentUserId || (isAdminUser && senderId === 'admin');
+  // If current user is an administrator, treat any message NOT from the participant (otherUser) as 'Mine'
+  // This groups all admin/super-admin messages as "sent by us" on the right side
+  const isMine = senderId === currentUserId || (isAdminUser && senderId !== otherUser.id);
   
   const isFromAdminTeam = otherUser.id === 'admin-team' || otherUser.id === 'admin';
   const displayName = otherUser.isAdministrator ? APP_CONSTANTS.ADMIN_NAME : getFirstName(otherUser.name);

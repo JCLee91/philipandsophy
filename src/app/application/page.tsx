@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     useApplicationStore,
@@ -12,9 +13,15 @@ import {
     fadeIn,
 } from '@/features/application';
 import OnboardingFlow from '@/features/onboarding/components/OnboardingFlow';
+import { getLandingConfig } from '@/lib/firebase/landing';
+import { DEFAULT_LANDING_CONFIG, LandingConfig } from '@/types/landing';
+import { Loader2 } from 'lucide-react';
 
 export default function ApplicationPage() {
+    const router = useRouter();
     const [showForm, setShowForm] = useState(false);
+    const [config, setConfig] = useState<LandingConfig | null>(null);
+    const [loading, setLoading] = useState(true);
 
     const {
         getCurrentQuestion,
@@ -27,6 +34,59 @@ export default function ApplicationPage() {
         answers
     } = useApplicationStore();
 
+    useEffect(() => {
+        async function fetchConfig() {
+            try {
+                const data = await getLandingConfig();
+                setConfig(data);
+
+                // 설정 확인 후 잘못된 접근 리다이렉트 로직
+                // 1. OPEN 상태이지만 외부 폼(EXTERNAL)을 써야 하는 경우 -> 외부 URL로 이동
+                if (data.status === 'OPEN' && data.openFormType === 'EXTERNAL' && data.externalUrl) {
+                    window.location.href = data.externalUrl;
+                    return;
+                }
+
+                // 2. CLOSED 상태이지만 외부 대기 폼(EXTERNAL_WAITLIST)을 써야 하는 경우 -> 바로 이동할지, 온보딩 후 이동할지 정책 결정
+                // (현재 기획: 온보딩 영상은 보고 나서 이동하도록 유지 -> 여기서는 리다이렉트 안 함)
+
+                // 3. CLOSED 상태이고 대기 안 받음(NONE)인 경우 -> 홈으로 쫓아내기
+                if (data.status === 'CLOSED' && data.closedFormType === 'NONE') {
+                    router.replace('/');
+                    return;
+                }
+
+            } catch (error) {
+                console.error('Failed to fetch landing config', error);
+                setConfig(DEFAULT_LANDING_CONFIG);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchConfig();
+    }, [router]);
+
+    const handleOnboardingComplete = () => {
+        if (!config) return;
+
+        // 온보딩 완료 후 동작 분기
+        if (config.status === 'OPEN') {
+            // 모집 중
+            if (config.openFormType === 'INTERNAL') {
+                setShowForm(true); // 자체 폼 표시
+            } else if (config.openFormType === 'EXTERNAL') {
+                window.location.href = config.externalUrl; // 외부 폼 이동 (혹시 위에서 안 걸러졌을 경우)
+            }
+        } else {
+            // 마감 (CLOSED)
+            if (config.closedFormType === 'EXTERNAL_WAITLIST' && config.externalUrl) {
+                window.location.href = config.externalUrl; // 대기 폼 이동
+            } else {
+                router.replace('/'); // 대기 안 받으면 홈으로
+            }
+        }
+    };
+
     const currentQuestion = getCurrentQuestion();
     const historyLength = getHistoryLength();
 
@@ -36,9 +96,17 @@ export default function ApplicationPage() {
         ? EXISTING_MEMBER_TOTAL_STEPS
         : NEW_MEMBER_TOTAL_STEPS;
 
+    if (loading) {
+        return (
+            <div className="application-page flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+            </div>
+        );
+    }
+
     // 온보딩 미완료 시 온보딩 플로우 표시
     if (!showForm) {
-        return <OnboardingFlow onComplete={() => setShowForm(true)} />;
+        return <OnboardingFlow onComplete={handleOnboardingComplete} />;
     }
 
     if (isComplete) {
