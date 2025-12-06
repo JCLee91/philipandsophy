@@ -30,6 +30,7 @@ export function uploadFileWithProgress(
     const storageRef = ref(storage, path);
     const metadata = {
       contentType: file.type,
+      cacheControl: 'public, max-age=31536000', // 1년 캐시
     };
     const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 

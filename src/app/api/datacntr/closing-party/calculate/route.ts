@@ -7,6 +7,7 @@ import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { logger } from '@/lib/logger';
+import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 
 /**
  * POST /api/datacntr/closing-party/calculate
@@ -131,6 +132,24 @@ async function calculateStats(
     totalDays
   );
 
+  // ✅ FIX: unique (participantId, submissionDate) 조합으로 중복 제거
+  // 같은 날 같은 참가자가 여러 번 제출(수정/재제출)해도 1회로 카운트
+  const uniqueSubmissionKeys = new Set<string>();
+  submissions.forEach((s) => {
+    let submissionDate = s.submissionDate;
+    if (!submissionDate && s.submittedAt) {
+      // submissionDate가 없는 경우 submittedAt fallback (레거시 데이터 호환)
+      const submittedAtDate = safeTimestampToDate(s.submittedAt);
+      if (submittedAtDate) {
+        submissionDate = format(submittedAtDate, 'yyyy-MM-dd');
+      }
+    }
+    if (submissionDate && s.participantId) {
+      uniqueSubmissionKeys.add(`${s.participantId}_${submissionDate}`);
+    }
+  });
+  const uniqueSubmissionCount = uniqueSubmissionKeys.size;
+
   // ClosingPartyStats 타입과 호환되도록 any 사용 (Admin SDK vs Client SDK Timestamp 차이)
   return {
     id: cohortId,
@@ -151,7 +170,7 @@ async function calculateStats(
     calculatedAt: Timestamp.now() as any,
     calculatedBy: 'manual',
     totalParticipants: participants.length,
-    totalSubmissions: submissions.length,
+    totalSubmissions: uniqueSubmissionCount, // ✅ FIX: unique 인증 기준
   } as ClosingPartyStats;
 }
 
@@ -282,16 +301,38 @@ function findLongestReviewWriter(
   submissions: ReadingSubmission[],
   participantMap: Map<string, Participant>
 ): ClosingPartyStats['longestReviewWriter'] {
-  const reviewStats = new Map<string, { total: number; count: number }>();
+  // ✅ FIX: (participantId, submissionDate) 조합으로 중복 제거
+  // 같은 날 여러 제출 시 가장 긴 review 선택
+  const reviewByKey = new Map<string, { participantId: string; length: number }>();
 
   for (const submission of submissions) {
     if (!submission.review) continue;
 
+    let submissionDate = submission.submissionDate;
+    if (!submissionDate && submission.submittedAt) {
+      const date = safeTimestampToDate(submission.submittedAt);
+      if (date) submissionDate = format(date, 'yyyy-MM-dd');
+    }
+    if (!submissionDate) continue;
+
+    const key = `${submission.participantId}_${submissionDate}`;
+    const existing = reviewByKey.get(key);
     const length = submission.review.length;
-    const stats = reviewStats.get(submission.participantId) || { total: 0, count: 0 };
+
+    // 같은 키에 대해 더 긴 review가 있으면 갱신
+    if (!existing || length > existing.length) {
+      reviewByKey.set(key, { participantId: submission.participantId, length });
+    }
+  }
+
+  // 참가자별 통계 집계
+  const reviewStats = new Map<string, { total: number; count: number }>();
+
+  for (const { participantId, length } of reviewByKey.values()) {
+    const stats = reviewStats.get(participantId) || { total: 0, count: 0 };
     stats.total += length;
     stats.count += 1;
-    reviewStats.set(submission.participantId, stats);
+    reviewStats.set(participantId, stats);
   }
 
   let maxAverage = 0;
@@ -323,16 +364,38 @@ function findLongestAnswerWriter(
   submissions: ReadingSubmission[],
   participantMap: Map<string, Participant>
 ): ClosingPartyStats['longestAnswerWriter'] {
-  const answerStats = new Map<string, { total: number; count: number }>();
+  // ✅ FIX: (participantId, submissionDate) 조합으로 중복 제거
+  // 같은 날 여러 제출 시 가장 긴 dailyAnswer 선택
+  const answerByKey = new Map<string, { participantId: string; length: number }>();
 
   for (const submission of submissions) {
     if (!submission.dailyAnswer) continue;
 
+    let submissionDate = submission.submissionDate;
+    if (!submissionDate && submission.submittedAt) {
+      const date = safeTimestampToDate(submission.submittedAt);
+      if (date) submissionDate = format(date, 'yyyy-MM-dd');
+    }
+    if (!submissionDate) continue;
+
+    const key = `${submission.participantId}_${submissionDate}`;
+    const existing = answerByKey.get(key);
     const length = submission.dailyAnswer.length;
-    const stats = answerStats.get(submission.participantId) || { total: 0, count: 0 };
+
+    // 같은 키에 대해 더 긴 dailyAnswer가 있으면 갱신
+    if (!existing || length > existing.length) {
+      answerByKey.set(key, { participantId: submission.participantId, length });
+    }
+  }
+
+  // 참가자별 통계 집계
+  const answerStats = new Map<string, { total: number; count: number }>();
+
+  for (const { participantId, length } of answerByKey.values()) {
+    const stats = answerStats.get(participantId) || { total: 0, count: 0 };
     stats.total += length;
     stats.count += 1;
-    answerStats.set(submission.participantId, stats);
+    answerStats.set(participantId, stats);
   }
 
   let maxAverage = 0;
