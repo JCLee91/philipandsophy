@@ -106,14 +106,14 @@ export default function DataCenterPage() {
           title="오늘 인증"
           value={stats?.todaySubmissions ?? 0}
           icon={BookOpen}
-          color="orange"
+          color="sky"
           isLoading={statsLoading}
         />
         <MetricCard
           title="전체 인증"
           value={stats?.totalSubmissions ?? 0}
           icon={FileText}
-          color="pink"
+          color="indigo"
           isLoading={statsLoading}
         />
         <MetricCard

@@ -53,7 +53,7 @@ export default function ImpersonationBanner() {
           }
 
           // 원래 진입했던 경로(데이터센터 or 앱)로 복귀
-          router.replace(returnUrl);
+          window.location.href = returnUrl;
           return;
         } catch (loginError) {
           console.error('Admin token login failed:', loginError);
