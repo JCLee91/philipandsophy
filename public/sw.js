@@ -37,12 +37,10 @@ const messaging = firebase.messaging();
 // PART 2: PWA Caching Setup
 // ============================================
 
-const CACHE_NAME = 'philipandsophy-v11'; // Increment version to force update (v11: Force CSP header refresh)
+const CACHE_NAME = 'philipandsophy-v13'; // v13: No navigation caching (industry standard for realtime apps)
 
-// ✅ 앱 셸 프리캐시 (초기 로딩 필수 리소스)
+// ✅ 정적 자산만 프리캐시 (HTML 페이지는 캐싱 안 함)
 const urlsToCache = [
-  '/',
-  '/app',
   '/image/favicon.webp',
   '/image/logo_app.webp',
   '/image/app-icon-192.png',
@@ -145,54 +143,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ✅ Cache-first for navigation requests (HTML pages)
-  // 빠른 초기 로딩을 위해 캐시 우선, 백그라운드 업데이트
+  // ✅ Navigation 요청은 서비스 워커가 개입하지 않음 (업계 표준)
+  // 실시간 데이터 앱에서는 HTML을 캐싱하지 않고 항상 서버에서 가져옴
   if (isNavigationRequest(event.request)) {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        // 캐시가 있으면 즉시 반환하고 백그라운드에서 업데이트
-        if (cachedResponse) {
-          // 백그라운드 업데이트 (await 없이)
-          fetch(event.request)
-            .then((networkResponse) => {
-              if (networkResponse && networkResponse.ok) {
-                caches.open(CACHE_NAME).then((cache) => {
-                  cache.put(event.request, networkResponse);
-                });
-              }
-            })
-            .catch(() => {
-              // 백그라운드 업데이트 실패는 무시
-            });
-
-          return cachedResponse;
-        }
-
-        // 캐시가 없으면 네트워크에서 가져오기
-        return fetch(event.request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.ok) {
-              const responseToCache = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-            }
-            return networkResponse;
-          })
-          .catch(() => {
-            // 네트워크도 실패하면 기본 오프라인 페이지
-            return new Response(
-              '<!DOCTYPE html><html><body><h1>오프라인 상태입니다</h1></body></html>',
-              {
-                status: 503,
-                statusText: 'Service Unavailable',
-                headers: { 'Content-Type': 'text/html; charset=utf-8' }
-              }
-            );
-          });
-      })
-    );
-    return;
+    return; // 브라우저가 알아서 처리
   }
 
   // ✅ Network-first for non-navigation requests (CSS, JS, images)

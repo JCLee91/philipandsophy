@@ -1,12 +1,12 @@
 'use client';
 
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import type { Participant } from '@/types/database';
-import { UI_CONFIG } from '@/constants/migration';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { Z_INDEX } from '@/constants/z-index';
 
 interface ProfileImageDialogProps {
   participant: Participant | null;
@@ -14,6 +14,16 @@ interface ProfileImageDialogProps {
   onClose: () => void;
 }
 
+/**
+ * 프로필 이미지를 크게 볼 수 있는 다이얼로그
+ * 참가자 리스트에서 프로필 사진 클릭 시 전체 화면으로 표시
+ *
+ * UX:
+ * - 이미지 밖(오버레이) 클릭 시 닫힘
+ * - ESC 키로 닫힘
+ * - 안드로이드 백 버튼으로 닫힘
+ * - 닫기 버튼 없음 (깔끔한 UI)
+ */
 export default function ProfileImageDialog({
   participant,
   open,
@@ -23,6 +33,7 @@ export default function ProfileImageDialog({
 
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isMountedRef = useRef(true);
   const wasClosedByBackButton = useRef(false);
   const historyEntryTimestamp = useRef<number>(0);
@@ -30,6 +41,7 @@ export default function ProfileImageDialog({
   // Track component mount state to prevent race conditions
   useEffect(() => {
     isMountedRef.current = true;
+    setMounted(true);
     return () => {
       isMountedRef.current = false;
     };
@@ -60,6 +72,23 @@ export default function ProfileImageDialog({
       setImageLoaded(false);
     }
   }, [open, imageUrl]);
+
+  // ESC 키 핸들러
+  const handleEscapeKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      onClose();
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    if (showDialog) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
+    }
+  }, [showDialog, handleEscapeKey]);
 
   // 안드로이드 back button 처리 (history API 활용)
   useEffect(() => {
@@ -110,66 +139,59 @@ export default function ProfileImageDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  if (!participant) return null;
+  // 빈 participant이거나 닫혀있으면 렌더링하지 않음
+  if (!participant || !showDialog || !mounted) {
+    return null;
+  }
 
-  return (
-    <Dialog open={showDialog} onOpenChange={(open) => {
-      if (!open) {
-        onClose();
-      }
-    }}>
-      <DialogContent
-        hideCloseButton
-        className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-transparent border-0 shadow-none place-items-center"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => {
-          // ESC 키로 ProfileImageDialog만 닫기 (Sheet는 유지)
-          e.stopPropagation();
-          onClose();
-        }}
-        onPointerDownOutside={(e) => {
-          // 외부 클릭 시 이벤트 전파 방지
-          e.preventDefault();
-          e.stopPropagation();
-          onClose();
-        }}
-        onInteractOutside={(e) => {
-          // 외부 상호작용 시 이벤트 전파 방지
-          e.preventDefault();
-          e.stopPropagation();
-        }}
+  const content = (
+    <>
+      {/* Backdrop - Sheet보다 위에 표시 */}
+      <div
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in-0 duration-normal"
+        style={{ zIndex: Z_INDEX.IMAGE_VIEWER_BACKDROP }}
         onClick={(e) => {
-          // 이미지 자체를 클릭한 경우가 아니라면 닫기
-          if (e.target === e.currentTarget) {
-            e.stopPropagation();
-            onClose();
-          }
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Image Container - 백드롭 위에 표시 */}
+      <div
+        className="fixed inset-0 flex items-center justify-center p-4 cursor-default pointer-events-auto"
+        style={{ zIndex: Z_INDEX.IMAGE_VIEWER_CONTENT }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
         }}
       >
-        <DialogTitle className="sr-only">{participant.name} 프로필 (클릭하여 닫기)</DialogTitle>
-        <DialogDescription className="sr-only">
-          {participant.name}님의 프로필 이미지
-        </DialogDescription>
+        {/* 접근성을 위한 숨겨진 제목 */}
+        <h2 className="sr-only">{participant.name} 프로필 (클릭하여 닫기)</h2>
+
+        {/* 이미지 - 중앙 정렬 */}
         {imageUrl && imageLoaded ? (
-          <div className="relative max-w-[90vw] max-h-[90vh]" style={{ aspectRatio: 'auto' }}>
-            <Image
-              src={getResizedImageUrl(imageUrl) || imageUrl}
-              alt={participant.name}
-              width={1024}
-              height={1024}
-              className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-            />
-          </div>
+          <Image
+            src={getResizedImageUrl(imageUrl) || imageUrl}
+            alt={participant.name}
+            width={1024}
+            height={1024}
+            className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain cursor-zoom-out animate-in zoom-in-95 fade-in-0 duration-fast"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+          />
         ) : (
           <div className="text-white text-center p-8">
             <p className="text-muted-foreground">프로필 이미지가 없습니다</p>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </>
   );
+
+  // Portal을 사용해서 body에 직접 렌더링
+  // PageTransition(Framer Motion)의 stacking context를 벗어나기 위함
+  return createPortal(content, document.body);
 }

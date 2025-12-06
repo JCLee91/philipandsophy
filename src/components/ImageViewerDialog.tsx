@@ -2,9 +2,9 @@
 
 import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { Z_INDEX } from '@/constants/z-index';
-import { getOriginalImageUrl } from '@/lib/image-utils';
 
 interface ImageViewerDialogProps {
   open: boolean;
@@ -20,6 +20,9 @@ interface ImageViewerDialogProps {
  * - 이미지 밖(오버레이) 클릭 시 닫힘
  * - ESC 키로 닫힘
  * - 닫기 버튼 없음 (깔끔한 UI)
+ *
+ * 주의: Portal을 사용해서 body에 직접 렌더링합니다.
+ * PageTransition(Framer Motion)의 stacking context를 벗어나기 위함입니다.
  */
 export default function ImageViewerDialog({
   open,
@@ -29,6 +32,12 @@ export default function ImageViewerDialog({
   useModalCleanup(open);
 
   const [imageError, setImageError] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // 클라이언트 사이드에서만 Portal 사용
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Dialog가 열릴 때마다 에러 상태 리셋
   useEffect(() => {
@@ -55,25 +64,31 @@ export default function ImageViewerDialog({
   }, [open, handleEscapeKey]);
 
   // 빈 URL이거나 닫혀있으면 렌더링하지 않음
-  if (!open || !imageUrl || imageUrl.trim() === '') {
+  if (!open || !imageUrl || imageUrl.trim() === '' || !mounted) {
     return null;
   }
 
-  return (
+  const content = (
     <>
-      {/* Backdrop - DM 다이얼로그보다 위에 표시 */}
+      {/* Backdrop - 모든 다이얼로그보다 위에 표시 */}
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in-0 duration-normal"
         style={{ zIndex: Z_INDEX.IMAGE_VIEWER_BACKDROP }}
-        onClick={() => onOpenChange(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenChange(false);
+        }}
         aria-hidden="true"
       />
 
       {/* Image Container - 백드롭 위에 표시 */}
       <div
-        className="fixed inset-0 flex items-center justify-center p-4"
+        className="fixed inset-0 flex items-center justify-center p-4 cursor-default pointer-events-auto"
         style={{ zIndex: Z_INDEX.IMAGE_VIEWER_CONTENT }}
-        onClick={() => onOpenChange(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenChange(false);
+        }}
       >
         {/* 접근성을 위한 숨겨진 제목 */}
         <h2 className="sr-only">이미지 크게 보기 (클릭하여 닫기)</h2>
@@ -101,4 +116,7 @@ export default function ImageViewerDialog({
       </div>
     </>
   );
+
+  // Portal을 사용해서 body에 직접 렌더링
+  return createPortal(content, document.body);
 }
