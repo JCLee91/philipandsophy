@@ -102,7 +102,7 @@ export const onNoticeCreated = onDocumentCreated(
         webPushSubscriptions,
         title || NOTIFICATION_MESSAGES.NOTICE_TITLE,
         noticeBody,
-        NOTIFICATION_ROUTES.CHAT,
+        `${NOTIFICATION_ROUTES.CHAT}?cohort=${cohortId}`, // ✅ Append cohort param for correct redirection
         NOTIFICATION_TYPES.NOTICE
       );
 

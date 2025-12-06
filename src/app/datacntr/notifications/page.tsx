@@ -229,6 +229,12 @@ export default function CustomNotificationsPage() {
         includeAdmins: formData.includeAdmins, // 관리자 포함 여부
       };
 
+      // ✅ 라우트에 cohortId 파라미터 추가 (정확한 기수 페이지로 이동)
+      if (formData.cohortId && requestBody.route.startsWith('/app')) {
+        const separator = requestBody.route.includes('?') ? '&' : '?';
+        requestBody.route = `${requestBody.route}${separator}cohort=${formData.cohortId}`;
+      }
+
       if (formData.targetType === 'cohort') {
         requestBody.cohortId = formData.cohortId;
       } else if (formData.targetType === 'unverified') {
@@ -384,16 +390,16 @@ export default function CustomNotificationsPage() {
                       </div>
                     ) : (
                       cohorts.map((cohort) => (
-                      <SelectItem key={cohort.id} value={cohort.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{cohort.name}</span>
-                          {cohort.isActive && (
-                            <span className="text-xs font-medium text-green-600">
-                              • 활성
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
+                        <SelectItem key={cohort.id} value={cohort.id}>
+                          <div className="flex items-center gap-2">
+                            <span>{cohort.name}</span>
+                            {cohort.isActive && (
+                              <span className="text-xs font-medium text-green-600">
+                                • 활성
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
                       ))
                     )}
                   </SelectContent>
