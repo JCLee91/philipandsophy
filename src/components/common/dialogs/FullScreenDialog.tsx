@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
@@ -81,6 +82,8 @@ const sizeClasses = {
  *
  * 모바일에서는 전체화면으로, 데스크톱에서는 중앙 모달로 표시됩니다.
  * 키보드 높이 대응이 내장되어 있어 입력 폼에 적합합니다.
+ * 
+ * v2: createPortal 사용으로 Stacking Context 문제 해결
  *
  * @example
  * <FullScreenDialog
@@ -114,6 +117,11 @@ export function FullScreenDialog({
 }: FullScreenDialogProps) {
   const keyboardHeight = useKeyboardHeight();
   const isKeyboardOpen = keyboardHeight > 0;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 스타일 객체 메모이제이션
   const dialogStyle = useMemo(() => {
@@ -137,22 +145,25 @@ export function FullScreenDialog({
   // Radix UI body 스타일 정리
   useModalCleanup(open);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  const content = (
     <>
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-200"
         style={{ zIndex: Z_INDEX.DM_DIALOG }}
-        onClick={() => onOpenChange(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenChange(false);
+        }}
         aria-hidden="true"
       />
 
       {/* Dialog */}
       <div
         className={cn(
-          'fixed bg-background transition-all duration-300',
+          'fixed bg-background transition-all duration-300 pointer-events-auto',
           // 모바일: 전체화면
           'inset-0 w-full h-full',
           // 데스크톱: 중앙 모달
@@ -219,6 +230,8 @@ export function FullScreenDialog({
       </div>
     </>
   );
+
+  return createPortal(content, document.body);
 }
 
 export default FullScreenDialog;

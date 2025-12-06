@@ -9,6 +9,7 @@ import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 import { Send, Paperclip, X, ArrowDown } from 'lucide-react';
 import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo, CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { FOOTER_STYLES } from '@/constants/ui';
 import { APP_CONSTANTS } from '@/constants/app';
@@ -46,6 +47,7 @@ export default function DirectMessageDialog({
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [inputAreaHeight, setInputAreaHeight] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -53,6 +55,10 @@ export default function DirectMessageDialog({
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const keyboardHeight = useKeyboardHeight();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleImageReset = useCallback(() => {
     resetImage();
@@ -264,7 +270,7 @@ export default function DirectMessageDialog({
       : '/favicon.webp';
 
   // Early returns AFTER all hooks
-  if (!otherUser || !open) return null;
+  if (!otherUser || !open || !mounted) return null;
 
   const isKeyboardOpen = keyboardHeight > 0;
   const bottomSafeSpacing = 'calc(env(safe-area-inset-bottom, 0px) + 0.25rem)';
@@ -284,19 +290,22 @@ export default function DirectMessageDialog({
       height: '600px',
     };
 
-  return (
+  const content = (
     <>
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         style={{ zIndex: Z_INDEX.DM_DIALOG }}
-        onClick={() => onOpenChange(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenChange(false);
+        }}
         aria-hidden="true"
       />
 
       {/* Dialog */}
       <div
-        className={`fixed z-[9999] bg-background transition-all duration-300 
+        className={`fixed z-[9999] bg-background transition-all duration-300 pointer-events-auto
           inset-0 w-full h-full 
           sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 
           sm:w-full sm:max-w-lg sm:h-[600px] sm:rounded-xl sm:border sm:shadow-lg
@@ -478,4 +487,6 @@ export default function DirectMessageDialog({
       />
     </>
   );
+
+  return createPortal(content, document.body);
 }
