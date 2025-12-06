@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getResizedImageUrl, getOriginalImageUrl } from '@/lib/image-utils';
+import { getRawResizedUrl, getOriginalImageUrl } from '@/lib/image-utils';
 import { logger } from '@/lib/logger';
 
 export const runtime = 'edge'; // Use Edge Runtime for lower latency
@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // 1. Generate the resized URL
-        const resizedUrl = getResizedImageUrl(url);
+        // 1. Generate the resized URL (using RAW logic, not the proxy wrapper)
+        const resizedUrl = getRawResizedUrl(url);
 
         // 2. Check if resized image exists (HEAD request)
         // We try to fetch the resized URL. If it's a 404 (or 403 meaning we can't validly access it as a resized file),
