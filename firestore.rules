@@ -188,16 +188,10 @@ service cloud.firestore {
     }
 
     // ============================================
-    // 대기자 신청 (Waitlist) [NEW]
+    // 대기자 신청 (Waitlist) - 설문처럼 개방
     // ============================================
     match /waitlist/{waitlistId} {
-      // 읽기: 관리자만 (데이터센터에서 확인 필요)
-      allow read: if isAdminClaim();
-
-      // 쓰기: 누구나 가능 (비로그인 사용자 신청)
-      allow create: if true;
-
-      allow update, delete: if false;
+      allow read, write: if true;
     }
   }
 }
