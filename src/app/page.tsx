@@ -40,6 +40,8 @@ export default function HomePage() {
     // CLOSED
     if (config.closedFormType === 'EXTERNAL_WAITLIST') {
       href = config.externalUrl;
+    } else if (config.closedFormType === 'INTERNAL_WAITLIST') {
+      href = '/waitlist'; // 자체 대기 폼
     } else if (config.closedFormType === 'NONE') {
       href = '#'; // 이동 안 함
     }

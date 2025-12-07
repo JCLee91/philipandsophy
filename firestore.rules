@@ -7,7 +7,7 @@ service cloud.firestore {
     // ============================================
     // 정책: 오류 없는 것이 최우선 (보안 < 안정성)
     // UI 레벨에서 권한 제어, Rules는 최소한만 체크
-    // Last Updated: 2025-11-09 22:30
+    // Last Updated: 2025-12-06
     // ============================================
 
     // Helper Functions
@@ -183,6 +183,19 @@ service cloud.firestore {
         request.resource.data.sessionId is string &&
         request.resource.data.stepId is string &&
         request.resource.data.stepIndex is number;
+
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // 대기자 신청 (Waitlist) [NEW]
+    // ============================================
+    match /waitlist/{waitlistId} {
+      // 읽기: 관리자만 (데이터센터에서 확인 필요)
+      allow read: if isAdminClaim();
+
+      // 쓰기: 누구나 가능 (비로그인 사용자 신청)
+      allow create: if true;
 
       allow update, delete: if false;
     }

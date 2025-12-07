@@ -56,6 +56,8 @@ export default function ApplicationPage() {
                     return;
                 }
 
+                // 4. CLOSED 상태이고 자체 대기 폼(INTERNAL_WAITLIST)인 경우 -> 온보딩 영상은 보고 넘어가도록 유지 (여기서는 리다이렉트 안 함)
+
             } catch (error) {
                 console.error('Failed to fetch landing config', error);
                 setConfig(DEFAULT_LANDING_CONFIG);
@@ -81,6 +83,8 @@ export default function ApplicationPage() {
             // 마감 (CLOSED)
             if (config.closedFormType === 'EXTERNAL_WAITLIST' && config.externalUrl) {
                 window.location.href = config.externalUrl; // 대기 폼 이동
+            } else if (config.closedFormType === 'INTERNAL_WAITLIST') {
+                router.push('/waitlist'); // 자체 대기 폼으로 이동
             } else {
                 router.replace('/'); // 대기 안 받으면 홈으로
             }

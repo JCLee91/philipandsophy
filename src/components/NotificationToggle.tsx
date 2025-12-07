@@ -227,9 +227,10 @@ export function NotificationToggle() {
 
   // Development mode: Show toggle even in browser tab
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
 
-  // Browser tab - show install message (gray text only, no toggle) - EXCEPT in dev mode
-  if (!isStandalone && !isDevelopment) {
+  // Browser tab - show install message (gray text only, no toggle) - EXCEPT in dev mode or Android
+  if (!isStandalone && !isDevelopment && !isAndroid) {
     return (
       <p className="text-sm text-gray-500">
         홈 화면에 추가 후 알림 사용 가능

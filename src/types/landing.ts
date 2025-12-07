@@ -8,8 +8,8 @@ export interface LandingConfig {
   /** 모집 중일 때 신청 폼 타입 (자체 폼 | 외부 링크) */
   openFormType: 'INTERNAL' | 'EXTERNAL';
 
-  /** 마감일 때 대기 폼 타입 (외부 대기 폼 | 대기 안 받음) */
-  closedFormType: 'EXTERNAL_WAITLIST' | 'NONE';
+  /** 마감일 때 대기 폼 타입 (외부 대기 폼 | 자체 대기 폼 | 대기 안 받음) */
+  closedFormType: 'EXTERNAL_WAITLIST' | 'INTERNAL_WAITLIST' | 'NONE';
 
   /** CTA 버튼 텍스트 (예: 필립앤소피 5기 참여하기) */
   ctaText: string;
@@ -44,7 +44,7 @@ export const DEFAULT_LANDING_CONFIG: LandingConfig = {
   cohortNumber: 5,
   status: 'OPEN',
   openFormType: 'INTERNAL',
-  closedFormType: 'EXTERNAL_WAITLIST',
+  closedFormType: 'INTERNAL_WAITLIST',
   ctaText: '필립앤소피 5기 참여하기',
   floatingText: '4기 멤버십은 마감됐어요',
   externalUrl: 'https://tally.so/r/w71N1L', // 기본 예시

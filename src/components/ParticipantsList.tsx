@@ -26,6 +26,7 @@ interface ParticipantsListProps {
   onProfileBookClick?: (participant: Participant) => void;
   onImageClick?: (participant: Participant) => void;
   isImageViewerOpen?: boolean;
+  isProfileOpen?: boolean;
 }
 
 export default function ParticipantsList({
@@ -39,6 +40,7 @@ export default function ParticipantsList({
   onProfileBookClick,
   onImageClick,
   isImageViewerOpen = false,
+  isProfileOpen = false,
 }: ParticipantsListProps) {
   useModalCleanup(open);
 
@@ -66,7 +68,7 @@ export default function ParticipantsList({
         side="right"
         className="w-80 p-0 flex flex-col"
         onInteractOutside={(e) => {
-          if (isImageViewerOpen) {
+          if (isImageViewerOpen || isProfileOpen) {
             e.preventDefault();
           }
         }}

@@ -145,9 +145,10 @@ export function detectPushChannel(): PushChannel {
 
   // Development mode: Allow FCM in browser tab
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const isAndroid = /Android/i.test(navigator.userAgent);
 
-  if (!isStandalone && !isDevelopment) {
-
+  // Allow Android Browser (not just PWA) to use FCM
+  if (!isStandalone && !isDevelopment && !isAndroid) {
     return 'unsupported';
   }
 

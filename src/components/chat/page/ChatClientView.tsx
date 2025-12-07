@@ -642,6 +642,7 @@ export function ChatClientView({
             onProfileBookClick={handleProfileBookClick}
             onImageClick={handleImageClick}
             isImageViewerOpen={imageViewerOpen}
+            isProfileOpen={!!selectedParticipant}
           />
 
           <DirectMessageDialog

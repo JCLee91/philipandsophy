@@ -26,7 +26,7 @@ const formSchema = z.object({
   cohortNumber: z.coerce.number().min(1, '기수는 1 이상이어야 합니다.'),
   status: z.enum(['OPEN', 'CLOSED']),
   openFormType: z.enum(['INTERNAL', 'EXTERNAL']),
-  closedFormType: z.enum(['EXTERNAL_WAITLIST', 'NONE']),
+  closedFormType: z.enum(['EXTERNAL_WAITLIST', 'INTERNAL_WAITLIST', 'NONE']),
   ctaText: z.string().min(1, 'CTA 텍스트를 입력해주세요.'),
   floatingText: z.string().min(1, '툴팁 텍스트를 입력해주세요.'),
   externalUrl: z.string().optional(),
@@ -247,18 +247,32 @@ export default function LandingConfigForm() {
                   <Label>마감 후 처리 방식</Label>
                   <RadioGroup
                     value={closedFormType}
-                    onValueChange={(value) => setValue('closedFormType', value as 'EXTERNAL_WAITLIST' | 'NONE')}
+                    onValueChange={(value) => setValue('closedFormType', value as 'EXTERNAL_WAITLIST' | 'INTERNAL_WAITLIST' | 'NONE')}
                     className="flex flex-col space-y-2"
                   >
+                    {/* 1. 외부 폼 */}
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="EXTERNAL_WAITLIST" id="closed-waitlist" />
                       <Label htmlFor="closed-waitlist" className="font-normal cursor-pointer">
                         외부 대기 폼 사용
                         <span className="block text-xs text-gray-500 mt-0.5">
-                          다음 기수 알림 신청을 받기 위해 외부 폼으로 이동합니다.
+                          Tally 등 외부 폼으로 이동하여 알림 신청을 받습니다.
                         </span>
                       </Label>
                     </div>
+
+                    {/* 2. 자체 폼 (NEW) */}
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="INTERNAL_WAITLIST" id="closed-internal-waitlist" />
+                      <Label htmlFor="closed-internal-waitlist" className="font-normal cursor-pointer">
+                        자체 대기 폼 사용 (추천)
+                        <span className="block text-xs text-gray-500 mt-0.5">
+                          별도 설정 없이 /waitlist 페이지로 연결되어 대기자를 수집합니다.
+                        </span>
+                      </Label>
+                    </div>
+
+                    {/* 3. 사용 안 함 */}
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="NONE" id="closed-none" />
                       <Label htmlFor="closed-none" className="font-normal cursor-pointer">
