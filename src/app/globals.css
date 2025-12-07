@@ -623,8 +623,7 @@ html[data-app="true"] .app-footer {
   width: 100vw;
   height: 100vh;
   height: 100dvh; /* 모바일 브라우저 주소창 대응 */
-  overflow-y: auto; /* 내부 스크롤 허용 (작은 화면 대응) */
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden; /* 스크롤바 깜빡임 방지 */
   background: #000000;
   font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   overscroll-behavior: none; /* 모바일 오버스크롤 방지 */
