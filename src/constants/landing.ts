@@ -11,12 +11,6 @@ export const LANDING_CONSTANTS = {
 
   /** 이미지 캐시 버스팅 버전 */
   IMAGE_VERSION: '1762739366900',
-
-  /** 현재 모집 중인 기수 */
-  COHORT_NUMBER: 5,
-
-  /** 마감된 기수 */
-  CLOSED_COHORT_NUMBER: 4,
 } as const;
 
 /**
@@ -26,25 +20,6 @@ export const LANDING_CONSTANTS = {
  */
 export const getImageUrl = (imagePath: string): string =>
   `${imagePath}?v=${LANDING_CONSTANTS.IMAGE_VERSION}`;
-
-/**
- * 툴팁 메시지
- */
-export const TOOLTIP_MESSAGES = {
-  /** 기수 마감 메시지 */
-  CLOSED: (cohort: number) => `${cohort}기 멤버십은 마감됐어요`,
-
-  /** 곧 오픈 메시지 */
-  OPENING_SOON: (cohort: number) => `${cohort}기 모집 준비 중입니다`,
-} as const;
-
-/**
- * CTA 버튼 텍스트
- */
-export const CTA_TEXTS = {
-  /** 참여하기 버튼 */
-  JOIN: (cohort: number) => `필립앤소피 ${cohort}기 참여하기`,
-} as const;
 
 /**
  * Analytics 이벤트 이름

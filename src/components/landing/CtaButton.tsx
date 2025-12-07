@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Tooltip from '@/components/Tooltip';
-import { LANDING_CONSTANTS, CTA_TEXTS, TOOLTIP_MESSAGES } from '@/constants/landing';
 import { trackEvent } from '@/lib/analytics';
 
 interface CtaButtonProps {
@@ -12,14 +11,14 @@ interface CtaButtonProps {
   /** aria-label 속성 값 */
   ariaLabel: string;
 
-  /** 버튼 텍스트 (기본값: 현재 기수 참여하기) */
-  text?: string;
+  /** 버튼 텍스트 */
+  text: string;
 
-  /** 링크 URL (기본값: LANDING_CONSTANTS.FORM_URL) */
-  href?: string;
+  /** 링크 URL */
+  href: string;
 
-  /** 툴팁 텍스트 (기본값: 마감된 기수 메시지) */
-  floatingText?: string;
+  /** 툴팁 텍스트 */
+  floatingText: string;
 }
 
 /**
@@ -31,9 +30,9 @@ interface CtaButtonProps {
 export default function CtaButton({
   analyticsName,
   ariaLabel,
-  text = CTA_TEXTS.JOIN(LANDING_CONSTANTS.COHORT_NUMBER),
-  href = LANDING_CONSTANTS.FORM_URL,
-  floatingText = TOOLTIP_MESSAGES.CLOSED(LANDING_CONSTANTS.CLOSED_COHORT_NUMBER),
+  text,
+  href,
+  floatingText,
 }: CtaButtonProps) {
   const isInternal = href.startsWith('/');
   const isDisabled = href === '#';

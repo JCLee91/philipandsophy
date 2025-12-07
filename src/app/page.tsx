@@ -15,7 +15,7 @@ import { DEFAULT_LANDING_CONFIG, LandingConfig } from '@/types/landing';
 export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
-  const [config, setConfig] = useState<LandingConfig>(DEFAULT_LANDING_CONFIG);
+  const [config, setConfig] = useState<LandingConfig | null>(null);
 
   useEffect(() => {
     async function fetchConfig() {
@@ -24,28 +24,32 @@ export default function HomePage() {
         setConfig(data);
       } catch (error) {
         console.error('Failed to fetch landing config', error);
+        setConfig(DEFAULT_LANDING_CONFIG); // 실패 시 기본값
       }
     }
     fetchConfig();
   }, []);
 
   // 설정에 따른 링크 결정
-  let href = '/application'; // 기본값: 자체 폼
+  const getHref = () => {
+    if (!config) return '/application';
 
-  if (config.status === 'OPEN') {
-    if (config.openFormType === 'EXTERNAL') {
-      href = config.externalUrl;
+    if (config.status === 'OPEN') {
+      if (config.openFormType === 'EXTERNAL') {
+        return config.externalUrl;
+      }
+    } else {
+      // CLOSED
+      if (config.closedFormType === 'EXTERNAL_WAITLIST') {
+        return config.externalUrl;
+      } else if (config.closedFormType === 'INTERNAL_WAITLIST') {
+        return '/waitlist'; // 자체 대기 폼
+      } else if (config.closedFormType === 'NONE') {
+        return '#'; // 이동 안 함
+      }
     }
-  } else {
-    // CLOSED
-    if (config.closedFormType === 'EXTERNAL_WAITLIST') {
-      href = config.externalUrl;
-    } else if (config.closedFormType === 'INTERNAL_WAITLIST') {
-      href = '/waitlist'; // 자체 대기 폼
-    } else if (config.closedFormType === 'NONE') {
-      href = '#'; // 이동 안 함
-    }
-  }
+    return '/application';
+  };
 
   return (
     <LandingLayout>
@@ -92,13 +96,15 @@ export default function HomePage() {
           className="main-image"
         />
 
-        <CtaButton
-          analyticsName={ANALYTICS_EVENTS.HOME}
-          ariaLabel="사전 신청 설문 열기"
-          text={config.ctaText}
-          floatingText={config.floatingText}
-          href={href}
-        />
+        {config && (
+          <CtaButton
+            analyticsName={ANALYTICS_EVENTS.HOME}
+            ariaLabel="사전 신청 설문 열기"
+            text={config.ctaText}
+            floatingText={config.floatingText}
+            href={getHref()}
+          />
+        )}
       </div>
     </LandingLayout>
   );

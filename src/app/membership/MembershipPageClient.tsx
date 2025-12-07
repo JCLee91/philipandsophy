@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
@@ -7,8 +8,30 @@ import CtaButton from '@/components/landing/CtaButton';
 import { getImageUrl } from '@/constants/landing';
 import { MEMBERSHIP_SCHEMA } from '@/constants/seo';
 import { ANALYTICS_EVENTS } from '@/constants/landing';
+import { getLandingConfig } from '@/lib/firebase/landing';
+import { DEFAULT_LANDING_CONFIG, LandingConfig } from '@/types/landing';
 
 export default function MembershipPageClient() {
+  const [config, setConfig] = useState<LandingConfig | null>(null);
+
+  useEffect(() => {
+    getLandingConfig()
+      .then(setConfig)
+      .catch(() => setConfig(DEFAULT_LANDING_CONFIG));
+  }, []);
+
+  const getHref = () => {
+    if (!config) return '/application';
+
+    if (config.status === 'OPEN') {
+      return config.openFormType === 'EXTERNAL' ? config.externalUrl : '/application';
+    } else {
+      if (config.closedFormType === 'EXTERNAL_WAITLIST') return config.externalUrl;
+      if (config.closedFormType === 'INTERNAL_WAITLIST') return '/waitlist';
+      return '#';
+    }
+  };
+
   return (
     <LandingLayout>
       {/* JSON-LD Structured Data - Membership */}
@@ -45,10 +68,15 @@ export default function MembershipPageClient() {
           className="main-image"
         />
 
-        <CtaButton
-          analyticsName={ANALYTICS_EVENTS.MEMBERSHIP}
-          ariaLabel="멤버십 신청하기"
-        />
+        {config && (
+          <CtaButton
+            analyticsName={ANALYTICS_EVENTS.MEMBERSHIP}
+            ariaLabel="멤버십 신청하기"
+            text={config.ctaText}
+            floatingText={config.floatingText}
+            href={getHref()}
+          />
+        )}
       </div>
     </LandingLayout>
   );
