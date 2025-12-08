@@ -51,7 +51,7 @@ export default function NoticeItem({
               {notice.author}
             </span>
             <span className="text-xs text-muted-foreground">
-              {formatTime(notice.createdAt)}
+              {formatTime(notice.scheduledAt || notice.createdAt)}
             </span>
           </div>
           {isAdmin && (

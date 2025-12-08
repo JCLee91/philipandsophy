@@ -43,10 +43,12 @@ export function NoticeTimeline({
 
   const grouped = useMemo(() => {
     const groups = filteredNotices.reduce<Record<string, GroupedNotice>>((acc, notice) => {
-      const dateKey = formatDate(notice.createdAt);
+      // 예약 발행된 공지는 scheduledAt을 사용, 그 외는 createdAt 사용
+      const displayTimestamp = notice.scheduledAt || notice.createdAt;
+      const dateKey = formatDate(displayTimestamp);
       if (!acc[dateKey]) {
         acc[dateKey] = {
-          timestamp: getTimestampMillis(notice.createdAt),
+          timestamp: getTimestampMillis(displayTimestamp),
           label: dateKey,
           notices: [],
         };
