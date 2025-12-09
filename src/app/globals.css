@@ -2,6 +2,9 @@
 
 @config '../../tailwind.config.ts';
 
+/* Tailwind v4: class 기반 dark mode 사용 (prefers-color-scheme 기본값 비활성화) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
