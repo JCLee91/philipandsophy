@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo, useRef, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import LockedScreen from '@/components/LockedScreen';
 import PageTransition from '@/components/PageTransition';
@@ -696,13 +696,16 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
         {/* 인증 상세 모달 */}
         {selectedSubmission && (
           <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-            <DialogContent className="profile-reading-dialog profile-reading-dialog-ios-safe sm:max-w-md sm:rounded-2xl">
+            <DialogContent className="profile-reading-dialog profile-reading-dialog-ios-safe gap-2 sm:max-w-md sm:rounded-2xl">
               <DialogHeader className="text-left gap-1">
                 <DialogTitle className="text-base">
                   {submissionDateLabel ?? '독서 기록'}
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  선택한 날짜의 독서 인증 상세 내용입니다.
+                </DialogDescription>
               </DialogHeader>
-              <div className="profile-reading-scroll space-y-4 overflow-y-auto">
+              <div className="profile-reading-scroll space-y-3 overflow-y-auto">
                 {/* 책 이미지 */}
                 {selectedSubmission.bookImageUrl && (
                   <div
@@ -790,7 +793,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
             width: 100% !important;
             max-width: none !important;
             border-radius: 28px 28px 0 0 !important;
-            padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+            padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
             box-shadow: 0 -20px 40px rgba(15, 23, 42, 0.18);
           }
 
