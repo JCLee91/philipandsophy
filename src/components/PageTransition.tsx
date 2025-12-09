@@ -23,7 +23,7 @@ const pageVariants = {
 
 const pageTransition = {
   duration: 0.3, // 300ms (duration-slow와 동일)
-  ease: [0.16, 1, 0.3, 1], // ease-out (--ease-out과 동일)
+  ease: [0.16, 1, 0.3, 1] as const, // ease-out (--ease-out과 동일)
 };
 
 export default function PageTransition({ children }: PageTransitionProps) {

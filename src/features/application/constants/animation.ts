@@ -4,7 +4,7 @@
  */
 
 // 공통 easing 함수
-export const EASE_SMOOTH = [0.25, 0.46, 0.45, 0.94];
+export const EASE_SMOOTH = [0.25, 0.46, 0.45, 0.94] as const;
 
 // 기본 fade 애니메이션
 export const fadeIn = {
