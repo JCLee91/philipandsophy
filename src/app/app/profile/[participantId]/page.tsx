@@ -819,13 +819,13 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           /* iOS PWA 독서 기록 모달 Safe Area 대응 */
           @media (max-width: 640px) and (display-mode: standalone) {
             .profile-reading-dialog-ios-safe {
-              padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+              padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
             }
 
             /* iOS 11.2 이전 버전 호환성 */
             @supports (padding-top: constant(safe-area-inset-top)) {
               .profile-reading-dialog-ios-safe {
-                padding-bottom: calc(24px + constant(safe-area-inset-bottom)) !important;
+                padding-bottom: calc(20px + constant(safe-area-inset-bottom)) !important;
               }
             }
           }
