@@ -30,3 +30,15 @@ export const EXISTING_MEMBER_FUNNEL_STEPS = [
 ] as const;
 
 export type PeriodFilter = 'today' | '7days' | '30days' | 'all';
+
+/**
+ * 퍼널 단계별 집계 데이터 조회
+ */
+export interface FunnelStepData {
+  stepId: string;
+  stepLabel: string;
+  stepIndex: number;
+  count: number;
+  percentage: number;      // 첫 단계 대비 비율 (%)
+  dropoffRate: number;     // 이전 단계 대비 이탈률 (%)
+}
