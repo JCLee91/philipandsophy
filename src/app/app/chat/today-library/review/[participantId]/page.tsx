@@ -15,8 +15,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
+import ImageDialog from '@/components/ImageDialog';
 import { getInitials, getFirstName } from '@/lib/utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { Maximize2 } from 'lucide-react';
 
 // ✅ Disable static generation
 export const dynamic = 'force-dynamic';
@@ -32,6 +34,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     const { toast } = useToast();
     const { participant: currentUser } = useAuth();
     const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
+    const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
     // URL 디코딩 (한글 이름 처리)
     const participantId = decodeURIComponent(params.participantId);
@@ -243,11 +246,11 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                             </div>
                         </div>
                         {/* 2. Book Info Section */}
-                        <section className="mb-10">
+                        <section className="mb-6">
                             <h2 className="text-[16px] font-bold text-[#191F28] mb-4">도서 정보</h2>
 
                             {/* Book Card (Yellow Style) */}
-                            <div className="relative border-b-[2px] border-[#FFD362] rounded-t-[4px] px-3 py-3 min-h-[100px] bg-[#FFFDF3] mb-3">
+                            <div className="relative border-b-[2px] border-[#FFD362] rounded-t-[4px] px-3 py-3 min-h-[80px] bg-[#FFFDF3]">
                                 <div className="flex items-start gap-3 pr-[72px]">
                                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                                         <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] truncate tracking-[-0.14px]">
@@ -271,14 +274,6 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                     </div>
                                 )}
                             </div>
-
-                            {/* Book Description */}
-                            {submission.bookDescription && (
-                                <p className="text-[14px] text-[#4E5968] leading-[1.6] break-keep">
-                                    {submission.bookDescription.slice(0, 100)}
-                                    {submission.bookDescription.length > 100 ? '...' : ''}
-                                </p>
-                            )}
                         </section>
 
                         {/* 3. Review Section */}
@@ -287,17 +282,32 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
                             {/* Certification Image (Gray Box) */}
                             {submission.bookImageUrl && (
-                                <div className="bg-[#F2F4F6] rounded-[8px] overflow-hidden mb-6">
-                                    <div className="relative w-full aspect-[4/3]">
-                                        <Image
-                                            src={submission.bookImageUrl}
-                                            alt="인증 이미지"
-                                            fill
-                                            className="object-cover"
-                                            sizes="(max-width: 768px) 100vw, 448px"
-                                        />
+                                <>
+                                    <div
+                                        className="bg-[#F2F4F6] rounded-[8px] overflow-hidden mb-6 cursor-pointer relative group"
+                                        onClick={() => setImageDialogOpen(true)}
+                                    >
+                                        <div className="relative w-full h-64">
+                                            <Image
+                                                src={submission.bookImageUrl}
+                                                alt="인증 이미지"
+                                                fill
+                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                sizes="(max-width: 768px) 100vw, 448px"
+                                            />
+                                            {/* 확대 아이콘 힌트 */}
+                                            <div className="absolute bottom-3 right-3 bg-black/50 text-white p-2 rounded-full opacity-80 hover:opacity-100 transition-opacity">
+                                                <Maximize2 size={18} />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                    <ImageDialog
+                                        open={imageDialogOpen}
+                                        onClose={() => setImageDialogOpen(false)}
+                                        imageUrl={submission.bookImageUrl}
+                                        alt="독서 인증 이미지"
+                                    />
+                                </>
                             )}
 
                             {/* Review Text */}
