@@ -285,7 +285,7 @@ export default function DataCenterLoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md space-y-4">
           {/* 에러 카드 */}
-          <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8">
+          <div className="bg-white rounded-xl shadow-xs border border-red-200 p-8">
             <div className="text-center space-y-4">
               <AlertCircle className="h-12 w-12 text-red-600 mx-auto" />
               <div>
@@ -338,7 +338,7 @@ export default function DataCenterLoginPage() {
         </div>
 
         {/* 로그인 폼 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-8">
           {step === 'phone' ? (
             <form onSubmit={handlePhoneSubmit} className="space-y-6">
               {/* 전화번호 입력 */}
@@ -353,7 +353,7 @@ export default function DataCenterLoginPage() {
                   onChange={handlePhoneChange}
                   placeholder="010-1234-5678"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   관리자로 등록된 전화번호만 접근 가능합니다
@@ -363,7 +363,7 @@ export default function DataCenterLoginPage() {
               {/* 에러 메시지 */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
               )}
@@ -404,7 +404,7 @@ export default function DataCenterLoginPage() {
                   maxLength={6}
                   required
                   autoFocus
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-center text-2xl tracking-widest"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-center text-2xl tracking-widest"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   {phoneNumber}로 발송된 6자리 인증번호를 입력하세요
@@ -414,7 +414,7 @@ export default function DataCenterLoginPage() {
               {/* 에러 메시지 */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
               )}

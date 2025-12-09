@@ -207,7 +207,7 @@ export default function DataCenterSidebar() {
       {/* 오버레이 (모바일) */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-xs transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -221,7 +221,7 @@ export default function DataCenterSidebar() {
         )}
       >
         {/* 헤더 */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-100 shrink-0 bg-gradient-to-r from-gray-50 to-white">
+        <div className="h-16 flex items-center px-6 border-b border-gray-100 shrink-0 bg-linear-to-r from-gray-50 to-white">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
               <BarChart3 className="h-4 w-4 text-white" />

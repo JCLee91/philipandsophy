@@ -420,7 +420,7 @@ function Step2Content() {
                   onClick={() => handleBookSelect(book)}
                   className="w-full flex items-start gap-4 p-4 hover:bg-gray-50 transition-colors text-left border-b last:border-b-0"
                 >
-                  {book.image && <Image src={book.image} alt={book.title} width={60} height={90} className="rounded object-cover flex-shrink-0" />}
+                  {book.image && <Image src={book.image} alt={book.title} width={60} height={90} className="rounded object-cover shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm line-clamp-2 mb-1">{book.title}</h4>
                     <p className="text-xs text-gray-600">{book.author}</p>
@@ -440,12 +440,12 @@ function Step2Content() {
 
       {/* 수동 입력된 책 제목 */}
       {!selectedBook && manualTitle && (
-        <div className="relative border-b-[2px] border-solid rounded-t-[4px] px-3 py-3 min-h-[67px] bg-gray-50" style={{ borderBottomColor: '#6b7280' }}>
+        <div className="relative border-b-2 border-solid rounded-t-[4px] px-3 py-3 min-h-[67px] bg-gray-50" style={{ borderBottomColor: '#6b7280' }}>
           <div className="flex items-start gap-3">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <div className="flex items-center gap-1">
                 <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] tracking-[-0.14px]">{manualTitle}</p>
-                <button type="button" onClick={() => { setSearchQuery(manualTitle); setManualTitle(''); setSearchResults([]); }} className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors">
+                <button type="button" onClick={() => { setSearchQuery(manualTitle); setManualTitle(''); setSearchResults([]); }} className="shrink-0 p-1 hover:bg-gray-100 rounded transition-colors">
                   <Image src="/image/today-library/ri_pencil-fill.svg" alt="제목 수정" width={18} height={18} />
                 </button>
               </div>
@@ -457,12 +457,12 @@ function Step2Content() {
 
       {/* 선택된 책 정보 */}
       {selectedBook && (
-        <div className="relative border-b-[2px] border-solid rounded-t-[4px] px-3 py-3 min-h-[67px] bg-blue-50" style={{ borderBottomColor: '#3b82f6' }}>
+        <div className="relative border-b-2 border-solid rounded-t-[4px] px-3 py-3 min-h-[67px] bg-blue-50" style={{ borderBottomColor: '#3b82f6' }}>
           <div className="flex items-start gap-3 pr-[110px]">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <div className="flex items-center gap-1">
                 <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] tracking-[-0.14px]">{selectedBook.title}</p>
-                <button type="button" onClick={handleEditBook} className="flex-shrink-0 p-1 hover:bg-blue-100 rounded transition-colors">
+                <button type="button" onClick={handleEditBook} className="shrink-0 p-1 hover:bg-blue-100 rounded transition-colors">
                   <Image src="/image/today-library/ri_pencil-fill.svg" alt="책 변경" width={18} height={18} />
                 </button>
               </div>

@@ -56,7 +56,7 @@ export default function TopBar({
   return (
     <header
       className={cn(
-        'z-[50] w-full border-b bg-background/95 backdrop-blur-sm shadow-sm safe-area-header isolate',
+        'z-50 w-full border-b bg-background/95 backdrop-blur-xs shadow-xs safe-area-header isolate',
         position === 'sticky' && 'sticky top-0',
         position === 'fixed' && 'fixed top-0 left-0 right-0',
         position === 'relative' && 'relative',

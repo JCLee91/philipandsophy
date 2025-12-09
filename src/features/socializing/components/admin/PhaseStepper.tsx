@@ -11,7 +11,7 @@ interface PhaseStepperProps {
 export default function PhaseStepper({ currentPhaseIndex }: PhaseStepperProps) {
   return (
     <div className="flex items-center justify-between mt-6 relative">
-      <div className="absolute top-1/2 left-0 w-full h-[1px] bg-border -z-10" />
+      <div className="absolute top-1/2 left-0 w-full h-px bg-border -z-10" />
       {PHASES.map((phase, idx) => {
         const isActive = idx === currentPhaseIndex;
         const isCompleted = idx < currentPhaseIndex;

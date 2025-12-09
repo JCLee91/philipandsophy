@@ -148,7 +148,7 @@ export default function Home() {
   if (loadingTimeout && (isLoading || isCohortLoading)) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-gray-50">
-        <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-sm text-center space-y-4">
+        <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-xs text-center space-y-4">
           <h2 className="text-xl font-bold text-gray-900">로딩이 오래 걸리고 있습니다</h2>
           <p className="text-gray-600">
             네트워크 연결이 느리거나 일시적인 문제가 있을 수 있습니다.
@@ -183,7 +183,7 @@ export default function Home() {
   if (participantStatus === 'error') {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-gray-50">
-        <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-sm text-center space-y-4">
+        <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-xs text-center space-y-4">
           <h2 className="text-xl font-bold text-gray-900">접속 오류</h2>
           <p className="text-gray-600">
             사용자 정보를 불러오는데 실패했습니다.<br />

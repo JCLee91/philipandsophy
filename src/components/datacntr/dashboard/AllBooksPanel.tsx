@@ -78,7 +78,7 @@ export default function AllBooksPanel({ data, isLoading }: AllBooksPanelProps) {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
       {/* 책 목록 (왼쪽 2칸) */}
       <Card className="lg:col-span-2 flex flex-col h-[800px]">
-        <CardHeader className="pb-3 flex-shrink-0">
+        <CardHeader className="pb-3 shrink-0">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-primary" />
@@ -91,7 +91,7 @@ export default function AllBooksPanel({ data, isLoading }: AllBooksPanelProps) {
         </CardHeader>
         <CardContent className="flex-1 flex flex-col min-h-0 space-y-4">
           {/* 검색 */}
-          <div className="relative flex-shrink-0">
+          <div className="relative shrink-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
@@ -141,7 +141,7 @@ export default function AllBooksPanel({ data, isLoading }: AllBooksPanelProps) {
                   </div>
 
                   {/* 인증 횟수 */}
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <Badge variant="outline" className="font-normal bg-background">
                       {book.count}회
                     </Badge>
@@ -153,7 +153,7 @@ export default function AllBooksPanel({ data, isLoading }: AllBooksPanelProps) {
 
           {/* 통계 요약 */}
           {filteredBooks.length > 0 && (
-            <div className="pt-3 border-t flex items-center justify-between text-xs text-muted-foreground flex-shrink-0">
+            <div className="pt-3 border-t flex items-center justify-between text-xs text-muted-foreground shrink-0">
               <span>검색된 책 {filteredBooks.length}권</span>
               <span>
                 총 {filteredBooks.reduce((sum, book) => sum + book.count, 0)}회 인증
@@ -166,7 +166,7 @@ export default function AllBooksPanel({ data, isLoading }: AllBooksPanelProps) {
       {/* 통계 (오른쪽 1칸) */}
       <div className="flex flex-col gap-6 h-[800px]">
         {/* 책 종류 통계 */}
-        <Card className="flex-shrink-0">
+        <Card className="shrink-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -202,7 +202,7 @@ export default function AllBooksPanel({ data, isLoading }: AllBooksPanelProps) {
 
         {/* 독서왕 Top 10 */}
         <Card className="flex-1 flex flex-col min-h-0">
-          <CardHeader className="pb-3 flex-shrink-0">
+          <CardHeader className="pb-3 shrink-0">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Trophy className="h-4 w-4" />
               독서왕 TOP 10

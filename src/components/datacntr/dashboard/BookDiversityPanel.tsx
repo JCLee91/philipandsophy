@@ -75,7 +75,7 @@ export default function BookDiversityPanel({ data, isLoading }: BookDiversityPan
 
               return (
                 <div key={index} className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                  <div className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -87,7 +87,7 @@ export default function BookDiversityPanel({ data, isLoading }: BookDiversityPan
                       />
                     </div>
                   </div>
-                  <div className="flex-shrink-0 text-right">
+                  <div className="shrink-0 text-right">
                     <p className="text-sm font-bold">{book.count}명</p>
                     <p className="text-xs text-muted-foreground">{percentage}%</p>
                   </div>

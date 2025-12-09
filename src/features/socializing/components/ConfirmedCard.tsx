@@ -44,7 +44,7 @@ export default function ConfirmedCard({ result, attendingVoters = [], openChatUr
     const isButtonActive = !!openChatUrl && now >= oneDayBefore;
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+        <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 text-center">
             <div className="flex flex-col items-center mb-6">
                 <div className="w-14 h-14 bg-gray-900 rounded-2xl flex items-center justify-center mb-3 text-white shadow-lg shadow-gray-200">
                     <Calendar className="w-7 h-7" />
@@ -58,7 +58,7 @@ export default function ConfirmedCard({ result, attendingVoters = [], openChatUr
 
             <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-left mb-6 border border-gray-100">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-xs border border-gray-100">
                         <Calendar className="w-4 h-4 text-gray-900" />
                     </div>
                     <span className="font-medium text-text-primary">
@@ -66,7 +66,7 @@ export default function ConfirmedCard({ result, attendingVoters = [], openChatUr
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-xs border border-gray-100">
                         <Clock className="w-4 h-4 text-gray-900" />
                     </div>
                     <span className="font-medium text-text-primary">
@@ -74,7 +74,7 @@ export default function ConfirmedCard({ result, attendingVoters = [], openChatUr
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-xs border border-gray-100">
                         <MapPin className="w-4 h-4 text-gray-900" />
                     </div>
                     <span className="font-medium text-text-primary">

@@ -105,7 +105,7 @@ export default function AttendanceCheckCard({
     };
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100">
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-900">
@@ -166,7 +166,7 @@ export default function AttendanceCheckCard({
                         onClick={() => handleVote('attending')}
                         disabled={isPending}
                         loading={isPending && selectedAttendance === 'attending'}
-                        variant={selectedAttendance === 'attending' ? 'primary' : 'outline'}
+                        variant={selectedAttendance === 'attending' ? 'primary' : 'outline-solid'}
                         className={cn(
                             "flex items-center justify-center gap-2 py-4",
                             selectedAttendance === 'attending' && "ring-2 ring-gray-900 ring-offset-2"
@@ -180,7 +180,7 @@ export default function AttendanceCheckCard({
                         onClick={() => handleVote('not_attending')}
                         disabled={isPending}
                         loading={isPending && selectedAttendance === 'not_attending'}
-                        variant={selectedAttendance === 'not_attending' ? 'secondary' : 'outline'}
+                        variant={selectedAttendance === 'not_attending' ? 'secondary' : 'outline-solid'}
                         className={cn(
                             "flex items-center justify-center gap-2 py-4",
                             selectedAttendance === 'not_attending' && "ring-2 ring-gray-200 ring-offset-2 bg-gray-100"

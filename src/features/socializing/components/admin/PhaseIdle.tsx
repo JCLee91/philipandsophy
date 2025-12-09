@@ -113,7 +113,7 @@ export default function PhaseIdle({
                     return (
                       <UnifiedButton
                         key={place}
-                        variant={isSelected ? 'default' : 'outline'}
+                        variant={isSelected ? 'default' : 'outline-solid'}
                         size="sm"
                         onClick={() => toggleLocation(place)}
                         className={cn(

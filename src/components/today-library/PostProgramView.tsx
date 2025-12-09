@@ -41,7 +41,7 @@ function MiniStatCard({
     mainValue: string;
 }) {
     return (
-        <div className="flex-1 bg-white rounded-[12px] p-4 shadow-sm min-h-[88px] flex flex-col">
+        <div className="flex-1 bg-white rounded-[12px] p-4 shadow-xs min-h-[88px] flex flex-col">
             <p className="text-[13px] font-bold text-[#333D4B] mb-2">{title}</p>
             <p className="text-[22px] font-bold text-[#333D4B] mt-auto text-right">{mainValue}</p>
         </div>
@@ -65,7 +65,7 @@ function CompanionCard({
     }
 
     return (
-        <div className="bg-white rounded-[12px] p-4 shadow-sm flex flex-col h-full">
+        <div className="bg-white rounded-[12px] p-4 shadow-xs flex flex-col h-full">
             <p className="text-[13px] font-bold text-[#333D4B] mb-3">{title}</p>
             {/* 프로필 목록 */}
             <div className="flex flex-wrap gap-2 flex-1 justify-center">
@@ -113,7 +113,7 @@ function ClusterCard({
 }) {
     return (
         <div
-            className="bg-[#F9FAFB] rounded-[16px] p-5 snap-center flex-shrink-0 w-[85%] min-w-[280px] cursor-pointer active:scale-[0.98] transition-transform"
+            className="bg-[#F9FAFB] rounded-[16px] p-5 snap-center shrink-0 w-[85%] min-w-[280px] cursor-pointer active:scale-[0.98] transition-transform"
             onClick={onClick}
         >
             {/* Header: Day + Category */}
@@ -380,7 +380,7 @@ export default function PostProgramView({
                     {/* Cluster Journey */}
                     {isLoading ? (
                         <section className="px-6 mb-3">
-                            <div className="bg-white rounded-[12px] p-4 shadow-sm">
+                            <div className="bg-white rounded-[12px] p-4 shadow-xs">
                                 <div className="w-40 h-4 bg-gray-200 rounded mb-3 animate-pulse" />
                                 <div className="w-full h-32 bg-gray-100 rounded-[12px] animate-pulse" />
                             </div>
@@ -388,7 +388,7 @@ export default function PostProgramView({
                     ) : (
                         activityRecap && activityRecap.myClusterJourney.length > 0 && (
                             <section className="px-6 mb-3">
-                                <div className="bg-white rounded-[12px] p-4 shadow-sm">
+                                <div className="bg-white rounded-[12px] p-4 shadow-xs">
                                     <p className="text-[13px] font-bold text-[#333D4B] mb-3">나의 모임 히스토리</p>
                                     {/* Carousel */}
                                     <div className="relative -mx-1">
@@ -434,7 +434,7 @@ export default function PostProgramView({
                     {isLoading ? (
                         <section className="px-6 pb-32">
                             <div className="w-32 h-6 bg-gray-200 rounded mb-4 animate-pulse" />
-                            <div className="bg-white rounded-[12px] p-4 shadow-sm">
+                            <div className="bg-white rounded-[12px] p-4 shadow-xs">
                                 <div className="flex flex-col gap-2">
                                     {[1, 2, 3, 4, 5].map(i => (
                                         <div key={i} className="w-full h-14 bg-gray-100 rounded-[8px] animate-pulse" />
@@ -445,7 +445,7 @@ export default function PostProgramView({
                     ) : (
                         activityRecap && (
                             <section className="px-6 pb-32">
-                                <div className="bg-white rounded-[12px] p-4 shadow-sm">
+                                <div className="bg-white rounded-[12px] p-4 shadow-xs">
                                     <p className="text-[13px] font-bold text-[#333D4B] mb-1">전체 멤버</p>
                                     <p className="text-[12px] text-[#8B95A1] mb-3">
                                         모든 프로필북이 개방됐어요. 파티 전에 미리 살펴보세요!
@@ -458,7 +458,7 @@ export default function PostProgramView({
                                                 className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-[10px] hover:bg-gray-100 transition-colors"
                                             >
                                                 <span className="text-[12px] text-[#8B95A1] w-6 text-center">{idx + 1}</span>
-                                                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                                                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0">
                                                     <Image
                                                         src={getResizedImageUrl(companion.profileImage) || '/image/default-profile.svg'}
                                                         alt={companion.name}

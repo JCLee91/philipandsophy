@@ -404,7 +404,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         </p>
 
         {/* 매칭 시스템 설정 및 프리뷰 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
+        <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200 mb-6">
           <div className="flex items-center justify-between mb-4">
              <h2 className="text-lg font-bold text-gray-900">매칭 시스템 설정</h2>
              {/* 매칭 실행 버튼 */}
@@ -581,7 +581,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
         </div>
 
         {/* 프로필 공개 설정 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
+        <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200 mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">프로필북 공개 설정</h2>
           <div className="space-y-3">
             <p className="text-sm text-gray-600">
@@ -598,7 +598,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
                 disabled={isUpdatingUnlockDay}
                 min={cohort?.programStartDate}
                 max={cohort?.endDate}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
               <button
                 type="button"
@@ -641,7 +641,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">참가자 수</p>
@@ -653,7 +653,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">총 인증 수</p>
@@ -667,7 +667,7 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">평균 인증률</p>

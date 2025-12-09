@@ -14,7 +14,7 @@ export default function PartyFloatingButton() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[1001] pointer-events-none flex justify-center">
+    <div className="fixed bottom-0 left-0 right-0 z-1001 pointer-events-none flex justify-center">
       <div className="relative w-full max-w-[500px]">
         <Link
           href="/secret-party"
@@ -23,10 +23,10 @@ export default function PartyFloatingButton() {
         >
           <div className="relative h-[85px] w-[85px] transition-all duration-300 ease-bounce hover:-translate-y-2 hover:scale-110">
             {/* Strongest outer glow for maximum visibility */}
-            <div className="absolute inset-[-12px] rounded-full bg-gradient-to-br from-red-500/60 to-green-500/60 blur-2xl opacity-75 animate-[pulse_2s_ease-in-out_infinite] group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-[-12px] rounded-full bg-linear-to-br from-red-500/60 to-green-500/60 blur-2xl opacity-75 animate-[pulse_2s_ease-in-out_infinite] group-hover:opacity-100 transition-opacity" />
 
             {/* Secondary glow layer */}
-            <div className="absolute inset-[-6px] rounded-full bg-gradient-to-br from-red-400/50 to-green-400/50 blur-xl opacity-60 animate-[pulse_2.5s_ease-in-out_infinite_0.3s] group-hover:opacity-80 transition-opacity" />
+            <div className="absolute inset-[-6px] rounded-full bg-linear-to-br from-red-400/50 to-green-400/50 blur-xl opacity-60 animate-[pulse_2.5s_ease-in-out_infinite_0.3s] group-hover:opacity-80 transition-opacity" />
 
             {/* White highlight glow for depth */}
             <div className="absolute inset-[-4px] rounded-full bg-white/30 blur-lg opacity-50 animate-[pulse_3s_ease-in-out_infinite_0.6s] group-hover:opacity-70 transition-opacity" />

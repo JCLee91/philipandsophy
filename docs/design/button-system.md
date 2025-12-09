@@ -327,7 +327,7 @@ import { BookOpen } from 'lucide-react';
 
 ```tsx
 <button
-  className="bg-black rounded-lg px-4 py-4 font-bold text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+  className="bg-black rounded-lg px-4 py-4 font-bold text-white transition-colors hover:bg-gray-800 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
 >
   독서 인증
 </button>
@@ -546,7 +546,7 @@ import { BookOpen } from 'lucide-react';
 <button
   type="button"
   aria-label="독서 인증하기"
-  className="bg-black rounded-lg px-4 py-4 font-bold text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+  className="bg-black rounded-lg px-4 py-4 font-bold text-white transition-colors hover:bg-gray-800 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
 >
   독서 인증
 </button>

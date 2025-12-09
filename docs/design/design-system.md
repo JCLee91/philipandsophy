@@ -380,7 +380,7 @@ import { SubmissionCard } from '@/components/SubmissionCard';
 
 ```tsx
 // 중앙 정렬 컨테이너 (max 1400px)
-<div className="container mx-auto px-4 max-w-screen-2xl">
+<div className="container mx-auto px-4 max-w-(--breakpoint-2xl)">
   {/* Content */}
 </div>
 ```
@@ -421,7 +421,7 @@ import { SubmissionCard } from '@/components/SubmissionCard';
 
 | 토큰 | 값 | Tailwind Class | 용도 |
 |------|----|----|------|
-| **sm** | `0 1px 2px rgba(0,0,0,0.05)` | `shadow-sm` | 미묘한 그림자 |
+| **sm** | `0 1px 2px rgba(0,0,0,0.05)` | `shadow-xs` | 미묘한 그림자 |
 | **md** | `0 4px 6px rgba(0,0,0,0.1)` | `shadow-md` | 카드 |
 | **lg** | `0 10px 15px rgba(0,0,0,0.1)` | `shadow-lg` | 모달 |
 | **xl** | `0 20px 25px rgba(0,0,0,0.15)` | `shadow-xl` | 플로팅 요소 |
@@ -453,7 +453,7 @@ transitionDuration: {
 ```css
 @layer utilities {
   .shimmer {
-    @apply bg-gradient-to-r from-gray-200 via-white to-gray-200 bg-[length:200%_100%] animate-shimmer;
+    @apply bg-linear-to-r from-gray-200 via-white to-gray-200 bg-size-[200%_100%] animate-shimmer;
     will-change: background-position;
     border-radius: 8px;
   }

@@ -34,7 +34,7 @@ export const FOOTER_STYLES = {
  */
 export const CARD_STYLES = {
   /** 카드 컨테이너 기본 스타일 */
-  CONTAINER: 'bg-admin-bg-card rounded-xl border border-admin-border shadow-sm overflow-hidden',
+  CONTAINER: 'bg-admin-bg-card rounded-xl border border-admin-border shadow-xs overflow-hidden',
 
   /** 카드 헤더 영역 */
   HEADER: 'px-5 py-4 border-b border-admin-border',

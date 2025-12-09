@@ -72,7 +72,7 @@ export default function ImageViewerDialog({
     <>
       {/* Backdrop - 모든 다이얼로그보다 위에 표시 */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in-0 duration-normal"
+        className="fixed inset-0 bg-black/80 backdrop-blur-xs animate-in fade-in-0 duration-normal"
         style={{ zIndex: Z_INDEX.IMAGE_VIEWER_BACKDROP }}
         onClick={(e) => {
           e.stopPropagation();

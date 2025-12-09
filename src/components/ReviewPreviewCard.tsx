@@ -29,14 +29,14 @@ export default function ReviewPreviewCard({
 }: ReviewPreviewCardProps) {
     return (
         <div
-            className={`flex items-start px-4 py-3 rounded-[12px] border-b-[2px] border-solid transition-all ${isMe
+            className={`flex items-start px-4 py-3 rounded-[12px] border-b-2 border-solid transition-all ${isMe
                     ? 'bg-blue-50 border-blue-300'
                     : 'bg-amber-50 border-amber-200'
                 }`}
         >
             {/* 프로필 이미지 + 이름 (세로 정렬) */}
             <div
-                className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer group mr-3 mt-1"
+                className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group mr-3 mt-1"
                 onClick={(e) => {
                     if (onProfileClick) {
                         e.stopPropagation();

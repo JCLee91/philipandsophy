@@ -42,7 +42,7 @@ export default function SettingsPage() {
         <LandingConfigForm />
 
         {/* 현재 사용자 정보 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <User className="h-5 w-5" />
             현재 사용자
@@ -60,7 +60,7 @@ export default function SettingsPage() {
         </div>
 
         {/* 허용된 이메일 도메인 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Mail className="h-5 w-5" />
             허용된 이메일 도메인
@@ -82,7 +82,7 @@ export default function SettingsPage() {
         </div>
 
         {/* 허용된 전화번호 국가 코드 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Phone className="h-5 w-5" />
             허용된 전화번호 국가 코드

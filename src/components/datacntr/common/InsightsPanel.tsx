@@ -50,7 +50,7 @@ const iconMap = {
 export default function InsightsPanel({ insights, isLoading }: InsightsPanelProps) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
         <div className="h-8 w-48 shimmer rounded mb-4" />
         <div className="space-y-3">
           <div className="h-16 shimmer rounded" />
@@ -66,7 +66,7 @@ export default function InsightsPanel({ insights, isLoading }: InsightsPanelProp
   }
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+    <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
       <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
         <Lightbulb className="h-5 w-5 text-yellow-500" />
         💡 주요 인사이트
@@ -84,7 +84,7 @@ export default function InsightsPanel({ insights, isLoading }: InsightsPanelProp
             >
               <div className="flex items-start gap-3">
                 {Icon && (
-                  <Icon className={`h-5 w-5 flex-shrink-0 mt-0.5 ${config.iconColor}`} />
+                  <Icon className={`h-5 w-5 shrink-0 mt-0.5 ${config.iconColor}`} />
                 )}
                 <p className={`text-sm font-medium ${config.text} flex-1`}>
                   {insight.message}

@@ -209,7 +209,7 @@ export default function OtherClustersPage() {
                                 <button
                                     key={cluster.id}
                                     onClick={() => handleClusterClick(cluster.id)}
-                                    className={`bg-white rounded-xl p-5 shadow-sm border text-left transition-all hover:shadow-md active:scale-[0.98] ${cluster.id === myClusterId ? 'border-black ring-1 ring-black' : 'border-gray-100'
+                                    className={`bg-white rounded-xl p-5 shadow-xs border text-left transition-all hover:shadow-md active:scale-[0.98] ${cluster.id === myClusterId ? 'border-black ring-1 ring-black' : 'border-gray-100'
                                         }`}
                                 >
                                     <div className="flex justify-between items-start gap-3 mb-3">

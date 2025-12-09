@@ -9,11 +9,11 @@ interface AfterDiningIntroCardProps {
 
 export default function AfterDiningIntroCard({ onNext }: AfterDiningIntroCardProps) {
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+        <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 text-center">
             <div className="flex flex-col items-center mb-6">
                 <div className="w-14 h-14 bg-gray-900 rounded-2xl flex items-center justify-center mb-3 text-white shadow-lg shadow-gray-200 relative">
-                    <Wine className="w-6 h-6 absolute left-1.5 top-3.5 rotate-[15deg]" />
-                    <Wine className="w-6 h-6 absolute right-1.5 top-3.5 -rotate-[15deg]" />
+                    <Wine className="w-6 h-6 absolute left-1.5 top-3.5 rotate-15" />
+                    <Wine className="w-6 h-6 absolute right-1.5 top-3.5 -rotate-15" />
                 </div>
                 <h3 className="text-heading-lg font-bold text-text-primary">애프터 다이닝</h3>
                 <p className="text-sm text-text-secondary mt-3 whitespace-pre-line leading-relaxed">
@@ -24,7 +24,7 @@ export default function AfterDiningIntroCard({ onNext }: AfterDiningIntroCardPro
 
             <div className="bg-gray-50 rounded-xl p-4 space-y-4 text-left mb-6 border border-gray-100">
                 <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-xs border border-gray-100 shrink-0">
                         <Users className="w-4 h-4 text-gray-900" />
                     </div>
                     <div>
@@ -35,7 +35,7 @@ export default function AfterDiningIntroCard({ onNext }: AfterDiningIntroCardPro
                     </div>
                 </div>
                 <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-xs border border-gray-100 shrink-0">
                         <Gift className="w-4 h-4 text-gray-900" />
                     </div>
                     <div>

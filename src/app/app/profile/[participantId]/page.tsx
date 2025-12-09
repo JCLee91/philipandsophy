@@ -561,7 +561,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                       alt="프로필 이미지 보기"
                       width={20}
                       height={20}
-                      className="flex-shrink-0"
+                      className="shrink-0"
                     />
                   </button>
                 </div>
@@ -571,7 +571,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   <div className="w-full mb-[60px]">
                     <h3 className="text-[18px] md:text-[20px] font-bold leading-[1.4] text-[#31363e] mb-4">최근 본 도서</h3>
                     <div className="flex flex-col gap-3">
-                      <div className="relative border-b-[2px] border-solid rounded-t-[4px] px-3 py-3 min-h-[100px]" style={{ backgroundColor: colors.accentLight, borderBottomColor: colors.bookBorder }}>
+                      <div className="relative border-b-2 border-solid rounded-t-[4px] px-3 py-3 min-h-[100px]" style={{ backgroundColor: colors.accentLight, borderBottomColor: colors.bookBorder }}>
                         <div className="flex items-start gap-3 pr-[72px]">
                           <div className="flex flex-col gap-1 flex-1 min-w-0">
                             <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] truncate tracking-[-0.14px]">
@@ -586,7 +586,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                         </div>
                         {/* 책 표지 표시: bookCoverUrl 우선, 없으면 bookImageUrl 사용 */}
                         {(latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl) && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-[60px] h-[88px] bg-white rounded-[4px] overflow-hidden shadow-sm">
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-[60px] h-[88px] bg-white rounded-[4px] overflow-hidden shadow-xs">
                             <Image
                               src={getResizedImageUrl(latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl) || latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl}
                               alt="책 표지"
@@ -658,7 +658,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                               <p className="flex-1 text-[16px] font-medium leading-[1.4] text-[#575e68]">
                                 {question}
                               </p>
-                              <div className={`flex-shrink-0 transition-transform duration-300 ease-in-out ${isExpanded ? 'rotate-180' : ''
+                              <div className={`shrink-0 transition-transform duration-300 ease-in-out ${isExpanded ? 'rotate-180' : ''
                                 }`}>
                                 <img
                                   src="/icons/chevron-down.svg"
@@ -674,7 +674,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                                 }`}
                             >
                               <div className="rounded-[12px] px-4 py-4" style={{ backgroundColor: colors.accentLight }}>
-                                <p className="text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap break-words">
+                                <p className="text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap wrap-break-word">
                                   {answer}
                                 </p>
                               </div>
@@ -724,7 +724,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     한 줄 감상평
                   </p>
-                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
+                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap wrap-break-word">
                     {selectedSubmission.review}
                   </p>
                 </div>

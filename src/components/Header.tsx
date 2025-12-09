@@ -35,7 +35,7 @@ export default function Header({
   return (
     <TopBar
       position="fixed"
-      className="z-[999]"
+      className="z-999"
       title={`필립앤소피 ${currentCohort?.name || ''}`}
       align="center"
       onBack={onBack}

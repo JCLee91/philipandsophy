@@ -232,7 +232,7 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
                 }`}
               >
                 {message.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                     <Bot className="h-5 w-5 text-blue-600" />
                   </div>
                 )}
@@ -248,7 +248,7 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
                 </div>
 
                 {message.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
                     <User className="h-5 w-5 text-white" />
                   </div>
                 )}
@@ -257,7 +257,7 @@ export default function AIChatPanel({ selectedCohortId }: AIChatPanelProps) {
 
             {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                   <Bot className="h-5 w-5 text-blue-600" />
                 </div>
                 <div className="bg-gray-100 rounded-lg px-4 py-2">

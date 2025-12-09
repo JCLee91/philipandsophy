@@ -129,7 +129,7 @@ export default function ImageDialog({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/90 backdrop-blur-sm animate-in fade-in-0 duration-normal"
+        className="fixed inset-0 bg-black/90 backdrop-blur-xs animate-in fade-in-0 duration-normal"
         style={{ zIndex: Z_INDEX.IMAGE_VIEWER_BACKDROP }}
         onClick={(e) => {
           e.stopPropagation();

@@ -49,7 +49,7 @@ function StatCard({ title, value, subtext, icon: Icon, highlight = false, onClic
   return (
     <Card
       className={cn(
-        "border-none shadow-sm",
+        "border-none shadow-xs",
         highlight ? "bg-primary/5 border-primary/20 border" : "bg-card",
         className
       )}
@@ -97,7 +97,7 @@ function MatchingGroupsList({ clusters, participants }: {
   return (
     <div className="space-y-3">
       {clusterList.map((cluster) => (
-        <Card key={cluster.id} className="bg-white border-none shadow-sm overflow-hidden">
+        <Card key={cluster.id} className="bg-white border-none shadow-xs overflow-hidden">
           <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xl">{cluster.emoji}</span>
@@ -322,7 +322,7 @@ function DashboardContent() {
             </div>
 
             {/* 인증 멤버 리스트 (Collapsible) */}
-            <Collapsible open={isListOpen} onOpenChange={setIsListOpen} className="bg-white rounded-xl border shadow-sm">
+            <Collapsible open={isListOpen} onOpenChange={setIsListOpen} className="bg-white rounded-xl border shadow-xs">
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 text-sm font-medium">
                 <span className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
@@ -369,7 +369,7 @@ function DashboardContent() {
 
           {/* 1.5 수동 매칭 실행 (매칭이 안되어 있을 때만 표시) */}
           {!isMatchingDone && (
-            <Card className="bg-amber-50 border-amber-100 shadow-sm">
+            <Card className="bg-amber-50 border-amber-100 shadow-xs">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 font-bold text-amber-700">
@@ -421,7 +421,7 @@ function DashboardContent() {
           {cohort?.socializingPhase && cohort.socializingPhase !== 'idle' && (
             <div className="space-y-2">
               <h2 className="text-sm font-semibold text-muted-foreground ml-1">소셜링 진행 현황</h2>
-              <Card className="bg-white border-none shadow-sm">
+              <Card className="bg-white border-none shadow-xs">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-sm font-medium text-muted-foreground">현재 단계</span>
@@ -447,7 +447,7 @@ function DashboardContent() {
                         모임이 최종 확정되었습니다.
                       </div>
                       {cohort.socializingResult && (
-                        <div className="text-sm grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 px-1">
+                        <div className="text-sm grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-1">
                           <span className="text-muted-foreground">날짜</span>
                           <span className="font-medium">{cohort.socializingResult.date}</span>
                           <span className="text-muted-foreground">시간</span>

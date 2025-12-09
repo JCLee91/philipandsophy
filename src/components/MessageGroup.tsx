@@ -128,7 +128,7 @@ export default function MessageGroup({
 
               {/* 텍스트 */}
               {msg.content && (
-                <p className="text-sm whitespace-pre-wrap break-words">
+                <p className="text-sm whitespace-pre-wrap wrap-break-word">
                   {msg.content}
                 </p>
               )}

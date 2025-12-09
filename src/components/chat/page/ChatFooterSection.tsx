@@ -48,7 +48,7 @@ export function ChatFooterSection({
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {isDay1 ? (
-            <div className="col-span-2 rounded-lg border bg-card p-4 text-center shadow-sm">
+            <div className="col-span-2 rounded-lg border bg-card p-4 text-center shadow-xs">
               <p className="text-lg font-bold text-foreground mb-1">환영합니다</p>
               <p className="text-sm text-muted-foreground">독서 인증은 내일부터 시작됩니다</p>
             </div>

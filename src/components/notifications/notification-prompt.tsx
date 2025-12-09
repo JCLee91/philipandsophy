@@ -213,7 +213,7 @@ export function NotificationPrompt() {
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-[9999] animate-in slide-in-from-bottom-5 md:left-auto md:right-4 md:w-96 pointer-events-auto">
+    <div className="fixed bottom-20 left-4 right-4 z-9999 animate-in slide-in-from-bottom-5 md:left-auto md:right-4 md:w-96 pointer-events-auto">
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">

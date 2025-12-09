@@ -247,7 +247,7 @@ export default function OptionVotingCard({
     }, [currentVotes, currentCantAttend, selectedDateTimes, selectedLocations, isCantAttend, combinations]);
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-900">
                     <Calendar className="w-5 h-5" />
@@ -425,7 +425,7 @@ export default function OptionVotingCard({
                 disabled={isPending || (!hasChanges && !isCantAttend)} // Allow submit if cant attend toggled or changes
                 loading={isPending}
                 loadingText="저장 중..."
-                variant={!hasChanges ? "outline" : "primary"}
+                variant={!hasChanges ? "outline-solid" : "primary"}
                 className="mt-6"
             >
                 {!hasChanges ? "선택 완료" : "투표하기"}

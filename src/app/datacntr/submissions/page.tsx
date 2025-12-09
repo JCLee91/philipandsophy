@@ -117,7 +117,7 @@ export default function SubmissionsPage() {
       </div>
 
       {/* 리스트형 테이블 */}
-      <div className="rounded-md border bg-white shadow-sm">
+      <div className="rounded-md border bg-white shadow-xs">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">

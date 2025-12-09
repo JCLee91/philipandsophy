@@ -28,7 +28,7 @@ export default function AlertPanel({ alerts }: AlertPanelProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+    <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
       <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
         <AlertCircle className="h-5 w-5 text-orange-600" />
         주의 필요
@@ -49,7 +49,7 @@ export default function AlertPanel({ alerts }: AlertPanelProps) {
                 {alert.action && (
                   <button
                     onClick={alert.action.onClick}
-                    className={`flex-shrink-0 flex items-center gap-1 text-xs font-semibold ${colors.text} hover:underline`}
+                    className={`shrink-0 flex items-center gap-1 text-xs font-semibold ${colors.text} hover:underline`}
                   >
                     {alert.action.label}
                     <ArrowRight className="h-3 w-3" />

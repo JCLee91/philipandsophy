@@ -25,7 +25,7 @@
 <div className="flex h-screen flex-col overflow-hidden">
 
 // After (해결)
-<div className="flex h-[100dvh] flex-col overflow-hidden">
+<div className="flex h-dvh flex-col overflow-hidden">
 ```
 
 ### 2. Pull-to-refresh 및 Overscroll Bounce
@@ -191,7 +191,7 @@ export const viewport: Viewport = {
 ### 1. 고정 레이아웃 구조
 
 ```tsx
-<div className="flex h-[100dvh] flex-col overflow-hidden">
+<div className="flex h-dvh flex-col overflow-hidden">
   {/* 헤더 - 고정 */}
   <Header />
 
@@ -208,7 +208,7 @@ export const viewport: Viewport = {
 ```
 
 **핵심 포인트**:
-- ✅ 컨테이너: `h-[100dvh]` - 전체 화면 채우기
+- ✅ 컨테이너: `h-dvh` - 전체 화면 채우기
 - ✅ 헤더/푸터: `shrink-0` - 고정 높이 유지
 - ✅ 메인: `flex-1 overflow-y-auto` - 남은 공간 채우고 스크롤
 

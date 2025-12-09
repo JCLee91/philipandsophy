@@ -18,7 +18,7 @@ export default function LockedScreen({
   return (
     <div className="app-shell flex flex-col">
       {/* 헤더 */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto flex h-14 max-w-2xl items-center px-4 relative">
           <button
             type="button"

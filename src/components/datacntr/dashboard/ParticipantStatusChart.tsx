@@ -22,7 +22,7 @@ const COLORS = {
 export default function ParticipantStatusChart({ data, isLoading }: ParticipantStatusChartProps) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
         <div className="h-8 w-48 shimmer rounded mb-4" />
         <div className="h-[250px] shimmer rounded" />
       </div>
@@ -33,7 +33,7 @@ export default function ParticipantStatusChart({ data, isLoading }: ParticipantS
 
   if (total === 0) {
     return (
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center">
+      <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200 text-center">
         <p className="text-gray-500">참가자 데이터가 없습니다</p>
       </div>
     );
@@ -58,7 +58,7 @@ export default function ParticipantStatusChart({ data, isLoading }: ParticipantS
   ].filter((item) => item.value > 0);
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+    <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
       <h3 className="text-lg font-bold text-gray-900 mb-4">참가자 활동 상태</h3>
 
       <ResponsiveContainer width="100%" height={250}>

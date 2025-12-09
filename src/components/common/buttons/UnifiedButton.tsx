@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface UnifiedButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
-  variant?: 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'default';
+  variant?: 'primary' | 'secondary' | 'destructive' | 'outline' | 'outline-solid' | 'ghost' | 'default';
   children?: ReactNode;
   fullWidth?: boolean;
   icon?: ReactNode;
@@ -70,7 +70,7 @@ export default function UnifiedButton({
         (variant === 'primary' || variant === 'default') && 'bg-black text-white hover:bg-gray-800 focus-visible:ring-white',
         variant === 'secondary' && 'bg-white border border-gray-200 text-black hover:bg-gray-50 focus-visible:ring-gray-200',
         variant === 'destructive' && 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600',
-        variant === 'outline' && 'border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-300',
+        (variant === 'outline' || variant === 'outline-solid') && 'border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-300',
         variant === 'ghost' && 'bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-300',
         // Layout
         fullWidth && 'w-full',

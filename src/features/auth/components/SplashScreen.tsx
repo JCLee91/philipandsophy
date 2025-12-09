@@ -12,7 +12,7 @@ export default function SplashScreen({}: SplashScreenProps) {
       {/* 로고를 화면 상단 40% 지점에 배치 (유명 앱 스타일) */}
       <div className="flex flex-col items-center gap-6 -translate-y-[10vh]">
         {/* iOS 스타일 라운드 로고 */}
-        <div className="relative w-32 h-32 rounded-3xl overflow-hidden shadow-sm">
+        <div className="relative w-32 h-32 rounded-3xl overflow-hidden shadow-xs">
           <Image
             src="/image/logo_app.webp"
             alt="필립앤소피"

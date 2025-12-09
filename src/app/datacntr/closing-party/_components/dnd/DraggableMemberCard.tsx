@@ -38,13 +38,13 @@ export default function DraggableMemberCard({ member, groupId }: DraggableMember
       {...listeners}
       className="flex items-center gap-2 p-2 bg-background border rounded-lg cursor-grab active:cursor-grabbing hover:border-primary transition-colors"
     >
-      <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-      <Avatar className="h-8 w-8 flex-shrink-0">
+      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+      <Avatar className="h-8 w-8 shrink-0">
         <AvatarImage src={member.profileImageCircle} alt={member.name} />
         <AvatarFallback className="text-xs">{member.name.slice(0, 2)}</AvatarFallback>
       </Avatar>
       <p className="flex-1 text-sm font-medium truncate">{member.name}</p>
-      <span className="text-xs text-muted-foreground flex-shrink-0">
+      <span className="text-xs text-muted-foreground shrink-0">
         {member.submissionCount || 0}회
       </span>
     </div>

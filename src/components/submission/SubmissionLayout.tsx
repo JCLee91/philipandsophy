@@ -38,7 +38,7 @@ export default function SubmissionLayout({
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden bg-background">
         <TopBar onBack={onBack} title="독서 인증하기" align="left" />
-        <div className="fixed top-14 left-0 right-0 z-[998]">
+        <div className="fixed top-14 left-0 right-0 z-998">
           <ProgressIndicator currentStep={currentStep} />
         </div>
 

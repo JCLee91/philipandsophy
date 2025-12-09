@@ -283,7 +283,7 @@ function Step1Content() {
       {!imagePreview ? (
         <label
           htmlFor="book-image"
-          className={`flex flex-col items-center justify-center aspect-[4/3] w-full border-2 border-dashed rounded-2xl transition-colors ${
+          className={`flex flex-col items-center justify-center aspect-4/3 w-full border-2 border-dashed rounded-2xl transition-colors ${
             isEBook ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50' : 'border-blue-200 bg-blue-50/30 cursor-pointer hover:border-gray-400'
           }`}
         >
@@ -295,7 +295,7 @@ function Step1Content() {
           <input id="book-image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" disabled={isProcessing || isEBook} />
         </label>
       ) : (
-        <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border-2 border-blue-200">
+        <div className="relative aspect-4/3 w-full rounded-2xl overflow-hidden border-2 border-blue-200">
           <Image src={imagePreview} alt="책 마지막 페이지" width={800} height={600} className="w-full h-full object-contain" />
           <button type="button" onClick={handleRemoveImage} className="absolute top-3 right-3 p-2 bg-black/70 hover:bg-black rounded-full transition-colors" aria-label="이미지 제거">
             <X className="h-5 w-5 text-white" />

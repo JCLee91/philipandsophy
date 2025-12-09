@@ -23,7 +23,7 @@ export default function AccordionContent({
         </p>
       </div>
 
-      <div className={`flex-shrink-0 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+      <div className={`shrink-0 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
         <ChevronDown className="w-5 h-5 text-[#B0B8C1]" />
       </div>
     </div>

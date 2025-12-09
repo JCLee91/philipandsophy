@@ -34,7 +34,7 @@ export default function VideoIntro({ src, onComplete }: VideoIntroProps) {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="application-container flex h-[100dvh] items-center justify-center"
+      className="application-container flex h-dvh items-center justify-center"
     >
       <video
         ref={videoRef}

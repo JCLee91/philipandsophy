@@ -86,7 +86,7 @@ export default function BookmarkCard({
           {/* Name Label (only for unlocked state) */}
           {!isLocked && (
             <div className="flex flex-col items-start w-full">
-              <p className="font-[family-name:var(--font-pretendard)] font-semibold text-body-base text-text-primary text-center w-full">
+              <p className="font-(family-name:--font-pretendard) font-semibold text-body-base text-text-primary text-center w-full">
                 {getFirstName(name)}
               </p>
             </div>

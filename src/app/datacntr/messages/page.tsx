@@ -41,7 +41,7 @@ export default function MessagesPage() {
     >
       {/* 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">전체 메시지</p>
@@ -53,7 +53,7 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">읽지 않은 메시지</p>
@@ -109,7 +109,7 @@ export default function MessagesPage() {
       </div>
 
       {messages?.length === 0 && !isLoading && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-12 text-center">
           <p className="text-gray-500">메시지가 없습니다</p>
         </div>
       )}

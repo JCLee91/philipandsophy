@@ -133,7 +133,7 @@ function ParticipantsPageContent() {
               if (isMe) {
                 const initials = getInitials(p.name);
                 return (
-                  <div key={p.id} className="rounded-lg border bg-white p-3 shadow-sm">
+                  <div key={p.id} className="rounded-lg border bg-white p-3 shadow-xs">
                     <div className="flex items-center gap-3">
                       <div 
                         className="relative cursor-pointer"
@@ -142,7 +142,7 @@ function ParticipantsPageContent() {
                           handleImageClick(p);
                         }}
                       >
-                        <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                        <Avatar className="h-12 w-12 border-2 border-background shadow-xs">
                           {getResizedImageUrl(p.profileImageCircle || p.profileImage) !== (p.profileImageCircle || p.profileImage) && (
                             <AvatarImage
                               src={getResizedImageUrl(p.profileImageCircle || p.profileImage)}
@@ -160,8 +160,8 @@ function ParticipantsPageContent() {
                           </AvatarFallback>
                         </Avatar>
                         {verified && (
-                          <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md">
-                            <Check className="h-3 w-3 text-white stroke-[3]" aria-label="오늘 독서 인증 완료" />
+                          <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-linear-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md">
+                            <Check className="h-3 w-3 text-white stroke-3" aria-label="오늘 독서 인증 완료" />
                           </div>
                         )}
                       </div>

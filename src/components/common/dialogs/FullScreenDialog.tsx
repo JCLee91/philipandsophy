@@ -151,7 +151,7 @@ export function FullScreenDialog({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-200"
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs animate-in fade-in-0 duration-200"
         style={{ zIndex: Z_INDEX.DM_DIALOG }}
         onClick={(e) => {
           e.stopPropagation();

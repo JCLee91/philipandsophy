@@ -29,7 +29,7 @@ export default function ValueAnswerAccordion({
     return (
         <div className="py-0"> {/* py-2 제거하여 ReviewPreviewCard와 간격 맞춤 필요 시 상위에서 gap 조절 */}
             {/* 배경 박스 - 감상평 스타일과 통일 */}
-            <div className={`flex flex-col rounded-[12px] border-b-[2px] border-solid px-4 py-3 transition-all ${isMe
+            <div className={`flex flex-col rounded-[12px] border-b-2 border-solid px-4 py-3 transition-all ${isMe
                     ? 'bg-blue-50 border-blue-300'
                     : 'bg-gray-50 border-gray-300'
                 }`}>
@@ -39,7 +39,7 @@ export default function ValueAnswerAccordion({
                 >
                     {/* 프로필 이미지 + 이름 (세로 정렬) - 클릭 영역 통합 */}
                     <div 
-                        className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer group mr-3 mt-1"
+                        className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group mr-3 mt-1"
                         onClick={(e) => {
                             e.stopPropagation();
                             onProfileClick();
@@ -69,7 +69,7 @@ export default function ValueAnswerAccordion({
                         </div>
 
                         {/* 화살표 */}
-                        <div className={`flex-shrink-0 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                        <div className={`shrink-0 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
                             <ChevronDown className="h-5 w-5 text-gray-400" />
                         </div>
                     </div>

@@ -20,7 +20,7 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
    * - ghost: 투명 배경, 호버 시 배경 (기본값)
    * - outline: 테두리 있는 스타일
    */
-  variant?: 'ghost' | 'outline';
+  variant?: 'ghost' | 'outline-solid';
   /**
    * 알림 배지
    * - number: 숫자 표시 (99 초과 시 99+)

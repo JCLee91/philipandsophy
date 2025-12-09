@@ -136,7 +136,7 @@ export function ParticipantCard({
             }
           }}
         >
-          <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+          <Avatar className="h-12 w-12 border-2 border-background shadow-xs">
             {getResizedImageUrl(participant.profileImageCircle || participant.profileImage) !== (participant.profileImageCircle || participant.profileImage) && (
               <AvatarImage
                 src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage)}
@@ -157,10 +157,10 @@ export function ParticipantCard({
           {/* 독서 인증 완료 배지 */}
           {verified && (
             <div
-              className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md"
+              className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-linear-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md"
               aria-label="오늘 독서 인증 완료"
             >
-              <Check className="h-3 w-3 text-white stroke-[3]" />
+              <Check className="h-3 w-3 text-white stroke-3" />
             </div>
           )}
 
@@ -235,7 +235,7 @@ export function ParticipantCard({
           }
         }}
       >
-        <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+        <Avatar className="h-12 w-12 border-2 border-background shadow-xs">
           {getResizedImageUrl(participant.profileImageCircle || participant.profileImage) !== (participant.profileImageCircle || participant.profileImage) && (
             <AvatarImage
               src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage)}
@@ -256,10 +256,10 @@ export function ParticipantCard({
         {/* 독서 인증 완료 배지 */}
         {verified && (
           <div
-            className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md"
+            className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-linear-to-br from-blue-500 to-blue-600 rounded-full border-2 border-white shadow-md"
             aria-label="오늘 독서 인증 완료"
           >
-            <Check className="h-3 w-3 text-white stroke-[3]" />
+            <Check className="h-3 w-3 text-white stroke-3" />
           </div>
         )}
       </div>

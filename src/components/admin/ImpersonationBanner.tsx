@@ -80,10 +80,10 @@ export default function ImpersonationBanner() {
   return (
     <>
       {/* 1. 화면 전체 테두리 (클릭 통과) */}
-      <div className="fixed inset-0 z-[9999] border-[4px] border-amber-500 pointer-events-none" />
+      <div className="fixed inset-0 z-9999 border-4 border-amber-500 pointer-events-none" />
 
       {/* 2. 하단 플로팅 복귀 버튼 (클릭 가능) */}
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-9999 pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={handleExit}
           className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-full shadow-lg font-bold transition-all hover:scale-105 active:scale-95"

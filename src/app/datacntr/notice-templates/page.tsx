@@ -88,7 +88,7 @@ export default function NoticeTemplatesPage() {
     >
       {/* 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">전체 템플릿</p>
@@ -101,7 +101,7 @@ export default function NoticeTemplatesPage() {
         </div>
 
         {Object.entries(CATEGORY_LABELS).map(([category, label]) => (
-          <div key={category} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div key={category} className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
             <p className="text-sm text-gray-600">{label}</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
               {groupedTemplates[category]?.length || 0}개
@@ -113,7 +113,7 @@ export default function NoticeTemplatesPage() {
       {/* 템플릿 리스트 */}
       <div className="space-y-8">
         {Object.entries(groupedTemplates).map(([category, categoryTemplates]) => (
-          <div key={category} className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div key={category} className="bg-white rounded-xl shadow-xs border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
                 {CATEGORY_LABELS[category] || category}
@@ -166,7 +166,7 @@ export default function NoticeTemplatesPage() {
       </div>
 
       {templates.length === 0 && !isLoading && (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="text-center py-12 bg-white rounded-xl shadow-xs border border-gray-200">
           <BookTemplate className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500">등록된 템플릿이 없습니다</p>
           <p className="text-sm text-gray-400 mt-1">

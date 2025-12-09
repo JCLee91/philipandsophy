@@ -46,7 +46,7 @@ export function NoticeListSkeleton() {
         {[1, 2, 3].map((i) => (
           <div key={i} className="py-3" aria-hidden="true">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full shimmer flex-shrink-0" />
+              <div className="h-10 w-10 rounded-full shimmer shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-20 rounded shimmer" />

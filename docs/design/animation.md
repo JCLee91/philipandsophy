@@ -224,7 +224,7 @@ export function ValueHistoryAccordionTailwind({ title, content }: AccordionItemP
 ```tsx
 // src/components/ui/button.tsx 확장
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-normal focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -265,12 +265,12 @@ import { motion, type HTMLMotionProps } from 'framer-motion';
 import { forwardRef } from 'react';
 
 interface MotionButtonProps extends HTMLMotionProps<'button'> {
-  variant?: 'default' | 'outline' | 'ghost';
+  variant?: 'default' | 'outline-solid' | 'ghost';
 }
 
 export const MotionButton = forwardRef<HTMLButtonElement, MotionButtonProps>(
   ({ variant = 'default', children, className, ...props }, ref) => {
-    const baseClass = "px-4 py-2 rounded-md font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    const baseClass = "px-4 py-2 rounded-md font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
     const variantClass = {
       default: "bg-primary text-primary-foreground",
       outline: "border border-input bg-background",
@@ -338,7 +338,7 @@ export function CalendarDay({ day, status, onClick }: CalendarDayProps) {
         ${isDisabled ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'}
         ${isCompleted ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}
         ${!isDisabled && !isCompleted ? 'hover:bg-accent hover:text-accent-foreground' : ''}
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+        focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring
       `}
       whileHover={!isDisabled ? { scale: 1.1 } : {}}
       whileTap={!isDisabled ? { scale: 0.95 } : {}}
@@ -548,7 +548,7 @@ export function ProfileCard({ name, email, joinDate, avatarUrl }: ProfileCardPro
       <motion.div
         animate={{ opacity: isHovered ? 0.1 : 0 }}
         transition={{ duration: 0.2 }}
-        className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent"
+        className="absolute inset-0 bg-linear-to-br from-primary/20 to-transparent"
       />
 
       <div className="relative z-10 space-y-4">
@@ -641,7 +641,7 @@ export function AccessibleButton() {
 
 ```tsx
 // 모든 인터랙티브 요소에 적용
-className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+className="focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 ```
 
 ---

@@ -22,7 +22,7 @@ export default function ActivityChart({
 }: ActivityChartProps) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
         <div className="h-8 w-48 shimmer rounded mb-4" />
         <div className="h-[300px] shimmer rounded" />
       </div>
@@ -49,7 +49,7 @@ export default function ActivityChart({
   }
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+    <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
       <h3 className="text-lg font-bold text-gray-900 mb-4">{chartTitle}</h3>
       <ResponsiveContainer width="100%" height={350}>
         <LineChart data={formattedData}>

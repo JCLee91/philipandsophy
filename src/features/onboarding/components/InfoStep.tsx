@@ -51,7 +51,7 @@ export default function InfoStep({ id, imageSrc, alt, title, buttonText, onNext,
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={getDragElastic()}
       onDragEnd={handleDragEnd}
-      className="application-container flex h-[100dvh] flex-col text-white cursor-grab active:cursor-grabbing"
+      className="application-container flex h-dvh flex-col text-white cursor-grab active:cursor-grabbing"
     >
       {/* 상단 텍스트 영역 */}
       <div className="pt-[10vh] pb-6 text-center">

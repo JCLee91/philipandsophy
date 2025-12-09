@@ -378,7 +378,7 @@ interface BookSearchAutocompleteProps {
 ```css
 @layer utilities {
   .shimmer {
-    @apply bg-gradient-to-r from-gray-200 via-white to-gray-200 bg-[length:200%_100%] animate-shimmer;
+    @apply bg-linear-to-r from-gray-200 via-white to-gray-200 bg-size-[200%_100%] animate-shimmer;
     will-change: background-position;
     border-radius: 8px;
   }

@@ -31,7 +31,7 @@ export default function ValuesSection({
         <div className="bg-black rounded-[12px] px-3 py-1.5 inline-block mb-3">
           <span className="text-white text-[12px] font-bold">가치관</span>
         </div>
-        <h2 className="text-[15px] font-medium text-[#333D4B] leading-[1.5]">
+        <h2 className="text-[15px] font-medium text-[#333D4B] leading-normal">
           {dailyQuestion}
         </h2>
       </div>

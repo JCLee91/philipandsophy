@@ -294,7 +294,7 @@ export default function DirectMessageDialog({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs"
         style={{ zIndex: Z_INDEX.DM_DIALOG }}
         onClick={(e) => {
           e.stopPropagation();
@@ -305,7 +305,7 @@ export default function DirectMessageDialog({
 
       {/* Dialog */}
       <div
-        className={`fixed z-[9999] bg-background transition-all duration-300 pointer-events-auto
+        className={`fixed z-9999 bg-background transition-all duration-300 pointer-events-auto
           inset-0 w-full h-full 
           sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 
           sm:w-full sm:max-w-lg sm:h-[600px] sm:rounded-xl sm:border sm:shadow-lg

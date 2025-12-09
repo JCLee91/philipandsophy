@@ -50,7 +50,7 @@ export default function ReviewsSection({
                   </h3>
                 </div>
               )}
-              <p className="text-[14px] text-[#333D4B] leading-[1.5] line-clamp-1 break-words">
+              <p className="text-[14px] text-[#333D4B] leading-normal line-clamp-1 wrap-break-word">
                 {member.review || '작성된 감상평이 없습니다.'}
               </p>
             </div>

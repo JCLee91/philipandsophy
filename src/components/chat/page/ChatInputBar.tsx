@@ -28,7 +28,7 @@ export default function ChatInputBar({ onSend, isLoading }: ChatInputBarProps) {
 
   return (
     <div className="sticky bottom-0 left-0 right-0 p-3 bg-white border-t z-10 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-      <div className="flex items-center gap-2 max-w-screen-md mx-auto">
+      <div className="flex items-center gap-2 max-w-(--breakpoint-md) mx-auto">
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}

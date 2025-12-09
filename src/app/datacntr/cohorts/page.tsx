@@ -88,7 +88,7 @@ export default function CohortsPage() {
           return (
             <div
               key={cohort.id}
-              className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+              className="bg-white rounded-xl p-6 shadow-xs border border-gray-200 hover:shadow-md transition-shadow"
             >
               {/* 헤더 */}
               <div className="flex items-start justify-between mb-4">
@@ -106,7 +106,7 @@ export default function CohortsPage() {
                       handleToggleActive(cohort.id, cohort.isActive);
                     }}
                     disabled={updatingCohortId === cohort.id}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                       cohort.isActive ? 'bg-green-600' : 'bg-gray-300'
                     }`}
                   >
@@ -148,7 +148,7 @@ export default function CohortsPage() {
       </div>
 
       {cohorts?.length === 0 && !isLoading && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-12 text-center">
           <p className="text-gray-500">등록된 코호트가 없습니다</p>
         </div>
       )}

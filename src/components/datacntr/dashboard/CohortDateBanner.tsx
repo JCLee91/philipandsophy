@@ -21,7 +21,7 @@ export default function CohortDateBanner({
 }: CohortDateBannerProps) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 mb-6">
+      <div className="bg-white rounded-xl p-5 shadow-xs border border-gray-200 mb-6">
         <div className="h-6 w-48 shimmer rounded mb-2" />
         <div className="h-4 w-32 shimmer rounded" />
       </div>
@@ -80,7 +80,7 @@ export default function CohortDateBanner({
   const StatusIcon = config.icon;
 
   return (
-    <div className={`rounded-xl p-5 shadow-sm border ${config.bgColor} ${config.borderColor} mb-6`}>
+    <div className={`rounded-xl p-5 shadow-xs border ${config.bgColor} ${config.borderColor} mb-6`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* 왼쪽: 날짜 정보 */}
         <div className="flex items-start gap-3">

@@ -89,7 +89,7 @@ export function NoticeFormFields({
             <input type="file" accept="image/*" onChange={onImageChange} className="hidden" />
           </label>
         ) : (
-          <div className="relative aspect-[3/2] w-full">
+          <div className="relative aspect-3/2 w-full">
             <Image
               src={imagePreview}
               alt="미리보기"

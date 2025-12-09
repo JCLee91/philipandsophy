@@ -223,7 +223,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                 className="w-[64px] h-[64px] cursor-pointer transition-transform active:scale-95"
                                 onClick={() => setProfileImageDialogOpen(true)}
                             >
-                                <Avatar className="w-full h-full border-[2px] border-[#31363e]">
+                                <Avatar className="w-full h-full border-2 border-[#31363e]">
                                     <AvatarImage
                                         src={getResizedImageUrl(participant.profileImageCircle || participant.profileImage) || participant.profileImageCircle || participant.profileImage}
                                         alt={participant.name}
@@ -250,7 +250,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                             <h2 className="text-[16px] font-bold text-[#191F28] mb-4">도서 정보</h2>
 
                             {/* Book Card (Yellow Style) */}
-                            <div className="relative border-b-[2px] border-[#FFD362] rounded-t-[4px] px-3 py-3 min-h-[80px] bg-[#FFFDF3]">
+                            <div className="relative border-b-2 border-[#FFD362] rounded-t-[4px] px-3 py-3 min-h-[80px] bg-[#FFFDF3]">
                                 <div className="flex items-start gap-3 pr-[72px]">
                                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                                         <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] truncate tracking-[-0.14px]">
@@ -263,7 +263,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                 </div>
                                 {/* Book Cover */}
                                 {submission.bookCoverUrl && (
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 w-[60px] h-[88px] bg-white rounded-[4px] overflow-hidden shadow-sm">
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 w-[60px] h-[88px] bg-white rounded-[4px] overflow-hidden shadow-xs">
                                         <Image
                                             src={submission.bookCoverUrl}
                                             alt="책 표지"
@@ -318,7 +318,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
 
                             {/* Review Text */}
                             <div className="space-y-6">
-                                <p className="text-[15px] text-[#191F28] leading-[1.7] whitespace-pre-wrap break-words">
+                                <p className="text-[15px] text-[#191F28] leading-[1.7] whitespace-pre-wrap wrap-break-word">
                                     {submission.review || '작성된 감상평이 없습니다.'}
                                 </p>
                             </div>

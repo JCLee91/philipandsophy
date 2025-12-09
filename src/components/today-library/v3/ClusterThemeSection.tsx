@@ -20,7 +20,7 @@ export default function ClusterThemeSection({
 }: ClusterThemeSectionProps) {
   return (
     <section className="flex flex-col items-center text-center gap-3 pt-2 pb-6 px-6 bg-[#F6F6F6]">
-      <div className="w-16 h-16 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-[32px]">
+      <div className="w-16 h-16 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-xs text-[32px]">
         {cluster.emoji || '🥂'}
       </div>
 
@@ -36,7 +36,7 @@ export default function ClusterThemeSection({
           </div>
         </div>
         <h3 className="text-[18px] font-bold text-black">{cluster.theme}</h3>
-        <p className="text-[14px] text-[#575E68] whitespace-pre-wrap leading-[1.4] break-words">
+        <p className="text-[14px] text-[#575E68] whitespace-pre-wrap leading-[1.4] wrap-break-word">
           {cluster.reasoning}
         </p>
       </div>

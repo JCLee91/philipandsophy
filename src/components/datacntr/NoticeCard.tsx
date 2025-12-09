@@ -52,7 +52,7 @@ export default function NoticeCard({
           {/* Header */}
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-1.5 text-xs">
-              <User className="h-3 w-3 text-gray-500 flex-shrink-0" />
+              <User className="h-3 w-3 text-gray-500 shrink-0" />
               <span className="font-medium text-gray-900">{notice.author}</span>
               {notice.status === 'draft' && (
                 <>

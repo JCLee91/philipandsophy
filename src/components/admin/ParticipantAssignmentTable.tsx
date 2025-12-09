@@ -76,7 +76,7 @@ export default function ParticipantAssignmentTable({
                   <td className="px-4 py-3 whitespace-nowrap text-center">
                     <button
                       type="button"
-                      className="font-semibold text-sm text-admin-text-primary hover:underline hover:text-admin-brand focus:outline-none focus:underline"
+                      className="font-semibold text-sm text-admin-text-primary hover:underline hover:text-admin-brand focus:outline-hidden focus:underline"
                       onClick={() => onOpenProfile(row.viewerId, 'similar')}
                       aria-label={`${row.viewerName} 프로필 보기`}
                     >
@@ -92,7 +92,7 @@ export default function ParticipantAssignmentTable({
                           <span key={target.id} className="inline-flex items-center">
                             <button
                               type="button"
-                              className="hover:underline hover:text-admin-brand focus:outline-none focus:underline px-1"
+                              className="hover:underline hover:text-admin-brand focus:outline-hidden focus:underline px-1"
                               onClick={() => onOpenProfile(target.id, 'similar')}
                               aria-label={`${target.name} 프로필 보기`}
                             >
@@ -115,7 +115,7 @@ export default function ParticipantAssignmentTable({
                           <span key={target.id} className="inline-flex items-center">
                             <button
                               type="button"
-                              className="hover:underline hover:text-admin-brand-warning focus:outline-none focus:underline px-1"
+                              className="hover:underline hover:text-admin-brand-warning focus:outline-hidden focus:underline px-1"
                               onClick={() => onOpenProfile(target.id, 'opposite')}
                               aria-label={`${target.name} 프로필 보기`}
                             >

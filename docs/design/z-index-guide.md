@@ -103,7 +103,7 @@ import { Z_INDEX } from '@/constants/z-index';
 className={`fixed inset-0 z-[${Z_INDEX.MODAL_BACKDROP}]`}
 
 // ❌ 하드코딩 금지
-className="fixed inset-0 z-[9999]"
+className="fixed inset-0 z-9999"
 ```
 
 ### 3. 헬퍼 함수 사용
@@ -111,7 +111,7 @@ className="fixed inset-0 z-[9999]"
 import { getZIndexClass } from '@/constants/z-index';
 
 // 클래스명 생성
-const zClass = getZIndexClass('MODAL_BACKDROP'); // "z-[9999]"
+const zClass = getZIndexClass('MODAL_BACKDROP'); // "z-9999"
 ```
 
 ## 규칙

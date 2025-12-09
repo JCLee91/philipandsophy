@@ -147,7 +147,7 @@ export default function CohortsPage() {
                     w-full bg-white border rounded-xl p-4 transition-all
                     ${isSelected
                       ? 'border-primary bg-primary/5 opacity-75 cursor-wait'
-                      : 'border-gray-200 [@media(hover:hover)]:hover:border-gray-300 [@media(hover:hover)]:hover:bg-gray-50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none'
+                      : 'border-gray-200 [@media(hover:hover)]:hover:border-gray-300 [@media(hover:hover)]:hover:bg-gray-50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-hidden'
                     }
                   `}
                 >
@@ -175,9 +175,9 @@ export default function CohortsPage() {
 
                     {/* 화살표 아이콘 */}
                     {isSelected ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-primary flex-shrink-0" />
+                      <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
                     ) : (
-                      <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                      <ChevronRight className="h-5 w-5 text-gray-400 shrink-0" />
                     )}
                   </div>
                 </button>

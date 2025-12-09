@@ -224,11 +224,11 @@ export default function BookSearchAutocomplete({
 
       {selectedBook ? (
         /* 선택된 책 정보 카드 */
-        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-xs">
           <div className="flex items-start gap-3">
             {/* 책 표지 */}
             {selectedBook.image ? (
-              <div className="relative w-12 h-16 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+              <div className="relative w-12 h-16 shrink-0 bg-gray-100 rounded overflow-hidden">
                 <Image
                   src={selectedBook.image}
                   alt={selectedBook.title}
@@ -238,7 +238,7 @@ export default function BookSearchAutocomplete({
                 />
               </div>
             ) : (
-              <div className="w-12 h-16 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
+              <div className="w-12 h-16 shrink-0 bg-gray-100 rounded flex items-center justify-center">
                 <Book className="h-6 w-6 text-gray-400" />
               </div>
             )}
@@ -265,7 +265,7 @@ export default function BookSearchAutocomplete({
             <button
               type="button"
               onClick={handleClearSelection}
-              className="flex-shrink-0 p-1 hover:bg-gray-100 rounded-full transition-colors"
+              className="shrink-0 p-1 hover:bg-gray-100 rounded-full transition-colors"
               aria-label="선택 취소"
             >
               <X className="h-4 w-4 text-gray-500" />
@@ -307,7 +307,7 @@ export default function BookSearchAutocomplete({
               >
                 {/* 책 표지 */}
                 {book.image ? (
-                  <div className="relative w-12 h-16 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+                  <div className="relative w-12 h-16 shrink-0 bg-gray-100 rounded overflow-hidden">
                     <Image
                       src={book.image}
                       alt={book.title}
@@ -317,7 +317,7 @@ export default function BookSearchAutocomplete({
                     />
                   </div>
                 ) : (
-                  <div className="w-12 h-16 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
+                  <div className="w-12 h-16 shrink-0 bg-gray-100 rounded flex items-center justify-center">
                     <Book className="h-6 w-6 text-gray-400" />
                   </div>
                 )}
