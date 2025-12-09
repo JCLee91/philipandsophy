@@ -39,6 +39,13 @@ export const STORAGE_PATHS = {
    */
   APPLICATION: (fileName: string) =>
     `applications/${fileName}`,
+
+  /**
+   * 랜딩 페이지 이미지
+   * landing/{fileName}
+   */
+  LANDING: (fileName: string) =>
+    `landing/${fileName}`,
 } as const;
 
 /**

@@ -36,6 +36,13 @@ export interface LandingConfig {
   /** 마지막 업데이트한 관리자 이메일 */
   updatedBy?: string;
 
+  /** 
+   * 동적 이미지 URL 맵
+   * key: 이미지 식별자 (예: 'home_main_1', 'service_intro')
+   * value: 이미지 URL
+   */
+  images?: Record<string, string>;
+
   // Deprecated fields (하위 호환성 유지를 위해 남겨둠, 추후 제거 가능)
   waitlistUrl?: string;
 }
@@ -50,4 +57,5 @@ export const DEFAULT_LANDING_CONFIG: LandingConfig = {
   externalUrl: 'https://tally.so/r/w71N1L', // 기본 예시
   applicationUrl: '/application',
   waitlistUrl: 'https://tally.so/r/w71N1L',
+  images: {},
 };

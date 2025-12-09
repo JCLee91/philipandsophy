@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { ALLOWED_EMAIL_DOMAINS, PHONE_VALIDATION } from '@/constants/auth';
 import { Loader2, Shield, Mail, Phone, User } from 'lucide-react';
-import LandingConfigForm from './_components/LandingConfigForm';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -38,9 +37,6 @@ export default function SettingsPage() {
       </div>
 
       <div className="space-y-6">
-        {/* 랜딩 페이지 설정 */}
-        <LandingConfigForm />
-
         {/* 현재 사용자 정보 */}
         <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">

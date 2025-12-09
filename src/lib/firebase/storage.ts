@@ -118,6 +118,22 @@ export async function uploadApplicationPhoto(
 }
 
 /**
+ * 이미지 업로드 (랜딩 페이지용)
+ */
+export async function uploadLandingImage(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  // 랜딩 이미지는 덮어쓰기 허용을 위해 timestamp 없이 원본 이름 사용 가능하지만,
+  // 브라우저 캐싱 이슈 방지를 위해 timestamp 포함 권장.
+  // 여기서는 generateStorageFileName 사용.
+  const fileName = generateStorageFileName(file.name);
+  const path = STORAGE_PATHS.LANDING(fileName);
+
+  return uploadFileWithProgress(file, path, onProgress);
+}
+
+/**
  * 외부 URL 이미지를 Firebase Storage에 업로드 (전자책 표지용)
  *
  * @param imageUrl - 외부 이미지 URL (예: 네이버 책 표지)

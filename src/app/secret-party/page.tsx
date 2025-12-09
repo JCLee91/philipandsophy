@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import LandingLayout from '@/components/landing/LandingLayout';
 import { getImageUrl } from '@/constants/landing';
+import { getLandingConfig } from '@/lib/firebase/landing';
+import { DEFAULT_LANDING_CONFIG, LandingConfig } from '@/types/landing';
 
 // ✅ Disable static generation - providers require runtime context
 export const dynamic = 'force-dynamic';
@@ -11,6 +13,13 @@ export const dynamic = 'force-dynamic';
 export default function SecretPartyPage() {
     const buttonRef = useRef<HTMLDivElement>(null);
     const [showFloatingButton, setShowFloatingButton] = useState(false);
+    const [config, setConfig] = useState<LandingConfig | null>(null);
+
+    useEffect(() => {
+        getLandingConfig()
+            .then(setConfig)
+            .catch(() => setConfig(DEFAULT_LANDING_CONFIG));
+    }, []);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -48,7 +57,7 @@ export default function SecretPartyPage() {
             <div className="party-page-container">
                 <div className="party-image-wrapper">
                     <Image
-                        src={getImageUrl('/image/landing/PnS_Members_Party_1.webp?v=2')}
+                        src={config?.images?.['party_1'] || getImageUrl('/image/landing/PnS_Members_Party_1.webp?v=2')}
                         alt="필립앤소피 크리스마스 파티 초대장 - 2023.12.18"
                         width={1170}
                         height={8022}
@@ -71,7 +80,7 @@ export default function SecretPartyPage() {
                 </div>
 
                 <Image
-                    src={getImageUrl('/image/landing/PnS_Members_Party_2.webp?v=2')}
+                    src={config?.images?.['party_2'] || getImageUrl('/image/landing/PnS_Members_Party_2.webp?v=2')}
                     alt="필립앤소피 연말 파티 상세 안내"
                     width={1170}
                     height={1161}

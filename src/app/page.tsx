@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
@@ -8,48 +7,13 @@ import CtaButton from '@/components/landing/CtaButton';
 import { getImageUrl } from '@/constants/landing';
 import { ORGANIZATION_SCHEMA } from '@/constants/seo';
 import { ANALYTICS_EVENTS } from '@/constants/landing';
-import { getLandingConfig } from '@/lib/firebase/landing';
-import { DEFAULT_LANDING_CONFIG, LandingConfig } from '@/types/landing';
+import { useLandingConfig } from '@/hooks/use-landing-config';
 
 // ✅ Disable static generation - providers require runtime context
 export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
-  const [config, setConfig] = useState<LandingConfig | null>(null);
-
-  useEffect(() => {
-    async function fetchConfig() {
-      try {
-        const data = await getLandingConfig();
-        setConfig(data);
-      } catch (error) {
-        console.error('Failed to fetch landing config', error);
-        setConfig(DEFAULT_LANDING_CONFIG); // 실패 시 기본값
-      }
-    }
-    fetchConfig();
-  }, []);
-
-  // 설정에 따른 링크 결정
-  const getHref = () => {
-    if (!config) return '/application';
-
-    if (config.status === 'OPEN') {
-      if (config.openFormType === 'EXTERNAL') {
-        return config.externalUrl;
-      }
-    } else {
-      // CLOSED
-      if (config.closedFormType === 'EXTERNAL_WAITLIST') {
-        return config.externalUrl;
-      } else if (config.closedFormType === 'INTERNAL_WAITLIST') {
-        return '/waitlist'; // 자체 대기 폼
-      } else if (config.closedFormType === 'NONE') {
-        return '#'; // 이동 안 함
-      }
-    }
-    return '/application';
-  };
+  const { config, getHref } = useLandingConfig();
 
   return (
     <LandingLayout>
@@ -71,7 +35,7 @@ export default function HomePage() {
 
       <div className="container">
         <Image
-          src={getImageUrl('/image/landing/PnS_1.webp')}
+          src={config?.images?.['home_main_1'] || getImageUrl('/image/landing/PnS_1.webp')}
           alt="필립앤소피(P&S) 승인제 독서소셜클럽 - 깊이 있는 대화가 설레는 만남으로"
           width={1170}
           height={2400}
@@ -80,7 +44,7 @@ export default function HomePage() {
         />
 
         <Image
-          src={getImageUrl('/image/landing/PnS_2.webp')}
+          src={config?.images?.['home_main_2'] || getImageUrl('/image/landing/PnS_2.webp')}
           alt="필립앤소피 소셜클럽 소개"
           width={1170}
           height={5526}
@@ -89,7 +53,7 @@ export default function HomePage() {
         />
 
         <Image
-          src={getImageUrl('/image/landing/PnS_3.webp')}
+          src={config?.images?.['home_main_3'] || getImageUrl('/image/landing/PnS_3.webp')}
           alt="필립앤소피 서비스 특징"
           width={1170}
           height={6930}

@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
@@ -8,29 +7,10 @@ import CtaButton from '@/components/landing/CtaButton';
 import { getImageUrl } from '@/constants/landing';
 import { SERVICE_SCHEMA } from '@/constants/seo';
 import { ANALYTICS_EVENTS } from '@/constants/landing';
-import { getLandingConfig } from '@/lib/firebase/landing';
-import { DEFAULT_LANDING_CONFIG, LandingConfig } from '@/types/landing';
+import { useLandingConfig } from '@/hooks/use-landing-config';
 
 export default function ServicePageClient() {
-  const [config, setConfig] = useState<LandingConfig | null>(null);
-
-  useEffect(() => {
-    getLandingConfig()
-      .then(setConfig)
-      .catch(() => setConfig(DEFAULT_LANDING_CONFIG));
-  }, []);
-
-  const getHref = () => {
-    if (!config) return '/application';
-
-    if (config.status === 'OPEN') {
-      return config.openFormType === 'EXTERNAL' ? config.externalUrl : '/application';
-    } else {
-      if (config.closedFormType === 'EXTERNAL_WAITLIST') return config.externalUrl;
-      if (config.closedFormType === 'INTERNAL_WAITLIST') return '/waitlist';
-      return '#';
-    }
-  };
+  const { config, getHref } = useLandingConfig();
 
   return (
     <LandingLayout>
@@ -54,7 +34,7 @@ export default function ServicePageClient() {
         {/* 첫 번째 이미지 + 동영상 오버레이 */}
         <div className="image-with-video-overlay">
           <Image
-            src={getImageUrl('/image/landing/PnS_Service_1.webp')}
+            src={config?.images?.['service_1'] || getImageUrl('/image/landing/PnS_Service_1.webp')}
             alt="필립앤소피 독서 프로그램 소개"
             width={1170}
             height={3963}
@@ -71,14 +51,14 @@ export default function ServicePageClient() {
               muted
               loop
               playsInline
-              poster={getImageUrl('/image/landing/PnS_Service_1.webp')}
+              poster={config?.images?.['service_1'] || getImageUrl('/image/landing/PnS_Service_1.webp')}
               aria-label="필립앤소피 프로그램 목업 영상"
             />
           </div>
         </div>
 
         <Image
-          src={getImageUrl('/image/landing/PnS_Service_2.webp')}
+          src={config?.images?.['service_2'] || getImageUrl('/image/landing/PnS_Service_2.webp')}
           alt="필립앤소피 프로그램 상세 안내"
           width={1170}
           height={5151}
@@ -86,7 +66,7 @@ export default function ServicePageClient() {
         />
 
         <Image
-          src={getImageUrl('/image/landing/PnS_Service_3.webp')}
+          src={config?.images?.['service_3'] || getImageUrl('/image/landing/PnS_Service_3.webp')}
           alt="필립앤소피 프로그램 추가 정보"
           width={1170}
           height={4797}

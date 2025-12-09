@@ -127,3 +127,80 @@ export function getOriginalImageUrl(resizedUrl: string | undefined | null): stri
 
 // ❌ REMOVED: isResizedImage - 미사용 함수 제거
 // ❌ REMOVED: firebaseImageLoader - 미사용 함수 제거
+
+/**
+ * 이미지를 무손실 WebP로 변환
+ * Canvas API를 사용하여 클라이언트에서 변환
+ *
+ * @param file - 원본 이미지 파일
+ * @returns WebP로 변환된 File 객체
+ */
+export async function convertToLosslessWebP(file: File): Promise<File> {
+  // 이미 WebP인 경우 그대로 반환
+  if (file.type === 'image/webp') {
+    return file;
+  }
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    img.onload = () => {
+      // 원본 크기 유지
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      if (!ctx) {
+        reject(new Error('Canvas context를 생성할 수 없습니다.'));
+        return;
+      }
+
+      // 이미지 그리기
+      ctx.drawImage(img, 0, 0);
+
+      // WebP로 변환 (quality 1.0 = 무손실에 가까운 최고 품질)
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('WebP 변환에 실패했습니다.'));
+            return;
+          }
+
+          // 파일명에서 확장자 교체
+          const originalName = file.name;
+          const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
+          const newFileName = `${nameWithoutExt}.webp`;
+
+          const webpFile = new File([blob], newFileName, {
+            type: 'image/webp',
+            lastModified: Date.now(),
+          });
+
+          resolve(webpFile);
+        },
+        'image/webp',
+        1.0 // 무손실에 가까운 최고 품질
+      );
+    };
+
+    img.onerror = () => {
+      reject(new Error('이미지 로드에 실패했습니다.'));
+    };
+
+    // 이미지 로드
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/**
+ * 캐시 버스트 파라미터가 포함된 URL 반환
+ *
+ * @param url - 원본 URL
+ * @returns 캐시 버스트 파라미터가 추가된 URL
+ */
+export function addCacheBustParam(url: string): string {
+  const timestamp = Date.now();
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}v=${timestamp}`;
+}

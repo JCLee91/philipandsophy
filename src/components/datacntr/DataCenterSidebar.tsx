@@ -52,9 +52,9 @@ const navGroups: NavGroup[] = [
     requiresCohort: false,
     items: [
       {
-        href: '/datacntr/funnel',
-        label: '퍼널 분석',
-        icon: <TrendingDown className="h-5 w-5" />,
+        href: '/datacntr/landing',
+        label: '랜딩 페이지',
+        icon: <Megaphone className="h-5 w-5" />,
       },
       {
         href: '/datacntr/notifications',

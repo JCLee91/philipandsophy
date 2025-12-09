@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { Loader2, TrendingDown, Users, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import {
   getFunnelData,
   FunnelStepData,
@@ -49,7 +50,7 @@ const BAR_COLORS = [
   '#CBD5E1', // slate-300 (제출 완료)
 ];
 
-export default function FunnelAnalyticsPage() {
+export default function FunnelAnalytics() {
   const [period, setPeriod] = useState<PeriodFilter>('7days');
   const [memberType, setMemberType] = useState<'new' | 'existing' | 'waitlist'>('new');
   const [funnelData, setFunnelData] = useState<FunnelStepData[]>([]);
@@ -62,7 +63,7 @@ export default function FunnelAnalyticsPage() {
         const data = await getFunnelData(period, memberType);
         setFunnelData(data);
       } catch (error) {
-        console.error('Failed to fetch funnel data:', error);
+        logger.error('Failed to fetch funnel data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -83,14 +84,9 @@ export default function FunnelAnalyticsPage() {
     : 0;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* 헤더 */}
+    <div className="space-y-6">
+      {/* 헤더 & 필터 */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">퍼널 분석</h1>
-          <p className="text-gray-500 mt-1">신청서 단계별 전환률 분석</p>
-        </div>
-
         {/* 필터 */}
         <div className="flex flex-wrap gap-3">
           {/* 기간 필터 */}
@@ -323,3 +319,4 @@ export default function FunnelAnalyticsPage() {
     </div>
   );
 }
+

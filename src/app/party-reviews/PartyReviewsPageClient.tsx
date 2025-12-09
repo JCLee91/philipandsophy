@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
@@ -8,29 +7,10 @@ import CtaButton from '@/components/landing/CtaButton';
 import { getImageUrl } from '@/constants/landing';
 import { PARTY_REVIEWS_SCHEMA } from '@/constants/seo';
 import { ANALYTICS_EVENTS } from '@/constants/landing';
-import { getLandingConfig } from '@/lib/firebase/landing';
-import { DEFAULT_LANDING_CONFIG, LandingConfig } from '@/types/landing';
+import { useLandingConfig } from '@/hooks/use-landing-config';
 
 export default function PartyReviewsPageClient() {
-  const [config, setConfig] = useState<LandingConfig | null>(null);
-
-  useEffect(() => {
-    getLandingConfig()
-      .then(setConfig)
-      .catch(() => setConfig(DEFAULT_LANDING_CONFIG));
-  }, []);
-
-  const getHref = () => {
-    if (!config) return '/application';
-
-    if (config.status === 'OPEN') {
-      return config.openFormType === 'EXTERNAL' ? config.externalUrl : '/application';
-    } else {
-      if (config.closedFormType === 'EXTERNAL_WAITLIST') return config.externalUrl;
-      if (config.closedFormType === 'INTERNAL_WAITLIST') return '/waitlist';
-      return '#';
-    }
-  };
+  const { config, getHref } = useLandingConfig();
 
   return (
     <LandingLayout>
@@ -52,7 +32,7 @@ export default function PartyReviewsPageClient() {
 
       <div className="container">
         <Image
-          src={getImageUrl('/image/landing/PnS_Review_1.png')}
+          src={config?.images?.['review_1'] || getImageUrl('/image/landing/PnS_Review_1.png')}
           alt="필립앤소피 파티 후기 - 참여자들의 실제 경험담"
           width={1170}
           height={4000}
