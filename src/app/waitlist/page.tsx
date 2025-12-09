@@ -13,7 +13,7 @@ import OnboardingFlow from '@/features/onboarding/components/OnboardingFlow';
 import { PrivacyPolicyModal } from '@/features/application/components/PrivacyPolicyModal';
 import { formatPhoneNumber, isValidPhoneNumber } from '@/features/application/lib/validation';
 import { getLandingConfig } from '@/lib/firebase/landing';
-import { logFunnelEvent, getStepIndex } from '@/lib/firebase/funnel';
+import { logFunnelEvent, getStepIndex as getFunnelStepIndex } from '@/lib/firebase/funnel';
 import { getOrCreateSessionId } from '@/features/application/hooks/use-application';
 
 // Animation variants
@@ -82,7 +82,7 @@ export default function WaitlistPage() {
     const sessionId = getOrCreateSessionId();
     if (!sessionId) return;
 
-    const stepIndex = getStepIndex(stepId, 'waitlist');
+    const stepIndex = getFunnelStepIndex(stepId, 'waitlist');
     
     logFunnelEvent({
       sessionId,
