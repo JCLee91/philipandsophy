@@ -118,6 +118,9 @@ export function ChatClientView({
   const { writeDialog, editDialog, deleteDialog } = useNoticeDialogs();
   const dmDialog = useDirectMessageDialogState();
 
+  // 푸시 알림에서 openDM 파라미터 처리 여부 (무한 루프 방지)
+  const hasProcessedOpenDM = useRef(false);
+
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
@@ -317,8 +320,12 @@ export function ChatClientView({
 
   // ✅ 푸시 알림 클릭 시 관리자 DM 대화창 자동 열기
   useEffect(() => {
+    // 이미 처리했으면 무시 (무한 루프 방지)
+    if (hasProcessedOpenDM.current) return;
+
     const openDM = searchParams.get('openDM');
     if (openDM === 'admin' && participant && cohortId) {
+      hasProcessedOpenDM.current = true; // 처리 완료 표시
       // URL에서 쿼리 파라미터 제거
       router.replace(appRoutes.chat(cohortId), { scroll: false });
       // 관리자 DM 대화창 열기
