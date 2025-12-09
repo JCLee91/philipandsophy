@@ -280,27 +280,33 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                         <section>
                             <h2 className="text-[16px] font-bold text-[#191F28] mb-4">감상평</h2>
 
-                            {/* Certification Image (Gray Box) */}
+                            {/* Certification Image Thumbnail */}
                             {submission.bookImageUrl && (
                                 <>
-                                    <div
-                                        className="bg-[#F2F4F6] rounded-[8px] overflow-hidden mb-6 cursor-pointer relative group"
+                                    <button
+                                        type="button"
+                                        className="flex items-center gap-3 w-full p-3 bg-[#F8F9FA] hover:bg-[#F2F4F6] rounded-[12px] mb-4 transition-colors group"
                                         onClick={() => setImageDialogOpen(true)}
                                     >
-                                        <div className="relative w-full h-64">
+                                        {/* 섬네일 이미지 */}
+                                        <div className="relative w-[80px] h-[80px] rounded-[8px] overflow-hidden shrink-0 bg-[#E5E8EB]">
                                             <Image
                                                 src={submission.bookImageUrl}
                                                 alt="인증 이미지"
                                                 fill
-                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                                sizes="(max-width: 768px) 100vw, 448px"
+                                                className="object-cover"
+                                                sizes="80px"
                                             />
-                                            {/* 확대 아이콘 힌트 */}
-                                            <div className="absolute bottom-3 right-3 bg-black/50 text-white p-2 rounded-full opacity-80 hover:opacity-100 transition-opacity">
-                                                <Maximize2 size={18} />
-                                            </div>
                                         </div>
-                                    </div>
+                                        {/* 텍스트 안내 */}
+                                        <div className="flex-1 flex items-center justify-between min-w-0">
+                                            <div className="text-left">
+                                                <p className="text-[14px] font-medium text-[#333D4B]">인증 사진</p>
+                                                <p className="text-[12px] text-[#8B95A1]">탭하여 크게 보기</p>
+                                            </div>
+                                            <Maximize2 size={20} className="text-[#8B95A1] group-hover:text-[#333D4B] transition-colors shrink-0" />
+                                        </div>
+                                    </button>
                                     <ImageDialog
                                         open={imageDialogOpen}
                                         onClose={() => setImageDialogOpen(false)}

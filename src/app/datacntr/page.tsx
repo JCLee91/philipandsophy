@@ -17,11 +17,12 @@ export const dynamic = 'force-dynamic';
 export default function DataCenterPage() {
   const { user } = useAuth();
   const { data: cohorts = [], isLoading: cohortsLoading } = useAllCohorts();
-  const { selectedCohortId, setSelectedCohortId } = useDatacntrStore();
+  const { selectedCohortId, setSelectedCohortId, _hasHydrated } = useDatacntrStore();
 
   // 첫 로드 시 활성 기수를 디폴트로 선택 (selectedCohortId가 없으면)
   useEffect(() => {
-    if (cohorts.length > 0 && selectedCohortId === null) {
+    // Hydration이 완료된 후에만 실행 (저장된 값이 있는지 확인하기 위함)
+    if (_hasHydrated && cohorts.length > 0 && selectedCohortId === null) {
       // 1. 활성 기수만 필터링
       let activeCohorts = cohorts.filter(c => c.isActive);
 
@@ -48,7 +49,7 @@ export default function DataCenterPage() {
         }
       }
     }
-  }, [cohorts, selectedCohortId, setSelectedCohortId]);
+  }, [cohorts, selectedCohortId, setSelectedCohortId, _hasHydrated]);
 
   // 선택된 cohortId로 통계 조회
   const statsSelectedCohortId = selectedCohortId || undefined;

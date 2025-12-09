@@ -32,6 +32,7 @@ import { useYesterdayVerifiedParticipants } from '@/hooks/use-yesterday-verified
 import { getResizedImageUrl, getOriginalImageUrl } from '@/lib/image-utils';
 import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 import TopBar from '@/components/TopBar';
+import { Maximize2 } from 'lucide-react';
 
 interface ProfileBookContentProps {
   params: { participantId: string };
@@ -96,7 +97,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [imageViewerUrl, setImageViewerUrl] = useState<string>('');
-  const [detailImageAspectRatio, setDetailImageAspectRatio] = useState<number | null>(null);
+  const [submissionImageViewerOpen, setSubmissionImageViewerOpen] = useState(false);
 
   const toggleQuestion = (question: string) => {
     setExpandedQuestions(prev => {
@@ -375,10 +376,6 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
     ? assignments[currentUserId] ?? null
     : null;
   const assignedProfileIds = useMemo(() => getAssignedProfiles(viewerAssignment), [viewerAssignment]);
-
-  useEffect(() => {
-    setDetailImageAspectRatio(null);
-  }, [selectedSubmission?.bookImageUrl]);
 
   // v2.0/v1.0 호환: assigned 우선, fallback으로 similar + opposite
   const accessibleProfileIds = useMemo(() => {
@@ -706,36 +703,12 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                 </DialogDescription>
               </DialogHeader>
               <div className="profile-reading-scroll space-y-3 overflow-y-auto">
-                {/* 책 이미지 */}
-                {selectedSubmission.bookImageUrl && (
-                  <div
-                    className="relative mx-auto w-full max-w-[360px] overflow-hidden rounded-2xl border bg-muted shadow-sm md:max-w-[420px]"
-                    style={{
-                      aspectRatio: detailImageAspectRatio ?? 3 / 4,
-                      maxHeight: 'min(320px, 45vh)',
-                    }}
-                  >
-                    <Image
-                      src={getResizedImageUrl(selectedSubmission.bookImageUrl) || selectedSubmission.bookImageUrl}
-                      alt="책 사진"
-                      fill
-                      sizes="(max-width: 768px) 90vw, 420px"
-                      className="object-contain"
-                      priority={false}
-                      onLoadingComplete={({ naturalWidth, naturalHeight }) => {
-                        if (naturalWidth > 0 && naturalHeight > 0) {
-                          setDetailImageAspectRatio(naturalWidth / naturalHeight);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
                 {/* 읽은 책 */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     읽은 책
                   </p>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <p className="text-sm font-medium text-foreground">
                       {selectedSubmission.bookTitle}
                     </p>
@@ -747,7 +720,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   </div>
                 </div>
                 {/* 한 줄 감상평 */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     한 줄 감상평
                   </p>
@@ -755,9 +728,43 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                     {selectedSubmission.review}
                   </p>
                 </div>
+                {/* 인증 사진 섬네일 */}
+                {selectedSubmission.bookImageUrl && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 w-full p-3 bg-muted/50 hover:bg-muted rounded-xl transition-colors group"
+                    onClick={() => setSubmissionImageViewerOpen(true)}
+                  >
+                    <div className="relative w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0 bg-muted">
+                      <Image
+                        src={getResizedImageUrl(selectedSubmission.bookImageUrl) || selectedSubmission.bookImageUrl}
+                        alt="인증 사진"
+                        fill
+                        className="object-cover"
+                        sizes="72px"
+                      />
+                    </div>
+                    <div className="flex-1 flex items-center justify-between min-w-0">
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-foreground">인증 사진</p>
+                        <p className="text-xs text-muted-foreground">탭하여 크게 보기</p>
+                      </div>
+                      <Maximize2 size={18} className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                    </div>
+                  </button>
+                )}
               </div>
             </DialogContent>
           </Dialog>
+        )}
+
+        {/* 인증 사진 확대 뷰어 */}
+        {selectedSubmission?.bookImageUrl && (
+          <ImageViewerDialog
+            open={submissionImageViewerOpen}
+            onOpenChange={setSubmissionImageViewerOpen}
+            imageUrl={selectedSubmission.bookImageUrl}
+          />
         )}
 
         {/* 간단 프로필 이미지 다이얼로그 */}
