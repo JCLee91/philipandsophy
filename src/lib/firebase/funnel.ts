@@ -10,6 +10,7 @@ import { generateFunnelEventId } from './id-generator';
 import {
   FUNNEL_STEPS,
   EXISTING_MEMBER_FUNNEL_STEPS,
+  WAITLIST_FUNNEL_STEPS,
   PeriodFilter,
   type FunnelStepData,
 } from '../funnel-constants';
@@ -17,6 +18,7 @@ import {
 export {
   FUNNEL_STEPS,
   EXISTING_MEMBER_FUNNEL_STEPS,
+  WAITLIST_FUNNEL_STEPS,
   type PeriodFilter,
   type FunnelStepData,
 };
@@ -28,7 +30,7 @@ export interface FunnelEventData {
   sessionId: string;
   stepId: string;
   stepIndex: number;
-  memberType: 'new' | 'existing' | null;
+  memberType: 'new' | 'existing' | 'waitlist' | null;
 }
 
 /**
@@ -46,8 +48,17 @@ export interface FunnelEvent extends FunnelEventData {
 /**
  * stepId로 stepIndex 찾기
  */
-export function getStepIndex(stepId: string, memberType: 'new' | 'existing' | null): number {
-  const steps = memberType === 'existing' ? EXISTING_MEMBER_FUNNEL_STEPS : FUNNEL_STEPS;
+export function getStepIndex(stepId: string, memberType: 'new' | 'existing' | 'waitlist' | null): number {
+  let steps: typeof FUNNEL_STEPS | typeof EXISTING_MEMBER_FUNNEL_STEPS | typeof WAITLIST_FUNNEL_STEPS;
+  
+  if (memberType === 'waitlist') {
+    steps = WAITLIST_FUNNEL_STEPS;
+  } else if (memberType === 'existing') {
+    steps = EXISTING_MEMBER_FUNNEL_STEPS;
+  } else {
+    steps = FUNNEL_STEPS;
+  }
+
   const step = steps.find(s => s.stepId === stepId);
   return step?.stepIndex ?? -1;
 }
@@ -85,7 +96,7 @@ export async function logFunnelEvent(data: FunnelEventData): Promise<void> {
  */
 export async function getFunnelData(
   period: PeriodFilter,
-  memberType: 'new' | 'existing' = 'new'
+  memberType: 'new' | 'existing' | 'waitlist' = 'new'
 ): Promise<FunnelStepData[]> {
   const response = await fetch(`/api/datacntr/funnel?period=${period}&memberType=${memberType}`);
   

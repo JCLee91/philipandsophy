@@ -30,6 +30,7 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
 const MEMBER_TYPE_OPTIONS = [
   { value: 'new', label: '신규 회원' },
   { value: 'existing', label: '기존 회원' },
+  { value: 'waitlist', label: '웨이팅' },
 ] as const;
 
 // 바 차트 색상 (점진적 그라데이션 - 12단계 대응)
@@ -50,7 +51,7 @@ const BAR_COLORS = [
 
 export default function FunnelAnalyticsPage() {
   const [period, setPeriod] = useState<PeriodFilter>('7days');
-  const [memberType, setMemberType] = useState<'new' | 'existing'>('new');
+  const [memberType, setMemberType] = useState<'new' | 'existing' | 'waitlist'>('new');
   const [funnelData, setFunnelData] = useState<FunnelStepData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

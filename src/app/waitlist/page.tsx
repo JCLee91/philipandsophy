@@ -13,6 +13,8 @@ import OnboardingFlow from '@/features/onboarding/components/OnboardingFlow';
 import { PrivacyPolicyModal } from '@/features/application/components/PrivacyPolicyModal';
 import { formatPhoneNumber, isValidPhoneNumber } from '@/features/application/lib/validation';
 import { getLandingConfig } from '@/lib/firebase/landing';
+import { logFunnelEvent, getStepIndex } from '@/lib/firebase/funnel';
+import { getOrCreateSessionId } from '@/features/application/hooks/use-application';
 
 // Animation variants
 const fadeInUp = {
@@ -41,6 +43,7 @@ export default function WaitlistPage() {
   const [showForm, setShowForm] = useState(false);
   const [currentStep, setCurrentStep] = useState<WaitlistStep>('intro');
   const [stepHistory, setStepHistory] = useState<WaitlistStep[]>(['intro']);
+  const trackedStepsRef = React.useRef<Set<string>>(new Set());
 
   // Config state (데이터센터 연동)
   const [cohortNumber, setCohortNumber] = useState<number>(6); // 기본값
@@ -68,6 +71,27 @@ export default function WaitlistPage() {
   // Onboarding complete handler
   const handleOnboardingComplete = () => {
     setShowForm(true);
+    // 인트로 진입 시 퍼널 이벤트 로깅
+    trackStep('waitlist_intro');
+  };
+
+  // Funnel Tracking Helper
+  const trackStep = (stepId: string) => {
+    if (trackedStepsRef.current.has(stepId)) return;
+
+    const sessionId = getOrCreateSessionId();
+    if (!sessionId) return;
+
+    const stepIndex = getStepIndex(stepId, 'waitlist');
+    
+    logFunnelEvent({
+      sessionId,
+      stepId,
+      stepIndex,
+      memberType: 'waitlist',
+    });
+
+    trackedStepsRef.current.add(stepId);
   };
 
   // Navigation helpers
@@ -165,6 +189,7 @@ export default function WaitlistPage() {
       }
 
       goToStep('complete');
+      trackStep('waitlist_complete');
     } catch (error) {
       console.error('Waitlist submission error:', error);
       toast({
@@ -183,6 +208,7 @@ export default function WaitlistPage() {
 
     if (currentStep === 'intro') {
       goToStep('info');
+      trackStep('waitlist_info');
       return;
     }
 
@@ -200,6 +226,7 @@ export default function WaitlistPage() {
         return;
       }
       goToStep('phone');
+      trackStep('waitlist_phone');
       return;
     }
 

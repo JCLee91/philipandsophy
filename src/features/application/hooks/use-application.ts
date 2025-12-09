@@ -9,9 +9,9 @@ import { Question, QUESTIONS, START_QUESTION_ID } from '../constants/questions';
 /**
  * 세션 ID 생성 및 관리
  */
-const SESSION_STORAGE_KEY = 'pns_funnel_session_id';
+export const SESSION_STORAGE_KEY = 'pns_funnel_session_id';
 
-function getOrCreateSessionId(): string {
+export function getOrCreateSessionId(): string {
     if (typeof window === 'undefined') return '';
 
     let sessionId = sessionStorage.getItem(SESSION_STORAGE_KEY);

@@ -3,6 +3,7 @@ import { getFirebaseAdmin } from '@/lib/firebase/admin-init';
 import { 
   FUNNEL_STEPS, 
   EXISTING_MEMBER_FUNNEL_STEPS, 
+  WAITLIST_FUNNEL_STEPS,
   PeriodFilter 
 } from '@/lib/funnel-constants';
 
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const period = (searchParams.get('period') || '7days') as PeriodFilter;
-    const memberType = (searchParams.get('memberType') || 'new') as 'new' | 'existing';
+    const memberType = (searchParams.get('memberType') || 'new') as 'new' | 'existing' | 'waitlist';
 
     const { db } = getFirebaseAdmin();
     const startDate = getStartDate(period);
@@ -51,12 +52,12 @@ export async function GET(request: Request) {
     // 1단계: 각 세션의 memberType 결정 (null이 아닌 값 우선)
     // intro, membership_status 단계에서는 memberType이 null이므로
     // 이후 단계에서 결정된 memberType을 세션 전체에 적용
-    const sessionMemberTypes = new Map<string, 'new' | 'existing' | null>();
+    const sessionMemberTypes = new Map<string, 'new' | 'existing' | 'waitlist' | null>();
 
     snapshot.docs.forEach(doc => {
       const data = doc.data();
       const sessionId = data.sessionId as string;
-      const eventMemberType = data.memberType as 'new' | 'existing' | null;
+      const eventMemberType = data.memberType as 'new' | 'existing' | 'waitlist' | null;
 
       // memberType이 있고, 아직 세션의 memberType이 결정되지 않았으면 저장
       if (eventMemberType && !sessionMemberTypes.has(sessionId)) {
@@ -97,7 +98,16 @@ export async function GET(request: Request) {
     });
 
     // 결과 구성
-    const steps = memberType === 'existing' ? EXISTING_MEMBER_FUNNEL_STEPS : FUNNEL_STEPS;
+    let steps: typeof FUNNEL_STEPS | typeof EXISTING_MEMBER_FUNNEL_STEPS | typeof WAITLIST_FUNNEL_STEPS;
+    
+    if (memberType === 'waitlist') {
+      steps = WAITLIST_FUNNEL_STEPS;
+    } else if (memberType === 'existing') {
+      steps = EXISTING_MEMBER_FUNNEL_STEPS;
+    } else {
+      steps = FUNNEL_STEPS;
+    }
+
     const firstStepCount = stepCounts.get(steps[0].stepId) || 0;
 
     // 먼저 각 단계의 기본 데이터 계산

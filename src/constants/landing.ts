@@ -10,7 +10,7 @@ export const LANDING_CONSTANTS = {
   FORM_URL: '/application',
 
   /** 이미지 캐시 버스팅 버전 */
-  IMAGE_VERSION: '1762739366900',
+  IMAGE_VERSION: '1765247254000',
 } as const;
 
 /**

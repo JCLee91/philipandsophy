@@ -29,6 +29,19 @@ export const EXISTING_MEMBER_FUNNEL_STEPS = [
   { stepId: 'submit', stepIndex: 8, label: '제출 완료' },
 ] as const;
 
+export const WAITLIST_FUNNEL_STEPS = [
+  // 온보딩 단계 (공통)
+  { stepId: 'onboarding_video', stepIndex: 0, label: '온보딩 영상' },
+  { stepId: 'onboarding_step_1', stepIndex: 1, label: '검증된 사람들' },
+  { stepId: 'onboarding_step_2', stepIndex: 2, label: '2주간 독서' },
+  { stepId: 'onboarding_step_3', stepIndex: 3, label: '클로징 파티' },
+  // 웨이팅 폼 단계
+  { stepId: 'waitlist_intro', stepIndex: 4, label: '웨이팅 인트로' },
+  { stepId: 'waitlist_info', stepIndex: 5, label: '기본 정보' },
+  { stepId: 'waitlist_phone', stepIndex: 6, label: '연락처 입력' },
+  { stepId: 'waitlist_complete', stepIndex: 7, label: '신청 완료' },
+] as const;
+
 export type PeriodFilter = 'today' | '7days' | '30days' | 'all';
 
 /**
