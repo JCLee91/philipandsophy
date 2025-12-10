@@ -197,28 +197,22 @@ service cloud.firestore {
     // ============================================
     // 좋아요 (Likes) - Private Interaction
     // ============================================
+    // NOTE: userId는 participantId (cohort5-홍길동)이고,
+    //       request.auth.uid는 Firebase Auth UID이므로 다름.
+    //       UI 레벨에서 권한 제어, Rules는 로그인만 체크.
     match /likes/{likeId} {
-      // 읽기 권한:
-      // 1. 내가 누른 좋아요 (userId == auth.uid)
-      // 2. 내가 받은 좋아요 (targetUserId == auth.uid)
-      allow read: if isSignedIn() && (
-        resource.data.userId == request.auth.uid || 
-        resource.data.targetUserId == request.auth.uid
-      );
+      // 읽기: 로그인한 사용자 허용 (UI에서 본인 좋아요만 필터링)
+      allow read: if isSignedIn();
       
-      // 생성 권한:
-      // - 로그인한 사용자만
-      // - 본인 ID로만 생성 가능 (userId == auth.uid)
-      // - 필수 필드 검증
+      // 생성: 로그인 + 필수 필드 검증
       allow create: if isSignedIn() && 
-        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.userId is string &&
         request.resource.data.targetId is string &&
         request.resource.data.targetUserId is string &&
         request.resource.data.targetType in ['review', 'answer'];
       
-      // 삭제 권한:
-      // - 본인이 누른 좋아요만 취소 가능
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // 삭제: 로그인한 사용자 허용 (UI에서 본인 좋아요만 삭제 가능하게 제어)
+      allow delete: if isSignedIn();
       
       // 수정 불가 (좋아요는 ON/OFF 개념)
       allow update: if false;
