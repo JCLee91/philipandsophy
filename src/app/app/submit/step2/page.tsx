@@ -288,7 +288,7 @@ function Step2Content() {
 
   const handleEditBook = () => {
     if (!window.confirm('책을 변경하시겠습니까?\n변경하면 현재 선택된 책 정보가 초기화됩니다.')) return;
-    if (selectedBook) setSearchQuery(selectedBook.title);
+    setSearchQuery('');
     setSelectedBook(null);
     setManualTitle('');
     if (isEBook) setImageStorageUrl(null);
