@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import BookmarkCard from '@/components/BookmarkCard';
+import Image from 'next/image';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import type { ClusterMemberWithSubmission } from '@/types/today-library';
 import type { Cohort, DailyMatchingEntry } from '@/types/database';
@@ -11,6 +11,7 @@ interface ProfileBooksTabProps {
   currentUserId: string;
   cohort: Cohort;
   onProfileClick: (participantId: string) => void;
+  isOtherCluster?: boolean;
 }
 
 export default function ProfileBooksTab({
@@ -18,6 +19,7 @@ export default function ProfileBooksTab({
   currentUserId,
   cohort,
   onProfileClick,
+  isOtherCluster = false,
 }: ProfileBooksTabProps) {
   // 멤버별 누적 매칭 횟수 계산 (useActivityRecap 로직 단순화 적용)
   const matchCounts = useMemo(() => {
@@ -28,7 +30,7 @@ export default function ProfileBooksTab({
 
     sortedDates.forEach((date) => {
       const dayData = cohort.dailyFeaturedParticipants![date] as DailyMatchingEntry;
-      
+
       // V3 클러스터 매칭만 처리
       if (dayData.matchingVersion !== 'cluster' || !dayData.clusters) return;
 
@@ -49,77 +51,65 @@ export default function ProfileBooksTab({
     return counts;
   }, [cohort, currentUserId]);
 
-  // 성별로 분류
-  const { males, females } = useMemo(() => {
-    const m: ClusterMemberWithSubmission[] = [];
-    const f: ClusterMemberWithSubmission[] = [];
-    
-    // 현재 로그인한 사용자 제외
-    const others = members.filter(m => m.id !== currentUserId);
-
-    others.forEach(member => {
-      if (member.gender === 'male') m.push(member);
-      else f.push(member);
-    });
-
-    return { males: m, females: f };
-  }, [members, currentUserId]);
+  // 현재 사용자 제외하고 매칭 횟수순 정렬
+  const sortedMembers = useMemo(() => {
+    return members
+      .filter(m => m.id !== currentUserId)
+      .sort((a, b) => (matchCounts[b.id] || 0) - (matchCounts[a.id] || 0));
+  }, [members, currentUserId, matchCounts]);
 
   return (
-    <div className="flex flex-col gap-6 pt-4 pb-32">
-       {/* 안내 문구 */}
-       <div className="text-center mb-2">
-          <p className="text-[14px] text-[#6B7684]">
-            오늘 함께하는 멤버들의 프로필북이에요.<br/>
-            누적 매칭 횟수로 친밀도를 확인해보세요!
-          </p>
-        </div>
+    <div className="px-6 pt-4 pb-32">
+      {/* 안내 문구 */}
+      <div className="bg-white rounded-[12px] p-4 shadow-xs">
+        <p className="text-[13px] font-bold text-[#333D4B] mb-1">
+          {isOtherCluster ? '이 모임의 멤버들' : '오늘 함께하는 멤버'}
+        </p>
+        <p className="text-[12px] text-[#8B95A1]">
+          멤버들의 프로필북을 살펴보세요!
+        </p>
+      </div>
 
-      <div className="grid grid-cols-2 gap-6 px-4">
-        {/* 남자 멤버 */}
-        <div className="flex flex-col gap-6">
-          {males.map((member) => (
-            <div key={member.id} className="flex flex-col items-center gap-2">
-              <BookmarkCard
-                profileImage={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage || '/image/default-profile.svg'}
-                name={member.name}
-                theme="blue"
-                isLocked={false}
-                onClick={() => onProfileClick(member.id)}
-              />
-              {/* 매칭 횟수 뱃지 */}
-              <div className="bg-[#F2F4F6] px-2 py-1 rounded-[6px] text-[11px] font-medium text-[#4E5968]">
-                {matchCounts[member.id] ? `${matchCounts[member.id]}번째 만남` : '첫 만남'}
-              </div>
-            </div>
-          ))}
-          {males.length === 0 && (
-            <div className="col-span-1 flex flex-col items-center justify-center py-10 text-gray-400 text-xs">
-              남자 멤버 없음
-            </div>
-          )}
-        </div>
+      {/* 멤버 리스트 */}
+      <div className="bg-white rounded-[12px] p-4 shadow-xs mt-4">
+        <div className="flex flex-col gap-2">
+          {sortedMembers.map((member, idx) => (
+            <button
+              key={member.id}
+              onClick={() => onProfileClick(member.id)}
+              className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-[10px] hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            >
+              {/* 순번 */}
+              <span className="text-[12px] text-[#8B95A1] w-6 text-center">{idx + 1}</span>
 
-        {/* 여자 멤버 */}
-        <div className="flex flex-col gap-6">
-          {females.map((member) => (
-            <div key={member.id} className="flex flex-col items-center gap-2">
-              <BookmarkCard
-                profileImage={getResizedImageUrl(member.profileImageCircle || member.profileImage) || member.profileImage || '/image/default-profile.svg'}
-                name={member.name}
-                theme="yellow"
-                isLocked={false}
-                onClick={() => onProfileClick(member.id)}
-              />
-              {/* 매칭 횟수 뱃지 */}
-              <div className="bg-[#F2F4F6] px-2 py-1 rounded-[6px] text-[11px] font-medium text-[#4E5968]">
-                {matchCounts[member.id] ? `${matchCounts[member.id]}번째 만남` : '첫 만남'}
+              {/* 프로필 이미지 */}
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0">
+                <Image
+                  src={getResizedImageUrl(member.profileImageCircle || member.profileImage) || '/image/default-profile.svg'}
+                  alt={member.name}
+                  fill
+                  className="object-cover"
+                />
               </div>
-            </div>
+
+              {/* 이름 */}
+              <span className="flex-1 text-[14px] font-medium text-[#333D4B] text-left">
+                {member.name}
+              </span>
+
+              {/* 매칭 횟수 */}
+              <span className="text-[12px] text-[#8B95A1]">
+                {isOtherCluster
+                  ? (matchCounts[member.id] ? `나와 ${matchCounts[member.id]}번 만남` : '아직 만난 적 없음')
+                  : (matchCounts[member.id] ? `${matchCounts[member.id]}번째 만남` : '첫 만남')
+                }
+              </span>
+            </button>
           ))}
-          {females.length === 0 && (
-            <div className="col-span-1 flex flex-col items-center justify-center py-10 text-gray-400 text-xs">
-              여자 멤버 없음
+
+          {sortedMembers.length === 0 && (
+            <div className="py-10 text-center text-gray-400 text-sm">
+              {isOtherCluster ? '이 모임의 멤버 정보가 없습니다.' : '오늘 함께하는 멤버가 없습니다.'}
             </div>
           )}
         </div>

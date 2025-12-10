@@ -107,27 +107,14 @@ export default function TodayLibraryV3Content() {
         />
 
         <main
-          className="flex-1 overflow-hidden touch-pan-y flex flex-col"
+          className="flex-1 overflow-y-auto overflow-x-hidden touch-pan-y"
+          style={{ overscrollBehaviorX: 'none' }}
         >
-          {/* 네비게이션 버튼 영역 (Only show if viewing other cluster or from recap) */}
-          {(isViewingOtherCluster || (!fromRecap && isViewingOtherCluster)) && (
-            <div className="flex px-6 pt-5 bg-[#F6F6F6]">
-              {isViewingOtherCluster ? (
-                <button
-                  onClick={handleReturnToMyCluster}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
-                >
-                  <ChevronLeft className="size-4" />
-                  내 모임으로 돌아가기
-                </button>
-              ) : null}
-            </div>
-          )}
-
-          {/* New Tabbed Interface */}
+          {/* Tabbed Interface */}
           <TodayLibraryTabs
             currentUserId={currentUserId || ''}
             cohort={cohort!}
+            cohortId={cohortId!}
             cluster={cluster}
             dateBadge={dateBadge}
             members={clusterMembersWithSubmissions}
@@ -137,6 +124,9 @@ export default function TodayLibraryV3Content() {
             onReviewClick={handleReviewClick}
             toggleAnswer={toggleAnswer}
             allParticipants={allParticipants}
+            isViewingOtherCluster={isViewingOtherCluster}
+            fromRecap={fromRecap}
+            onReturnToMyCluster={handleReturnToMyCluster}
           />
         </main>
 

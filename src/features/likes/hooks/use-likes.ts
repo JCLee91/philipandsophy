@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toggleLike, fetchMyLikes, fetchReceivedLikes } from '../api';
+import { toggleLike, fetchMyLikes, fetchReceivedLikes, fetchSubmissionsByIds } from '../api';
 import { useToast } from '@/hooks/use-toast';
 import { LikeData } from '../types';
+import type { ReadingSubmission } from '@/types/database';
 
 export function useLikes(currentUserId?: string) {
   const queryClient = useQueryClient();
@@ -21,6 +22,22 @@ export function useLikes(currentUserId?: string) {
     queryKey: ['likes', 'received', currentUserId],
     queryFn: () => fetchReceivedLikes(currentUserId!),
     enabled: !!currentUserId,
+    staleTime: 1000 * 60 * 5, // 5분
+  });
+
+  // 모든 좋아요의 targetId 추출 (중복 제거)
+  const allTargetIds = useMemo(() => {
+    const ids = new Set<string>();
+    myLikes.forEach(like => ids.add(like.targetId));
+    receivedLikes.forEach(like => ids.add(like.targetId));
+    return Array.from(ids);
+  }, [myLikes, receivedLikes]);
+
+  // 좋아요한 글 내용 조회 (스크랩용)
+  const { data: submissionsMap = new Map<string, ReadingSubmission>() } = useQuery({
+    queryKey: ['likes', 'submissions', allTargetIds],
+    queryFn: () => fetchSubmissionsByIds(allTargetIds),
+    enabled: allTargetIds.length > 0,
     staleTime: 1000 * 60 * 5, // 5분
   });
 
@@ -77,6 +94,7 @@ export function useLikes(currentUserId?: string) {
   return {
     myLikes,
     receivedLikes,
+    submissionsMap,
     isLiked,
     toggleLike: toggleLikeMutation.mutate,
     isLoading: toggleLikeMutation.isPending

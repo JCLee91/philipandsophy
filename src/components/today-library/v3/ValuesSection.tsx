@@ -69,35 +69,37 @@ export default function ValuesSection({
 
               {/* Right: Content */}
               <div className="flex-1 flex flex-col gap-1 min-w-0">
-                <div 
+                {/* Top Row: Character Count + Like Button */}
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className="text-[12px] text-[#8B95A1] cursor-pointer"
+                    onClick={() => onToggleAnswer(member.id)}
+                  >
+                    [{answerLength}자]
+                  </span>
+                  {/* Like Button - 우측 상단 */}
+                  {member.submission && (
+                    <LikeButton
+                      targetId={member.submission.id}
+                      targetType="answer"
+                      targetUserId={member.id}
+                      currentUserId={currentUserId}
+                      // @ts-ignore - DB field needs update, fallback to 0
+                      initialCount={member.submission.answerLikeCount || 0}
+                    />
+                  )}
+                </div>
+
+                {/* Text + Chevron Row */}
+                <div
                   className="cursor-pointer"
                   onClick={() => onToggleAnswer(member.id)}
                 >
-                  {/* Character Count */}
-                  <span className="text-[12px] text-[#8B95A1]">
-                    [{answerLength}자]
-                  </span>
-
-                  {/* Text + Chevron Row */}
                   <AccordionContent
                     text={member.dailyAnswer}
                     isExpanded={isExpanded}
                   />
                 </div>
-
-                {/* Like Button Row */}
-                {member.submission && (
-                    <div className="flex justify-end mt-1">
-                        <LikeButton
-                        targetId={member.submission.id}
-                        targetType="answer"
-                        targetUserId={member.id}
-                        currentUserId={currentUserId}
-                        // @ts-ignore - DB field needs update, fallback to 0
-                        initialCount={member.submission.answerLikeCount || 0}
-                        />
-                    </div>
-                )}
               </div>
             </div>
           );

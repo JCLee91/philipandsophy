@@ -6,9 +6,3 @@ export interface LikeData {
   targetUserId: string;
   createdAt: any; // Timestamp
 }
-
-export interface LikeStats {
-  id: string; // targetId
-  count: number;
-  isLiked: boolean;
-}

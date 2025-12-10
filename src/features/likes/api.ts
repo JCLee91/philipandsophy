@@ -4,6 +4,7 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
   runTransaction,
   serverTimestamp,
   increment,
@@ -12,6 +13,7 @@ import {
 import { getDb } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
 import { LikeData } from './types';
+import type { ReadingSubmission } from '@/types/database';
 
 export const LIKES_COLLECTION = 'likes';
 export const SUBMISSIONS_COLLECTION = 'reading_submissions';
@@ -105,32 +107,31 @@ export async function fetchReceivedLikes(userId: string): Promise<LikeData[]> {
 }
 
 /**
- * 특정 타겟들의 좋아요 상태 조회 (Batch check for current user)
+ * 여러 submission ID로 submission 데이터 조회
+ * 스크랩 기능용 - 좋아요한 글 내용 표시에 사용
  */
-export async function checkLikeStatus(
-  userId: string, 
+export async function fetchSubmissionsByIds(
   targetIds: string[]
-): Promise<Record<string, boolean>> {
-  if (!targetIds.length) return {};
-  
+): Promise<Map<string, ReadingSubmission>> {
+  if (!targetIds.length) return new Map();
+
   const db = getDb();
-  const statusMap: Record<string, boolean> = {};
-  
-  // Firestore limit for 'in' query is 10. Split if necessary, but typically simple loop or compound ID check is better
-  // Since we construct ID as userId_targetId, we can just getDocs with those IDs?
-  // Firestore doesn't support getMultiple by IDs natively well without 'in'. 
-  // Given standard constraints, let's query by userId and filter in memory or loop.
-  // Efficient way: Fetch all my likes? If lists are long, this is bad.
-  // Better: Since we view ~10 items at a time, we can assume targetIds is small.
-  
-  // Strategy: Fetch all likes by me (assuming user doesn't like thousands of posts per day).
-  // If scaling is needed, implement pagination or 'in' queries.
-  // For now, fetching all my likes is reasonable for a cohort-based app.
-  
-  const myLikes = await fetchMyLikes(userId);
-  myLikes.forEach(like => {
-    statusMap[like.targetId] = true;
+  const submissionMap = new Map<string, ReadingSubmission>();
+
+  // Firestore는 batch get을 직접 지원하지 않으므로 개별 조회
+  // 최적화 필요시 in query 분할 또는 캐싱 적용 가능
+  const promises = targetIds.map(async (id) => {
+    try {
+      const docRef = doc(db, SUBMISSIONS_COLLECTION, id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        submissionMap.set(id, { id: docSnap.id, ...docSnap.data() } as ReadingSubmission);
+      }
+    } catch (error) {
+      logger.error(`Error fetching submission ${id}:`, error);
+    }
   });
-  
-  return statusMap;
+
+  await Promise.all(promises);
+  return submissionMap;
 }

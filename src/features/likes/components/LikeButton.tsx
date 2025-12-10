@@ -54,8 +54,6 @@ export default function LikeButton({
     });
   };
 
-  const isOwner = currentUserId === targetUserId;
-
   return (
     <button
       onClick={handleClick}
