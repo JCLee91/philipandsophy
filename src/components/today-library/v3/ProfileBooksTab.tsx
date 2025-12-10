@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import BookmarkCard from '@/components/BookmarkCard';
 import { getResizedImageUrl } from '@/lib/image-utils';
-import { getFirstName } from '@/lib/utils';
 import type { ClusterMemberWithSubmission } from '@/types/today-library';
 import type { Cohort, DailyMatchingEntry } from '@/types/database';
 

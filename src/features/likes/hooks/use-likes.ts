@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toggleLike, fetchMyLikes, fetchReceivedLikes } from './api';
+import { toggleLike, fetchMyLikes, fetchReceivedLikes } from '../api';
 import { useToast } from '@/hooks/use-toast';
-import { LikeData } from './types';
+import { LikeData } from '../types';
 
 export function useLikes(currentUserId?: string) {
   const queryClient = useQueryClient();
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   // 내가 누른 좋아요 목록
   const { data: myLikes = [] } = useQuery({
@@ -66,7 +66,7 @@ export function useLikes(currentUserId?: string) {
     },
     onError: (err, variables, context) => {
       queryClient.setQueryData(['likes', 'sent', currentUserId], context?.previousLikes);
-      showToast('좋아요 처리에 실패했습니다.', 'error');
+      toast({ title: '좋아요 처리에 실패했습니다.', variant: 'destructive' });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['likes', 'sent', currentUserId] });

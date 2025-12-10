@@ -1,16 +1,16 @@
-import { 
-  collection, 
-  doc, 
-  query, 
-  where, 
-  getDocs, 
-  runTransaction, 
+import {
+  collection,
+  doc,
+  query,
+  where,
+  getDocs,
+  runTransaction,
   serverTimestamp,
   increment,
-  limit,
   orderBy
 } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
+import { logger } from '@/lib/logger';
 import { LikeData } from './types';
 
 export const LIKES_COLLECTION = 'likes';
@@ -69,7 +69,7 @@ export async function toggleLike(
       }
     });
   } catch (error) {
-    console.error('Error toggling like:', error);
+    logger.error('Error toggling like:', error);
     throw error;
   }
 }

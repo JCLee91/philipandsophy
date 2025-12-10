@@ -9,9 +9,8 @@ import ReviewsSection from './ReviewsSection';
 import ValuesSection from './ValuesSection';
 import ProfileBooksTab from './ProfileBooksTab';
 import LikesTab from './LikesTab';
-import type { ClusterMemberWithSubmission, Cluster } from '@/types/today-library';
-import type { Cohort } from '@/types/database';
-import { Participant } from '@/types/database';
+import type { ClusterMemberWithSubmission } from '@/types/today-library';
+import type { Cohort, Participant, Cluster } from '@/types/database';
 
 interface TodayLibraryTabsProps {
   // Common
@@ -20,7 +19,7 @@ interface TodayLibraryTabsProps {
   
   // Tab 1: Today
   cluster: Cluster;
-  dateBadge: string;
+  dateBadge: { label: string; isToday: boolean };
   members: ClusterMemberWithSubmission[];
   dailyQuestion: string;
   expandedAnswers: Set<string>;

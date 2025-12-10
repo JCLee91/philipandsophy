@@ -129,7 +129,7 @@ export default function TodayLibraryV3Content() {
             currentUserId={currentUserId || ''}
             cohort={cohort!}
             cluster={cluster}
-            dateBadge={dateBadge.label}
+            dateBadge={dateBadge}
             members={clusterMembersWithSubmissions}
             dailyQuestion={dailyQuestion}
             expandedAnswers={expandedAnswers}
