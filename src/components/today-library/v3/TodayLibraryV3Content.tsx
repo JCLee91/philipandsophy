@@ -8,9 +8,7 @@ import PostProgramView from '@/components/today-library/PostProgramView';
 import LoadingSkeleton from '@/components/today-library/common/LoadingSkeleton';
 import EmptyStateFirstAuth from '@/components/today-library/common/EmptyStateFirstAuth';
 import EmptyStateNoMatching from '@/components/today-library/common/EmptyStateNoMatching';
-import ClusterThemeSection from './ClusterThemeSection';
-import ReviewsSection from './ReviewsSection';
-import ValuesSection from './ValuesSection';
+import TodayLibraryTabs from './TodayLibraryTabs';
 import { useTodayLibraryV3 } from '@/hooks/today-library/use-today-library-v3';
 import { appRoutes } from '@/lib/navigation';
 
@@ -38,6 +36,7 @@ export default function TodayLibraryV3Content() {
     getTopBarTitle,
     getMeetingDateBadge,
     router,
+    allParticipants,
   } = useTodayLibraryV3();
 
   // 로딩 상태
@@ -108,57 +107,47 @@ export default function TodayLibraryV3Content() {
         />
 
         <main
-          className="flex-1 overflow-y-auto overflow-x-hidden touch-pan-y"
-          style={{ overscrollBehaviorX: 'none' }}
+          className="flex-1 overflow-hidden touch-pan-y flex flex-col"
         >
-          {/* 네비게이션 버튼 영역 */}
-          <div className="flex px-6 pt-5 bg-[#F6F6F6]">
-            {isViewingOtherCluster ? (
-              <button
-                onClick={handleReturnToMyCluster}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
-              >
-                <ChevronLeft className="size-4" />
-                내 모임으로 돌아가기
-              </button>
-            ) : !fromRecap ? (
-              <button
-                onClick={() => router.push(appRoutes.todayLibraryOtherClusters(cohortId!))}
-                className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
-              >
-                다른 모임 구경하기 <ChevronRight className="size-4" />
-              </button>
-            ) : null}
-          </div>
+          {/* 네비게이션 버튼 영역 (Only show if viewing other cluster or from recap) */}
+          {(isViewingOtherCluster || (!fromRecap && isViewingOtherCluster)) && (
+            <div className="flex px-6 pt-5 bg-[#F6F6F6]">
+              {isViewingOtherCluster ? (
+                <button
+                  onClick={handleReturnToMyCluster}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronLeft className="size-4" />
+                  내 모임으로 돌아가기
+                </button>
+              ) : null}
+            </div>
+          )}
 
-          {/* Theme Section */}
-          <ClusterThemeSection
+          {/* New Tabbed Interface */}
+          <TodayLibraryTabs
+            currentUserId={currentUserId || ''}
+            cohort={cohort!}
             cluster={cluster}
+            dateBadge={dateBadge.label}
             members={clusterMembersWithSubmissions}
-            dateBadge={dateBadge}
-            onMemberClick={handleProfileClick}
+            dailyQuestion={dailyQuestion}
+            expandedAnswers={expandedAnswers}
+            onProfileClick={handleProfileClick}
+            onReviewClick={handleReviewClick}
+            toggleAnswer={toggleAnswer}
+            allParticipants={allParticipants}
           />
-
-          {/* Main Content */}
-          <div className="bg-white rounded-t-[24px] px-6 pt-8 pb-32 min-h-[calc(100vh-300px)]">
-            <ReviewsSection
-              members={clusterMembersWithSubmissions}
-              onProfileClick={handleProfileClick}
-              onReviewClick={handleReviewClick}
-            />
-
-            <ValuesSection
-              dailyQuestion={dailyQuestion}
-              members={clusterMembersWithSubmissions}
-              expandedAnswers={expandedAnswers}
-              onProfileClick={handleProfileClick}
-              onToggleAnswer={toggleAnswer}
-            />
-          </div>
         </main>
 
-        {/* Fixed Footer Button */}
-        <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-[#F2F2F2] z-50 safe-area-bottom">
+        {/* Fixed Footer Button - Removed here, as it's now inside specific tabs or redundant */}
+        {/* If we want to keep "My Profile Book" accessible always, we can put it here or inside TodayLibraryTabs.
+            However, with the new Tab structure, "Likes" tab takes space.
+            Let's keep the global footer logic consistent if desired, but for now I removed it from here to let Tabs handle their own layout or footer needs if necessary.
+            Actually, the original design had a fixed footer. Let's add it back if it doesn't conflict with tabs.
+            The Tabs component has `pb-32` padding at bottom of content areas to accommodate this.
+        */}
+         <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-[#F2F2F2] z-50 safe-area-bottom">
           <UnifiedButton
             fullWidth
             onClick={() => router.push(appRoutes.profile(currentUserId || '', cohortId!))}

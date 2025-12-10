@@ -193,5 +193,35 @@ service cloud.firestore {
     match /waitlist/{waitlistId} {
       allow read, write: if true;
     }
+
+    // ============================================
+    // 좋아요 (Likes) - Private Interaction
+    // ============================================
+    match /likes/{likeId} {
+      // 읽기 권한:
+      // 1. 내가 누른 좋아요 (userId == auth.uid)
+      // 2. 내가 받은 좋아요 (targetUserId == auth.uid)
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.targetUserId == request.auth.uid
+      );
+      
+      // 생성 권한:
+      // - 로그인한 사용자만
+      // - 본인 ID로만 생성 가능 (userId == auth.uid)
+      // - 필수 필드 검증
+      allow create: if isSignedIn() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.targetId is string &&
+        request.resource.data.targetUserId is string &&
+        request.resource.data.targetType in ['review', 'answer'];
+      
+      // 삭제 권한:
+      // - 본인이 누른 좋아요만 취소 가능
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // 수정 불가 (좋아요는 ON/OFF 개념)
+      allow update: if false;
+    }
   }
 }
