@@ -7,7 +7,7 @@
     "build": "npm run build:sw && ./node_modules/.bin/next build",
     "build:sw": "echo '✅ Service Worker is already at public/sw.js (manual maintenance)'",
     "start": "./node_modules/.bin/next start",
-    "lint": "./node_modules/.bin/next lint",
+    "lint": "./node_modules/.bin/eslint src functions/src",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

@@ -684,7 +684,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                                   return submissionForQuestion?.id ? (
                                     <div className="flex justify-center pt-4 mt-3 border-t border-white/50">
                                       <LikeButton
-                                        targetId={submissionForQuestion.id}
+                                        targetId={`${submissionForQuestion.id}_answer`}
                                         targetType="answer"
                                         targetUserId={participantId}
                                         currentUserId={currentUserId}
@@ -773,7 +773,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                 {currentUserId && selectedSubmission.id && (
                   <div className="flex justify-center pt-4 mt-2 border-t border-[#F2F4F6]">
                     <LikeButton
-                      targetId={selectedSubmission.id}
+                      targetId={`${selectedSubmission.id}_review`}
                       targetType="review"
                       targetUserId={participantId}
                       currentUserId={currentUserId}

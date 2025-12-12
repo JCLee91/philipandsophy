@@ -19,6 +19,22 @@ export const LIKES_COLLECTION = 'likes';
 export const SUBMISSIONS_COLLECTION = 'reading_submissions';
 
 /**
+ * targetId에서 실제 submission ID를 추출
+ * targetId 형식: {submissionId}_review 또는 {submissionId}_answer
+ */
+function extractSubmissionId(targetId: string): string {
+  // _review 또는 _answer suffix 제거
+  if (targetId.endsWith('_review')) {
+    return targetId.slice(0, -7);
+  }
+  if (targetId.endsWith('_answer')) {
+    return targetId.slice(0, -7);
+  }
+  // 이전 형식 호환성을 위해 그대로 반환
+  return targetId;
+}
+
+/**
  * 좋아요 토글 (좋아요/취소)
  * Transaction을 사용하여 좋아요 문서 생성/삭제와 카운트 증감을 원자적으로 처리
  */
@@ -31,9 +47,13 @@ export async function toggleLike(
   const db = getDb();
   
   // 좋아요 문서 ID 생성 규칙: userId_targetId (중복 방지)
+  // targetId는 이제 submissionId_review 또는 submissionId_answer 형식
   const likeDocId = `${userId}_${targetId}`;
   const likeDocRef = doc(db, LIKES_COLLECTION, likeDocId);
-  const targetDocRef = doc(db, SUBMISSIONS_COLLECTION, targetId);
+  
+  // submission 문서는 실제 submissionId로 조회
+  const submissionId = extractSubmissionId(targetId);
+  const targetDocRef = doc(db, SUBMISSIONS_COLLECTION, submissionId);
   
   try {
     return await runTransaction(db, async (transaction) => {
@@ -109,6 +129,7 @@ export async function fetchReceivedLikes(userId: string): Promise<LikeData[]> {
 /**
  * 여러 submission ID로 submission 데이터 조회
  * 스크랩 기능용 - 좋아요한 글 내용 표시에 사용
+ * targetId는 submissionId_review 또는 submissionId_answer 형식일 수 있음
  */
 export async function fetchSubmissionsByIds(
   targetIds: string[]
@@ -118,17 +139,30 @@ export async function fetchSubmissionsByIds(
   const db = getDb();
   const submissionMap = new Map<string, ReadingSubmission>();
 
+  // 중복 제거를 위해 실제 submissionId -> targetIds 매핑
+  const submissionIdToTargetIds = new Map<string, string[]>();
+  targetIds.forEach(targetId => {
+    const submissionId = extractSubmissionId(targetId);
+    const existing = submissionIdToTargetIds.get(submissionId) || [];
+    existing.push(targetId);
+    submissionIdToTargetIds.set(submissionId, existing);
+  });
+
   // Firestore는 batch get을 직접 지원하지 않으므로 개별 조회
   // 최적화 필요시 in query 분할 또는 캐싱 적용 가능
-  const promises = targetIds.map(async (id) => {
+  const promises = Array.from(submissionIdToTargetIds.entries()).map(async ([submissionId, relatedTargetIds]) => {
     try {
-      const docRef = doc(db, SUBMISSIONS_COLLECTION, id);
+      const docRef = doc(db, SUBMISSIONS_COLLECTION, submissionId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        submissionMap.set(id, { id: docSnap.id, ...docSnap.data() } as ReadingSubmission);
+        const submission = { id: docSnap.id, ...docSnap.data() } as ReadingSubmission;
+        // 모든 관련 targetId에 대해 같은 submission 매핑
+        relatedTargetIds.forEach(targetId => {
+          submissionMap.set(targetId, submission);
+        });
       }
     } catch (error) {
-      logger.error(`Error fetching submission ${id}:`, error);
+      logger.error(`Error fetching submission ${submissionId}:`, error);
     }
   });
 

@@ -61,11 +61,10 @@ export default function ReviewsSection({
                 {/* Like Button - 우측 상단 */}
                 {member.submission && (
                   <LikeButton
-                    targetId={member.submission.id}
+                    targetId={`${member.submission.id}_review`}
                     targetType="review"
                     targetUserId={member.id}
                     currentUserId={currentUserId}
-                    // @ts-ignore - DB field needs update, fallback to 0
                     initialCount={member.submission.reviewLikeCount || 0}
                   />
                 )}

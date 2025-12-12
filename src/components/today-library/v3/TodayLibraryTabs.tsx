@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -59,7 +59,27 @@ export default function TodayLibraryTabs({
   onReturnToMyCluster,
 }: TodayLibraryTabsProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>('today');
+  const searchParams = useSearchParams();
+  
+  // URL 쿼리 파라미터로 탭 상태 관리 (뒤로가기 시 유지)
+  const tabParam = searchParams.get('tab');
+  const activeTab: TabType = (tabParam === 'members' || tabParam === 'likes') ? tabParam : 'today';
+  
+  // 탭 변경 시 URL 업데이트 (히스토리 교체)
+  const setActiveTab = useCallback((tab: TabType) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === 'today') {
+      params.delete('tab');
+    } else {
+      params.set('tab', tab);
+    }
+    // 좋아요 서브탭 초기화
+    if (tab !== 'likes') {
+      params.delete('likesTab');
+    }
+    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [router, searchParams]);
 
   // 다른 모임 구경 중일 때는 모임/프로필북 탭만 표시
   if (isViewingOtherCluster) {

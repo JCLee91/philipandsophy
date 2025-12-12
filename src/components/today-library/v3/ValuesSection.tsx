@@ -80,11 +80,10 @@ export default function ValuesSection({
                   {/* Like Button - 우측 상단 */}
                   {member.submission && (
                     <LikeButton
-                      targetId={member.submission.id}
+                      targetId={`${member.submission.id}_answer`}
                       targetType="answer"
                       targetUserId={member.id}
                       currentUserId={currentUserId}
-                      // @ts-ignore - DB field needs update, fallback to 0
                       initialCount={member.submission.answerLikeCount || 0}
                     />
                   )}

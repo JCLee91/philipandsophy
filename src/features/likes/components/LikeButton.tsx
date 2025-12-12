@@ -25,10 +25,11 @@ export default function LikeButton({
   className,
   size = 18
 }: LikeButtonProps) {
-  const { isLiked, toggleLike } = useLikes(currentUserId);
+  const { isLiked, toggleLikeAsync } = useLikes(currentUserId);
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sync with global state
   useEffect(() => {
@@ -37,21 +38,39 @@ export default function LikeButton({
     }
   }, [currentUserId, targetId, isLiked]);
 
-  const handleClick = (e: React.MouseEvent) => {
+  // initialCount가 갱신될 수 있으므로 (리렌더/재진입) 동기화
+  useEffect(() => {
+    setCount(initialCount);
+  }, [initialCount]);
+
+  const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUserId) return; // Or show login toast
+    if (isSubmitting) return;
 
     // Optimistic UI update
+    const prevCount = count;
     const newLiked = !liked;
     setLiked(newLiked);
     setCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
     setIsAnimating(true);
 
-    toggleLike({
-      targetId,
-      targetType,
-      targetUserId
-    });
+    setIsSubmitting(true);
+    try {
+      const result = await toggleLikeAsync({
+        targetId,
+        targetType,
+        targetUserId
+      });
+      // 서버 트랜잭션 결과 기준으로 보정 (실패/중복 클릭/레이스 방지)
+      setLiked(result.isLiked);
+      setCount(result.newCount);
+    } catch {
+      // 실패 시 카운트는 즉시 롤백 (liked는 global isLiked 동기화로 복구됨)
+      setCount(prevCount);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -62,7 +81,7 @@ export default function LikeButton({
         liked ? "text-[#FF4B4B]" : "text-[#8B95A1] hover:text-[#505967]",
         className
       )}
-      disabled={!currentUserId}
+      disabled={!currentUserId || isSubmitting}
     >
       <div className="relative">
         <Heart 

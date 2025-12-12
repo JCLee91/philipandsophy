@@ -329,11 +329,10 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                             {/* Like Button - 중앙 하단 */}
                             <div className="flex justify-center mt-8 pt-6 border-t border-[#F2F4F6]">
                                 <LikeButton
-                                    targetId={submission.id}
+                                    targetId={`${submission.id}_review`}
                                     targetType="review"
                                     targetUserId={participantId}
                                     currentUserId={currentUser?.id || ''}
-                                    // @ts-ignore - DB field needs update, fallback to 0
                                     initialCount={submission.reviewLikeCount || 0}
                                     size={28}
                                 />

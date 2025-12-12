@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useCallback, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useLikes } from '@/features/likes/hooks/use-likes';
 import { getResizedImageUrl } from '@/lib/image-utils';
@@ -9,7 +10,14 @@ import { getFirstName } from '@/lib/utils';
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LikeData } from '@/features/likes/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import type { Participant, ReadingSubmission } from '@/types/database';
+
+// 가치관 답변 모달 데이터 타입
+interface AnswerModalData {
+  participant: Participant;
+  submission: ReadingSubmission;
+}
 
 interface LikesTabProps {
   currentUserId: string;
@@ -96,12 +104,14 @@ function ScrapCard({
   participant,
   onProfileClick,
   onReviewClick,
+  onAnswerClick,
 }: {
   like: LikeData;
   submission?: ReadingSubmission;
   participant?: Participant;
   onProfileClick: (id: string) => void;
   onReviewClick: (id: string) => void;
+  onAnswerClick: (participant: Participant, submission: ReadingSubmission) => void;
 }) {
   if (!participant || !submission) return null;
 
@@ -110,6 +120,15 @@ function ScrapCard({
     : submission.dailyAnswer;
 
   const contentLabel = like.targetType === 'review' ? '감상평' : '가치관 답변';
+
+  // 클릭 핸들러: 감상평은 페이지 이동, 가치관 답변은 모달
+  const handleContentClick = () => {
+    if (like.targetType === 'review') {
+      onReviewClick(participant.id);
+    } else {
+      onAnswerClick(participant, submission);
+    }
+  };
 
   return (
     <div className="flex gap-3 border-b border-[#F2F4F6] py-4 first:pt-0 items-start">
@@ -136,7 +155,7 @@ function ScrapCard({
         <div className="flex items-start justify-between gap-2">
           <div
             className="cursor-pointer flex-1 min-w-0"
-            onClick={() => onReviewClick(participant.id)}
+            onClick={handleContentClick}
           >
             {like.targetType === 'review' && submission.bookTitle ? (
               <div className="bg-[#F2F4F6] px-2 py-1 rounded-[4px] inline-block max-w-full">
@@ -160,7 +179,7 @@ function ScrapCard({
         {/* Content Text */}
         <div
           className="cursor-pointer"
-          onClick={() => onReviewClick(participant.id)}
+          onClick={handleContentClick}
         >
           <p className="text-[14px] text-[#333D4B] leading-normal truncate max-w-[320px]">
             {content ? normalizeTextForPreview(content) : `작성된 ${contentLabel}이 없습니다.`}
@@ -176,19 +195,116 @@ function ScrapCard({
   );
 }
 
+// 좋아요 목록 섹션 컴포넌트 (감상평/가치관 답변 분리)
+function LikeListSection({
+  title,
+  likes,
+  submissionsMap,
+  participantMap,
+  participantKey,
+  onProfileClick,
+  onReviewClick,
+  onAnswerClick,
+  emptyMessage,
+  accentColor,
+}: {
+  title: string;
+  likes: LikeData[];
+  submissionsMap: Map<string, ReadingSubmission>;
+  participantMap: Map<string, Participant>;
+  participantKey: 'userId' | 'targetUserId';
+  onProfileClick: (id: string) => void;
+  onReviewClick: (id: string) => void;
+  onAnswerClick: (participant: Participant, submission: ReadingSubmission) => void;
+  emptyMessage: string;
+  accentColor: string;
+}) {
+  return (
+    <div className="bg-white rounded-[12px] p-5 shadow-xs">
+      <div className="flex items-center gap-2 mb-3">
+        <div className={cn("w-2 h-2 rounded-full", accentColor)} />
+        <p className="text-[13px] font-bold text-[#333D4B]">{title}</p>
+        <span className="text-[12px] text-[#8B95A1]">{likes.length}개</span>
+      </div>
+      {likes.length > 0 ? (
+        <div className="flex flex-col">
+          {likes.map(like => (
+            <ScrapCard
+              key={like.id}
+              like={like}
+              submission={submissionsMap.get(like.targetId)}
+              participant={participantMap.get(like[participantKey])}
+              onProfileClick={onProfileClick}
+              onReviewClick={onReviewClick}
+              onAnswerClick={onAnswerClick}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="py-6 text-center text-[#8B95A1] text-[13px]">
+          {emptyMessage}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LikesTab({
   currentUserId,
   allParticipants,
   onProfileClick,
   onReviewClick,
 }: LikesTabProps) {
-  const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { myLikes, receivedLikes, submissionsMap, isLoading } = useLikes(currentUserId);
+  
+  // 가치관 답변 모달 상태
+  const [answerModalData, setAnswerModalData] = useState<AnswerModalData | null>(null);
+  
+  // URL 쿼리 파라미터로 서브탭 상태 관리 (뒤로가기 시 유지)
+  const likesTabParam = searchParams.get('likesTab');
+  const activeTab: 'received' | 'sent' = likesTabParam === 'sent' ? 'sent' : 'received';
+  
+  // 서브탭 변경 시 URL 업데이트
+  const setActiveTab = useCallback((tab: 'received' | 'sent') => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === 'received') {
+      params.delete('likesTab');
+    } else {
+      params.set('likesTab', tab);
+    }
+    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [router, searchParams]);
+  
+  // 가치관 답변 클릭 핸들러
+  const handleAnswerClick = useCallback((participant: Participant, submission: ReadingSubmission) => {
+    setAnswerModalData({ participant, submission });
+  }, []);
 
   // Participant Map
   const participantMap = useMemo(() => {
     return new Map(allParticipants.map(p => [p.id, p]));
   }, [allParticipants]);
+
+  // 감상평과 가치관 답변 분리
+  const receivedReviewLikes = useMemo(
+    () => receivedLikes.filter(like => like.targetType === 'review'),
+    [receivedLikes]
+  );
+  const receivedAnswerLikes = useMemo(
+    () => receivedLikes.filter(like => like.targetType === 'answer'),
+    [receivedLikes]
+  );
+  const sentReviewLikes = useMemo(
+    () => myLikes.filter(like => like.targetType === 'review'),
+    [myLikes]
+  );
+  const sentAnswerLikes = useMemo(
+    () => myLikes.filter(like => like.targetType === 'answer'),
+    [myLikes]
+  );
 
   // Ranking Logic
   const getRankings = (likes: LikeData[], key: 'userId' | 'targetUserId') => {
@@ -271,28 +387,33 @@ export default function LikesTab({
               emptyMessage="아직 받은 좋아요가 없어요. 먼저 표현해보세요!"
             />
 
-            {/* Scrap List */}
-            <div className="bg-white rounded-[12px] p-5 shadow-xs">
-              <p className="text-[13px] font-bold text-[#333D4B] mb-3">받은 좋아요 목록</p>
-              {receivedLikes.length > 0 ? (
-                <div className="flex flex-col">
-                  {receivedLikes.map(like => (
-                    <ScrapCard
-                      key={like.id}
-                      like={like}
-                      submission={submissionsMap.get(like.targetId)}
-                      participant={participantMap.get(like.userId)}
-                      onProfileClick={onProfileClick}
-                      onReviewClick={onReviewClick}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-[#8B95A1] text-[13px]">
-                  아직 받은 좋아요가 없습니다.
-                </div>
-              )}
-            </div>
+            {/* 감상평 좋아요 목록 */}
+            <LikeListSection
+              title="감상평"
+              likes={receivedReviewLikes}
+              submissionsMap={submissionsMap}
+              participantMap={participantMap}
+              participantKey="userId"
+              onProfileClick={onProfileClick}
+              onReviewClick={onReviewClick}
+              onAnswerClick={handleAnswerClick}
+              emptyMessage="아직 받은 감상평 좋아요가 없습니다."
+              accentColor="bg-[#4A90D9]"
+            />
+
+            {/* 가치관 답변 좋아요 목록 */}
+            <LikeListSection
+              title="가치관 답변"
+              likes={receivedAnswerLikes}
+              submissionsMap={submissionsMap}
+              participantMap={participantMap}
+              participantKey="userId"
+              onProfileClick={onProfileClick}
+              onReviewClick={onReviewClick}
+              onAnswerClick={handleAnswerClick}
+              emptyMessage="아직 받은 가치관 답변 좋아요가 없습니다."
+              accentColor="bg-[#F5A623]"
+            />
           </div>
         ) : (
           <div className="flex flex-col gap-6">
@@ -304,31 +425,107 @@ export default function LikesTab({
               emptyMessage="아직 보낸 좋아요가 없어요. 마음을 표현해보세요!"
             />
 
-            {/* Scrap List */}
-            <div className="bg-white rounded-[12px] p-5 shadow-xs">
-              <p className="text-[13px] font-bold text-[#333D4B] mb-3">보낸 좋아요 목록</p>
-              {myLikes.length > 0 ? (
-                <div className="flex flex-col">
-                  {myLikes.map(like => (
-                    <ScrapCard
-                      key={like.id}
-                      like={like}
-                      submission={submissionsMap.get(like.targetId)}
-                      participant={participantMap.get(like.targetUserId)}
-                      onProfileClick={onProfileClick}
-                      onReviewClick={onReviewClick}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-[#8B95A1] text-[13px]">
-                  아직 보낸 좋아요가 없습니다.
-                </div>
-              )}
-            </div>
+            {/* 감상평 좋아요 목록 */}
+            <LikeListSection
+              title="감상평"
+              likes={sentReviewLikes}
+              submissionsMap={submissionsMap}
+              participantMap={participantMap}
+              participantKey="targetUserId"
+              onProfileClick={onProfileClick}
+              onReviewClick={onReviewClick}
+              onAnswerClick={handleAnswerClick}
+              emptyMessage="아직 보낸 감상평 좋아요가 없습니다."
+              accentColor="bg-[#4A90D9]"
+            />
+
+            {/* 가치관 답변 좋아요 목록 */}
+            <LikeListSection
+              title="가치관 답변"
+              likes={sentAnswerLikes}
+              submissionsMap={submissionsMap}
+              participantMap={participantMap}
+              participantKey="targetUserId"
+              onProfileClick={onProfileClick}
+              onReviewClick={onReviewClick}
+              onAnswerClick={handleAnswerClick}
+              emptyMessage="아직 보낸 가치관 답변 좋아요가 없습니다."
+              accentColor="bg-[#F5A623]"
+            />
           </div>
         )}
       </div>
+
+      {/* 가치관 답변 상세 모달 */}
+      <Dialog open={!!answerModalData} onOpenChange={(open) => !open && setAnswerModalData(null)}>
+        <DialogContent className="likes-answer-dialog sm:max-w-md sm:rounded-2xl">
+          <DialogHeader className="text-left gap-1">
+            <DialogTitle className="text-base flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0">
+                <Image
+                  src={getResizedImageUrl(answerModalData?.participant.profileImageCircle || answerModalData?.participant.profileImage) || '/image/default-profile.svg'}
+                  alt={answerModalData?.participant.name || ''}
+                  fill
+                  className="object-cover"
+                  sizes="32px"
+                />
+              </div>
+              <span>{getFirstName(answerModalData?.participant.name || '')}의 가치관 답변</span>
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              가치관 답변 상세 내용입니다.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {answerModalData && (
+            <div className="space-y-4">
+              {/* 질문 */}
+              <div className="bg-[#FFF8E1] rounded-[12px] p-4">
+                <div className="bg-black rounded-[8px] px-2 py-1 inline-block mb-2">
+                  <span className="text-white text-[11px] font-bold">가치관</span>
+                </div>
+                <p className="text-[14px] font-medium text-[#333D4B] leading-normal">
+                  {answerModalData.submission.dailyQuestion}
+                </p>
+              </div>
+              
+              {/* 답변 */}
+              <div className="px-1">
+                <p className="text-[15px] text-[#333D4B] leading-[1.7] whitespace-pre-wrap">
+                  {answerModalData.submission.dailyAnswer || '작성된 답변이 없습니다.'}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 모달 스타일 */}
+      <style jsx global>{`
+        .likes-answer-dialog {
+          margin: 0 !important;
+          inset: auto 0 0 0 !important;
+          width: 100% !important;
+          max-width: none !important;
+          border-radius: 28px 28px 0 0 !important;
+          padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+          box-shadow: 0 -20px 40px rgba(15, 23, 42, 0.18);
+          max-height: 80vh;
+          overflow-y: auto;
+        }
+
+        @media (min-width: 640px) {
+          .likes-answer-dialog {
+            inset: 50% auto auto 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: clamp(360px, 90vw, 480px) !important;
+            border-radius: 20px !important;
+            padding: 24px !important;
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+            max-height: 70vh;
+          }
+        }
+      `}</style>
     </div>
   );
 }

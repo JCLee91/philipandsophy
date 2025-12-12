@@ -7,6 +7,11 @@ const GSTATIC_ENDPOINT = 'https://www.gstatic.com';
 const nextConfig: NextConfig = {
   /* config options here */
   productionBrowserSourceMaps: false,
+  turbopack: {
+    // Next.js가 상위 디렉토리의 lockfile(bun.lock 등)을 workspace root로 오탐지하는 경우가 있어
+    // 프로젝트 루트를 명시합니다.
+    root: process.cwd(),
+  },
   images: {
     unoptimized: true, // Vercel Image Optimization 비활성화 - Firebase Resize Extension 사용
     remotePatterns: [
