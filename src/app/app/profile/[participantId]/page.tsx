@@ -71,12 +71,13 @@ const getSubmissionTime = (submission: ReadingSubmission): number => {
   return 0;
 };
 
-function ProfileBookContent({ params }: ProfileBookContentProps) {
+export function ProfileBookContent({ params }: ProfileBookContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   // URL 디코딩: %EC%9D%B4%EC%9C%A4%EC%A7%80-4321 → 이윤지-4321
   const participantId = decodeURIComponent(params.participantId);
   const cohortId = searchParams.get('cohort');
+  const isPartyView = searchParams.get('from') === 'party';
 
   // ⚠️ 용어 정의:
   // matchingDate: 인증 기반 날짜 (이 날짜에 인증한 사람들의 프로필북)
@@ -252,6 +253,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 매칭 날짜 기준으로 제출물 필터링 (스포일러 방지)
   // "어제 답변 → 오늘 공개" 규칙: 10월 17일 매칭은 10월 16일까지의 제출물만 표시
   const submissions = useMemo(() => {
+    // 파티 페이지에서는 스포일러 방지 없이 전체 공개 (임시저장 제외)
+    if (isPartyView) {
+      return rawSubmissions.filter((s) => s.submittedAt);
+    }
+
     // 1. 본인은 항상 모든 제출물 볼 수 있음
     if (isSelf) {
       return rawSubmissions;
@@ -351,6 +357,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   const allQuestionsAnswers = useMemo(() => {
     return submissions.reduce((acc, sub) => {
       const key = sub.dailyQuestion;
+      if (!key || !sub.dailyAnswer) {
+        return acc;
+      }
       if (!acc[key]) {
         acc[key] = sub.dailyAnswer;
       }
@@ -363,14 +372,18 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
   useEffect(() => {
     const firstQuestion = Object.keys(allQuestionsAnswers)[0];
     if (firstQuestion) {
-      setExpandedQuestions(prev => {
-        if (prev.size === 0) {
-          return new Set([firstQuestion]);
-        }
+      // 파티에서는 항상 1번(첫 질문)만 열리도록 통일
+      if (isPartyView) {
+        setExpandedQuestions(new Set([firstQuestion]));
+        return;
+      }
+
+      setExpandedQuestions((prev) => {
+        if (prev.size === 0) return new Set([firstQuestion]);
         return prev;
       });
     }
-  }, [allQuestionsAnswers]); // allQuestionsAnswers는 이제 안정적인 참조
+  }, [allQuestionsAnswers, isPartyView]); // allQuestionsAnswers는 이제 안정적인 참조
 
   const assignments = matchingLookup?.matching.assignments ?? {};
   const viewerAssignment = currentUserId
@@ -448,6 +461,9 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 이미지 클릭 핸들러
   const handleImageClick = () => {
+    if (isPartyView) {
+      return;
+    }
     // 원본 이미지는 오직 faceImage만 사용 (폴백 없음)
     const imageUrl = participant.faceImage;
     if (imageUrl) {
@@ -518,8 +534,11 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
           {/* 프로필 이미지 (컨테이너 위로 겹침) */}
           <div className="absolute left-1/2 transform -translate-x-1/2 top-[36px] z-10">
             <div
-              className="relative w-[80px] h-[80px] cursor-pointer transition-transform active:scale-95"
-              onClick={handleImageClick}
+              className={[
+                'relative w-[80px] h-[80px] transition-transform',
+                isPartyView ? 'cursor-default' : 'cursor-pointer active:scale-95',
+              ].join(' ')}
+              onClick={isPartyView ? undefined : handleImageClick}
             >
               <Avatar className="w-full h-full border-[3px] border-[#31363e]">
                 {getResizedImageUrl(participant.profileImageCircle || participant.profileImage) !== (participant.profileImageCircle || participant.profileImage) && (
@@ -551,19 +570,28 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
               <div className="flex flex-col items-center pt-[48px] pb-[32px]">
                 <div className="flex flex-col items-center gap-2 mb-[32px]">
                   <button
-                    onClick={() => setProfileImageDialogOpen(true)}
-                    className="flex items-center gap-1 transition-opacity hover:opacity-70"
+                    onClick={() => {
+                      if (isPartyView) return;
+                      setProfileImageDialogOpen(true);
+                    }}
+                    className={[
+                      'flex items-center gap-1 transition-opacity',
+                      isPartyView ? 'cursor-default' : 'hover:opacity-70',
+                    ].join(' ')}
+                    disabled={isPartyView}
                   >
                     <h2 className="text-[20px] font-bold leading-[1.4] text-[#31363e]">
                       {firstName}
                     </h2>
-                    <img
-                      src="/icons/chevron.svg"
-                      alt="프로필 이미지 보기"
-                      width={20}
-                      height={20}
-                      className="shrink-0"
-                    />
+                    {!isPartyView && (
+                      <img
+                        src="/icons/chevron.svg"
+                        alt="프로필 이미지 보기"
+                        width={20}
+                        height={20}
+                        className="shrink-0"
+                      />
+                    )}
                   </button>
                 </div>
 
@@ -679,7 +707,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                                   {answer}
                                 </p>
                                 {/* 좋아요 버튼 */}
-                                {currentUserId && (() => {
+                                {!isPartyView && currentUserId && (() => {
                                   const submissionForQuestion = submissions.find(s => s.dailyQuestion === question);
                                   return submissionForQuestion?.id ? (
                                     <div className="flex justify-center pt-4 mt-3 border-t border-white/50">
@@ -770,7 +798,7 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                   </p>
                 </div>
                 {/* 좋아요 버튼 */}
-                {currentUserId && selectedSubmission.id && (
+                {!isPartyView && currentUserId && selectedSubmission.id && (
                   <div className="flex justify-center pt-4 mt-2 border-t border-[#F2F4F6]">
                     <LikeButton
                       targetId={`${selectedSubmission.id}_review`}

@@ -3,11 +3,11 @@
 import PageTransition from '@/components/PageTransition';
 import TopBar from '@/components/TopBar';
 
-export default function LoadingSkeleton() {
+export default function LoadingSkeleton({ title = '오늘의 서재' }: { title?: string }) {
   return (
     <PageTransition>
       <div className="app-shell flex flex-col overflow-hidden">
-        <TopBar title="오늘의 서재" />
+        <TopBar title={title} />
         <main className="app-main-content flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-md px-6 w-full">
             <div className="pb-6">

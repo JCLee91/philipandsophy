@@ -11,6 +11,7 @@ import {
   query,
   where,
   orderBy,
+  documentId,
   Timestamp,
   QueryConstraint,
   runTransaction,
@@ -73,6 +74,91 @@ export async function getParticipantById(
     ...docSnap.data(),
   } as Participant;
 }
+
+/**
+ * 여러 참가자 조회 (ID 목록으로)
+ * Firestore 'in' 쿼리 제한(30개)을 고려하여 청크 단위로 처리
+ */
+export async function getParticipantsByIds(ids: string[]): Promise<Participant[]> {
+  if (!ids || ids.length === 0) return [];
+
+  const db = getDb();
+  const CHUNK_SIZE = 30; // Firestore 'in' query limit
+  const uniqueIds = [...new Set(ids)]; // Remove duplicates, preserve first-seen order
+  const chunks = [];
+
+  for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+    chunks.push(uniqueIds.slice(i, i + CHUNK_SIZE));
+  }
+
+  const results = await Promise.all(
+    chunks.map(async (chunkIds) => {
+      const q = query(
+        collection(db, COLLECTIONS.PARTICIPANTS),
+        where(documentId(), 'in', chunkIds)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as Participant
+      );
+    })
+  );
+
+  const byId = new Map<string, Participant>();
+  results.flat().forEach((participant) => byId.set(participant.id, participant));
+
+  // Preserve requested order, drop missing IDs.
+  return uniqueIds.map((id) => byId.get(id)).filter(Boolean) as Participant[];
+}
+
+function normalizePhoneNumber(phoneNumber: string) {
+  return phoneNumber.replace(/\D/g, '');
+}
+
+/**
+ * 여러 참가자 조회 (전화번호 목록으로)
+ * - phoneNumber 필드는 하이픈 제거된 숫자 문자열로 저장됨을 전제로 합니다.
+ * - Firestore 'in' 쿼리 제한(30개)을 고려하여 청크 단위로 처리합니다.
+ */
+export async function getParticipantsByPhoneNumbers(phoneNumbers: string[]): Promise<Participant[]> {
+  if (!phoneNumbers || phoneNumbers.length === 0) return [];
+
+  const db = getDb();
+  const CHUNK_SIZE = 30; // Firestore 'in' query limit
+  const normalized = phoneNumbers
+    .map(normalizePhoneNumber)
+    .filter((v) => v.length > 0);
+  const uniqueNumbers = [...new Set(normalized)];
+
+  const chunks: string[][] = [];
+  for (let i = 0; i < uniqueNumbers.length; i += CHUNK_SIZE) {
+    chunks.push(uniqueNumbers.slice(i, i + CHUNK_SIZE));
+  }
+
+  const results = await Promise.all(
+    chunks.map(async (chunkNumbers) => {
+      const q = query(
+        collection(db, COLLECTIONS.PARTICIPANTS),
+        where('phoneNumber', 'in', chunkNumbers)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as Participant
+      );
+    })
+  );
+
+  return results.flat();
+}
+
 
 /**
  * Firestore 쿼리 타임아웃 (네트워크 무한 대기 방지)

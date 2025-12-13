@@ -16,6 +16,7 @@ import {
   query,
   where,
   orderBy,
+  documentId,
   Timestamp,
   setDoc,
   onSnapshot,
@@ -65,6 +66,44 @@ export const getCohortById = async (id: string): Promise<Cohort | null> => {
     id: snapshot.id,
     ...snapshot.data(),
   } as Cohort;
+};
+
+/**
+ * Get multiple cohorts by IDs (chunked for Firestore 'in' query limit)
+ */
+export const getCohortsByIds = async (ids: string[]): Promise<Cohort[]> => {
+  if (!ids || ids.length === 0) return [];
+
+  const db = getDb();
+  const CHUNK_SIZE = 30; // Firestore 'in' query limit
+  const uniqueIds = [...new Set(ids)];
+  const chunks: string[][] = [];
+
+  for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+    chunks.push(uniqueIds.slice(i, i + CHUNK_SIZE));
+  }
+
+  const results = await Promise.all(
+    chunks.map(async (chunkIds) => {
+      const q = query(
+        collection(db, COLLECTIONS.COHORTS),
+        where(documentId(), 'in', chunkIds)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as Cohort
+      );
+    })
+  );
+
+  const byId = new Map<string, Cohort>();
+  results.flat().forEach((cohort) => byId.set(cohort.id, cohort));
+
+  return uniqueIds.map((id) => byId.get(id)).filter(Boolean) as Cohort[];
 };
 
 /**
