@@ -1,4 +1,6 @@
-# 배포 전 최종 검증 체크리스트
+# 배포 전 최종 검증 체크리스트 (Archive)
+
+이 문서는 특정 시점/브랜치의 배포 검증 기록입니다. 현재 운영 체크는 `docs/setup/internal-service-secret.md` 및 `docs/setup/firebase.md` 등을 기준으로 진행하세요.
 
 **작성일**: 2025-11-10
 **브랜치**: refactor/random-matching-v2

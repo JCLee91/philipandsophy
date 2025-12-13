@@ -1,9 +1,9 @@
 # 필립앤소피 독서 소셜클럽 플랫폼
 
 **버전**: V1.1 (프로덕션 배포 완료)
-**최종 업데이트**: 2025-11-04
+**최종 업데이트**: 2025-12-13
 
-Next.js 15 + React 19 + Firebase 기반의 독서 프로그램 참가자 전용 웹 플랫폼입니다.
+Next.js 16 + React 19 + Firebase 기반의 독서 프로그램 참가자 전용 웹 플랫폼입니다.
 
 ## 📖 프로젝트 소개
 
@@ -112,7 +112,7 @@ src/
 cp .env.local.example .env.local
 ```
 
-`.env.local` 파일에 Firebase 설정 및 네이버 API 키를 입력합니다:
+`.env.local` 파일에 Firebase 설정 및 네이버 API 키를 입력합니다 (전체 목록은 `.env.local.example` 참고):
 
 ```env
 # Firebase 설정
@@ -126,6 +126,14 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 # 네이버 책 검색 API (서버 사이드 전용)
 NAVER_CLIENT_ID=your_naver_client_id
 NAVER_CLIENT_SECRET=your_naver_client_secret
+
+# 푸시 알림 (클라이언트 공개키)
+NEXT_PUBLIC_FCM_VAPID_KEY=your_fcm_vapid_public_key
+NEXT_PUBLIC_WEBPUSH_VAPID_KEY=your_webpush_vapid_public_key
+
+# reCAPTCHA Enterprise (Firebase App Check / Phone Auth)
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
+NEXT_PUBLIC_RECAPTCHA_PROJECT_ID=your_recaptcha_project_id
 ```
 
 Firebase 설정 방법은 [Firebase 설정 가이드](./docs/setup/firebase.md)를 참고하세요.
@@ -151,36 +159,19 @@ npm run dev
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 결과를 확인할 수 있습니다.
 
-### 4. Firebase 데이터 시딩 (선택사항)
+### 4. 데이터 작업 스크립트 (선택사항)
 
-개발 환경에서 테스트 데이터를 생성하려면:
+이 레포지토리는 범용 “시드 데이터 생성” 스크립트를 기본 제공하지 않습니다.
+
+대신 `src/scripts/` / `scripts/`에 마이그레이션/정리/검증 스크립트가 있으며, 운영 DB에 영향을 줄 수 있으니 주의해서 사용하세요. 자세한 목록은 `scripts/README.md`를 참고하세요.
 
 ```bash
-# 모든 데이터 시딩 (cohorts + participants + notices + submissions + templates)
-npm run seed:all
-
-# 개별 시딩
-npm run seed:cohorts              # 코호트 및 참가자
-npm run seed:notices              # 공지사항
-npm run seed:submissions          # 독서 인증
-npm run seed:admin                # 관리자 참가자 (admin, admin2, admin3)
-npm run seed:real-users           # 실유저 추가 (user-junyoung, user-hyunji)
-npm run seed:notice-templates     # 공지 템플릿 시딩 (5개 기본 템플릿)
-
-# 데이터 정리
-npm run cleanup:dummy             # 더미 데이터 삭제 (더미 참가자 20명 + 테스트 공지 3개)
+npm run audit:schema
+npm run stats
+npm run fix:duplicate-submissions
+npm run migrate:storage
+npm run migrate:notices-submissions
 ```
-
-**사용자 시스템**:
-- **슈퍼 관리자 (1명)**: 전체 프로필 열람 권한, 프로필 리스트 미표시
-  - `admin` (운영자): 01000000001 (`isSuperAdmin: true`)
-- **일반 관리자 (2명)**: 공지사항 관리 권한, 프로필 열람 제약 동일
-  - `admin2` (문준영): 42633467921 (`isAdministrator: true`)
-  - `admin3` (김현지): 42627615193 (`isAdministrator: true`)
-- **일반 참가자 (2명)**: 표준 사용자 권한
-  - `user-junyoung` (문준영): 42633467921
-  - `user-hyunji` (김현지): 42627615193
-- **Ghost 참가자**: 테스트용 계정 (`isGhost: true`, 프로필 리스트 미표시)
 
 ## ✨ 주요 기능
 
@@ -256,79 +247,59 @@ type ReadingSubmission = {
 ## 🛠️ 기술 스택
 
 ### 프레임워크 & UI
-- **Next.js 15.1.0** - App Router, React Server Components
-- **React 19** - 최신 React 기능 활용
-- **TypeScript 5** - 타입 안전성
-- **Tailwind CSS 3.4** - 유틸리티 우선 CSS
-- **Shadcn UI** - 재사용 가능한 컴포넌트 라이브러리
-- **Pretendard Variable** - 한글 웹폰트
-- **Recharts** - Data Center 차트 라이브러리
+- **Next.js 16** - App Router
+- **React 19** - UI 라이브러리
+- **TypeScript 5.9** - 타입 안전성
+- **Tailwind CSS 4** - 유틸리티 우선 CSS
+- **shadcn/ui (Radix UI)** - 재사용 가능한 UI 컴포넌트 기반
+- **Framer Motion 12** - 애니메이션
+- **Recharts 3** - Data Center 차트 라이브러리
+- **lucide-react** - 아이콘 라이브러리
 
 ### 백엔드 & 인프라
-- **Firebase Firestore** - NoSQL 데이터베이스 (6개 컬렉션)
-- **Firebase Storage** - 이미지 및 파일 저장
-- **Firebase Cloud Functions** - 예약 매칭 및 서버리스 작업
+- **Firebase** - Firestore / Storage / Auth
+- **Firebase Cloud Functions** - 예약 작업 및 서버리스 백엔드 (`functions/`)
 - **Firebase Cloud Messaging (FCM)** - Android/Desktop 푸시 알림
 - **Web Push API** - iOS Safari 푸시 알림 (VAPID)
-- **Google Cloud Run** - 장기 실행 AI 매칭 작업 위임
+- **Vercel** - Next.js 배포
 
 ### 상태 관리 & 데이터
 - **@tanstack/react-query v5** - 서버 상태 관리 (Data Center, 채팅 등)
 - **Firebase Realtime Subscriptions** - `onSnapshot` 실시간 구독 (프로필북)
-- **Zustand v4** - 전역 상태 관리
+- **Zustand v5** - 전역 상태 관리
 - **React Hook Form v7** + **Zod v3** - 폼 처리 및 검증
 
 ### AI & 외부 API
-- **OpenAI API** - GPT-4o 기반 AI 매칭 및 인사이트 생성
-- **Naver Book Search API** - 책 검색 자동완성
-- **Web Push Protocol** - 표준 푸시 알림 (Apple/Mozilla)
+- **Naver Book Search API** - 책 검색 자동완성 (서버 사이드 프록시)
+- **AI SDK** - OpenAI/Anthropic/Google Provider 연동 (기능별 사용)
+- **reCAPTCHA Enterprise** - Firebase App Check / Phone Auth 보조
 
 ### 유틸리티 & 도구
-- **lucide-react** - 아이콘 라이브러리
-- **date-fns v4** - 날짜 조작
-- **es-toolkit v1** - 유틸리티 함수 (lodash 대체)
-- **react-use v17** - React 훅 모음
-- **ts-pattern v5** - 타입 안전 패턴 매칭
-- **framer-motion v11** - 애니메이션
-- **axios v1.7.9** - HTTP 클라이언트
+- **date-fns v4 / date-fns-tz** - 날짜/타임존 처리
+- **sharp** - 이미지 처리
+- **dotenv** - 스크립트 환경 변수 로딩
 
 ## 📝 사용 가능한 명령어
 
-### 개발
+### 개발/검증
 ```bash
-npm run dev              # 개발 서버 시작 (Turbopack)
-npm run build            # 프로덕션 빌드
-npm start                # 프로덕션 서버 시작
-npm run lint             # ESLint 실행
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run typecheck
+npm run test
 ```
 
-### Firebase 데이터 시딩
+### 운영/데이터 스크립트 (주의)
+`package.json` 및 `scripts/README.md`를 참고하세요.
+
 ```bash
-npm run seed:cohorts              # 코호트 및 참가자 시딩
-npm run seed:notices              # 공지사항 시딩
-npm run seed:submissions          # 독서 인증 시딩
-npm run seed:admin                # 관리자 참가자 시딩 (admin, admin2, admin3)
-npm run seed:real-users           # 실유저 추가 (user-junyoung, user-hyunji)
-npm run seed:notice-templates     # 공지 템플릿 시딩 (5개 기본 템플릿)
-npm run seed:all                  # 모든 데이터 시딩
-
-# 데이터 정리
-npm run cleanup:dummy             # 더미 데이터 삭제
-npm run cleanup:dm                # DM 메시지 정리
-npm run reset:user-submissions    # 사용자 독서 인증 초기화
-npm run check:user-data           # 사용자 데이터 검증
-npm run reset:push-tokens         # 푸시 토큰 초기화 (--dry-run 지원)
-npm run reset:admin-push          # 관리자 푸시 토큰 정리
-npm run cleanup:android-webpush   # Android Web Push 정리
-
-# 유틸리티
-npm run convert:webp              # 이미지 WebP 변환
-npm run verify:schema             # Firebase 스키마 검증
-```
-
-### 타입 체크
-```bash
-npx tsc --noEmit         # TypeScript 타입 체크
+npm run audit:schema
+npm run stats
+npm run fix:duplicate-submissions
+npm run migrate:storage
+npm run migrate:notices-submissions
 ```
 
 ### Firebase CLI
@@ -427,44 +398,14 @@ firebase deploy          # Firebase 배포
 
 ## 📚 프로젝트 문서
 
-### 📖 종합 문서 (Complete Documentation)
-- **[문서 인덱스](./docs/README.md)** - 📑 전체 문서 네비게이션 및 빠른 참조
-
-### 🚀 시작하기 (Getting Started)
-- **[CLAUDE.md](./CLAUDE.md)** - 프로젝트 개발 가이드 (AI 어시스턴트용, 필독)
-- **[개발 환경 설정](./docs/development/setup-guide.md)** ✨ NEW - 초기 설정부터 배포까지 완벽 가이드
-- **[Firebase 설정](./docs/setup/firebase.md)** - Firebase 프로젝트 생성 및 연동
-- **[Admin SDK 설정](./docs/setup/admin-sdk.md)** - Firebase Admin SDK 구성
-
-### 🏗️ 기획 및 아키텍처 (Planning & Architecture)
-- **[PRD 종합판](./docs/architecture/prd-comprehensive.md)** ✨ NEW - 제품 요구사항 완벽 문서 (70+ 페이지)
-- **[TRD 종합판](./docs/architecture/trd-comprehensive.md)** ✨ NEW - 기술 요구사항 완벽 문서
-- **[시스템 아키텍처](./docs/architecture/system-architecture.md)** ✨ NEW - 전체 시스템 구조 및 데이터 흐름
-- **[정보 구조 (IA)](./docs/architecture/ia.md)** - 앱 구조 및 사용자 여정
-
-### 🗄️ 데이터베이스 (Database)
-- **[Firestore 스키마](./docs/database/schema.md)** ✨ V1.1 - 6개 컬렉션 완벽 문서화 (notice_templates 추가)
-- **[쿼리 패턴 가이드](./docs/database/query-patterns.md)** - React Query 통합 및 실시간 구독
-- **[DB Best Practices](./docs/database/best-practices.md)** - 모범 사례 및 비용 최적화
-
-### 🔌 API 문서 (API Documentation)
-- **[API 레퍼런스](./docs/api/api-reference.md)** ✨ V1.1 - 40+ Firebase 함수 및 외부 API 완벽 레퍼런스
-- **[Data Center API](./docs/api/datacntr-api.md)** ✨ NEW - 30+ 관리자 API 엔드포인트 문서
-
-### 🎨 디자인 시스템 (Design System)
-- **[디자인 시스템 종합](./docs/design/design-system.md)** ✨ NEW - 색상, 타이포그래피, 컴포넌트 완벽 가이드
-- **[버튼 시스템](./docs/design/button-system.md)** - 통일된 버튼 스타일 가이드
-- **[UI 디자인 가이드](./docs/design/ui-guide.md)** - Shimmer 애니메이션 시스템
-
-### ⚡ 성능 최적화 (Performance)
-- **[성능 최적화 가이드](./docs/optimization/performance.md)** - React Query 3단계 캐싱 (69.5% 읽기 감소)
-- **[데이터베이스 최적화](./docs/optimization/database.md)** - Firebase 쿼리 및 구독 최적화
-
-### 🚧 구현 가이드 (Implementation)
-- **[Data Center 구현](./docs/implementation/datacenter-implementation-guide.md)** - 관리자 대시보드 구현 로드맵
-
-### 🐛 문제 해결 (Troubleshooting)
-- **[iOS PWA 스크롤 버그](./docs/troubleshooting/ios-pwa-scroll.md)** - iOS PWA position:fixed 버그 해결
+- **문서 인덱스**: `docs/README.md`
+- **개발 가이드**: `docs/development/setup-guide.md`, `CLAUDE.md`
+- **아키텍처**: `docs/architecture/system-architecture.md`, `docs/architecture/prd.md`, `docs/architecture/trd.md`, `docs/architecture/ia.md`
+- **데이터베이스**: `docs/database/schema.md`, `docs/database/query-patterns.md`, `docs/database/best-practices.md`
+- **설정(Setup)**: `docs/setup/firebase.md`, `docs/setup/push-notifications.md`, `docs/setup/web-push-implementation.md`, `docs/setup-recaptcha-enterprise.md`
+- **API 레퍼런스**: `docs/api/api-reference.md`
+- **트러블슈팅**: `docs/troubleshooting/ios-pwa-scroll.md`
+- **스크립트 가이드**: `scripts/README.md`
 
 ## 🔒 보안 주의사항
 
@@ -492,30 +433,5 @@ firebase deploy          # Firebase 배포
 
 ---
 
-**프로젝트 버전**: V1.1
-**최종 업데이트**: 2025-11-04
-**배포 상태**: ✅ 프로덕션 배포 완료 (Vercel)
-**데이터베이스**: 6개 컬렉션 (notice_templates 추가)
-**API 엔드포인트**: 40+ Firebase 함수 + 30+ Data Center API
-**문서 상태**: ✅ 종합 문서화 완료
-
-Built with ❤️ using [EasyNext](https://github.com/easynext/easynext)
-
-### Dry-run 옵션
-
-데이터 정리/초기화 스크립트는 `--dry-run` 플래그를 제공해 실제로 데이터를 변경하지 않고 결과를 미리 확인할 수 있습니다.
-
-사용 예시:
-
-```bash
-# 모든 푸시 토큰 초기화를 시뮬레이션 (실제 변경 없음)
-npm run reset:push-tokens -- --dry-run
-
-# admin 푸시 토큰 정리를 시뮬레이션
-npm run reset:admin-push -- --dry-run
-
-# FCM 사용자 Web Push 정리를 시뮬레이션
-node scripts/cleanup-android-webpush.mjs --dry-run
-```
-
-실제 변경을 적용하려면 `--dry-run` 없이 실행하고, `reset:push-tokens`는 기본 확인 프롬프트를 제공하며 `--force`로 건너뛸 수 있습니다.
+**프로젝트 버전**: V1.1  
+**최종 업데이트**: 2025-12-13

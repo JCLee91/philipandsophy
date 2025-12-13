@@ -74,7 +74,7 @@ interface Notice {
 - [ ] 기존 공지 작성 화면에 "템플릿에서 선택" 탭 추가
 
 ### Phase 4: Seed Data (Step 6)
-- [ ] `seed-notice-templates.ts` - 기본 템플릿 생성 스크립트
+- [ ] 기본 템플릿 생성 스크립트 (현재 레포지토리에는 별도 seed 스크립트 없음 — 필요 시 `scripts/` 또는 `src/scripts/`에 추가)
 
 ### Phase 5: Integration (Step 7-8)
 - [ ] datacntr 공지 관리 페이지 통합

@@ -1,11 +1,11 @@
 # Push Notification Helpers Architecture
 
-**Last Updated**: 2025-10-21
+**Last Updated**: 2025-12-13
 **Status**: ✅ Production Ready
 
 ## Overview
 
-Unified push notification helper system that provides consistent status detection across all platforms (FCM + Web Push) with proper server/client separation for Next.js 15.
+Unified push notification helper system that provides consistent status detection across all platforms (FCM + Web Push) with proper server/client separation for Next.js App Router (v16).
 
 ---
 

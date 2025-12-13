@@ -1,4 +1,6 @@
-# 코드 리뷰: 데이터센터 코호트 및 유저 추가 로직
+# 코드 리뷰: 데이터센터 코호트 및 유저 추가 로직 (Archive)
+
+이 문서는 특정 시점의 코드 리뷰 기록입니다.
 
 ## 1. 분석 대상
 -   **Frontend:** `src/app/datacntr/cohorts/new/page.tsx` (기수 생성 UI)

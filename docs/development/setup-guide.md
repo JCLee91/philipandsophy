@@ -1,7 +1,7 @@
 # Development Setup & Workflow Guide
 
-**Last Updated**: 2025-10-16
-**Document Version**: v1.0.0
+**Last Updated**: 2025-12-13
+**Document Version**: v1.0.1
 **Category**: development
 
 ---
@@ -312,7 +312,7 @@ npm run dev
 
 - **URL**: http://localhost:3000
 - **Hot Reload**: 파일 저장 시 자동 새로고침
-- **Turbopack**: Next.js 15의 빠른 번들러 사용
+- **Dev bundler**: Next.js dev 서버 (Turbopack 사용 가능)
 
 **포트 변경**:
 ```bash
@@ -357,34 +357,19 @@ npm run lint -- --fix
 
 ---
 
-### Firebase 데이터 시딩
+### 데이터 작업 (선택사항)
 
-개발 환경에서 테스트 데이터를 생성합니다.
+이 레포지토리는 범용 “시드 데이터 생성” 스크립트를 기본 제공하지 않습니다.
+
+대신 `src/scripts/` / `scripts/`에 마이그레이션/정리/검증 스크립트가 있으며, 운영 DB에 영향을 줄 수 있으니 주의해서 사용하세요.
 
 ```bash
-# 모든 데이터 시딩 (cohorts + participants + notices + submissions)
-npm run seed:all
-
-# 개별 시딩
-npm run seed:cohorts       # 코호트 및 참가자
-npm run seed:notices       # 공지사항
-npm run seed:submissions   # 독서 인증
-npm run seed:admin         # 관리자 참가자 (admin, admin2, admin3)
-npm run seed:real-users    # 실유저 추가 (user-junyoung, user-hyunji)
-
-# 데이터 정리
-npm run cleanup:dummy      # 더미 데이터 삭제 (더미 참가자 20명 + 테스트 공지 3개)
-npm run cleanup:dm         # DM 메시지 정리
-npm run reset:user-submissions  # 사용자 독서 인증 초기화
-npm run check:user-data    # 사용자 데이터 검증
-```
-
-**시딩 순서** (처음 시작 시):
-```bash
-1. npm run seed:cohorts      # 기수 및 참가자 생성
-2. npm run seed:admin        # 관리자 계정 생성
-3. npm run seed:notices      # 공지사항 생성
-4. npm run seed:submissions  # 독서 인증 생성
+# 예시 (package.json 기준)
+npm run fix:duplicate-submissions
+npm run migrate:storage
+npm run migrate:notices-submissions
+npm run audit:schema
+npm run stats
 ```
 
 ---
@@ -392,188 +377,21 @@ npm run check:user-data    # 사용자 데이터 검증
 ### 이미지 최적화
 
 ```bash
-# 모든 이미지를 WebP 형식으로 변환
-npm run convert:webp
+# 랜딩 이미지 변환/최적화
+npm run convert:landing-images
 ```
 
 ---
 
 ## Scripts Documentation
 
-### 데이터 시딩 스크립트
+스크립트는 `package.json` 및 `scripts/README.md`를 단일 기준으로 관리합니다.
 
-#### `seed:cohorts` - 코호트 및 참가자 시딩
-
-**파일**: `scripts/seed-cohorts-participants.ts`
-
-**실행**:
 ```bash
-npm run seed:cohorts
+# TypeScript 스크립트 직접 실행
+npx tsx src/scripts/<file>.ts
+npx tsx scripts/<file>.ts
 ```
-
-**동작**:
-1. `cohort1` (1기) 생성
-2. 20명의 더미 참가자 생성 (dummy-01 ~ dummy-20)
-3. 각 참가자에 프로필 이미지, 직업, 소개 등 설정
-
-**생성되는 데이터**:
-```typescript
-// 코호트
-{
-  id: 'cohort1',
-  name: '1기',
-  startDate: '2025-01-01',
-  endDate: '2025-03-31',
-  isActive: true
-}
-
-// 참가자 (예시)
-{
-  id: 'dummy-01',
-  cohortId: 'cohort1',
-  name: '더미 참가자 01',
-  phoneNumber: '01000000101',
-  gender: 'male',
-  occupation: '개발자',
-  bio: '독서를 좋아하는 개발자입니다.',
-  // ...
-}
-```
-
----
-
-#### `seed:admin` - 관리자 계정 시딩
-
-**파일**: `scripts/seed-admin.ts`
-
-**실행**:
-```bash
-npm run seed:admin
-```
-
-**생성되는 관리자** (3명):
-1. **admin** (운영자)
-   - ID: `admin`
-   - Phone: `01000000001`
-   - isAdministrator: `true`
-
-2. **admin2** (문준영)
-   - ID: `admin2`
-   - Phone: `42633467921`
-   - isAdministrator: `true`
-
-3. **admin3** (김현지)
-   - ID: `admin3`
-   - Phone: `42627615193`
-   - isAdministrator: `true`
-
----
-
-#### `seed:real-users` - 실유저 계정 추가
-
-**파일**: `scripts/add-real-users.ts`
-
-**실행**:
-```bash
-npm run seed:real-users
-```
-
-**생성되는 실유저** (2명):
-1. **user-junyoung** (문준영)
-   - Phone: `42633467921` (admin2와 동일)
-   - isAdministrator: `false`
-
-2. **user-hyunji** (김현지)
-   - Phone: `42627615193` (admin3와 동일)
-   - isAdministrator: `false`
-
-**차이점**: 같은 전화번호를 사용하지만 권한이 다릅니다.
-
----
-
-#### `seed:notices` - 공지사항 시딩
-
-**파일**: `scripts/seed-notices.ts`
-
-**동작**: 3개의 테스트 공지사항 생성
-
----
-
-#### `seed:submissions` - 독서 인증 시딩
-
-**파일**: `scripts/seed-submissions.ts`
-
-**동작**: 각 참가자별로 5개의 독서 인증 생성
-
----
-
-#### `cleanup:dummy` - 더미 데이터 정리
-
-**파일**: `scripts/cleanup-dummy-data.ts`
-
-**실행**:
-```bash
-npm run cleanup:dummy
-```
-
-**삭제되는 데이터**:
-- ID가 `dummy-`로 시작하는 모든 참가자 (20명)
-- 제목에 "테스트"가 포함된 모든 공지사항 (3개)
-
-**보존되는 데이터**:
-- 관리자 계정 (admin, admin2, admin3)
-- 실유저 계정 (user-junyoung, user-hyunji)
-- 실제 참가자의 독서 인증
-
----
-
-### 유틸리티 스크립트
-
-#### `check:user-data` - 사용자 데이터 검증
-
-**실행**:
-```bash
-npm run check:user-data
-```
-
-**동작**: Firestore 데이터 무결성 확인
-- 참가자 수 확인
-- 독서 인증 수 확인
-- 공지사항 수 확인
-
----
-
-### Firebase Admin 스크립트
-
-#### `set:admin-claims` - Custom Claims 설정
-
-**파일**: `scripts/set-admin-claims.ts`
-
-**실행**:
-```bash
-npm run set:admin-claims
-```
-
-**동작**: Firebase Auth 사용자에게 관리자 권한 설정
-
-```typescript
-// Custom Claims 설정
-{
-  isAdministrator: true,
-  canManageMatching: true
-}
-```
-
----
-
-#### `verify:admin-claims` - Custom Claims 확인
-
-**실행**:
-```bash
-npm run verify:admin-claims
-```
-
-**동작**: 관리자 권한 설정 확인
 
 ---
 
@@ -1168,7 +986,7 @@ const title = participant?.currentBookTitle ?? '책 미설정';
 
 ---
 
-#### 6. Next.js 15 params 에러
+#### 6. Next.js params 타입 에러 (Next.js 15+)
 
 **증상**:
 ```
@@ -1182,7 +1000,7 @@ export default function Page({ params }: { params: { id: string } }) {
   const { id } = params; // 에러!
 }
 
-// ✅ Next.js 15 방식 (올바름)
+// ✅ Next.js 15+ 방식 (올바름)
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 }
@@ -1391,8 +1209,8 @@ import Image from 'next/image';
 1. **Prerequisites**: Node.js, npm, Git, Firebase CLI 설치
 2. **Initial Setup**: 저장소 클론, 의존성 설치, 환경 변수 설정
 3. **Firebase Setup**: 프로젝트 생성, Firestore/Storage/Auth 설정
-4. **Development**: 개발 서버 실행, 데이터 시딩, 코드 작성
-5. **Testing**: TDD 원칙 준수 (현재 미구현)
+4. **Development**: 개발 서버 실행, 코드 작성
+5. **Testing**: 테스트/타입 체크/린트로 품질 유지
 6. **Deployment**: Vercel 배포, 환경 변수 설정, 도메인 연결
 
 ### 🛠️ 필수 명령어
@@ -1402,11 +1220,12 @@ import Image from 'next/image';
 npm run dev              # 개발 서버 시작
 npm run build            # 프로덕션 빌드
 npm run lint             # 린트 실행
-npx tsc --noEmit         # 타입 체크
+npm run typecheck        # 타입 체크
+npm run test             # 테스트
 
-# 데이터 시딩
-npm run seed:all         # 모든 데이터 시딩
-npm run cleanup:dummy    # 더미 데이터 정리
+# 운영/데이터 스크립트 (주의)
+npm run audit:schema
+npm run stats
 
 # 배포
 vercel --prod            # Vercel 프로덕션 배포

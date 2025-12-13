@@ -172,5 +172,5 @@ All components now handle the 0-2AM window as part of normal operation.
 
 ---
 *This is the authoritative document for 0-2AM exception handling. For related topics, see:*
-- [Date Utils Documentation](../setup/date-utils.md)
+- [Date Logic](./date-logic.md)
 - [Firebase Schema](../optimization/database.md)

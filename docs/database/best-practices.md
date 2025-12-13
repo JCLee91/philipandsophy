@@ -547,43 +547,22 @@ http://localhost:4000
 - 무제한 읽기/쓰기 (비용 0)
 - 빠른 개발 사이클
 
-### 2. 시드 데이터 관리
+### 2. 데이터 작업 스크립트
 
-**✅ 권장: 스크립트로 시드 데이터 생성**
+**✅ 권장: 스크립트로 데이터 작업을 재현 가능하게 관리**
+
+- 스크립트 위치: `src/scripts/`, `scripts/`
+- 단일 기준: `package.json` 및 `scripts/README.md`
+
 ```bash
-# 기수 및 참가자 시드
-npm run seed:cohorts
-
-# 공지사항 시드
-npm run seed:notices
-
-# 전체 시드
-npm run seed:all
+# 예시 (운영 DB에 영향을 줄 수 있으니 주의)
+npm run audit:schema
+npm run stats
+npm run migrate:storage
+npm run migrate:notices-submissions
 ```
 
-**시드 스크립트 예시** (`scripts/seed-cohorts.ts`):
-```typescript
-import { createCohortWithId, createParticipant } from '@/lib/firebase';
-
-async function seedCohorts() {
-  // 기수 생성
-  await createCohortWithId('cohort1', {
-    name: '1기',
-    startDate: '2025-01-01',
-    endDate: '2025-03-31',
-    isActive: true,
-  });
-
-  // 참가자 생성
-  await createParticipant({
-    cohortId: 'cohort1',
-    name: '테스트 참가자',
-    phoneNumber: '01012345678',
-  });
-}
-
-seedCohorts();
-```
+시드 데이터가 필요하면 Firebase Emulator에서만 동작하도록 별도 스크립트를 추가하고, 프로덕션에서는 실행하지 않도록 방어 로직을 두는 것을 권장합니다.
 
 ### 3. 데이터 마이그레이션
 

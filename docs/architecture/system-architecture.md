@@ -1,7 +1,7 @@
 # System Architecture Documentation
 
-**Last Updated**: 2025-11-04
-**Document Version**: v1.1.0
+**Last Updated**: 2025-12-13
+**Document Version**: v1.1.1
 **Category**: architecture
 
 ---
@@ -23,7 +23,7 @@
 
 ## 개요 (Overview)
 
-**필립앤소피** 플랫폼은 Next.js 15 기반의 **서버리스 아키텍처**를 채택한 독서 소셜클럽 웹 애플리케이션입니다. Firebase를 백엔드로 활용하여 완전한 서버리스 환경에서 운영되며, Vercel에 배포되어 글로벌 엣지 네트워크를 통해 제공됩니다.
+**필립앤소피** 플랫폼은 Next.js 16 기반의 **서버리스 아키텍처**를 채택한 독서 소셜클럽 웹 애플리케이션입니다. Firebase를 백엔드로 활용하여 완전한 서버리스 환경에서 운영되며, Vercel에 배포되어 글로벌 엣지 네트워크를 통해 제공됩니다.
 
 ### 핵심 특징
 
@@ -37,9 +37,9 @@
 
 | 계층 | 기술 |
 |------|------|
-| **프론트엔드** | Next.js 15 (App Router), React 19, TypeScript 5 |
+| **프론트엔드** | Next.js 16 (App Router), React 19, TypeScript 5 |
 | **UI 라이브러리** | Tailwind CSS, Shadcn UI, Lucide React |
-| **상태 관리** | React Query v5 (서버 상태), Zustand v4 (전역 상태) |
+| **상태 관리** | React Query v5 (서버 상태), Zustand v5 (전역 상태) |
 | **백엔드** | Firebase Firestore, Firebase Storage, Firebase Auth |
 | **외부 API** | Naver Book Search API, OpenAI API (AI Matching) |
 | **배포** | Vercel (Edge Network) |
@@ -65,7 +65,7 @@
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   Next.js 15 Application                         │
+│                   Next.js 16 Application                         │
 │  ┌──────────────┬──────────────────┬──────────────────────┐    │
 │  │   Landing    │   Member Portal  │    Data Center       │    │
 │  │     (/)      │      (/app)      │    (Admin Only)      │    │
@@ -129,7 +129,7 @@
 
 ### Next.js App Router 구조
 
-프로젝트는 **Next.js 15 App Router**를 활용하며, 파일 시스템 기반 라우팅을 사용합니다.
+프로젝트는 **Next.js 16 App Router**를 활용하며, 파일 시스템 기반 라우팅을 사용합니다.
 
 ```
 src/app/
@@ -183,10 +183,10 @@ app/
 
 ### 동적 라우트 (Dynamic Routes)
 
-**Next.js 15**에서는 `params`와 `searchParams`가 **Promise**로 변경되었습니다:
+**Next.js 15+**에서는 `params`와 `searchParams`가 **Promise**로 변경되었습니다:
 
 ```typescript
-// ✅ 올바른 방법 (Next.js 15)
+// ✅ 올바른 방법 (Next.js 15+)
 export default async function ProfilePage({
   params,
 }: {
@@ -834,102 +834,29 @@ queryClient.invalidateQueries({ queryKey: ['participants', cohortId] });
 ```
 projectpns/
 ├── src/
-│   ├── app/                           # Next.js App Router
-│   │   ├── page.tsx                   # 랜딩페이지 (/)
-│   │   ├── layout.tsx                 # 루트 레이아웃
-│   │   ├── providers.tsx              # 전역 프로바이더
-│   │   ├── globals.css                # 전역 스타일
-│   │   │
-│   │   ├── app/                       # 웹앱 (/app)
-│   │   │   ├── page.tsx               # 접근 코드 입력
-│   │   │   ├── layout.tsx
-│   │   │   ├── chat/                  # 채팅 (/app/chat)
-│   │   │   ├── profile/               # 프로필 (/app/profile)
-│   │   │   └── program/               # 프로그램 (/app/program)
-│   │   │
-│   │   └── api/                       # API Routes
-│   │       ├── search-books/          # 네이버 책 검색
-│   │       └── admin/                 # 관리자 API
-│   │
-│   ├── components/                    # 공유 컴포넌트
-│   │   └── ui/                        # Shadcn UI 컴포넌트
-│   │
-│   ├── features/                      # 기능별 모듈
-│   │   ├── chat/                      # 채팅 기능
-│   │   │   ├── components/            # 채팅 컴포넌트
-│   │   │   ├── hooks/                 # 채팅 훅 (useMessages)
-│   │   │   └── lib/                   # 채팅 유틸리티
-│   │   │
-│   │   ├── profile/                   # 프로필 기능
-│   │   ├── submission/                # 독서 인증 기능
-│   │   └── matching/                  # AI 매칭 기능
-│   │
-│   ├── lib/                           # 공유 라이브러리
-│   │   ├── firebase/                  # Firebase 클라이언트
-│   │   │   ├── index.ts               # Firebase 초기화
-│   │   │   ├── config.ts              # Firebase 설정
-│   │   │   ├── client.ts              # Firestore 클라이언트
-│   │   │   ├── cohorts.ts             # Cohort 작업
-│   │   │   ├── participants.ts        # Participant 작업
-│   │   │   ├── submissions.ts         # Submission 작업
-│   │   │   ├── notices.ts             # Notice 작업
-│   │   │   ├── messages.ts            # Message 작업
-│   │   │   ├── storage.ts             # Storage 작업
-│   │   │   └── auth.ts                # Phone Auth
-│   │   │
-│   │   ├── naver-book-api.ts          # 네이버 책 검색 API
-│   │   ├── logger.ts                  # 로거 유틸리티
-│   │   └── utils.ts                   # 공통 유틸리티
-│   │
-│   ├── hooks/                         # 공유 React 훅
-│   │   ├── use-toast.tsx              # Toast 알림
-│   │   └── use-is-ios-standalone.ts   # iOS PWA 감지
-│   │
+│   ├── app/                           # Next.js App Router (라우트: /, /app/*, /datacntr/*, /api/*)
+│   ├── components/                    # 공유 컴포넌트 (UI 포함)
+│   ├── constants/                     # 전역 상수
+│   ├── contexts/                      # React Context
+│   ├── features/                      # 도메인 기능 모듈
+│   ├── hooks/                         # React hooks
+│   ├── lib/                           # 공용 라이브러리 (firebase/push/datacntr 등)
+│   ├── scripts/                       # tsx로 실행하는 데이터 작업 스크립트
+│   ├── services/                      # 서비스 레이어
 │   ├── stores/                        # Zustand 스토어
-│   │   └── auth-store.ts              # 인증 스토어
-│   │
-│   ├── types/                         # TypeScript 타입
-│   │   └── database.ts                # Firestore 타입
-│   │
-│   ├── constants/                     # 상수 정의
-│   │   ├── api.ts                     # API 캐시 설정
-│   │   ├── validation.ts              # 검증 규칙
-│   │   ├── search.ts                  # 검색 설정
-│   │   ├── ui.ts                      # UI 상수
-│   │   ├── auth.ts                    # 인증 상수
-│   │   └── daily-questions.ts         # 일일 질문
-│   │
-│   └── styles/                        # 추가 스타일시트
-│       └── landing.css                # 랜딩페이지 스타일
+│   ├── styles/                        # CSS/스타일 관련
+│   └── types/                         # 타입 정의
 │
+├── functions/                         # Firebase Functions (Node 20)
 ├── public/                            # 정적 파일
-│   ├── image/                         # 이미지
-│   ├── privacy-policy.html            # 개인정보처리방침
-│   ├── terms-of-service.html          # 이용약관
-│   ├── robots.txt                     # SEO
-│   └── sitemap.xml                    # SEO
-│
-├── scripts/                           # 유틸리티 스크립트
-│   ├── seed-cohorts-participants.ts   # 코호트/참가자 시딩
-│   ├── seed-notices.ts                # 공지사항 시딩
-│   ├── seed-submissions.ts            # 독서 인증 시딩
-│   ├── seed-admin.ts                  # 관리자 시딩
-│   └── cleanup-dummy-data.ts          # 더미 데이터 정리
-│
+├── scripts/                           # 운영/검증/유틸 스크립트
 ├── docs/                              # 프로젝트 문서
-│   ├── README.md                      # 문서 인덱스
-│   ├── architecture/                  # 아키텍처 문서
-│   ├── design/                        # 디자인 시스템
-│   ├── setup/                         # 설정 가이드
-│   └── optimization/                  # 최적화 가이드
-│
 ├── next.config.ts                     # Next.js 설정
 ├── tailwind.config.ts                 # Tailwind 설정
 ├── tsconfig.json                      # TypeScript 설정
-├── package.json                       # 의존성 관리
-├── .env.local                         # 환경 변수 (gitignore)
+├── package.json                       # 의존성/스크립트
 ├── firebase.json                      # Firebase 설정
-└── CLAUDE.md                          # 프로젝트 가이드
+└── CLAUDE.md                          # 개발 가이드
 ```
 
 ### Feature-Based 모듈 구조
@@ -1560,7 +1487,7 @@ logger.error('Failed to load notices', error);
 
 ### 🏗️ 기술적 하이라이트
 
-- **Next.js 15 App Router**: 파일 시스템 기반 라우팅, SSR/CSR 하이브리드
+- **Next.js 16 App Router**: 파일 시스템 기반 라우팅, SSR/CSR 하이브리드
 - **React Query + Firebase**: 서버 상태 관리와 실시간 구독의 조화
 - **4자리 접근 코드**: 간편하면서도 안전한 인증 시스템
 - **AI 매칭**: OpenAI API를 활용한 참가자 매칭 자동화
@@ -1600,7 +1527,7 @@ logger.error('Failed to load notices', error);
 
 **초기 버전**:
 - 전체 시스템 아키텍처 문서 작성
-- Next.js 15 + Firebase 서버리스 아키텍처 정의
+- Next.js App Router + Firebase 서버리스 아키텍처 정의
 - 3대 섹션 구조 (Landing, Member Portal, Data Center)
 - 인증/권한 관리 시스템
 - 데이터 흐름 및 상태 관리 전략
@@ -1615,4 +1542,4 @@ logger.error('Failed to load notices', error);
 - [API Reference Documentation](../api/api-reference.md)
 - [Development Setup & Workflow Guide](../development/setup-guide.md)
 - [Database Optimization](../optimization/database.md)
-- [PRD (Product Requirements Document)](./prd-comprehensive.md)
+- [PRD (Product Requirements Document)](./prd.md)

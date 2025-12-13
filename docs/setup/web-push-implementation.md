@@ -1853,7 +1853,7 @@ Track these metrics to ensure system health:
 
 - [Firebase Setup Guide](./firebase.md) - Complete Firebase configuration
 - [Database Schema](../optimization/database.md) - Firestore collections and types
-- [Project Architecture](../architecture/system-design.md) - Overall system design
+- [Project Architecture](../architecture/system-architecture.md) - Overall system design
 
 ---
 

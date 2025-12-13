@@ -1,6 +1,6 @@
 # Internal Service Secret Setup
 
-**Last Updated**: 2025-10-20
+**Last Updated**: 2025-12-13
 **Purpose**: Secure authentication between Firebase Functions (Cron) and Next.js API routes
 
 ---
@@ -413,9 +413,8 @@ firebase functions:log --only scheduledMatchingPreview --follow
 
 **Solution**: Use `.env` file for local development:
 ```bash
-cd functions
-echo 'INTERNAL_SERVICE_SECRET=YOUR_GENERATED_SECRET' >> .env
-npm run serve
+echo 'INTERNAL_SERVICE_SECRET=YOUR_GENERATED_SECRET' >> functions/.env
+npm --prefix functions run serve
 ```
 
 ---
@@ -520,12 +519,11 @@ Vercel env:        YOUR_GENERATED_SECRET
 
 ## Related Documentation
 
-- [Deployment Checklist](./DEPLOYMENT-CHECKLIST.md) - Production deployment steps
 - [Firebase Functions Configuration](https://firebase.google.com/docs/functions/config-env)
 - [Vercel Environment Variables](https://vercel.com/docs/concepts/projects/environment-variables)
 - [Next.js Environment Variables](https://nextjs.org/docs/basic-features/environment-variables)
 
 ---
 
-**Last Updated**: 2025-10-20
+**Last Updated**: 2025-12-13
 **Maintainer**: Development Team

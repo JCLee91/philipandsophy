@@ -221,9 +221,9 @@ export interface DailyParticipantAssignment {
 
 ## 📝 관련 문서
 
-- [랜덤 매칭 시스템 문서](./scheduled-random-matching.md)
-- [데이터베이스 마이그레이션 가이드](./database-migration.md) (작성 예정)
-- [API 변경 사항](./api-changelog.md) (작성 예정)
+- [랜덤 매칭/백엔드 요구사항(TRD)](./architecture/trd.md)
+- [마이그레이션 전략](./migration-strategy.md)
+- [API 레퍼런스](./api/api-reference.md)
 
 ---
 

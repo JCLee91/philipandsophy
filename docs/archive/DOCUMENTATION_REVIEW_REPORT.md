@@ -1,4 +1,6 @@
-# 📋 ProjectPNS Documentation Review Report
+# 📋 ProjectPNS Documentation Review Report (Archive)
+
+이 문서는 특정 시점의 문서 점검 보고서입니다. 최신 문서 구조는 `docs/README.md`를 기준으로 합니다.
 
 **Report Date**: 2025-11-04
 **Reviewer**: Claude Code (Technical Documentation Specialist)
@@ -562,7 +564,7 @@ if (dbValue) {
 15. **`/docs/setup/web-push-implementation.md`** ✅ (2025-10-21)
 16. **`/docs/setup/pwa-mobile-optimization.md`** ✅ (2025-10-13)
 17. **`/docs/setup/internal-service-secret.md`** ✅ (2025-10-20)
-18. **`/docs/setup/DEPLOYMENT-CHECKLIST.md`** ✅ (2025-10-20)
+18. **`/docs/setup/internal-service-secret.md`** ✅ (2025-10-20)
 
 #### Development Documentation
 19. **`/docs/development/setup-guide.md`** ✅ (2025-10-16)

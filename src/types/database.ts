@@ -275,6 +275,9 @@ export interface Participant {
     location: string;      // 확정된 장소
   };
 
+  // 🆕 파티 프로필북 선택 (재참여자용)
+  partyPreferredCohortId?: string; // 파티에서 보여줄 프로필북 기수 ID
+
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }

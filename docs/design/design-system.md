@@ -670,7 +670,7 @@ animation: {
 - **[Button Design System](./button-system.md)**: 통일된 버튼 디자인 시스템 상세
 - **[Animation Guide](./animation.md)**: Framer Motion 및 트랜지션 가이드
 - **[UI Guide](./ui-guide.md)**: 컴포넌트 및 Shimmer 애니메이션 가이드
-- **[TRD](../architecture/trd-comprehensive.md)**: 기술 스택 및 구현 상세
+- **[TRD](../architecture/trd.md)**: 기술 스택 및 구현 상세
 
 ---
 

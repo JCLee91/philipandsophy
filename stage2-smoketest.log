@@ -1,9 +1,0 @@
-Stage 2 - Firestore Emulator Smoke Test
-2025-10-26
-Status: Passed
-Command: PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" firebase emulators:exec --only firestore "npm run test:firestore-smoke"
-Summary:
-- Admin claim (custom token) successfully updated cohort metadata.
-- Non-admin participant update on cohort denied as expected.
-- Participant can read cohort details, update own profile fields, and create/read notices.
-Notes: Logs show PERMISSION_DENIED messages for the negative test cases (expected failures validated via assertFails).

@@ -1,4 +1,6 @@
-# 🚀 Internal Service Secret - Deployment Checklist
+# 🚀 Internal Service Secret - Deployment Checklist (Archive)
+
+이 문서는 과거 배포 시점의 체크리스트 기록입니다. 현재 기준 문서는 `docs/setup/internal-service-secret.md`를 참고하세요.
 
 **Last Updated**: 2025-11-04
 **Status**: ✅ Production Deployed and Verified

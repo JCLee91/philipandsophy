@@ -1,6 +1,6 @@
 # 필립앤소피 독서 소셜클럽 플랫폼 TRD (Technical Requirements Document)
 
-**최종 업데이트**: 2025-11-04
+**최종 업데이트**: 2025-12-13
 **프로젝트 버전**: V1.1 (통계 시스템 개선 완료)
 
 ## 1. 기술 개요
@@ -12,7 +12,7 @@
 ```
 ┌─────────────────────────────────────────────────┐
 │                  Vercel Edge                     │
-│            (Next.js 15 App Router)               │
+│            (Next.js 16 App Router)               │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
 │  │ Landing  │  │  WebApp  │  │   API    │      │
 │  │  Pages   │  │  Routes  │  │  Routes  │      │
@@ -33,12 +33,12 @@
 
 | 계층 | 기술 | 버전 | 목적 |
 |------|------|------|------|
-| **프론트엔드** | Next.js | 15.1.0 | SSR/SSG, App Router |
-| | React | 19.0.0 | UI 라이브러리 |
-| | TypeScript | 5.x | 타입 안전성 |
-| | Tailwind CSS | 3.4.x | 스타일링 |
+| **프론트엔드** | Next.js | 16.x | SSR/SSG, App Router |
+| | React | 19.x | UI 라이브러리 |
+| | TypeScript | 5.9.x | 타입 안전성 |
+| | Tailwind CSS | 4.x | 스타일링 |
 | **상태 관리** | React Query | 5.x | 서버 상태 |
-| | Zustand | 4.x | 전역 상태 |
+| | Zustand | 5.x | 전역 상태 |
 | **백엔드** | Firebase Firestore | 12.3.0 | NoSQL 데이터베이스 |
 | | Firebase Storage | 12.3.0 | 파일 저장소 |
 | **외부 API** | Naver Book API | v1.1 | 책 검색 |
@@ -82,37 +82,19 @@
 
 ## 3. 프론트엔드 아키텍처
 
-### 3.1 Next.js 15 App Router
+### 3.1 Next.js App Router (Next.js 16)
 
 #### 라우트 구조
 
-```typescript
-app/
-├── page.tsx                        // 랜딩페이지 (/)
-├── layout.tsx                      // 루트 레이아웃 (SEO, 폰트)
-├── providers.tsx                   // React Query, Theme, Firebase
-├── app/                            // 웹앱 영역
-│   ├── page.tsx                   // 접근 코드 입력 (/app)
-│   ├── layout.tsx                 // 웹앱 레이아웃
-│   ├── chat/                      // 채팅 및 공지
-│   │   ├── page.tsx
-│   │   ├── layout.tsx
-│   │   ├── today-library/         // 오늘의 서재
-│   │   │   └── page.tsx
-│   │   └── participants/          // 참가자 리스트 (iOS PWA 전용)
-│   │       └── page.tsx
-│   ├── profile/[participantId]/   // 참가자 프로필
-│   │   └── page.tsx
-│   ├── program/                   // 프로그램 소개
-│   │   └── page.tsx
-│   └── admin/                     // 관리자 패널
-│       └── matching/
-│           └── page.tsx
-└── api/                           // API Routes
-    ├── naver-book-search/
-    │   └── route.ts
-    └── seed/
-        └── route.ts
+```text
+src/app/
+├── page.tsx                     # 랜딩페이지 (/)
+├── app/                         # 참가자용 웹앱 (/app/*)
+├── datacntr/                    # 관리자용 Data Center (/datacntr/*)
+└── api/                         # Route Handlers (/api/*)
+    ├── search-books/route.ts    # 네이버 책 검색 프록시
+    ├── proxy-image/route.ts     # 이미지 프록시
+    └── ...                      # 기타 관리자/데이터센터 API
 ```
 
 #### Server Components vs Client Components
@@ -584,7 +566,7 @@ const matching = await generateAIMatching(eligibleParticipants);
 #### 엔드포인트
 
 ```
-POST /api/naver-book-search
+GET /api/search-books?query=<검색어>
 ```
 
 #### 요청
@@ -612,19 +594,19 @@ interface BookSearchResponse {
 #### 구현
 
 ```typescript
-// app/api/naver-book-search/route.ts
-export async function POST(request: Request) {
-  const { query } = await request.json();
+// src/app/api/search-books/route.ts
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const query = searchParams.get('query');
 
-  const response = await axios.get('https://openapi.naver.com/v1/search/book.json', {
-    params: { query, display: 5 },
+  const response = await fetch('https://openapi.naver.com/v1/search/book.json?query=' + encodeURIComponent(query ?? ''), {
     headers: {
       'X-Naver-Client-Id': process.env.NAVER_CLIENT_ID!,
       'X-Naver-Client-Secret': process.env.NAVER_CLIENT_SECRET!,
     },
   });
 
-  return Response.json(response.data);
+  return NextResponse.json(await response.json());
 }
 ```
 
@@ -823,11 +805,13 @@ OPENAI_API_KEY=
 {
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run build:sw && next build",
     "start": "next start",
-    "lint": "next lint",
-    "seed:all": "npm run seed:cohorts && npm run seed:notices && npm run seed:submissions",
-    "cleanup:dummy": "tsx src/scripts/cleanup-dummy-data.ts"
+    "lint": "eslint src functions/src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "migrate:storage": "tsx src/scripts/migrate-storage-structure.ts",
+    "audit:schema": "tsx scripts/audit-firestore-schema.ts"
   }
 }
 ```

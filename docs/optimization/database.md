@@ -8,8 +8,8 @@
 - **데이터베이스**: Firebase Firestore (NoSQL 문서 데이터베이스)
 - **스토리지**: Firebase Storage (이미지 파일)
 - **클라이언트 캐싱**: @tanstack/react-query v5
-- **전역 상태**: Zustand v4
-- **프레임워크**: Next.js 15 + React 19
+- **전역 상태**: Zustand v5
+- **프레임워크**: Next.js 16 + React 19
 
 ### 최적화 목표
 1. Firebase 읽기 작업 비용 절감 (60-70% 감소 목표)

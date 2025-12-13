@@ -14,10 +14,6 @@
     "fix:duplicate-submissions": "tsx src/scripts/fix-duplicate-submissions.ts",
     "migrate:storage": "tsx src/scripts/migrate-storage-structure.ts",
     "migrate:notices-submissions": "tsx src/scripts/migrate-notices-and-fix-submissions.ts",
-    "migrate:cohort3-id": "tsx src/scripts/migrate-cohort3-id.ts",
-    "migrate:cohort3-participant-ids": "tsx src/scripts/migrate-cohort3-participant-ids.ts",
-    "add:cohort3-questions": "tsx src/scripts/add-cohort3-daily-questions.ts",
-    "update:cohort3-images": "tsx src/scripts/update-cohort3-profile-images.ts",
     "update:cohort-active": "tsx src/scripts/update-cohort-active-status.ts",
     "stats": "tsx scripts/show-database-statistics.ts",
     "stats:cohort1": "tsx scripts/generate-cohort1-statistics.ts",
@@ -33,8 +29,7 @@
     "convert:landing-images": "tsx scripts/convert-landing-images.ts",
     "migrate:uid-to-latest": "tsx scripts/migrate-uid-to-latest-cohort.ts",
     "migrate:uid-to-latest:apply": "tsx scripts/migrate-uid-to-latest-cohort.ts --apply",
-    "audit:schema": "tsx scripts/audit-firestore-schema.ts",
-    "seed:test-cohort": "tsx src/scripts/seed-test-cohort.ts"
+    "audit:schema": "tsx scripts/audit-firestore-schema.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.37",

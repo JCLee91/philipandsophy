@@ -911,11 +911,11 @@ Firebase Console → Firestore → Usage 탭에서 다음 지표 확인:
 
 - [데이터베이스 스키마](./schema.md)
 - [데이터베이스 최적화 가이드](../optimization/database.md)
-- [React Query 설정](../setup/react-query.md)
+- [React Query & 성능 최적화](../optimization/performance.md)
 
 ---
 
-**최종 업데이트**: 2025년 11월 04일
+**최종 업데이트**: 2025년 12월 13일
 **문서 위치**: `docs/database/query-patterns.md`
 **문서 버전**: v1.1
 

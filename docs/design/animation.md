@@ -1,6 +1,6 @@
 # 프로필북 애니메이션 & 마이크로 인터랙션 디자인 가이드
 
-> Next.js 15 + React 19 + Tailwind CSS + Framer Motion
+> Next.js 16 + React 19 + Tailwind CSS + Framer Motion
 > 모바일 중심 디자인 (360px 기준)
 
 ---

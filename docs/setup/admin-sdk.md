@@ -41,20 +41,20 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 # 키 파일 존재 확인
 ls -la firebase-service-account.json
 
-# 시딩 테스트
-npm run seed:cohorts
+# Admin SDK 동작 확인 (예: Firestore 스키마 감사)
+npm run audit:schema
 ```
 
 ## 📝 다음 단계
 
 Service Account 키 다운로드 후:
 1. ✅ `firebase-service-account.json` 파일이 프로젝트 루트에 있는지 확인
-2. ✅ Admin SDK 시딩 스크립트 실행
+2. ✅ Admin SDK가 필요한 스크립트 실행 (예: `npm run audit:schema`, `npm run stats`)
 3. ✅ 정상 작동 확인
 
 ---
 
-**Last Updated**: 2025-11-04
+**Last Updated**: 2025-12-13
 **Version**: V1.1 (설정 검증 완료)
 **Location**: `docs/setup/admin-sdk.md`
 

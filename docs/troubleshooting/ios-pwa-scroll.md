@@ -1,6 +1,6 @@
 # iOS PWA Scroll Bug Fix
 
-**Last Updated**: 2025-10-13
+**Last Updated**: 2025-12-13
 **Version**: V1.0 (프로덕션 배포 완료)
 **Category**: troubleshooting
 
@@ -316,6 +316,6 @@ export const appRoutes = {
 ---
 
 **Related Documentation**:
-- [PWA Setup](../setup/pwa.md)
-- [Navigation System](../architecture/navigation.md)
+- [PWA Mobile Optimization](../setup/pwa-mobile-optimization.md)
+- [Information Architecture](../architecture/ia.md)
 - [Performance Optimization](../optimization/performance.md)

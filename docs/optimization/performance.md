@@ -3,7 +3,7 @@
 ## 개요 (Overview)
 
 ### 프로젝트 소개
-**필립앤소피 독서모임 회원 포털**은 Next.js 15, React 19, TypeScript, Firebase를 기반으로 구축된 독서 모임 관리 플랫폼입니다. 회원 간 소통, 독서 인증, 공지사항 관리 등의 기능을 제공합니다.
+**필립앤소피 독서모임 회원 포털**은 Next.js 16, React 19, TypeScript, Firebase를 기반으로 구축된 독서 모임 관리 플랫폼입니다. 회원 간 소통, 독서 인증, 공지사항 관리 등의 기능을 제공합니다.
 
 ### 최적화 목적
 Firebase 사용량 최적화 및 사용자 경험 개선을 위해 3단계 최적화 작업을 수행했습니다:
@@ -1857,7 +1857,7 @@ const [prefetched, setPrefetched] = useState(false);
 - **React Context vs Zustand**: https://github.com/pmndrs/zustand#comparison
 
 #### Next.js
-- **Next.js 15 최적화 가이드**: https://nextjs.org/docs/app/building-your-application/optimizing
+- **Next.js 최적화 가이드**: https://nextjs.org/docs/app/building-your-application/optimizing
 - **Code Splitting**: https://nextjs.org/docs/app/building-your-application/optimizing/lazy-loading
 
 #### Firebase

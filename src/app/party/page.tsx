@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 
 import TopBar from '@/components/TopBar';
 import PageTransition from '@/components/PageTransition';
-import PartyParticipantList from '@/components/party/PartyParticipantList';
+import PartyTabs from '@/components/party/PartyTabs';
 import LoadingSkeleton from '@/components/today-library/common/LoadingSkeleton';
+import CohortSelectModal from '@/components/party/CohortSelectModal';
 
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -34,6 +35,11 @@ export default function PartyPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [highlightParticipantId, setHighlightParticipantId] = useState<string | null>(null);
+
+    // 재참여자 프로필북 선택 관련 상태
+    const [myAllCohortParticipants, setMyAllCohortParticipants] = useState<Participant[]>([]);
+    const [showCohortSelectModal, setShowCohortSelectModal] = useState(false);
+    const [selectedCohortParticipant, setSelectedCohortParticipant] = useState<Participant | null>(null);
 
     useEffect(() => {
         async function fetchGuests() {
@@ -74,16 +80,27 @@ export default function PartyPage() {
                             const group = groups.get(phone);
                             if (!group || group.length === 0) return null;
 
+                            // 기수 순으로 정렬 (최초 기수부터)
                             const ranked = [...group].sort((a, b) => {
-                                const aActive = cohortIsActive.get(a.cohortId) ? 1 : 0;
-                                const bActive = cohortIsActive.get(b.cohortId) ? 1 : 0;
-                                if (aActive !== bActive) return bActive - aActive;
-                                return parseCohortNumber(b.cohortId) - parseCohortNumber(a.cohortId);
+                                return parseCohortNumber(a.cohortId) - parseCohortNumber(b.cohortId);
                             });
+
+                            // 재참여자의 partyPreferredCohortId 확인
+                            // 어떤 참가자든 같은 전화번호면 같은 preferredCohortId를 가짐
+                            const preferredCohortId = group.find(p => p.partyPreferredCohortId)?.partyPreferredCohortId;
+                            let selectedParticipant = ranked[0]; // 기본값: 최초 기수
+
+                            if (preferredCohortId) {
+                                // 선호 기수가 설정되어 있으면 해당 기수의 참가자 사용
+                                const preferred = ranked.find(p => p.cohortId === preferredCohortId);
+                                if (preferred) {
+                                    selectedParticipant = preferred;
+                                }
+                            }
 
                             return {
                                 phone,
-                                participant: ranked[0],
+                                participant: selectedParticipant,
                                 orderIndex: orderIndexByPhone.get(phone) ?? Number.POSITIVE_INFINITY,
                             };
                         })
@@ -93,25 +110,58 @@ export default function PartyPage() {
                     const ordered = merged.map((x) => x.participant);
 
                     const viewerPhone = normalizePhoneNumber(currentParticipant.phoneNumber);
-                    const myPartyParticipantId = viewerPhone
-                        ? (merged.find((x) => x.phone === viewerPhone)?.participant.id ?? null)
-                        : null;
+
+                    // 현재 사용자의 모든 기수 참가자 정보 저장 (재참여자 프로필북 선택용)
+                    const myAllParticipants = viewerPhone ? (groups.get(viewerPhone) ?? []) : [];
+                    const sortedMyParticipants = [...myAllParticipants].sort((a, b) =>
+                        parseCohortNumber(a.cohortId) - parseCohortNumber(b.cohortId)
+                    );
+                    setMyAllCohortParticipants(sortedMyParticipants);
+
+                    // 재참여자인지 확인 및 프로필북 선택 처리
+                    let selectedParticipant: Participant | null = null;
+                    if (sortedMyParticipants.length > 1) {
+                        // 재참여자: partyPreferredCohortId 확인
+                        const preferredCohortId = currentParticipant.partyPreferredCohortId;
+                        if (preferredCohortId) {
+                            // 이미 선택됨 → 해당 기수의 참가자 사용
+                            selectedParticipant = sortedMyParticipants.find(
+                                (p) => p.cohortId === preferredCohortId
+                            ) ?? sortedMyParticipants[0];
+                        } else {
+                            // 아직 선택 안 함 → 모달 표시
+                            setShowCohortSelectModal(true);
+                            selectedParticipant = sortedMyParticipants[0]; // 임시로 최초 기수
+                        }
+                    } else if (sortedMyParticipants.length === 1) {
+                        selectedParticipant = sortedMyParticipants[0];
+                    }
+                    setSelectedCohortParticipant(selectedParticipant);
+
+                    const myPartyParticipantId = selectedParticipant?.id ?? null;
                     setHighlightParticipantId(myPartyParticipantId);
 
                     // ✅ 정렬 정책
                     // - 파티 명단(전화번호)에 포함된 경우에만 "내 프로필북" 고정/표시
                     // - 추가로, 내 프로필북이 속한 '기수(cohortId)'의 멤버들을 우선 노출
-                    if (myPartyParticipantId) {
-                        const mine = merged.find((x) => x.participant.id === myPartyParticipantId)?.participant ?? null;
-                        if (mine) {
-                            const viewerCohortId = mine.cohortId;
-                            const withoutMe = ordered.filter((p) => p.id !== myPartyParticipantId);
-                            const sameCohort = withoutMe.filter((p) => p.cohortId === viewerCohortId);
-                            const otherCohort = withoutMe.filter((p) => p.cohortId !== viewerCohortId);
+                    if (selectedParticipant) {
+                        const viewerCohortId = selectedParticipant.cohortId;
 
-                            setParticipants([mine, ...sameCohort, ...otherCohort]);
-                            return;
-                        }
+                        // 내 프로필북을 리스트에서 선택된 기수로 교체
+                        const orderedWithSelectedCohort = ordered.map((p) => {
+                            // 같은 전화번호의 다른 기수 참가자면 선택된 기수로 교체
+                            if (viewerPhone && normalizePhoneNumber(p.phoneNumber) === viewerPhone) {
+                                return selectedParticipant;
+                            }
+                            return p;
+                        });
+
+                        const withoutMe = orderedWithSelectedCohort.filter((p) => p.id !== selectedParticipant.id);
+                        const sameCohort = withoutMe.filter((p) => p.cohortId === viewerCohortId);
+                        const otherCohort = withoutMe.filter((p) => p.cohortId !== viewerCohortId);
+
+                        setParticipants([selectedParticipant, ...sameCohort, ...otherCohort]);
+                        return;
                     }
 
                     setParticipants(ordered);
@@ -128,7 +178,7 @@ export default function PartyPage() {
     }, [currentParticipant, participantStatus]);
 
     const handleProfileClick = (participantId: string) => {
-        // 코호트 ID가 필요하지만, 파티 페이지는 기수 초월이므로 
+        // 코호트 ID가 필요하지만, 파티 페이지는 기수 초월이므로
         // 해당 참가자의 cohortId를 가져와서 사용해야 함.
         // getParticipantsByIds로 가져온 데이터에 cohortId가 있음.
         const participant = participants.find(p => p.id === participantId);
@@ -141,9 +191,44 @@ export default function PartyPage() {
         }
     };
 
+    // 프로필북 선택 핸들러
+    const handleCohortSelect = (participant: Participant) => {
+        setSelectedCohortParticipant(participant);
+        setHighlightParticipantId(participant.id);
+        setShowCohortSelectModal(false);
+
+        // participants 리스트에서 내 프로필북을 선택된 기수로 교체
+        setParticipants((prev) => {
+            const viewerPhone = normalizePhoneNumber(currentParticipant?.phoneNumber);
+            if (!viewerPhone) return prev;
+
+            const updated = prev.map((p) => {
+                if (normalizePhoneNumber(p.phoneNumber) === viewerPhone) {
+                    return participant;
+                }
+                return p;
+            });
+
+            // 정렬 유지: 내 프로필북 + 같은 기수 + 다른 기수
+            const withoutMe = updated.filter((p) => p.id !== participant.id);
+            const sameCohort = withoutMe.filter((p) => p.cohortId === participant.cohortId);
+            const otherCohort = withoutMe.filter((p) => p.cohortId !== participant.cohortId);
+
+            return [participant, ...sameCohort, ...otherCohort];
+        });
+    };
+
+    const handleCohortModalClose = () => {
+        // 닫기 시 최초 기수로 자동 설정 (CohortSelectModal에서 처리됨)
+        setShowCohortSelectModal(false);
+    };
+
     if (isLoading) {
         return <LoadingSkeleton title="2025 X-mas 연말파티" />;
     }
+
+    // 재참여자인지 확인 (프로필북 변경 버튼 표시용)
+    const isReParticipant = myAllCohortParticipants.length > 1;
 
     return (
         <PageTransition>
@@ -152,6 +237,17 @@ export default function PartyPage() {
                     title="2025 X-mas 연말파티"
                     align="center"
                     className="bg-white border-b-0"
+                    leftAction={
+                        isReParticipant ? (
+                            <button
+                                type="button"
+                                onClick={() => setShowCohortSelectModal(true)}
+                                className="rounded-md px-3 py-2 text-[13px] font-medium text-[#333D4B] hover:bg-gray-100 transition-colors"
+                            >
+                                프로필북 변경
+                            </button>
+                        ) : undefined
+                    }
                     rightAction={
                         <button
                             type="button"
@@ -166,26 +262,25 @@ export default function PartyPage() {
                     }
                 />
 
-                <main className="flex-1 overflow-y-auto px-6 py-4">
-                    {/* 안내 문구 */}
-                    <div className="bg-white rounded-[12px] p-4 shadow-sm mb-4">
-                        <p className="text-[15px] font-bold text-[#333D4B] mb-1">
-                            참가자 리스트
-                        </p>
-                        <p className="text-[13px] text-[#8B95A1] leading-relaxed">
-                            이번 파티에 함께하는 멤버들입니다.<br />
-                            프로필북을 미리 읽어보고 오시면 더 깊은 대화를 나눌 수 있어요!
-                        </p>
-                    </div>
-
-                    <PartyParticipantList
+                <main className="flex-1 overflow-y-auto">
+                    <PartyTabs
                         participants={participants}
+                        currentUserName={currentParticipant?.name ?? null}
+                        highlightParticipantId={highlightParticipantId}
                         onProfileClick={handleProfileClick}
-                        emptyMessage={errorMessage ?? undefined}
-                        highlightParticipantId={highlightParticipantId ?? undefined}
+                        errorMessage={errorMessage ?? undefined}
                     />
                 </main>
             </div>
+
+            {/* 재참여자 프로필북 선택 모달 */}
+            <CohortSelectModal
+                isOpen={showCohortSelectModal}
+                participants={myAllCohortParticipants}
+                currentParticipantId={currentParticipant?.id ?? ''}
+                onSelect={handleCohortSelect}
+                onClose={handleCohortModalClose}
+            />
         </PageTransition>
     );
 }

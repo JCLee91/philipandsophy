@@ -1,7 +1,7 @@
 # 필립앤소피 독서 소셜클럽 플랫폼 PRD (Product Requirements Document)
 
 **문서 버전**: 2.0
-**최종 업데이트**: 2025년 10월 16일
+**최종 업데이트**: 2025년 12월 13일
 **프로젝트 상태**: V1.0 프로덕션 배포 완료
 **문서 작성자**: Technical Documentation Specialist
 
@@ -349,14 +349,14 @@
 ## 9. 기술 및 제약조건
 
 ### 기술 스택
-- **프레임워크**: Next.js 15.1.0 (App Router, Turbopack)
-- **언어**: TypeScript 5
-- **UI**: React 19, Tailwind CSS 3.4, Shadcn UI
-- **상태 관리**: React Query v5 (서버 상태), Zustand v4 (전역 상태)
+- **프레임워크**: Next.js 16 (App Router)
+- **언어**: TypeScript 5.9
+- **UI**: React 19, Tailwind CSS 4, Shadcn UI
+- **상태 관리**: React Query v5 (서버 상태), Zustand v5 (전역 상태)
 - **폼**: React Hook Form v7 + Zod v3
-- **애니메이션**: Framer Motion v11
+- **애니메이션**: Framer Motion v12
 - **백엔드**: Firebase Firestore + Storage
-- **HTTP 클라이언트**: Axios v1.7.9
+- **HTTP**: `fetch` (Route Handler에서 서버 사이드 호출)
 - **외부 API**: Naver Book Search API v1.1
 - **배포**: Vercel
 

@@ -1,75 +1,59 @@
 # 📜 Scripts Guide
 
-**Last Updated**: 2025-11-07
+**Last Updated**: 2025-12-13
 
-프로젝트의 핵심 스크립트 사용 가이드입니다.
+프로젝트의 유지보수/마이그레이션/검증 스크립트 가이드입니다.
 
----
+## 핵심 npm 스크립트
 
-## 🎯 핵심 npm 스크립트 (10개)
-
-### 개발 필수 (5개)
+### 개발/품질
 ```bash
-npm run dev          # 개발 서버 시작 (localhost:3000)
-npm run build        # 프로덕션 빌드
-npm start            # 프로덕션 서버 시작
-npm run lint         # ESLint 실행
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run typecheck
+npm run test
 ```
 
-### 데이터 관리 (2개)
+### 데이터 작업(주의)
 ```bash
-npm run fix:duplicate-submissions  # 중복 독서 인증 제거
-npm run migrate:storage            # Storage 구조 마이그레이션
+npm run fix:duplicate-submissions
+npm run migrate:storage
+npm run migrate:notices-submissions
+npm run migrate:uid-to-latest
+npm run migrate:uid-to-latest:apply
+npm run audit:schema
 ```
 
-### 운영 관리 (1개)
+### 점검/유틸
 ```bash
-npm run update:cohort-active  # 코호트 활성화 상태 업데이트
+npm run stats
+npm run stats:cohort1
+npm run test:phone
+npm run test:doc-id
+npm run check:template
+npm run check:daily-questions
+npm run check:participation-code
+npm run cleanup:duplicate-uid
+npm run cleanup:duplicate-uid:apply
+npm run add:gender-data
+npm run add:gender-data:apply
+npm run convert:landing-images
 ```
 
-### 통계 (2개)
+## 스크립트 파일 위치
+
+- `src/scripts/`: 앱과 가까운 마이그레이션/정리 스크립트
+- `scripts/`: 운영/검증/일회성 유틸리티 스크립트
+
+직접 실행:
 ```bash
-npm run stats         # 전체 데이터베이스 통계
-npm run stats:cohort1 # 코호트1 통계 생성
+npx tsx src/scripts/<file>.ts
+npx tsx scripts/<file>.ts
 ```
 
----
+## Firebase Admin SDK 주의사항
 
-## 📂 스크립트 파일 위치
-
-### `src/scripts/` (3개)
-- `fix-duplicate-submissions.ts` - 중복 독서 인증 제거
-- `migrate-storage-structure.ts` - Firebase Storage 구조 마이그레이션
-- `update-cohort-active-status.ts` - 코호트 활성화 상태 관리
-
-### `scripts/` (2개)
-- `show-database-statistics.ts` - 데이터베이스 통계 출력
-- `generate-cohort1-statistics.ts` - 코호트1 상세 통계
-
----
-
-## 💡 사용 팁
-
-### 직접 실행 (npm 스크립트에 없는 경우)
-```bash
-# TypeScript 파일 직접 실행
-npx tsx src/scripts/[파일명].ts
-npx tsx scripts/[파일명].ts
-```
-
-### Firebase Admin SDK
-- 모든 스크립트는 Firebase Admin SDK 사용
-- `.env.local`에 Firebase 설정 필요
-- 프로덕션 데이터베이스 주의!
-
----
-
-## ⚠️ 주의사항
-
-- ❌ **프로덕션 환경에서 데이터 수정 스크립트 신중히 사용**
-- ✅ **테스트 환경에서 먼저 검증 권장**
-- ✅ **중요 데이터는 백업 후 실행**
-
----
-
-**문의**: 스크립트 관련 문제는 프로젝트 관리자에게 문의하세요.
+- 일부 스크립트는 `firebase-service-account.json`(루트)에 의존합니다.
+- 프로덕션 데이터에 영향을 줄 수 있으니 `--apply` 플래그가 있는 스크립트는 특히 주의하세요.

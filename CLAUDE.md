@@ -92,9 +92,9 @@ const db = getAdminFirestore();
 ## Technology Stack
 
 - **Next.js 16** + **React 19** + **TypeScript 5**
-- **Tailwind CSS 3.4** + **Shadcn UI** + **Framer Motion 11**
+- **Tailwind CSS 4** + **Shadcn UI** + **Framer Motion 12**
 - **Firebase** (Firestore + Storage + FCM)
-- **TanStack Query v5** + **Zustand v4**
+- **TanStack Query v5** + **Zustand v5**
 - **AI SDK** (@ai-sdk/anthropic, @ai-sdk/openai, @ai-sdk/google)
 - **date-fns v4** + **date-fns-tz** + **zod v3**
 
@@ -110,7 +110,7 @@ const db = getAdminFirestore();
 
 ### Library Preferences
 - **Dates**: `date-fns` (not moment)
-- **Utilities**: `es-toolkit` (not lodash)
+- **Utilities**: prefer small, local utilities (avoid lodash)
 - **State**: Zustand for global, useState for local
 - **Forms**: React Hook Form + Zod
 - **Icons**: lucide-react

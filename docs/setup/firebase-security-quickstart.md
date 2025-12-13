@@ -1,6 +1,6 @@
 # Firebase 보안 규칙 빠른 시작 가이드
 
-**Last Updated**: 2025-10-16
+**Last Updated**: 2025-12-13
 **Category**: setup
 
 ## Overview
@@ -26,16 +26,11 @@ firebase deploy --only storage:rules
 
 ## 2단계: 관리자 Custom Claims 설정
 
-### 방법 1: 자동 스크립트 (권장)
+### 방법 1: Admin SDK로 설정 (권장)
 
-```bash
-npm run set:admin-claims
-```
+Custom Claims 설정은 Admin SDK가 필요합니다. 상세 절차는 다음 문서를 참고하세요:
 
-이 스크립트는:
-1. Firestore에서 `isAdministrator=true`인 participant 찾기
-2. 각 participant의 `firebaseUid`에 admin claim 설정
-3. 결과 출력
+- `docs/setup/firebase-custom-claims.md`
 
 ### 방법 2: Firebase Console (수동)
 
@@ -142,7 +137,7 @@ firebase storage:rules --project philipandsophy
 
 2. Claims가 없으면 스크립트 실행:
    ```bash
-   npm run set:admin-claims
+   # docs/setup/firebase-custom-claims.md 참고 (Admin SDK로 claims 설정)
    ```
 
 3. 토큰 새로고침:
