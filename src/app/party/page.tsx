@@ -142,14 +142,14 @@ export default function PartyPage() {
     };
 
     if (isLoading) {
-        return <LoadingSkeleton title="월간 멤버스 파티" />;
+        return <LoadingSkeleton title="2025 X-mas 연말파티" />;
     }
 
     return (
         <PageTransition>
             <div className="app-shell flex flex-col overflow-hidden bg-[#F6F6F6] min-h-screen">
                 <TopBar
-                    title="월간 멤버스 파티"
+                    title="2025 X-mas 연말파티"
                     align="center"
                     className="bg-white border-b-0"
                     rightAction={
