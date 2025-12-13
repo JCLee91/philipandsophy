@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { createSafeLocalStorage } from '@/lib/safe-storage';
 
 interface DatacntrStore {
   selectedCohortId: string | null;
@@ -18,6 +19,7 @@ export const useDatacntrStore = create<DatacntrStore>()(
     }),
     {
       name: 'datacntr-storage',
+      storage: createJSONStorage(() => createSafeLocalStorage()),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

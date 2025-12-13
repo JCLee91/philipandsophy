@@ -10,7 +10,7 @@ import {
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { ThemeProvider } from 'next-themes';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { initializeFirebase } from '@/lib/firebase';
 import { CACHE_TIMES } from '@/constants/cache';
 import { Toaster } from '@/components/ui/toaster';
@@ -19,6 +19,8 @@ import { PushNotificationRefresher } from '@/components/PushNotificationRefreshe
 import ImpersonationBanner from '@/components/admin/ImpersonationBanner';
 import { GlobalErrorBoundary } from '@/components/GlobalErrorBoundary';
 import { AppLifecycleManager } from '@/components/AppLifecycleManager';
+import { logger } from '@/lib/logger';
+import { createSafeLocalStorage, isLocalStorageUsable } from '@/lib/safe-storage';
 
 // ✅ Firebase 즉시 초기화 (모듈 로드 시점, React 마운트 대기 불필요)
 if (typeof window !== 'undefined') {
@@ -55,13 +57,14 @@ function makeQueryClient() {
 
 let browserQueryClient: QueryClient | undefined = undefined;
 
-// localStorage persister 생성 (브라우저 전용)
-const persister = typeof window !== 'undefined'
-  ? createSyncStoragePersister({
-    storage: window.localStorage,
-    key: 'philipandsophy-cache', // 캐시 저장 키
-  })
-  : undefined;
+// localStorage persister 생성 (브라우저 전용, 안정성 강화)
+const persister =
+  typeof window !== 'undefined' && isLocalStorageUsable()
+    ? createSyncStoragePersister({
+      storage: createSafeLocalStorage(),
+      key: 'philipandsophy-cache', // 캐시 저장 키
+    })
+    : undefined;
 
 function getQueryClient() {
   if (isServer) {
@@ -83,6 +86,41 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   //       suspend because React will throw away the client on the initial
   //       render if it suspends and there is no boundary
   const queryClient = getQueryClient();
+
+  // 렌더 에러(ErrorBoundary) 밖에서 발생하는 전역 오류도 기록 (unhandled promise 등)
+  useEffect(() => {
+    const onError = (event: ErrorEvent) => {
+      if (event.error instanceof Error) {
+        logger.error('[Global] window.error', event.error);
+        return;
+      }
+
+      logger.error('[Global] window.error', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+      });
+    };
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      if (reason instanceof Error) {
+        logger.error('[Global] unhandledrejection', reason);
+        return;
+      }
+
+      logger.error('[Global] unhandledrejection', { reason });
+    };
+
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    };
+  }, []);
 
   const content = (
     <AuthProvider>
@@ -111,7 +149,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         {persister ? (
           <PersistQueryClientProvider
             client={queryClient}
-            persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+            persistOptions={{
+              persister,
+              maxAge: 24 * 60 * 60 * 1000,
+              dehydrateOptions: {
+                // localStorage 용량/호환성 이슈로 크래시가 날 수 있어, 최소한만 영속화
+                shouldDehydrateQuery: (query) => query.queryKey?.[0] === 'participant',
+              },
+            }}
           >
             <AppLifecycleManager />
             {content}

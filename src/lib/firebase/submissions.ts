@@ -196,7 +196,7 @@ export function subscribeParticipantSubmissions(
       callback(submissions);
     },
     (error) => {
-
+      logger.error('Participant submissions subscription error', error as Error);
       callback([]); // 에러 시 빈 배열
     }
   );
@@ -243,7 +243,7 @@ export function subscribeTodayVerified(
     },
     (error) => {
       // Firebase 에러 처리 (네트워크, 권한 등)
-
+      logger.error('Today verified subscription error', error as Error);
       // 에러 발생 시 빈 Set 반환 (fallback)
       callback(new Set());
     }

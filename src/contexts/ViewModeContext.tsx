@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 import { APP_CONSTANTS } from '@/constants/app';
+import { createSafeLocalStorage } from '@/lib/safe-storage';
 
 export type ViewMode = 'participant' | 'admin';
 
@@ -21,6 +22,7 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
   const { participant, isLoading } = useAuth();
   const [viewMode, setViewModeState] = useState<ViewMode>('participant');
   const [isReady, setIsReady] = useState(false);
+  const storage = createSafeLocalStorage();
 
   // 관리자 권한이 있는지 확인 (일반 관리자 또는 슈퍼 관리자)
   const canSwitchMode = !isLoading && (participant?.isAdministrator === true || participant?.isSuperAdmin === true);
@@ -30,7 +32,7 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
     if (isLoading) return;
 
     // localStorage에서 저장된 모드 읽기
-    const savedMode = localStorage.getItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE) as ViewMode | null;
+    const savedMode = storage.getItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE) as ViewMode | null;
 
     if (savedMode && canSwitchMode) {
       // 관리자이고 저장된 모드가 있으면 복원
@@ -38,7 +40,7 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
     } else if (!canSwitchMode) {
       // 관리자가 아니면 항상 참가자 모드
       setViewModeState('participant');
-      localStorage.removeItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE);
+      storage.removeItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE);
     }
 
     // ✅ 초기화 완료
@@ -53,7 +55,7 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
     }
 
     setViewModeState(mode);
-    localStorage.setItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE, mode);
+    storage.setItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE, mode);
 
   };
 

@@ -25,6 +25,7 @@ import { getDb } from './client';
 import type { DirectMessage, Conversation } from '@/types/database';
 import { COLLECTIONS } from '@/types/database';
 import { generateMessageId } from './id-generator';
+import { logger } from '@/lib/logger';
 
 /**
  * Create a new direct message
@@ -327,7 +328,7 @@ export const subscribeToMessages = (
       callback(messages);
     },
     (error) => {
-
+      logger.error('Message subscription error', error as Error);
       callback([]); // Fallback to empty array on error
     }
   );
@@ -364,7 +365,7 @@ export const subscribeToAdminConversations = (
       callback(conversations);
     },
     (error) => {
-      console.error('Error fetching conversations:', error);
+      logger.error('Admin conversations subscription error', error as Error);
       callback([]);
     }
   );

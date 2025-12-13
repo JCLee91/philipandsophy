@@ -9,7 +9,14 @@ import {
   persistentMultipleTabManager,
 } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
-import { getAuth, Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import {
+  getAuth,
+  Auth,
+  setPersistence,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  inMemoryPersistence,
+} from 'firebase/auth';
 import { getFunctions, Functions } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { firebaseConfig } from './config';
@@ -27,6 +34,25 @@ let storage: FirebaseStorage;
 let auth: Auth;
 let functions: Functions;
 let initialized = false;
+let authPersistencePromise: Promise<void> | null = null;
+
+async function setBestAuthPersistence(targetAuth: Auth): Promise<void> {
+  const candidates = [
+    { name: 'INDEXED_DB', persistence: indexedDBLocalPersistence },
+    { name: 'LOCAL_STORAGE', persistence: browserLocalPersistence },
+    { name: 'IN_MEMORY', persistence: inMemoryPersistence },
+  ] as const;
+
+  for (const candidate of candidates) {
+    try {
+      await setPersistence(targetAuth, candidate.persistence);
+      logger.info(`Firebase Auth Persistence set to ${candidate.name}`);
+      return;
+    } catch (error) {
+      logger.warn(`Failed to set Firebase Auth Persistence to ${candidate.name}`, error);
+    }
+  }
+}
 
 /**
  * Initialize Firebase only if not already initialized
@@ -67,29 +93,31 @@ export function initializeFirebase() {
 
     // Initialize Firestore with Seoul DB and persistent cache
     // 1. initializeFirestore로 캐시 설정 + databaseId 지정 (한 번만 호출)
-    initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-      })
-    }, 'seoul');
+    try {
+      initializeFirestore(
+        app,
+        {
+          localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager(),
+          }),
+        },
+        'seoul'
+      );
+    } catch (error) {
+      // iOS Safari/프라이빗 모드 등에서 IndexedDB 기반 캐시가 실패할 수 있음
+      // 이 경우 캐시 없이도 앱이 동작하도록 메모리 캐시로 폴백
+      logger.warn('Firestore persistent cache init failed; falling back to memory cache', error);
+    }
 
-    // 2. getFirestore로 인스턴스 획득
+    // 2. getFirestore로 인스턴스 획득 (캐시 성공/실패와 무관하게 동작)
     db = getFirestore(app, 'seoul');
 
     storage = getStorage(app);
     auth = getAuth(app);
     functions = getFunctions(app, 'asia-northeast3');
 
-    // PWA를 위한 명시적 persistence 설정
-    // browserLocalPersistence: localStorage 사용 (기본값)
-    // 브라우저를 닫아도 로그인 유지
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
-        logger.info('Firebase Auth Persistence set to LOCAL');
-      })
-      .catch((error) => {
-        logger.error('Failed to set Firebase Auth Persistence', error);
-      });
+    // PWA 환경(iOS/Android)에서 가장 안정적인 persistence를 선택 (IDB → localStorage → memory)
+    authPersistencePromise = setBestAuthPersistence(auth);
 
     initialized = true;
 
@@ -108,10 +136,7 @@ export function initializeFirebase() {
         functions = getFunctions(app, 'asia-northeast3');
 
         // Fallback에서도 persistence 설정
-        setPersistence(auth, browserLocalPersistence)
-          .catch((error) => {
-
-          });
+        authPersistencePromise = setBestAuthPersistence(auth);
 
         initialized = true;
 
@@ -162,6 +187,17 @@ export function getFirebaseAuth(): Auth {
     initializeFirebase();
   }
   return auth;
+}
+
+/**
+ * Ensure Auth persistence selection has finished.
+ * Useful before subscribing to auth state in flaky mobile environments.
+ */
+export async function ensureAuthPersistenceReady(): Promise<void> {
+  if (!auth) {
+    initializeFirebase();
+  }
+  await authPersistencePromise;
 }
 
 /**

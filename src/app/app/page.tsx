@@ -62,14 +62,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isLoading || (isAdminUser && activeCohortsLoading)) {
+    if (isLoading || isCohortLoading || (isAdminUser && activeCohortsLoading)) {
       const timer = setTimeout(() => {
         setLoadingTimeout(true);
       }, MAX_LOADING_TIME);
 
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isAdminUser, activeCohortsLoading]);
+  }, [isLoading, isCohortLoading, isAdminUser, activeCohortsLoading]);
 
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();

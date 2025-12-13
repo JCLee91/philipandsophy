@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, Suspense } f
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { initializeFirebase, getFirebaseAuth } from '@/lib/firebase';
+import { initializeFirebase, getFirebaseAuth, ensureAuthPersistenceReady } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
 import { Participant } from '@/types/database';
 import { useParticipant as useParticipantQuery } from '@/hooks/useParticipant';
@@ -53,6 +53,8 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     const setupAuth = async () => {
       try {
         initializeFirebase();
+        // iOS/Android에서 persistence 설정이 늦어 auth state가 불안정해지는 케이스 방지
+        await ensureAuthPersistenceReady();
         const auth = getFirebaseAuth();
 
         if (!mounted) return;

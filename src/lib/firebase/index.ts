@@ -12,6 +12,7 @@ export {
   getStorageInstance,
   getFirebaseApp,
   getFirebaseAuth,
+  ensureAuthPersistenceReady,
 } from './client';
 
 // Phone Authentication

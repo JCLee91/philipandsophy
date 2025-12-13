@@ -198,7 +198,7 @@ export const subscribeToNoticesByCohort = (
     },
     (error) => {
       logger.error('Notice subscription error', error);
-      callback([]); // Fallback to empty array on error
+      // 에러 시 기존 목록을 유지 (빈 목록으로 덮어쓰지 않음)
     }
   );
 };
