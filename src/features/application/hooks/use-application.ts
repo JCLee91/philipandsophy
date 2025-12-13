@@ -157,8 +157,8 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
 
             // 2. 성별 한글 변환
             const genderMap: Record<string, string> = {
-                'male': '남성',
-                'female': '여성',
+                'male': '남',
+                'female': '여',
             };
             const gender = answers['gender'] as string;
 
