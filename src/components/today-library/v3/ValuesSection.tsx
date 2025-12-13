@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import AccordionContent from './AccordionContent';
+import LikeButton from '@/features/likes/components/LikeButton';
 import type { ClusterMemberWithSubmission } from '@/types/today-library';
 
 interface ValuesSectionProps {
@@ -11,6 +12,7 @@ interface ValuesSectionProps {
   expandedAnswers: Set<string>;
   onProfileClick: (participantId: string) => void;
   onToggleAnswer: (participantId: string) => void;
+  currentUserId: string;
 }
 
 export default function ValuesSection({
@@ -19,6 +21,7 @@ export default function ValuesSection({
   expandedAnswers,
   onProfileClick,
   onToggleAnswer,
+  currentUserId,
 }: ValuesSectionProps) {
   if (!dailyQuestion) return null;
 
@@ -65,20 +68,37 @@ export default function ValuesSection({
               </div>
 
               {/* Right: Content */}
-              <div
-                className="flex-1 flex flex-col gap-1 cursor-pointer"
-                onClick={() => onToggleAnswer(member.id)}
-              >
-                {/* Character Count */}
-                <span className="text-[12px] text-[#8B95A1]">
-                  [{answerLength}자]
-                </span>
+              <div className="flex-1 flex flex-col gap-1 min-w-0">
+                {/* Top Row: Character Count + Like Button */}
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className="text-[12px] text-[#8B95A1] cursor-pointer"
+                    onClick={() => onToggleAnswer(member.id)}
+                  >
+                    [{answerLength}자]
+                  </span>
+                  {/* Like Button - 우측 상단 */}
+                  {member.submission && (
+                    <LikeButton
+                      targetId={`${member.submission.id}_answer`}
+                      targetType="answer"
+                      targetUserId={member.id}
+                      currentUserId={currentUserId}
+                      initialCount={member.submission.answerLikeCount || 0}
+                    />
+                  )}
+                </div>
 
                 {/* Text + Chevron Row */}
-                <AccordionContent
-                  text={member.dailyAnswer}
-                  isExpanded={isExpanded}
-                />
+                <div
+                  className="cursor-pointer"
+                  onClick={() => onToggleAnswer(member.id)}
+                >
+                  <AccordionContent
+                    text={member.dailyAnswer}
+                    isExpanded={isExpanded}
+                  />
+                </div>
               </div>
             </div>
           );

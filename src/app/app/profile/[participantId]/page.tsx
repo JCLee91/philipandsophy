@@ -33,6 +33,7 @@ import { getResizedImageUrl, getOriginalImageUrl } from '@/lib/image-utils';
 import { getTimestampDate } from '@/lib/firebase/timestamp-utils';
 import TopBar from '@/components/TopBar';
 import { Maximize2 } from 'lucide-react';
+import LikeButton from '@/features/likes/components/LikeButton';
 
 interface ProfileBookContentProps {
   params: { participantId: string };
@@ -677,6 +678,21 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                                 <p className="text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap wrap-break-word">
                                   {answer}
                                 </p>
+                                {/* 좋아요 버튼 */}
+                                {currentUserId && (() => {
+                                  const submissionForQuestion = submissions.find(s => s.dailyQuestion === question);
+                                  return submissionForQuestion?.id ? (
+                                    <div className="flex justify-center pt-4 mt-3 border-t border-white/50">
+                                      <LikeButton
+                                        targetId={`${submissionForQuestion.id}_answer`}
+                                        targetType="answer"
+                                        targetUserId={participantId}
+                                        currentUserId={currentUserId}
+                                        size={24}
+                                      />
+                                    </div>
+                                  ) : null;
+                                })()}
                               </div>
                             </div>
                           </div>
@@ -703,6 +719,31 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                 </DialogDescription>
               </DialogHeader>
               <div className="profile-reading-scroll space-y-3 overflow-y-auto">
+                {/* 인증 사진 섬네일 */}
+                {selectedSubmission.bookImageUrl && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 w-full p-3 bg-muted/50 hover:bg-muted rounded-xl transition-colors group"
+                    onClick={() => setSubmissionImageViewerOpen(true)}
+                  >
+                    <div className="relative w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0 bg-muted">
+                      <Image
+                        src={getResizedImageUrl(selectedSubmission.bookImageUrl) || selectedSubmission.bookImageUrl}
+                        alt="인증 사진"
+                        fill
+                        className="object-cover"
+                        sizes="72px"
+                      />
+                    </div>
+                    <div className="flex-1 flex items-center justify-between min-w-0">
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-foreground">인증 사진</p>
+                        <p className="text-xs text-muted-foreground">탭하여 크게 보기</p>
+                      </div>
+                      <Maximize2 size={18} className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                    </div>
+                  </button>
+                )}
                 {/* 읽은 책 */}
                 <div className="space-y-1.5">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -728,30 +769,17 @@ function ProfileBookContent({ params }: ProfileBookContentProps) {
                     {selectedSubmission.review}
                   </p>
                 </div>
-                {/* 인증 사진 섬네일 */}
-                {selectedSubmission.bookImageUrl && (
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 w-full p-3 bg-muted/50 hover:bg-muted rounded-xl transition-colors group"
-                    onClick={() => setSubmissionImageViewerOpen(true)}
-                  >
-                    <div className="relative w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0 bg-muted">
-                      <Image
-                        src={getResizedImageUrl(selectedSubmission.bookImageUrl) || selectedSubmission.bookImageUrl}
-                        alt="인증 사진"
-                        fill
-                        className="object-cover"
-                        sizes="72px"
-                      />
-                    </div>
-                    <div className="flex-1 flex items-center justify-between min-w-0">
-                      <div className="text-left">
-                        <p className="text-sm font-medium text-foreground">인증 사진</p>
-                        <p className="text-xs text-muted-foreground">탭하여 크게 보기</p>
-                      </div>
-                      <Maximize2 size={18} className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-                    </div>
-                  </button>
+                {/* 좋아요 버튼 */}
+                {currentUserId && selectedSubmission.id && (
+                  <div className="flex justify-center pt-4 mt-2 border-t border-[#F2F4F6]">
+                    <LikeButton
+                      targetId={`${selectedSubmission.id}_review`}
+                      targetType="review"
+                      targetUserId={participantId}
+                      currentUserId={currentUserId}
+                      size={28}
+                    />
+                  </div>
                 )}
               </div>
             </DialogContent>

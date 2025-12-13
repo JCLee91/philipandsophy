@@ -71,40 +71,41 @@ export function useTodayLibraryV3() {
     return clusterMatching.assignedIds;
   }, [clusterMatching]);
 
-  // 클러스터 멤버 정보 쿼리
-  const { data: clusterMembers = [], isLoading: membersLoading } = useQuery<Participant[]>({
-    queryKey: ['cluster-members-v3', clusterMatching?.clusterId, clusterMatching?.matchingDate],
+  // 전체 멤버 정보 조회 (LikesTab용)
+  const { data: allParticipants = [], isLoading: allParticipantsLoading } = useQuery<Participant[]>({
+    queryKey: ['all-participants-v3', cohortId],
     queryFn: async () => {
-      if (!visibleProfileIds.length) return [];
-
+      if (!cohortId) return [];
       const db = getDb();
-      const participantsRef = collection(db, 'participants');
-
-      const chunks: Participant[] = [];
-      for (let i = 0; i < visibleProfileIds.length; i += 10) {
-        const chunk = visibleProfileIds.slice(i, i + 10);
-        const q = query(participantsRef, where('__name__', 'in', chunk));
-        const snapshot = await getDocs(q);
-        chunks.push(...snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Participant[]);
-      }
-
-      return chunks.map(p => {
-        const inferCircleUrl = (url?: string) => {
-          if (!url) return undefined;
-          const [base, queryStr] = url.split('?');
-          if (!base.includes('_full')) return undefined;
-          const circleBase = base.replace('_full', '_circle');
-          return queryStr ? `${circleBase}?${queryStr}` : circleBase;
-        };
-
-        const circleImage = p.profileImageCircle || inferCircleUrl(p.profileImage);
-        return { ...p, profileImage: circleImage || p.profileImage, profileImageCircle: circleImage };
-      });
+      const q = query(collection(db, 'participants'), where('cohortId', '==', cohortId));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Participant);
     },
-    enabled: visibleProfileIds.length > 0 && !!clusterMatching,
-    staleTime: 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    enabled: !!cohortId,
+    staleTime: 5 * 60 * 1000,
   });
+
+  // 클러스터 멤버 정보 쿼리 (최적화: allParticipants에서 필터링)
+  const clusterMembers = useMemo(() => {
+    if (!visibleProfileIds.length || !allParticipants.length) return [];
+
+    const members = allParticipants.filter(p => visibleProfileIds.includes(p.id));
+
+    return members.map(p => {
+      const inferCircleUrl = (url?: string) => {
+        if (!url) return undefined;
+        const [base, queryStr] = url.split('?');
+        if (!base.includes('_full')) return undefined;
+        const circleBase = base.replace('_full', '_circle');
+        return queryStr ? `${circleBase}?${queryStr}` : circleBase;
+      };
+
+      const circleImage = p.profileImageCircle || inferCircleUrl(p.profileImage);
+      return { ...p, profileImage: circleImage || p.profileImage, profileImageCircle: circleImage };
+    });
+  }, [visibleProfileIds, allParticipants]);
+
+  const membersLoading = allParticipantsLoading;
 
   // 인증 데이터 쿼리
   const { data: submissionsMap = {}, isLoading: submissionsLoading } = useClusterSubmissions(
@@ -303,7 +304,10 @@ export function useTodayLibraryV3() {
     clusterMatching,
     clusterMembersWithSubmissions,
     dailyQuestion,
-    
+
+    // 추가 데이터 (LikesTab용)
+    allParticipants,
+
     // 답변 확장 상태
     expandedAnswers,
     toggleAnswer,

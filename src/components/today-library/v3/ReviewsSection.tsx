@@ -2,18 +2,22 @@
 
 import Image from 'next/image';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { normalizeTextForPreview } from '@/lib/text-utils';
+import LikeButton from '@/features/likes/components/LikeButton';
 import type { ClusterMemberWithSubmission } from '@/types/today-library';
 
 interface ReviewsSectionProps {
   members: ClusterMemberWithSubmission[];
   onProfileClick: (participantId: string) => void;
   onReviewClick: (participantId: string) => void;
+  currentUserId: string;
 }
 
 export default function ReviewsSection({
   members,
   onProfileClick,
   onReviewClick,
+  currentUserId,
 }: ReviewsSectionProps) {
   return (
     <section className="mb-10">
@@ -39,20 +43,42 @@ export default function ReviewsSection({
             </div>
 
             {/* Right: Content */}
-            <div
-              className="flex-1 flex flex-col gap-1 cursor-pointer min-w-0"
-              onClick={() => onReviewClick(member.id)}
-            >
-              {member.submission?.bookTitle && (
-                <div className="bg-[#F2F4F6] px-2 py-1 rounded-[4px] self-start max-w-full">
-                  <h3 className="text-[12px] font-bold text-[#4E5968] truncate">
-                    {member.submission.bookTitle}
-                  </h3>
+            <div className="flex-1 flex flex-col gap-1 min-w-0">
+              {/* Top Row: Book Title + Like Button */}
+              <div className="flex items-start justify-between gap-2">
+                <div
+                  className="cursor-pointer flex-1 min-w-0"
+                  onClick={() => onReviewClick(member.id)}
+                >
+                  {member.submission?.bookTitle && (
+                    <div className="bg-[#F2F4F6] px-2 py-1 rounded-[4px] inline-block max-w-full">
+                      <h3 className="text-[12px] font-bold text-[#4E5968] truncate">
+                        {member.submission.bookTitle}
+                      </h3>
+                    </div>
+                  )}
                 </div>
-              )}
-              <p className="text-[14px] text-[#333D4B] leading-normal line-clamp-1 wrap-break-word">
-                {member.review || '작성된 감상평이 없습니다.'}
-              </p>
+                {/* Like Button - 우측 상단 */}
+                {member.submission && (
+                  <LikeButton
+                    targetId={`${member.submission.id}_review`}
+                    targetType="review"
+                    targetUserId={member.id}
+                    currentUserId={currentUserId}
+                    initialCount={member.submission.reviewLikeCount || 0}
+                  />
+                )}
+              </div>
+
+              {/* Review Text */}
+              <div
+                className="cursor-pointer"
+                onClick={() => onReviewClick(member.id)}
+              >
+                <p className="text-[14px] text-[#333D4B] leading-normal truncate max-w-[320px]">
+                  {member.review ? normalizeTextForPreview(member.review) : '작성된 감상평이 없습니다.'}
+                </p>
+              </div>
             </div>
           </div>
         ))}

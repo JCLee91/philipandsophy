@@ -15,10 +15,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfileImageDialog from '@/components/ProfileImageDialog';
+import ImageViewerDialog from '@/components/ImageViewerDialog';
 import ImageDialog from '@/components/ImageDialog';
 import { getInitials, getFirstName } from '@/lib/utils';
 import { getResizedImageUrl } from '@/lib/image-utils';
 import { Maximize2 } from 'lucide-react';
+import LikeButton from '@/features/likes/components/LikeButton';
 
 // ✅ Disable static generation
 export const dynamic = 'force-dynamic';
@@ -34,6 +36,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
     const { toast } = useToast();
     const { participant: currentUser } = useAuth();
     const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
+    const [faceImageViewerOpen, setFaceImageViewerOpen] = useState(false);
     const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
     // URL 디코딩 (한글 이름 처리)
@@ -221,7 +224,7 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                         <div className="flex flex-col items-center gap-3 pb-8 border-b border-[#F2F4F6]">
                             <div
                                 className="w-[64px] h-[64px] cursor-pointer transition-transform active:scale-95"
-                                onClick={() => setProfileImageDialogOpen(true)}
+                                onClick={() => setFaceImageViewerOpen(true)}
                             >
                                 <Avatar className="w-full h-full border-2 border-[#31363e]">
                                     <AvatarImage
@@ -322,16 +325,35 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                                     {submission.review || '작성된 감상평이 없습니다.'}
                                 </p>
                             </div>
+
+                            {/* Like Button - 중앙 하단 */}
+                            <div className="flex justify-center mt-8 pt-6 border-t border-[#F2F4F6]">
+                                <LikeButton
+                                    targetId={`${submission.id}_review`}
+                                    targetType="review"
+                                    targetUserId={participantId}
+                                    currentUserId={currentUser?.id || ''}
+                                    initialCount={submission.reviewLikeCount || 0}
+                                    size={28}
+                                />
+                            </div>
                         </section>
 
                     </div>
                 </main>
 
-                {/* Profile Image Dialog */}
+                {/* Profile Image Dialog - 이름 클릭 시 프로필 카드 */}
                 <ProfileImageDialog
                     participant={participant}
                     open={profileImageDialogOpen}
                     onClose={() => setProfileImageDialogOpen(false)}
+                />
+
+                {/* Face Image Viewer - 아바타 클릭 시 얼굴 이미지 */}
+                <ImageViewerDialog
+                    open={faceImageViewerOpen}
+                    onOpenChange={setFaceImageViewerOpen}
+                    imageUrl={participant.faceImage || participant.profileImageCircle || participant.profileImage || ''}
                 />
             </div>
         </PageTransition>

@@ -295,6 +295,9 @@ export interface ReadingSubmission {
   review?: string; // 간단 감상평 (임시저장 시 선택, 제출 시 필수)
   dailyQuestion?: string; // 오늘의 질문 (임시저장 시 선택, 제출 시 필수)
   dailyAnswer?: string; // 오늘의 질문에 대한 답변 (임시저장 시 선택, 제출 시 필수)
+  // 좋아요 카운트 (Private likes: 상태는 비공개, 숫자는 공개)
+  reviewLikeCount?: number;
+  answerLikeCount?: number;
   submittedAt?: Timestamp; // 제출 일시 (임시저장 시 null)
   submissionDate?: string; // 제출 날짜 (YYYY-MM-DD 형식, 임시저장 시 선택)
   status: 'draft' | 'pending' | 'approved' | 'rejected'; // draft: 임시저장, approved: 제출 완료

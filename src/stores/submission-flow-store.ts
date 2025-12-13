@@ -130,16 +130,7 @@ export const useSubmissionFlowStore = create<SubmissionFlowState>()(
           // imageFile, imagePreview는 File/base64라서 제외
         }) as SubmissionFlowState,
       onRehydrateStorage: () => (state) => {
-        console.log('[Zustand] Hydration 시작, 복원된 상태:', {
-          isEBook: state?.isEBook,
-          selectedBook: state?.selectedBook?.title,
-          manualTitle: state?.manualTitle,
-          review: state?.review?.length,
-          imageStorageUrl: state?.imageStorageUrl,
-          submissionDate: state?.submissionDate,
-        });
         state?.setHasHydrated(true);
-        console.log('[Zustand] Hydration 완료, _hasHydrated:', true);
       },
     }
   )
