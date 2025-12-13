@@ -81,15 +81,15 @@ export default function ValuesSection({
                   >
                     [{answerLength}자]
                   </span>
-                  {/* Like Button - 우측 상단 */}
-                  {member.submission && (
+                  {/* Like Button - 우측 상단 (본인 글에는 표시 안 함) */}
+                  {member.submission && member.id !== currentUserId && (
                     <LikeButton
                       targetId={`${member.submission.id}_answer`}
                       targetType="answer"
                       targetUserId={member.id}
                       currentUserId={currentUserId}
                       initialCount={member.submission.answerLikeCount || 0}
-                      isLocked={isLocked && !isSuperAdmin && member.id !== currentUserId}
+                      isLocked={isLocked && !isSuperAdmin}
                     />
                   )}
                 </div>
