@@ -44,7 +44,8 @@ export default function PartyPage() {
     useEffect(() => {
         async function fetchGuests() {
             try {
-                if (!currentParticipant || participantStatus !== 'ready') {
+                // Firebase Auth가 완전히 초기화될 때까지 대기
+                if (authLoading || !currentParticipant || participantStatus !== 'ready') {
                     return;
                 }
                 setIsLoading(true);
@@ -175,7 +176,7 @@ export default function PartyPage() {
         }
 
         fetchGuests();
-    }, [currentParticipant, participantStatus]);
+    }, [authLoading, currentParticipant, participantStatus]);
 
     const handleProfileClick = (participantId: string) => {
         // 코호트 ID가 필요하지만, 파티 페이지는 기수 초월이므로
