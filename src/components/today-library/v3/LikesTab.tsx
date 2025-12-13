@@ -19,6 +19,12 @@ interface AnswerModalData {
   submission: ReadingSubmission;
 }
 
+// 좋아요 준 사람 목록 모달 데이터 타입
+interface LikersModalData {
+  title: string;
+  participants: Participant[];
+}
+
 interface LikesTabProps {
   currentUserId: string;
   allParticipants: Participant[];
@@ -97,11 +103,140 @@ function RankingCard({
   );
 }
 
+function AvatarRow({
+  participants,
+  max = 5,
+}: {
+  participants: Participant[];
+  max?: number;
+}) {
+  const unique = useMemo(() => {
+    const seen = new Set<string>();
+    const result: Participant[] = [];
+    for (const participant of participants) {
+      if (!participant?.id) continue;
+      if (seen.has(participant.id)) continue;
+      seen.add(participant.id);
+      result.push(participant);
+    }
+    return result;
+  }, [participants]);
+
+  const visible = unique.slice(0, max);
+
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <div className="flex -space-x-2">
+        {visible.map(p => (
+          <div
+            key={p.id}
+            className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative bg-[#F2F4F6]"
+            title={p.name}
+          >
+            <Image
+              src={getResizedImageUrl(p.profileImageCircle || p.profileImage) || '/image/default-profile.svg'}
+              alt={p.name}
+              fill
+              className="object-cover"
+              sizes="28px"
+            />
+          </div>
+        ))}
+      </div>
+      <div className="text-[12px] text-[#6B7684] truncate">
+        {unique.length > 0 ? (
+          <>
+            <span className="font-medium text-[#333D4B]">{getFirstName(unique[0].name)}</span>
+            {unique.length > 1 && (
+              <span className="ml-1">외 {unique.length - 1}명</span>
+            )}
+          </>
+        ) : (
+          <span>좋아요</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReceivedLikeCard({
+  title,
+  subtitle,
+  preview,
+  likeCount,
+  submission,
+  contentParticipant,
+  likers,
+  onOpenLikers,
+  onOpenContent,
+}: {
+  title: string;
+  subtitle?: string;
+  preview: string;
+  likeCount: number;
+  submission?: ReadingSubmission;
+  contentParticipant?: Participant;
+  likers: Participant[];
+  onOpenLikers: () => void;
+  onOpenContent: () => void;
+}) {
+  const isMissingContent = !submission || !contentParticipant;
+
+  return (
+    <div
+      className={cn(
+        "bg-white rounded-[12px] p-5 border border-[#F2F4F6] transition-colors",
+        isMissingContent ? "opacity-60" : "hover:border-[#E5E8EB]"
+      )}
+    >
+      <button
+        type="button"
+        onClick={onOpenContent}
+        className="w-full text-left"
+        disabled={isMissingContent}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[12px] font-bold text-[#333D4B] truncate">{title}</span>
+              <span className="text-[11px] text-[#FF4B4B] font-bold shrink-0">{likeCount}개</span>
+            </div>
+            {subtitle && (
+              <p className="text-[12px] text-[#8B95A1] mt-1 truncate">{subtitle}</p>
+            )}
+          </div>
+          <Heart size={14} fill="#FF4B4B" className="text-[#FF4B4B] shrink-0 mt-0.5" />
+        </div>
+
+        <p className="text-[14px] text-[#333D4B] leading-normal mt-3 truncate">
+          {isMissingContent ? '삭제되었거나 불러올 수 없는 글입니다.' : normalizeTextForPreview(preview)}
+        </p>
+      </button>
+
+      <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-[#F2F4F6]">
+        <AvatarRow participants={likers} />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenLikers();
+          }}
+          className="shrink-0 text-[12px] font-bold text-[#4E5968] bg-[#F2F4F6] hover:bg-[#E5E8EB] px-3 py-1.5 rounded-[8px] transition-colors"
+          disabled={likers.length === 0}
+        >
+          보기
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // 스크랩 카드 컴포넌트
 function ScrapCard({
   like,
   submission,
   participant,
+  contentParticipant,
   onProfileClick,
   onReviewClick,
   onAnswerClick,
@@ -109,6 +244,7 @@ function ScrapCard({
   like: LikeData;
   submission?: ReadingSubmission;
   participant?: Participant;
+  contentParticipant?: Participant;
   onProfileClick: (id: string) => void;
   onReviewClick: (id: string, submission?: ReadingSubmission) => void;
   onAnswerClick: (participant: Participant, submission: ReadingSubmission) => void;
@@ -124,9 +260,9 @@ function ScrapCard({
   // 클릭 핸들러: 감상평은 페이지 이동, 가치관 답변은 모달
   const handleContentClick = () => {
     if (like.targetType === 'review') {
-      onReviewClick(participant.id, submission);
+      onReviewClick(submission.participantId, submission);
     } else {
-      onAnswerClick(participant, submission);
+      onAnswerClick(contentParticipant ?? participant, submission);
     }
   };
 
@@ -228,17 +364,23 @@ function LikeListSection({
       </div>
       {likes.length > 0 ? (
         <div className="flex flex-col">
-          {likes.map(like => (
-            <ScrapCard
-              key={like.id}
-              like={like}
-              submission={submissionsMap.get(like.targetId)}
-              participant={participantMap.get(like[participantKey])}
-              onProfileClick={onProfileClick}
-              onReviewClick={onReviewClick}
-              onAnswerClick={onAnswerClick}
-            />
-          ))}
+          {likes.map(like => {
+            const submission = submissionsMap.get(like.targetId);
+            const contentParticipant = submission ? participantMap.get(submission.participantId) : undefined;
+
+            return (
+              <ScrapCard
+                key={like.id}
+                like={like}
+                submission={submission}
+                participant={participantMap.get(like[participantKey])}
+                contentParticipant={contentParticipant}
+                onProfileClick={onProfileClick}
+                onReviewClick={onReviewClick}
+                onAnswerClick={onAnswerClick}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="py-6 text-center text-[#8B95A1] text-[13px]">
@@ -261,6 +403,7 @@ export default function LikesTab({
 
   // 가치관 답변 모달 상태
   const [answerModalData, setAnswerModalData] = useState<AnswerModalData | null>(null);
+  const [likersModalData, setLikersModalData] = useState<LikersModalData | null>(null);
 
   // URL 쿼리 파라미터로 서브탭 상태 관리 (뒤로가기 시 유지)
   const likesTabParam = searchParams.get('likesTab');
@@ -338,6 +481,69 @@ export default function LikesTab({
   const receivedRankings = useMemo(() => getRankings(receivedLikes, 'userId'), [receivedLikes, participantMap]);
   const sentRankings = useMemo(() => getRankings(myLikes, 'targetUserId'), [myLikes, participantMap]);
 
+  const receivedReviewGroups = useMemo(() => {
+    const groups = new Map<string, LikeData[]>();
+    receivedReviewLikes.forEach(like => {
+      const existing = groups.get(like.targetId) || [];
+      existing.push(like);
+      groups.set(like.targetId, existing);
+    });
+
+    const result = Array.from(groups.entries()).map(([targetId, likes]) => {
+      const submission = submissionsMap.get(targetId);
+      const contentParticipant = submission ? participantMap.get(submission.participantId) : undefined;
+      const likers = likes
+        .map(like => participantMap.get(like.userId))
+        .filter((p): p is Participant => !!p);
+
+      return { targetId, likes, submission, contentParticipant, likers };
+    });
+
+    // 최근 좋아요 순으로: 그룹 내 createdAt max 기준
+    const getLikeTime = (like: LikeData) => {
+      const value = like.createdAt?.toDate?.() || like.createdAt;
+      const date = value instanceof Date ? value : new Date(value);
+      return date.getTime();
+    };
+
+    return result.sort((a, b) => {
+      const aMax = Math.max(...a.likes.map(getLikeTime));
+      const bMax = Math.max(...b.likes.map(getLikeTime));
+      return bMax - aMax;
+    });
+  }, [receivedReviewLikes, submissionsMap, participantMap]);
+
+  const receivedAnswerGroups = useMemo(() => {
+    const groups = new Map<string, LikeData[]>();
+    receivedAnswerLikes.forEach(like => {
+      const existing = groups.get(like.targetId) || [];
+      existing.push(like);
+      groups.set(like.targetId, existing);
+    });
+
+    const result = Array.from(groups.entries()).map(([targetId, likes]) => {
+      const submission = submissionsMap.get(targetId);
+      const contentParticipant = submission ? participantMap.get(submission.participantId) : undefined;
+      const likers = likes
+        .map(like => participantMap.get(like.userId))
+        .filter((p): p is Participant => !!p);
+
+      return { targetId, likes, submission, contentParticipant, likers };
+    });
+
+    const getLikeTime = (like: LikeData) => {
+      const value = like.createdAt?.toDate?.() || like.createdAt;
+      const date = value instanceof Date ? value : new Date(value);
+      return date.getTime();
+    };
+
+    return result.sort((a, b) => {
+      const aMax = Math.max(...a.likes.map(getLikeTime));
+      const bMax = Math.max(...b.likes.map(getLikeTime));
+      return bMax - aMax;
+    });
+  }, [receivedAnswerLikes, submissionsMap, participantMap]);
+
   if (isLoading) {
     return <div className="p-8 text-center text-gray-400">로딩 중...</div>;
   }
@@ -393,33 +599,89 @@ export default function LikesTab({
               emptyMessage="아직 받은 좋아요가 없어요. 먼저 표현해보세요!"
             />
 
-            {/* 감상평 좋아요 목록 */}
-            <LikeListSection
-              title="감상평"
-              likes={receivedReviewLikes}
-              submissionsMap={submissionsMap}
-              participantMap={participantMap}
-              participantKey="userId"
-              onProfileClick={onProfileClick}
-              onReviewClick={handleReviewClick}
-              onAnswerClick={handleAnswerClick}
-              emptyMessage="아직 받은 감상평 좋아요가 없습니다."
-              accentColor="bg-[#4A90D9]"
-            />
+            {/* 감상평 (내 글 기준) */}
+            <div className="bg-white rounded-[12px] p-5 shadow-xs">
+              <div className="flex items-center gap-2 mb-3">
+                <div className={cn("w-2 h-2 rounded-full", "bg-[#4A90D9]")} />
+                <p className="text-[13px] font-bold text-[#333D4B]">감상평</p>
+                <span className="text-[12px] text-[#8B95A1]">{receivedReviewLikes.length}개</span>
+              </div>
+              {receivedReviewGroups.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {receivedReviewGroups.map(group => (
+                    <ReceivedLikeCard
+                      key={group.targetId}
+                      title={group.submission?.bookTitle || '감상평'}
+                      subtitle={group.submission?.submissionDate}
+                      preview={group.submission?.review || ''}
+                      likeCount={group.likes.length}
+                      submission={group.submission}
+                      contentParticipant={group.contentParticipant}
+                      likers={group.likers}
+                      onOpenLikers={() => {
+                        const uniqueParticipants = Array.from(
+                          new Map(group.likers.map(p => [p.id, p])).values()
+                        );
+                        setLikersModalData({
+                          title: `${group.submission?.bookTitle || '감상평'}에 좋아요`,
+                          participants: uniqueParticipants,
+                        });
+                      }}
+                      onOpenContent={() => {
+                        if (!group.submission) return;
+                        handleReviewClick(group.submission.participantId, group.submission);
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-[#8B95A1] text-[13px]">
+                  아직 받은 감상평 좋아요가 없습니다.
+                </div>
+              )}
+            </div>
 
-            {/* 가치관 답변 좋아요 목록 */}
-            <LikeListSection
-              title="가치관 답변"
-              likes={receivedAnswerLikes}
-              submissionsMap={submissionsMap}
-              participantMap={participantMap}
-              participantKey="userId"
-              onProfileClick={onProfileClick}
-              onReviewClick={handleReviewClick}
-              onAnswerClick={handleAnswerClick}
-              emptyMessage="아직 받은 가치관 답변 좋아요가 없습니다."
-              accentColor="bg-[#F5A623]"
-            />
+            {/* 가치관 답변 (내 글 기준) */}
+            <div className="bg-white rounded-[12px] p-5 shadow-xs">
+              <div className="flex items-center gap-2 mb-3">
+                <div className={cn("w-2 h-2 rounded-full", "bg-[#F5A623]")} />
+                <p className="text-[13px] font-bold text-[#333D4B]">가치관 답변</p>
+                <span className="text-[12px] text-[#8B95A1]">{receivedAnswerLikes.length}개</span>
+              </div>
+              {receivedAnswerGroups.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {receivedAnswerGroups.map(group => (
+                    <ReceivedLikeCard
+                      key={group.targetId}
+                      title={group.submission?.dailyQuestion || '가치관 답변'}
+                      subtitle={group.submission?.submissionDate}
+                      preview={group.submission?.dailyAnswer || ''}
+                      likeCount={group.likes.length}
+                      submission={group.submission}
+                      contentParticipant={group.contentParticipant}
+                      likers={group.likers}
+                      onOpenLikers={() => {
+                        const uniqueParticipants = Array.from(
+                          new Map(group.likers.map(p => [p.id, p])).values()
+                        );
+                        setLikersModalData({
+                          title: `${group.submission?.dailyQuestion || '가치관 답변'}에 좋아요`,
+                          participants: uniqueParticipants,
+                        });
+                      }}
+                      onOpenContent={() => {
+                        if (!group.submission || !group.contentParticipant) return;
+                        handleAnswerClick(group.contentParticipant, group.submission);
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-[#8B95A1] text-[13px]">
+                  아직 받은 가치관 답변 좋아요가 없습니다.
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-6">
@@ -503,6 +765,51 @@ export default function LikesTab({
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 좋아요 준 사람 목록 모달 */}
+      <Dialog open={!!likersModalData} onOpenChange={(open) => !open && setLikersModalData(null)}>
+        <DialogContent className="sm:max-w-md sm:rounded-2xl">
+          <DialogHeader className="text-left gap-1">
+            <DialogTitle className="text-base">{likersModalData?.title || '좋아요'}</DialogTitle>
+            <DialogDescription className="sr-only">좋아요를 준 사람 목록입니다.</DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-2 max-h-[60vh] overflow-y-auto">
+            {likersModalData?.participants?.length ? (
+              <div className="flex flex-col divide-y divide-[#F2F4F6]">
+                {likersModalData.participants.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="flex items-center gap-3 py-3 text-left hover:bg-[#F9FAFB] px-1 rounded-[10px] transition-colors"
+                    onClick={() => {
+                      setLikersModalData(null);
+                      onProfileClick(p.id);
+                    }}
+                  >
+                    <div className="w-9 h-9 rounded-full overflow-hidden relative shrink-0 bg-[#F2F4F6]">
+                      <Image
+                        src={getResizedImageUrl(p.profileImageCircle || p.profileImage) || '/image/default-profile.svg'}
+                        alt={p.name}
+                        fill
+                        className="object-cover"
+                        sizes="36px"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-medium text-[#333D4B] truncate">{p.name}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="py-10 text-center text-[#8B95A1] text-[13px]">
+                좋아요를 준 사람이 없습니다.
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

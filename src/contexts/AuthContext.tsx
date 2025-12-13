@@ -81,7 +81,6 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           }
         });
       } catch (error) {
-
         if (mounted) {
           setAuthLoading(false);
         }

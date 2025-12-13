@@ -6,7 +6,7 @@ import PhoneAuthCard from '@/features/auth/components/PhoneAuthCard';
 import SplashScreen from '@/features/auth/components/SplashScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { appRoutes } from '@/lib/navigation';
-import { useActiveCohorts, useRealtimeCohort } from '@/hooks/use-cohorts';
+import { useActiveCohorts } from '@/hooks/use-cohorts';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +40,17 @@ export default function Home() {
     return false;
   });
 
+  // Impersonation 복귀 시 돌아갈 코호트(=방금 impersonated 유저의 코호트)
+  const [returnCohortIdFromImpersonation] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    const cohortId = sessionStorage.getItem('pns_impersonation_return_cohort_id');
+    if (cohortId) {
+      sessionStorage.removeItem('pns_impersonation_return_cohort_id');
+      return cohortId;
+    }
+    return null;
+  });
+
   const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
   const {
     data: activeCohorts = [],
@@ -50,9 +61,6 @@ export default function Home() {
     refetchOnWindowFocus: false,
   });
 
-  const targetCohortId = participant?.cohortId;
-  const { data: targetCohort, isLoading: isCohortLoading } = useRealtimeCohort(targetCohortId || undefined);
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinSplashElapsed(true);
@@ -62,14 +70,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isLoading || isCohortLoading || (isAdminUser && activeCohortsLoading)) {
+    if (isLoading || (isAdminUser && activeCohortsLoading)) {
       const timer = setTimeout(() => {
         setLoadingTimeout(true);
       }, MAX_LOADING_TIME);
 
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isCohortLoading, isAdminUser, activeCohortsLoading]);
+  }, [isLoading, isAdminUser, activeCohortsLoading]);
 
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
@@ -90,26 +98,22 @@ export default function Home() {
 
   useEffect(() => {
     if (participantStatus === 'ready' && participant && !hasNavigated) {
-      // If we have a cohort ID, ensure we have checked the cohort status.
-      // We rely on isCohortLoading, but we also need to handle the race condition.
-      
-      // 1. If loading, wait.
-      if (isCohortLoading) return;
-      
-      // 2. If we have an ID but no data, and we are NOT loading...
-      // This happens when the ID just changed and the hook hasn't updated loading state yet (async state update).
-      // We must wait for the data to arrive.
-      if (targetCohortId && !targetCohort) {
-         return;
-      }
+      // /app/chat 서버 라우트에서 cohort 존재/권한을 검증하므로, 여기서는 cohort 로딩을 기다리지 않음.
 
       let targetCohortIdToNavigate: string | null = null;
 
+      // impersonation에서 방금 복귀한 경우: 마지막으로 보던(impersonated 유저의) 코호트로 복귀
+      if (isReturningFromImpersonation && returnCohortIdFromImpersonation) {
+        targetCohortIdToNavigate = returnCohortIdFromImpersonation;
+      } else {
       // Impersonate 모드가 아닌 관리자만 최신 활성 코호트로 이동
       // (단, impersonation에서 막 복귀한 경우는 제외 - 원래 보던 화면 유지)
       const shouldUseAdminLogic = isAdminUser && !isImpersonating && !isReturningFromImpersonation;
 
       if (shouldUseAdminLogic) {
+        if (activeCohortsLoading) {
+          return;
+        }
         const activeCohort = activeCohorts[0];
 
         if (activeCohort) {
@@ -120,6 +124,7 @@ export default function Home() {
       } else {
         // 일반 유저 또는 Impersonate 모드: 타겟 유저의 cohortId 사용
         targetCohortIdToNavigate = participant.cohortId;
+      }
       }
 
       if (targetCohortIdToNavigate) {
@@ -138,14 +143,12 @@ export default function Home() {
     isAdminUser,
     isImpersonating,
     isReturningFromImpersonation,
+    returnCohortIdFromImpersonation,
     router,
-    isCohortLoading,
-    targetCohort,
-    targetCohortId,
   ]);
 
   // 로딩 타임아웃 시 재시도 UI 표시 (스플래시 무한 표시 방지)
-  if (loadingTimeout && (isLoading || isCohortLoading)) {
+  if (loadingTimeout && (isLoading || (isAdminUser && activeCohortsLoading))) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-gray-50">
         <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-xs text-center space-y-4">
@@ -175,7 +178,7 @@ export default function Home() {
     );
   }
 
-  if (isLoading || !minSplashElapsed || isCohortLoading) {
+  if (isLoading || !minSplashElapsed || (isAdminUser && activeCohortsLoading)) {
     return <SplashScreen />;
   }
 

@@ -35,6 +35,7 @@ export default function LikeButton({
   const [count, setCount] = useState(initialCount);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isOwnTarget = Boolean(currentUserId && targetUserId && currentUserId === targetUserId);
 
   // Sync with global state
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function LikeButton({
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUserId) return;
+    if (isOwnTarget) return;
     if (isSubmitting) return;
 
     // 인증 안 했으면 토스트 표시하고 리턴
@@ -92,7 +94,7 @@ export default function LikeButton({
         liked ? "text-[#FF4B4B]" : "text-[#8B95A1] hover:text-[#505967]",
         className
       )}
-      disabled={!currentUserId || isSubmitting}
+      disabled={!currentUserId || isSubmitting || isOwnTarget}
     >
       <div className="relative">
         <Heart 

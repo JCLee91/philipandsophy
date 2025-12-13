@@ -27,8 +27,10 @@ export default function ImpersonationBanner() {
     try {
       // 1. 저장된 관리자 토큰 확인
       const adminToken = sessionStorage.getItem('pns_admin_token');
-      const returnUrl = sessionStorage.getItem('pns_impersonation_return_url') || '/datacntr/participants';
+      const storedReturnUrl = sessionStorage.getItem('pns_impersonation_return_url') || '/datacntr/participants';
       const auth = getFirebaseAuth();
+
+      const impersonatedCohortId = participant?.cohortId ?? null;
 
       if (adminToken) {
         try {
@@ -48,8 +50,16 @@ export default function ImpersonationBanner() {
           sessionStorage.removeItem('pns_impersonation_view_mode');
 
           // /app 경로로 복귀 시 활성 코호트 리디렉션 방지 플래그
+          let returnUrl = storedReturnUrl;
           if (returnUrl.startsWith('/app')) {
             sessionStorage.setItem('pns_admin_returning_from_impersonation', 'true');
+            if (impersonatedCohortId) {
+              // 복귀 직후 /app에서 이동할 코호트(=방금 impersonated 유저의 코호트)
+              sessionStorage.setItem('pns_impersonation_return_cohort_id', impersonatedCohortId);
+            }
+            // /app 하위 경로로 바로 들어가면 cohort query가 누락돼 다시 "기본 코호트"로 떨어질 수 있으므로,
+            // /app에서 한 번 결정하도록 고정.
+            returnUrl = '/app';
           }
 
           // 원래 진입했던 경로(데이터센터 or 앱)로 복귀

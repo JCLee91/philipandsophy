@@ -67,6 +67,11 @@ export async function toggleLike(
       const currentData = targetDoc.data();
       const countField = targetType === 'review' ? 'reviewLikeCount' : 'answerLikeCount';
       const currentCount = currentData[countField] || 0;
+
+      // 본인 글에는 좋아요 생성 불가 (잘못 생성된 경우는 정리만 허용)
+      if (userId === targetUserId && !likeDoc.exists()) {
+        return { isLiked: false, newCount: currentCount };
+      }
       
       if (likeDoc.exists()) {
         // 이미 좋아요 상태 -> 취소

@@ -96,7 +96,10 @@ export function ParticipantCard({
       // 2. 배너 표시 플래그 및 복귀 경로 저장
       // 모바일 앱에서는 현재 경로를 저장해두고 복귀 시 해당 경로로 이동
       sessionStorage.setItem('pns_admin_impersonation', 'true');
-      sessionStorage.setItem('pns_impersonation_return_url', pathname);
+      const returnUrl = typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+        : pathname;
+      sessionStorage.setItem('pns_impersonation_return_url', returnUrl);
 
       // 3. 현재 viewMode 저장 (복귀 시 관리자 모드 복원용)
       const currentViewMode = localStorage.getItem(APP_CONSTANTS.STORAGE_KEY_VIEW_MODE);

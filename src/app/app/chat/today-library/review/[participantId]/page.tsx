@@ -327,16 +327,18 @@ function ReviewDetailContent({ params }: { params: { participantId: string } }) 
                             </div>
 
                             {/* Like Button - 중앙 하단 */}
-                            <div className="flex justify-center mt-8 pt-6 border-t border-[#F2F4F6]">
-                                <LikeButton
-                                    targetId={`${submission.id}_review`}
-                                    targetType="review"
-                                    targetUserId={participantId}
-                                    currentUserId={currentUser?.id || ''}
-                                    initialCount={submission.reviewLikeCount || 0}
-                                    size={28}
-                                />
-                            </div>
+                            {currentUser?.id && participantId !== currentUser.id && (
+                                <div className="flex justify-center mt-8 pt-6 border-t border-[#F2F4F6]">
+                                    <LikeButton
+                                        targetId={`${submission.id}_review`}
+                                        targetType="review"
+                                        targetUserId={participantId}
+                                        currentUserId={currentUser.id}
+                                        initialCount={submission.reviewLikeCount || 0}
+                                        size={28}
+                                    />
+                                </div>
+                            )}
                         </section>
 
                     </div>
@@ -369,4 +371,3 @@ export default function ReviewDetailPage({ params }: { params: Promise<{ partici
         </Suspense>
     );
 }
-
