@@ -706,8 +706,8 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                                 <p className="text-[14px] leading-[1.4] text-[#31363e] whitespace-pre-wrap wrap-break-word">
                                   {answer}
                                 </p>
-                                {/* 좋아요 버튼 */}
-                                {!isPartyView && currentUserId && (() => {
+                                {/* 좋아요 버튼 (본인 글에는 표시 안 함) */}
+                                {!isPartyView && currentUserId && !isSelf && (() => {
                                   const submissionForQuestion = submissions.find(s => s.dailyQuestion === question);
                                   return submissionForQuestion?.id ? (
                                     <div className="flex justify-center pt-4 mt-3 border-t border-white/50">
@@ -797,8 +797,8 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                     {selectedSubmission.review}
                   </p>
                 </div>
-                {/* 좋아요 버튼 */}
-                {!isPartyView && currentUserId && selectedSubmission.id && (
+                {/* 좋아요 버튼 (본인 글에는 표시 안 함) */}
+                {!isPartyView && currentUserId && !isSelf && selectedSubmission.id && (
                   <div className="flex justify-center pt-4 mt-2 border-t border-[#F2F4F6]">
                     <LikeButton
                       targetId={`${selectedSubmission.id}_review`}
