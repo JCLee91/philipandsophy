@@ -1,7 +1,7 @@
 
 import { useToast } from '@/hooks/use-toast';
 
-type LockType = 'review' | 'answer' | 'profile';
+type LockType = 'review' | 'answer' | 'profile' | 'like';
 
 export function useLockedToast() {
   const { toast } = useToast();
@@ -19,6 +19,10 @@ export function useLockedToast() {
       profile: {
         title: '프로필 잠김 🔒',
         description: '오늘의 독서를 인증하면 다른 멤버들의 프로필북을 볼 수 있어요'
+      },
+      like: {
+        title: '좋아요 잠김 🔒',
+        description: '오늘의 독서를 인증하면 좋아요를 보낼 수 있어요'
       }
     };
 

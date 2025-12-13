@@ -11,6 +11,8 @@ interface ReviewsSectionProps {
   onProfileClick: (participantId: string) => void;
   onReviewClick: (participantId: string) => void;
   currentUserId: string;
+  isLocked: boolean;
+  isSuperAdmin: boolean;
 }
 
 export default function ReviewsSection({
@@ -18,6 +20,8 @@ export default function ReviewsSection({
   onProfileClick,
   onReviewClick,
   currentUserId,
+  isLocked,
+  isSuperAdmin,
 }: ReviewsSectionProps) {
   return (
     <section className="mb-10">
@@ -66,6 +70,7 @@ export default function ReviewsSection({
                     targetUserId={member.id}
                     currentUserId={currentUserId}
                     initialCount={member.submission.reviewLikeCount || 0}
+                    isLocked={isLocked && !isSuperAdmin && member.id !== currentUserId}
                   />
                 )}
               </div>

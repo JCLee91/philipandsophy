@@ -37,6 +37,10 @@ interface TodayLibraryTabsProps {
   isViewingOtherCluster: boolean;
   fromRecap: boolean;
   onReturnToMyCluster: () => void;
+
+  // Access Control
+  isLocked: boolean;
+  isSuperAdmin: boolean;
 }
 
 type TabType = 'today' | 'members' | 'likes';
@@ -57,6 +61,8 @@ export default function TodayLibraryTabs({
   isViewingOtherCluster,
   fromRecap,
   onReturnToMyCluster,
+  isLocked,
+  isSuperAdmin,
 }: TodayLibraryTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -152,6 +158,8 @@ export default function TodayLibraryTabs({
                       onProfileClick={onProfileClick}
                       onReviewClick={onReviewClick}
                       currentUserId={currentUserId}
+                      isLocked={isLocked}
+                      isSuperAdmin={isSuperAdmin}
                     />
 
                     <ValuesSection
@@ -161,6 +169,8 @@ export default function TodayLibraryTabs({
                       onProfileClick={onProfileClick}
                       onToggleAnswer={toggleAnswer}
                       currentUserId={currentUserId}
+                      isLocked={isLocked}
+                      isSuperAdmin={isSuperAdmin}
                     />
                   </div>
                 </div>
@@ -272,6 +282,8 @@ export default function TodayLibraryTabs({
                         onProfileClick={onProfileClick}
                         onReviewClick={onReviewClick}
                         currentUserId={currentUserId}
+                        isLocked={isLocked}
+                        isSuperAdmin={isSuperAdmin}
                     />
 
                     <ValuesSection
@@ -281,6 +293,8 @@ export default function TodayLibraryTabs({
                         onProfileClick={onProfileClick}
                         onToggleAnswer={toggleAnswer}
                         currentUserId={currentUserId}
+                        isLocked={isLocked}
+                        isSuperAdmin={isSuperAdmin}
                     />
                 </div>
               </div>
@@ -316,7 +330,7 @@ export default function TodayLibraryTabs({
                 currentUserId={currentUserId}
                 allParticipants={allParticipants}
                 onProfileClick={onProfileClick}
-                onReviewClick={onReviewClick}
+                cohortId={cohortId}
               />
             </motion.div>
           )}

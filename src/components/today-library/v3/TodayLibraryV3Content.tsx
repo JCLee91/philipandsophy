@@ -24,6 +24,8 @@ export default function TodayLibraryV3Content() {
     showPostProgramView,
     fromRecap,
     isViewingOtherCluster,
+    isLocked,
+    isSuperAdmin,
     clusterMatching,
     clusterMembersWithSubmissions,
     dailyQuestion,
@@ -127,6 +129,8 @@ export default function TodayLibraryV3Content() {
             isViewingOtherCluster={isViewingOtherCluster}
             fromRecap={fromRecap}
             onReturnToMyCluster={handleReturnToMyCluster}
+            isLocked={isLocked}
+            isSuperAdmin={isSuperAdmin}
           />
         </main>
 

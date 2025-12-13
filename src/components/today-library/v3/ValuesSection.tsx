@@ -13,6 +13,8 @@ interface ValuesSectionProps {
   onProfileClick: (participantId: string) => void;
   onToggleAnswer: (participantId: string) => void;
   currentUserId: string;
+  isLocked: boolean;
+  isSuperAdmin: boolean;
 }
 
 export default function ValuesSection({
@@ -22,6 +24,8 @@ export default function ValuesSection({
   onProfileClick,
   onToggleAnswer,
   currentUserId,
+  isLocked,
+  isSuperAdmin,
 }: ValuesSectionProps) {
   if (!dailyQuestion) return null;
 
@@ -85,6 +89,7 @@ export default function ValuesSection({
                       targetUserId={member.id}
                       currentUserId={currentUserId}
                       initialCount={member.submission.answerLikeCount || 0}
+                      isLocked={isLocked && !isSuperAdmin && member.id !== currentUserId}
                     />
                   )}
                 </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLikes } from '../hooks/use-likes';
+import { useLockedToast } from '@/hooks/use-locked-toast';
 import { cn } from '@/lib/utils';
 
 interface LikeButtonProps {
@@ -14,6 +15,8 @@ interface LikeButtonProps {
   initialCount?: number;
   className?: string;
   size?: number;
+  /** 인증 안 했을 때 잠금 상태 */
+  isLocked?: boolean;
 }
 
 export default function LikeButton({
@@ -23,9 +26,11 @@ export default function LikeButton({
   currentUserId,
   initialCount = 0,
   className,
-  size = 18
+  size = 18,
+  isLocked = false,
 }: LikeButtonProps) {
   const { isLiked, toggleLikeAsync } = useLikes(currentUserId);
+  const { showLockedToast } = useLockedToast();
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -45,8 +50,14 @@ export default function LikeButton({
 
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentUserId) return; // Or show login toast
+    if (!currentUserId) return;
     if (isSubmitting) return;
+
+    // 인증 안 했으면 토스트 표시하고 리턴
+    if (isLocked) {
+      showLockedToast('like');
+      return;
+    }
 
     // Optimistic UI update
     const prevCount = count;

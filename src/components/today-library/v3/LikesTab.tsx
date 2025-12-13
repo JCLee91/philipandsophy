@@ -23,7 +23,7 @@ interface LikesTabProps {
   currentUserId: string;
   allParticipants: Participant[];
   onProfileClick: (participantId: string) => void;
-  onReviewClick: (participantId: string) => void;
+  cohortId: string;
 }
 
 // 랭킹 카드 컴포넌트 (Top 3)
@@ -110,7 +110,7 @@ function ScrapCard({
   submission?: ReadingSubmission;
   participant?: Participant;
   onProfileClick: (id: string) => void;
-  onReviewClick: (id: string) => void;
+  onReviewClick: (id: string, submission?: ReadingSubmission) => void;
   onAnswerClick: (participant: Participant, submission: ReadingSubmission) => void;
 }) {
   if (!participant || !submission) return null;
@@ -124,7 +124,7 @@ function ScrapCard({
   // 클릭 핸들러: 감상평은 페이지 이동, 가치관 답변은 모달
   const handleContentClick = () => {
     if (like.targetType === 'review') {
-      onReviewClick(participant.id);
+      onReviewClick(participant.id, submission);
     } else {
       onAnswerClick(participant, submission);
     }
@@ -214,7 +214,7 @@ function LikeListSection({
   participantMap: Map<string, Participant>;
   participantKey: 'userId' | 'targetUserId';
   onProfileClick: (id: string) => void;
-  onReviewClick: (id: string) => void;
+  onReviewClick: (id: string, submission?: ReadingSubmission) => void;
   onAnswerClick: (participant: Participant, submission: ReadingSubmission) => void;
   emptyMessage: string;
   accentColor: string;
@@ -253,19 +253,19 @@ export default function LikesTab({
   currentUserId,
   allParticipants,
   onProfileClick,
-  onReviewClick,
+  cohortId,
 }: LikesTabProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { myLikes, receivedLikes, submissionsMap, isLoading } = useLikes(currentUserId);
-  
+
   // 가치관 답변 모달 상태
   const [answerModalData, setAnswerModalData] = useState<AnswerModalData | null>(null);
-  
+
   // URL 쿼리 파라미터로 서브탭 상태 관리 (뒤로가기 시 유지)
   const likesTabParam = searchParams.get('likesTab');
   const activeTab: 'received' | 'sent' = likesTabParam === 'sent' ? 'sent' : 'received';
-  
+
   // 서브탭 변경 시 URL 업데이트
   const setActiveTab = useCallback((tab: 'received' | 'sent') => {
     const params = new URLSearchParams(searchParams.toString());
@@ -277,7 +277,13 @@ export default function LikesTab({
     const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
     router.replace(newUrl, { scroll: false });
   }, [router, searchParams]);
-  
+
+  // 감상평 클릭 핸들러 (좋아요 탭에서는 isLocked 체크 없이 직접 이동)
+  const handleReviewClick = useCallback((participantId: string, submission?: ReadingSubmission) => {
+    const date = submission?.submissionDate || searchParams.get('matchingDate') || '';
+    router.push(`/app/chat/today-library/review/${encodeURIComponent(participantId)}?date=${date}&cohort=${cohortId}`);
+  }, [router, cohortId, searchParams]);
+
   // 가치관 답변 클릭 핸들러
   const handleAnswerClick = useCallback((participant: Participant, submission: ReadingSubmission) => {
     setAnswerModalData({ participant, submission });
@@ -395,7 +401,7 @@ export default function LikesTab({
               participantMap={participantMap}
               participantKey="userId"
               onProfileClick={onProfileClick}
-              onReviewClick={onReviewClick}
+              onReviewClick={handleReviewClick}
               onAnswerClick={handleAnswerClick}
               emptyMessage="아직 받은 감상평 좋아요가 없습니다."
               accentColor="bg-[#4A90D9]"
@@ -409,7 +415,7 @@ export default function LikesTab({
               participantMap={participantMap}
               participantKey="userId"
               onProfileClick={onProfileClick}
-              onReviewClick={onReviewClick}
+              onReviewClick={handleReviewClick}
               onAnswerClick={handleAnswerClick}
               emptyMessage="아직 받은 가치관 답변 좋아요가 없습니다."
               accentColor="bg-[#F5A623]"
@@ -433,7 +439,7 @@ export default function LikesTab({
               participantMap={participantMap}
               participantKey="targetUserId"
               onProfileClick={onProfileClick}
-              onReviewClick={onReviewClick}
+              onReviewClick={handleReviewClick}
               onAnswerClick={handleAnswerClick}
               emptyMessage="아직 보낸 감상평 좋아요가 없습니다."
               accentColor="bg-[#4A90D9]"
@@ -447,7 +453,7 @@ export default function LikesTab({
               participantMap={participantMap}
               participantKey="targetUserId"
               onProfileClick={onProfileClick}
-              onReviewClick={onReviewClick}
+              onReviewClick={handleReviewClick}
               onAnswerClick={handleAnswerClick}
               emptyMessage="아직 보낸 가치관 답변 좋아요가 없습니다."
               accentColor="bg-[#F5A623]"
