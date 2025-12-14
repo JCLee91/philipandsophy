@@ -90,13 +90,14 @@ export default function ParticipantsPage() {
       sessionStorage.setItem('pns_impersonation_return_url', '/datacntr/participants');
 
       const auth = getFirebaseAuth();
-      await signInWithCustomToken(auth, customToken);
-
-      // Firebase Auth 세션 저장 대기 후 이동
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (user?.uid) {
+        sessionStorage.setItem('pns_impersonation_admin_uid', user.uid);
+      }
+      const credential = await signInWithCustomToken(auth, customToken);
+      await credential.user.getIdToken(true);
 
       // 전체 새로고침으로 React Query 캐시 초기화
-      window.location.href = '/app';
+      window.location.replace(`/app?r=${Date.now()}`);
     } catch (error) {
       console.error('Impersonation failed:', error);
       alert('유저로 로그인하기 실패했습니다. 권한을 확인해주세요.');

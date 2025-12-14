@@ -109,13 +109,17 @@ export function ParticipantCard({
 
       // 4. 타겟 유저로 로그인
       const auth = getFirebaseAuth();
-      await signInWithCustomToken(auth, customToken);
+      const adminUid = auth.currentUser?.uid;
+      if (adminUid) {
+        sessionStorage.setItem('pns_impersonation_admin_uid', adminUid);
+      }
 
-      // Firebase Auth 세션 저장 대기 후 이동
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const credential = await signInWithCustomToken(auth, customToken);
+      // iOS PWA에서 persistence가 안정화되기 전에 이동하면 흰 화면이 날 수 있어 토큰 확보 후 이동
+      await credential.user.getIdToken(true);
 
       // 메인 앱으로 이동 (전체 새로고침으로 React Query 캐시 초기화)
-      window.location.href = '/app';
+      window.location.replace(`/app?r=${Date.now()}`);
       
     } catch (error) {
       console.error('Impersonation failed:', error);

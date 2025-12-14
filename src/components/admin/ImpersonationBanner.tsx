@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, LogOut } from 'lucide-react';
 import { signInWithCustomToken } from 'firebase/auth';
@@ -11,18 +11,20 @@ import { APP_CONSTANTS } from '@/constants/app';
 export default function ImpersonationBanner() {
   const { user, participant, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     // 세션 스토리지 확인
     const impersonationFlag = sessionStorage.getItem('pns_admin_impersonation');
-    if (impersonationFlag === 'true' && user) {
-      setIsImpersonating(true);
-    } else {
-      setIsImpersonating(false);
-    }
-  }, [user]);
+    const adminUid = sessionStorage.getItem('pns_impersonation_admin_uid');
+    // 배너는 "관리자 → 유저" 전환이 완료된 후(=Auth uid가 바뀐 후)에만 표시
+    const isTransitionComplete =
+      impersonationFlag === 'true' && !!user?.uid && !!adminUid && user.uid !== adminUid;
+
+    setIsImpersonating(isTransitionComplete);
+  }, [user?.uid]);
 
   const handleExit = async () => {
     try {
@@ -54,6 +56,7 @@ export default function ImpersonationBanner() {
           sessionStorage.removeItem('pns_admin_token');
           sessionStorage.removeItem('pns_impersonation_return_url');
           sessionStorage.removeItem('pns_impersonation_view_mode');
+          sessionStorage.removeItem('pns_impersonation_admin_uid');
 
           // /app 경로로 복귀 시 활성 코호트 리디렉션 방지 플래그
           let returnUrl = storedReturnUrl;
@@ -86,6 +89,7 @@ export default function ImpersonationBanner() {
       sessionStorage.removeItem('pns_admin_token');
       sessionStorage.removeItem('pns_impersonation_return_url');
       sessionStorage.removeItem('pns_impersonation_view_mode');
+      sessionStorage.removeItem('pns_impersonation_admin_uid');
 
       // 관리자 로그인 페이지로 이동
       router.replace('/datacntr/login');
@@ -101,7 +105,9 @@ export default function ImpersonationBanner() {
   return (
     <>
       {/* 1. 화면 전체 테두리 (클릭 통과) */}
-      <div className="fixed inset-0 z-9999 border-4 border-amber-500 pointer-events-none" />
+      {pathname.startsWith('/app') && (
+        <div className="fixed inset-0 z-9999 border-4 border-amber-500 pointer-events-none" />
+      )}
 
       {/* 2. 하단 플로팅 복귀 버튼 (클릭 가능) */}
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-9999 pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import PhoneAuthCard from '@/features/auth/components/PhoneAuthCard';
 import SplashScreen from '@/features/auth/components/SplashScreen';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +14,6 @@ const MIN_SPLASH_TIME = 1000;
 const NAVIGATION_TIMEOUT_TIME = 10000;
 
 export default function Home() {
-  const router = useRouter();
   const { participant, participantStatus, isLoading, retryParticipantFetch } = useAuth();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
@@ -53,13 +51,6 @@ export default function Home() {
     }
     return null;
   });
-
-  const hasAuthCookies = () => {
-    if (typeof document === 'undefined') return false;
-    // /app/chat 서버 라우트가 pns-participant 쿠키를 기반으로 초기 데이터를 로드하므로
-    // 쿠키가 생성되기 전에는 이동을 지연한다 (iOS PWA에서 특히 중요).
-    return document.cookie.includes('pns-participant=');
-  };
 
   const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
   const {
@@ -109,8 +100,6 @@ export default function Home() {
   useEffect(() => {
     if (participantStatus === 'ready' && participant && !hasNavigated) {
       // /app/chat 서버 라우트에서 cohort 존재/권한을 검증하므로, 여기서는 cohort 로딩을 기다리지 않음.
-      if (!hasAuthCookies()) return;
-
       let targetCohortIdToNavigate: string | null = null;
 
       // impersonation에서 방금 복귀한 경우: 마지막으로 보던(impersonated 유저의) 코호트로 복귀
@@ -159,7 +148,6 @@ export default function Home() {
     isImpersonating,
     isReturningFromImpersonation,
     returnCohortIdFromImpersonation,
-    router,
   ]);
 
   useEffect(() => {
