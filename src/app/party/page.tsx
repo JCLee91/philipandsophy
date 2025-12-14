@@ -16,6 +16,9 @@ import { getCohortsByIds } from '@/lib/firebase/cohorts';
 import { PARTY_GUEST_PHONE_NUMBERS } from '@/constants/party-guests';
 import { Participant } from '@/types/database';
 
+// ARCHIVED(2025-12): 연말파티 종료 - 다음 시즌에 이 플래그를 false로 변경하면 재활성화
+const PARTY_ARCHIVED = true;
+
 function normalizePhoneNumber(phoneNumber?: string | null) {
     if (!phoneNumber) return null;
     const normalized = phoneNumber.replace(/\D/g, '');
@@ -223,6 +226,33 @@ export default function PartyPage() {
         // 닫기 시 최초 기수로 자동 설정 (CohortSelectModal에서 처리됨)
         setShowCohortSelectModal(false);
     };
+
+    // ARCHIVED: 연말파티 종료 화면
+    if (PARTY_ARCHIVED) {
+        return (
+            <PageTransition>
+                <div className="app-shell flex flex-col items-center justify-center min-h-screen bg-[#F6F6F6] p-6">
+                    <div className="text-center space-y-4">
+                        <div className="text-6xl mb-4">🎄</div>
+                        <h1 className="text-2xl font-bold text-gray-900">
+                            2025 X-mas 연말파티가 종료되었습니다
+                        </h1>
+                        <p className="text-gray-600">
+                            함께해주셔서 감사합니다!<br />
+                            다음 파티에서 만나요 ✨
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => window.location.href = '/app'}
+                            className="mt-6 px-6 py-3 bg-black text-white rounded-xl font-medium hover:bg-neutral-800 transition-colors"
+                        >
+                            앱으로 돌아가기
+                        </button>
+                    </div>
+                </div>
+            </PageTransition>
+        );
+    }
 
     if (isLoading) {
         return <LoadingSkeleton title="2025 X-mas 연말파티" />;
