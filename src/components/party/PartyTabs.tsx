@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import PartyParticipantList from './PartyParticipantList';
@@ -8,6 +9,10 @@ import PartyGroupsTab from './PartyGroupsTab';
 import type { Participant } from '@/types/database';
 
 type TabType = 'participants' | 'groups';
+
+function parseTabParam(value: string | null): TabType {
+  return value === 'groups' ? 'groups' : 'participants';
+}
 
 interface PartyTabsProps {
   participants: Participant[];
@@ -24,7 +29,25 @@ export default function PartyTabs({
   onProfileClick,
   errorMessage,
 }: PartyTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('participants');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const tabFromUrl = useMemo(() => parseTabParam(searchParams.get('tab')), [searchParams]);
+  const [activeTab, setActiveTab] = useState<TabType>(tabFromUrl);
+
+  useEffect(() => {
+    setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
+
+  const setTabAndUrl = (tab: TabType) => {
+    setActiveTab(tab);
+    const next = new URLSearchParams(searchParams.toString());
+    if (tab === 'participants') next.delete('tab');
+    else next.set('tab', tab);
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  };
 
   return (
     <div className="flex flex-col">
@@ -32,7 +55,7 @@ export default function PartyTabs({
       <div className="bg-white sticky top-0 z-20 px-4 pt-2 border-b border-[#F2F4F6]">
         <div className="flex items-center justify-around">
           <button
-            onClick={() => setActiveTab('participants')}
+            onClick={() => setTabAndUrl('participants')}
             className="flex flex-col items-center gap-1 py-3 px-2 flex-1 relative"
           >
             <span
@@ -52,7 +75,7 @@ export default function PartyTabs({
           </button>
 
           <button
-            onClick={() => setActiveTab('groups')}
+            onClick={() => setTabAndUrl('groups')}
             className="flex flex-col items-center gap-1 py-3 px-2 flex-1 relative"
           >
             <span
