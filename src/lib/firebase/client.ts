@@ -36,12 +36,28 @@ let functions: Functions;
 let initialized = false;
 let authPersistencePromise: Promise<void> | null = null;
 
+function isStandalonePwa(): boolean {
+  if (typeof window === 'undefined') return false;
+  const displayModeStandalone =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(display-mode: standalone)').matches;
+  const iosStandalone = (window.navigator as any)?.standalone === true;
+  return Boolean(displayModeStandalone || iosStandalone);
+}
+
 async function setBestAuthPersistence(targetAuth: Auth): Promise<void> {
-  const candidates = [
-    { name: 'INDEXED_DB', persistence: indexedDBLocalPersistence },
-    { name: 'LOCAL_STORAGE', persistence: browserLocalPersistence },
-    { name: 'IN_MEMORY', persistence: inMemoryPersistence },
-  ] as const;
+  const preferLocalStorage = isStandalonePwa();
+  const candidates = preferLocalStorage
+    ? ([
+        { name: 'LOCAL_STORAGE', persistence: browserLocalPersistence },
+        { name: 'INDEXED_DB', persistence: indexedDBLocalPersistence },
+        { name: 'IN_MEMORY', persistence: inMemoryPersistence },
+      ] as const)
+    : ([
+        { name: 'INDEXED_DB', persistence: indexedDBLocalPersistence },
+        { name: 'LOCAL_STORAGE', persistence: browserLocalPersistence },
+        { name: 'IN_MEMORY', persistence: inMemoryPersistence },
+      ] as const);
 
   for (const candidate of candidates) {
     try {

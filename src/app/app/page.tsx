@@ -1,25 +1,56 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import PhoneAuthCard from '@/features/auth/components/PhoneAuthCard';
 import SplashScreen from '@/features/auth/components/SplashScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { appRoutes } from '@/lib/navigation';
 import { useActiveCohorts } from '@/hooks/use-cohorts';
+import { setClientCookie } from '@/lib/cookies';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_LOADING_TIME = 10000;
-const MIN_SPLASH_TIME = 1000;
+const MIN_SPLASH_TIME_DEFAULT_MS = 1000;
+const MIN_SPLASH_TIME_PWA_MS = 200;
 const NAVIGATION_TIMEOUT_TIME = 10000;
 
+function isStandalonePwa(): boolean {
+  if (typeof window === 'undefined') return false;
+  const displayModeStandalone =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(display-mode: standalone)').matches;
+  const iosStandalone = (window.navigator as any)?.standalone === true;
+  return Boolean(displayModeStandalone || iosStandalone);
+}
+
+function ensureAuthCookies(participantId: string, cohortId: string): boolean {
+  if (typeof document === 'undefined') return false;
+
+  if (!document.cookie.includes('pns-participant=')) {
+    setClientCookie('pns-participant', participantId);
+    setClientCookie('pns-cohort', cohortId);
+    try {
+      window.localStorage.setItem('participantId', participantId);
+    } catch {
+      // ignore
+    }
+  }
+
+  return document.cookie.includes('pns-participant=');
+}
+
 export default function Home() {
+  const router = useRouter();
+  const pathname = usePathname();
   const { participant, participantStatus, isLoading, retryParticipantFetch } = useAuth();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
   const [lastNavigationUrl, setLastNavigationUrl] = useState<string | null>(null);
   const [navigationTimeout, setNavigationTimeout] = useState(false);
   const [minSplashElapsed, setMinSplashElapsed] = useState(false);
+  const navigationFallbackTimerRef = useRef<number | null>(null);
   // Impersonate 모드 확인 (초기값에서 바로 설정하여 타이밍 이슈 방지)
   const [isImpersonating] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -63,9 +94,10 @@ export default function Home() {
   });
 
   useEffect(() => {
+    const minSplashMs = isStandalonePwa() ? MIN_SPLASH_TIME_PWA_MS : MIN_SPLASH_TIME_DEFAULT_MS;
     const timer = setTimeout(() => {
       setMinSplashElapsed(true);
-    }, MIN_SPLASH_TIME);
+    }, minSplashMs);
 
     return () => clearTimeout(timer);
   }, []);
@@ -128,12 +160,33 @@ export default function Home() {
       }
 
       if (targetCohortIdToNavigate) {
-        const url = `${appRoutes.chat(targetCohortIdToNavigate)}&r=${Date.now()}`;
-        setLastNavigationUrl(url);
+        if (!ensureAuthCookies(participant.id, targetCohortIdToNavigate)) {
+          return;
+        }
+
+        const baseUrl = appRoutes.chat(targetCohortIdToNavigate);
+        const cacheBustedUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}r=${Date.now()}`;
+        setLastNavigationUrl(baseUrl);
         setHasNavigated(true);
-        // iOS PWA에서 next/navigation의 client router가 간헐적으로 멈추는 케이스가 있어
-        // redirect 전용 페이지(/app)는 강제 이동을 사용한다.
-        window.location.replace(url);
+
+        // 기본은 client navigation으로 빠르게 이동하고,
+        // iOS PWA에서 next/navigation이 멈추는 케이스만 hard navigation으로 폴백한다.
+        try {
+          router.replace(baseUrl);
+        } catch {
+          window.location.replace(cacheBustedUrl);
+          return;
+        }
+
+        if (navigationFallbackTimerRef.current) {
+          window.clearTimeout(navigationFallbackTimerRef.current);
+        }
+
+        navigationFallbackTimerRef.current = window.setTimeout(() => {
+          if (window.location.pathname === '/app') {
+            window.location.replace(cacheBustedUrl);
+          }
+        }, 1500);
       }
     }
   }, [
@@ -148,7 +201,24 @@ export default function Home() {
     isImpersonating,
     isReturningFromImpersonation,
     returnCohortIdFromImpersonation,
+    router,
   ]);
+
+  useEffect(() => {
+    if (pathname !== '/app' && navigationFallbackTimerRef.current) {
+      window.clearTimeout(navigationFallbackTimerRef.current);
+      navigationFallbackTimerRef.current = null;
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (navigationFallbackTimerRef.current) {
+        window.clearTimeout(navigationFallbackTimerRef.current);
+        navigationFallbackTimerRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!hasNavigated || !lastNavigationUrl) return;
@@ -201,7 +271,11 @@ export default function Home() {
           </p>
           <button
             type="button"
-            onClick={() => window.location.replace(`${lastNavigationUrl.split('&r=')[0]}&r=${Date.now()}`)}
+            onClick={() => {
+              const baseUrl = lastNavigationUrl;
+              const retryUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}r=${Date.now()}`;
+              window.location.replace(retryUrl);
+            }}
             className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             다시 시도
