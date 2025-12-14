@@ -12,6 +12,7 @@ export default function ImpersonationBanner() {
   const { user, participant, logout } = useAuth();
   const router = useRouter();
   const [isImpersonating, setIsImpersonating] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     // 세션 스토리지 확인
@@ -25,6 +26,7 @@ export default function ImpersonationBanner() {
 
   const handleExit = async () => {
     try {
+      setIsExiting(true);
       // 1. 저장된 관리자 토큰 확인
       const adminToken = sessionStorage.getItem('pns_admin_token');
       const storedReturnUrl = sessionStorage.getItem('pns_impersonation_return_url') || '/datacntr/participants';
@@ -35,7 +37,11 @@ export default function ImpersonationBanner() {
       if (adminToken) {
         try {
           // 2. 관리자 토큰으로 재로그인 시도
-          await signInWithCustomToken(auth, adminToken);
+          const credential = await signInWithCustomToken(auth, adminToken);
+          // iOS PWA에서 Auth persistence가 안정화되기 전에 라우팅하면 흰 화면/무한 로딩이 발생할 수 있어
+          // 토큰 확보 + 짧은 딜레이로 안정화 시간을 줌.
+          await credential.user.getIdToken(true);
+          await new Promise((resolve) => setTimeout(resolve, 500));
 
           // 3. 저장된 viewMode 복원 (관리자 모드 복원)
           const savedViewMode = sessionStorage.getItem('pns_impersonation_view_mode');
@@ -62,8 +68,11 @@ export default function ImpersonationBanner() {
             returnUrl = '/app';
           }
 
+          // iOS PWA에서 간헐적으로 캐시/히스토리로 인해 화면이 멈추는 케이스를 피하기 위해 cache-buster 부여
+          const cacheBustedUrl = `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}r=${Date.now()}`;
+
           // 원래 진입했던 경로(데이터센터 or 앱)로 복귀
-          window.location.href = returnUrl;
+          window.location.replace(cacheBustedUrl);
           return;
         } catch (loginError) {
           console.error('Admin token login failed:', loginError);
@@ -82,6 +91,8 @@ export default function ImpersonationBanner() {
       router.replace('/datacntr/login');
     } catch (error) {
       console.error('Failed to exit impersonation:', error);
+    } finally {
+      setIsExiting(false);
     }
   };
 
@@ -96,6 +107,7 @@ export default function ImpersonationBanner() {
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-9999 pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={handleExit}
+          disabled={isExiting}
           className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-full shadow-lg font-bold transition-all hover:scale-105 active:scale-95"
         >
           <Eye className="h-4 w-4" />

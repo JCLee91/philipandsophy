@@ -12,12 +12,15 @@ export const dynamic = 'force-dynamic';
 
 const MAX_LOADING_TIME = 10000;
 const MIN_SPLASH_TIME = 1000;
+const NAVIGATION_TIMEOUT_TIME = 10000;
 
 export default function Home() {
   const router = useRouter();
   const { participant, participantStatus, isLoading, retryParticipantFetch } = useAuth();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
+  const [lastNavigationUrl, setLastNavigationUrl] = useState<string | null>(null);
+  const [navigationTimeout, setNavigationTimeout] = useState(false);
   const [minSplashElapsed, setMinSplashElapsed] = useState(false);
   // Impersonate 모드 확인 (초기값에서 바로 설정하여 타이밍 이슈 방지)
   const [isImpersonating] = useState(() => {
@@ -50,6 +53,13 @@ export default function Home() {
     }
     return null;
   });
+
+  const hasAuthCookies = () => {
+    if (typeof document === 'undefined') return false;
+    // /app/chat 서버 라우트가 pns-participant 쿠키를 기반으로 초기 데이터를 로드하므로
+    // 쿠키가 생성되기 전에는 이동을 지연한다 (iOS PWA에서 특히 중요).
+    return document.cookie.includes('pns-participant=');
+  };
 
   const isAdminUser = Boolean(participant?.isAdministrator || participant?.isSuperAdmin);
   const {
@@ -99,6 +109,7 @@ export default function Home() {
   useEffect(() => {
     if (participantStatus === 'ready' && participant && !hasNavigated) {
       // /app/chat 서버 라우트에서 cohort 존재/권한을 검증하므로, 여기서는 cohort 로딩을 기다리지 않음.
+      if (!hasAuthCookies()) return;
 
       let targetCohortIdToNavigate: string | null = null;
 
@@ -128,8 +139,12 @@ export default function Home() {
       }
 
       if (targetCohortIdToNavigate) {
+        const url = `${appRoutes.chat(targetCohortIdToNavigate)}&r=${Date.now()}`;
+        setLastNavigationUrl(url);
         setHasNavigated(true);
-        router.replace(appRoutes.chat(targetCohortIdToNavigate));
+        // iOS PWA에서 next/navigation의 client router가 간헐적으로 멈추는 케이스가 있어
+        // redirect 전용 페이지(/app)는 강제 이동을 사용한다.
+        window.location.replace(url);
       }
     }
   }, [
@@ -146,6 +161,12 @@ export default function Home() {
     returnCohortIdFromImpersonation,
     router,
   ]);
+
+  useEffect(() => {
+    if (!hasNavigated || !lastNavigationUrl) return;
+    const timer = setTimeout(() => setNavigationTimeout(true), NAVIGATION_TIMEOUT_TIME);
+    return () => clearTimeout(timer);
+  }, [hasNavigated, lastNavigationUrl]);
 
   // 로딩 타임아웃 시 재시도 UI 표시 (스플래시 무한 표시 방지)
   if (loadingTimeout && (isLoading || (isAdminUser && activeCohortsLoading))) {
@@ -182,6 +203,33 @@ export default function Home() {
     return <SplashScreen />;
   }
 
+  if (navigationTimeout && lastNavigationUrl) {
+    return (
+      <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-gray-50">
+        <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-xs text-center space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">화면 이동이 오래 걸리고 있습니다</h2>
+          <p className="text-gray-600">
+            iOS PWA 환경에서 인증 전환 직후 화면이 멈추는 경우가 있습니다.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.replace(`${lastNavigationUrl.split('&r=')[0]}&r=${Date.now()}`)}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            다시 시도
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm"
+          >
+            앱 새로고침
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Handle initialization error specifically
   if (participantStatus === 'error') {
     return (
@@ -212,10 +260,7 @@ export default function Home() {
   }
 
   if (participantStatus === 'ready' && participant) {
-    if (!hasNavigated) {
-      return <SplashScreen />;
-    }
-    return null;
+    return <SplashScreen />;
   }
 
   return (
