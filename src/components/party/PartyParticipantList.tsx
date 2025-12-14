@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { getResizedImageUrl } from '@/lib/image-utils';
+import { PARTY_GUEST_JOBS } from '@/constants/party-guests';
 import type { Participant } from '@/types/database';
 
 function getNameWithoutSurname(fullName: string) {
@@ -87,14 +88,21 @@ export default function PartyParticipantList({
               />
             </div>
 
-            {/* 이름 */}
-              <div className="flex-1 min-w-0 flex items-center gap-2">
-                <span className="text-[14px] font-bold text-[#333D4B] text-left truncate">
-                  {displayName}
-                </span>
-                {isMe && (
-                  <span className="shrink-0 rounded-full bg-[#FFB020] px-2 py-0.5 text-[11px] font-bold text-white">
-                    내 프로필북
+            {/* 이름 + 직업 */}
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px] font-bold text-[#333D4B] text-left truncate">
+                    {displayName}
+                  </span>
+                  {isMe && (
+                    <span className="shrink-0 rounded-full bg-[#FFB020] px-2 py-0.5 text-[11px] font-bold text-white">
+                      내 프로필북
+                    </span>
+                  )}
+                </div>
+                {(PARTY_GUEST_JOBS[member.name] || PARTY_GUEST_JOBS[displayName]) && (
+                  <span className="text-[11px] text-[#8B95A1] text-left truncate mt-0.5 tracking-tight">
+                    {PARTY_GUEST_JOBS[member.name] || PARTY_GUEST_JOBS[displayName]}
                   </span>
                 )}
               </div>
