@@ -6,12 +6,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import PartyParticipantList from './PartyParticipantList';
 import PartyGroupsTab from './PartyGroupsTab';
+import { PARTY_ROUNDS } from '@/constants/party-guests';
 import type { Participant } from '@/types/database';
 
 type TabType = 'participants' | 'groups';
 
 function parseTabParam(value: string | null): TabType {
   return value === 'groups' ? 'groups' : 'participants';
+}
+
+function parseRoundParam(value: string | null): number {
+  if (!value) return 0;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return 0;
+  const maxIndex = Math.max(0, PARTY_ROUNDS.length - 1);
+  return Math.min(Math.max(parsed, 0), maxIndex);
 }
 
 interface PartyTabsProps {
@@ -34,6 +43,7 @@ export default function PartyTabs({
   const searchParams = useSearchParams();
 
   const tabFromUrl = useMemo(() => parseTabParam(searchParams.get('tab')), [searchParams]);
+  const roundFromUrl = useMemo(() => parseRoundParam(searchParams.get('round')), [searchParams]);
   const [activeTab, setActiveTab] = useState<TabType>(tabFromUrl);
 
   useEffect(() => {
@@ -47,6 +57,13 @@ export default function PartyTabs({
     else next.set('tab', tab);
     const qs = next.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
+  };
+
+  const setRoundAndUrl = (roundIndex: number) => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set('tab', 'groups');
+    next.set('round', String(roundIndex));
+    router.replace(`${pathname}?${next.toString()}`);
   };
 
   return (
@@ -151,6 +168,8 @@ export default function PartyTabs({
                 participants={participants}
                 currentUserName={currentUserName}
                 onProfileClick={onProfileClick}
+                initialRoundIndex={roundFromUrl}
+                onRoundIndexChange={setRoundAndUrl}
               />
             </motion.div>
           )}

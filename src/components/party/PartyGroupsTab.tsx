@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -12,9 +12,16 @@ interface PartyGroupsTabProps {
   participants: Participant[];
   currentUserName: string | null;
   onProfileClick: (participantId: string) => void;
+  initialRoundIndex?: number;
+  onRoundIndexChange?: (roundIndex: number) => void;
 }
 
 const SWIPE_THRESHOLD = 50;
+
+function clampRoundIndex(value: number) {
+  const maxIndex = Math.max(0, PARTY_ROUNDS.length - 1);
+  return Math.min(Math.max(value, 0), maxIndex);
+}
 
 function getNameWithoutSurname(fullName: string) {
   const name = fullName.trim();
@@ -35,8 +42,22 @@ export default function PartyGroupsTab({
   participants,
   currentUserName,
   onProfileClick,
+  initialRoundIndex,
+  onRoundIndexChange,
 }: PartyGroupsTabProps) {
-  const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
+  const [currentRoundIndex, setCurrentRoundIndex] = useState(() =>
+    clampRoundIndex(initialRoundIndex ?? 0)
+  );
+
+  useEffect(() => {
+    setCurrentRoundIndex(clampRoundIndex(initialRoundIndex ?? 0));
+  }, [initialRoundIndex]);
+
+  const setRoundIndex = (nextIndex: number) => {
+    const clamped = clampRoundIndex(nextIndex);
+    setCurrentRoundIndex(clamped);
+    onRoundIndexChange?.(clamped);
+  };
 
   const participantsByName = useMemo(() => {
     const map = new Map<string, Participant>();
@@ -53,9 +74,9 @@ export default function PartyGroupsTab({
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -SWIPE_THRESHOLD && currentRoundIndex < PARTY_ROUNDS.length - 1) {
-      setCurrentRoundIndex((prev) => prev + 1);
+      setRoundIndex(currentRoundIndex + 1);
     } else if (info.offset.x > SWIPE_THRESHOLD && currentRoundIndex > 0) {
-      setCurrentRoundIndex((prev) => prev - 1);
+      setRoundIndex(currentRoundIndex - 1);
     }
   };
 
@@ -74,7 +95,7 @@ export default function PartyGroupsTab({
         {PARTY_ROUNDS.map((round, idx) => (
           <button
             key={round.roundId}
-            onClick={() => setCurrentRoundIndex(idx)}
+            onClick={() => setRoundIndex(idx)}
             className={cn(
               'h-2 rounded-full transition-all duration-300',
               idx === currentRoundIndex ? 'w-6 bg-[#333D4B]' : 'w-2 bg-gray-300'
