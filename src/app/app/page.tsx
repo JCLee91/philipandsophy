@@ -268,9 +268,9 @@ export default function Home() {
         }
 
         navigationFallbackTimerRef.current = window.setTimeout(() => {
-          if (window.location.pathname === '/app') {
-            window.location.replace(cacheBustedUrl);
-          }
+          // router.replace가 URL을 즉시 변경하므로 pathname 체크를 하면 안됨
+          // 타이머가 살아있다는 것 자체가 아직 페이지 전환(언마운트)이 안됐다는 뜻
+          window.location.replace(cacheBustedUrl);
         }, 1500);
       }
     }
