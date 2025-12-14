@@ -100,6 +100,8 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const questionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [profileImageDialogOpen, setProfileImageDialogOpen] = useState(false);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string>('');
   const [submissionImageViewerOpen, setSubmissionImageViewerOpen] = useState(false);
 
   const toggleQuestion = (question: string) => {
@@ -465,6 +467,16 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
   // 이름에서 성 제거 (예: "김철수" -> "철수")
   const firstName = getFirstName(participant.name);
 
+  // 이미지 클릭 핸들러
+  const handleImageClick = () => {
+    // 원본 이미지는 오직 faceImage만 사용 (폴백 없음)
+    const imageUrl = participant.faceImage;
+    if (imageUrl) {
+      setImageViewerUrl(imageUrl);
+      setImageViewerOpen(true);
+    }
+  };
+
   // 코호트 번호 추출 (예: "1기" → 1, "2기" → 2)
   const cohortNumber = cohort?.name ? parseInt(cohort.name.match(/\d+/)?.[0] || '0', 10) : undefined;
 
@@ -529,8 +541,9 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
             <div
               className={[
                 'relative w-[80px] h-[80px] transition-transform',
-                'cursor-default',
+                'cursor-pointer active:scale-95',
               ].join(' ')}
+              onClick={handleImageClick}
             >
               <Avatar className="w-full h-full border-[3px] border-[#31363e]">
                 {getResizedImageUrl(participant.profileImageCircle || participant.profileImage) !== (participant.profileImageCircle || participant.profileImage) && (
@@ -816,6 +829,13 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
           participant={participant}
           open={profileImageDialogOpen}
           onClose={() => setProfileImageDialogOpen(false)}
+        />
+
+        {/* 이미지 확대 뷰어 (프로필 이미지 클릭 시) */}
+        <ImageViewerDialog
+          open={imageViewerOpen}
+          onOpenChange={setImageViewerOpen}
+          imageUrl={imageViewerUrl}
         />
 
         {/* Safe Area CSS */}
