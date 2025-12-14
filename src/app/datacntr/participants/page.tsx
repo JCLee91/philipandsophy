@@ -16,6 +16,7 @@ import ParticipantEditDialog from '@/components/datacntr/participants/Participan
 import { httpsCallable } from 'firebase/functions';
 import { signInWithCustomToken } from 'firebase/auth';
 import { getFirebaseFunctions, getFirebaseAuth } from '@/lib/firebase/client';
+import SplashScreen from '@/features/auth/components/SplashScreen';
 
 export const dynamic = 'force-dynamic';
 
@@ -187,6 +188,7 @@ export default function ParticipantsPage() {
   const isLoading = authLoading || dataLoading || isImpersonating;
 
   if (!user && !authLoading) return null;
+  if (isImpersonating) return <SplashScreen />;
 
   return (
     <DatacntrPageShell

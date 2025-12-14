@@ -20,6 +20,8 @@ import { signInWithCustomToken } from 'firebase/auth';
 import { getFirebaseFunctions, getFirebaseAuth } from '@/lib/firebase/client';
 import { useRouter, usePathname } from 'next/navigation';
 import { APP_CONSTANTS } from '@/constants/app';
+import { useState } from 'react';
+import SplashScreen from '@/features/auth/components/SplashScreen';
 
 export interface ParticipantCardProps {
   participant: Participant;
@@ -56,6 +58,7 @@ export function ParticipantCard({
 }: ParticipantCardProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [isImpersonationTransitioning, setIsImpersonationTransitioning] = useState(false);
   const initials = getInitials(participant.name);
 
   // 오늘 독서 인증 여부
@@ -81,6 +84,7 @@ export function ParticipantCard({
     }
 
     try {
+      setIsImpersonationTransitioning(true);
       const functions = getFirebaseFunctions();
       const getImpersonationToken = httpsCallable(functions, 'getImpersonationToken');
 
@@ -124,13 +128,16 @@ export function ParticipantCard({
     } catch (error) {
       console.error('Impersonation failed:', error);
       alert('유저로 로그인하기 실패했습니다. 권한을 확인해주세요.');
+      setIsImpersonationTransitioning(false);
     }
   };
 
   // 관리자이면서 자신이 아닌 참가자: 드롭다운 메뉴(별도 버튼)
   if (isAdmin && participant.id !== currentUserId) {
     return (
-      <div className="flex w-full items-center gap-2 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
+      <>
+        {isImpersonationTransitioning && <SplashScreen />}
+        <div className="flex w-full items-center gap-2 rounded-lg p-3 hover:bg-muted transition-colors duration-normal">
         {/* 얼굴 이미지 영역 - 버튼 밖으로 분리 */}
         <div 
           className="relative cursor-pointer shrink-0"
@@ -223,7 +230,8 @@ export function ParticipantCard({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+        </div>
+      </>
     );
   }
 

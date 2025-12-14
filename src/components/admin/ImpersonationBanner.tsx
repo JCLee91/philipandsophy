@@ -7,6 +7,7 @@ import { Eye, LogOut } from 'lucide-react';
 import { signInWithCustomToken } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase/client';
 import { APP_CONSTANTS } from '@/constants/app';
+import SplashScreen from '@/features/auth/components/SplashScreen';
 
 export default function ImpersonationBanner() {
   const { user, participant, logout } = useAuth();
@@ -27,6 +28,7 @@ export default function ImpersonationBanner() {
   }, [user?.uid]);
 
   const handleExit = async () => {
+    let shouldClearExiting = true;
     try {
       setIsExiting(true);
       // 1. 저장된 관리자 토큰 확인
@@ -75,6 +77,7 @@ export default function ImpersonationBanner() {
           const cacheBustedUrl = `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}r=${Date.now()}`;
 
           // 원래 진입했던 경로(데이터센터 or 앱)로 복귀
+          shouldClearExiting = false;
           window.location.replace(cacheBustedUrl);
           return;
         } catch (loginError) {
@@ -96,10 +99,13 @@ export default function ImpersonationBanner() {
     } catch (error) {
       console.error('Failed to exit impersonation:', error);
     } finally {
-      setIsExiting(false);
+      if (shouldClearExiting) {
+        setIsExiting(false);
+      }
     }
   };
 
+  if (isExiting) return <SplashScreen />;
   if (!isImpersonating) return null;
 
   return (
