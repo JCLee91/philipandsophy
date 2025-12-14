@@ -41,6 +41,24 @@ function ensureAuthCookies(participantId: string, cohortId: string): boolean {
   return document.cookie.includes('pns-participant=');
 }
 
+function goToParty(): void {
+  const url = `${window.location.origin}/party`;
+
+  // TEMP(2025-12): /app 진입 버튼을 눌렀을 때 파티 목록은 "웹 브라우저"에서 열리게 하기 위한 임시 조치
+  // - Android: PWA scope(/app) 밖으로 이동하면 보통 브라우저로 전환됨
+  // - iOS standalone(PWA): scope 밖 이동도 앱 안에 남는 경우가 있어 _blank를 우선 시도
+  try {
+    if (isStandalonePwa()) {
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      if (opened) return;
+    }
+  } catch {
+    // ignore and fallback
+  }
+
+  window.location.href = '/party';
+}
+
 export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
@@ -89,9 +107,11 @@ export default function Home() {
     isLoading: activeCohortsLoading,
     error: activeCohortsError,
   } = useActiveCohorts({
-    enabled: isAdminUser,
+    enabled: !!participant, // 모든 로그인 유저에 대해 활성 코호트 정보 확인
     refetchOnWindowFocus: false,
   });
+
+  const [cohortChoice, setCohortChoice] = useState<'app' | 'party' | null>(null);
 
   useEffect(() => {
     const minSplashMs = isStandalonePwa() ? MIN_SPLASH_TIME_PWA_MS : MIN_SPLASH_TIME_DEFAULT_MS;
@@ -103,14 +123,15 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isLoading || (isAdminUser && activeCohortsLoading)) {
+    // 모든 유저에 대해 activeCohorts 로딩을 기다림 (조건부 리다이렉트를 위해)
+    if (isLoading || activeCohortsLoading) {
       const timer = setTimeout(() => {
         setLoadingTimeout(true);
       }, MAX_LOADING_TIME);
 
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isAdminUser, activeCohortsLoading]);
+  }, [isLoading, activeCohortsLoading]);
 
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
@@ -138,25 +159,58 @@ export default function Home() {
       if (isReturningFromImpersonation && returnCohortIdFromImpersonation) {
         targetCohortIdToNavigate = returnCohortIdFromImpersonation;
       } else {
-      // Impersonate 모드가 아닌 관리자만 최신 활성 코호트로 이동
-      // (단, impersonation에서 막 복귀한 경우는 제외 - 원래 보던 화면 유지)
-      const shouldUseAdminLogic = isAdminUser && !isImpersonating && !isReturningFromImpersonation;
+        // Impersonate 모드가 아닌 관리자만 최신 활성 코호트로 이동
+        // (단, impersonation에서 막 복귀한 경우는 제외 - 원래 보던 화면 유지)
+        const shouldUseAdminLogic = isAdminUser && !isImpersonating && !isReturningFromImpersonation;
 
-      if (shouldUseAdminLogic) {
-        if (activeCohortsLoading) {
-          return;
-        }
-        const activeCohort = activeCohorts[0];
+        if (shouldUseAdminLogic) {
+          if (activeCohortsLoading) {
+            return;
+          }
+          const activeCohort = activeCohorts[0];
 
-        if (activeCohort) {
-          targetCohortIdToNavigate = activeCohort.id;
-        } else if (!activeCohortsLoading || loadingTimeout || activeCohortsError) {
-          targetCohortIdToNavigate = participant.cohortId;
+          if (activeCohort) {
+            targetCohortIdToNavigate = activeCohort.id;
+          } else if (!activeCohortsLoading || loadingTimeout || activeCohortsError) {
+            targetCohortIdToNavigate = participant.cohortId;
+          }
+        } else {
+          // 일반 유저 또는 Impersonate 모드
+
+          if (activeCohortsLoading) return;
+
+          // TEMP(2025-12): "비활성 코호트 → /party" 분기 적용을 위해 activeCohorts가 필요함.
+          // activeCohorts 조회가 실패한 경우에는 오동작(활성 유저를 /party로 보내는 것) 방지를 위해 기존 /app 진입 로직을 유지한다.
+          const canUseActiveCohortGate = !activeCohortsError && Array.isArray(activeCohorts);
+
+          if (!canUseActiveCohortGate) {
+            targetCohortIdToNavigate = participant.cohortId;
+          } else {
+            const isActiveCohortUser = activeCohorts.some((c) => c.id === participant.cohortId);
+
+            if (!isActiveCohortUser) {
+              // 비활성 코호트 유저 -> /party로 리다이렉트
+              setHasNavigated(true);
+              goToParty();
+              return;
+            }
+
+            // 활성 코호트 유저 -> 선택지 제공
+            if (!cohortChoice) {
+              // 아직 선택하지 않음 -> UI 렌더링 대기
+              return;
+            }
+
+            if (cohortChoice === 'party') {
+              setHasNavigated(true);
+              goToParty();
+              return;
+            }
+
+            // 'app' 선택 시 기존 로직 진행
+            targetCohortIdToNavigate = participant.cohortId;
+          }
         }
-      } else {
-        // 일반 유저 또는 Impersonate 모드: 타겟 유저의 cohortId 사용
-        targetCohortIdToNavigate = participant.cohortId;
-      }
       }
 
       if (targetCohortIdToNavigate) {
@@ -202,6 +256,7 @@ export default function Home() {
     isReturningFromImpersonation,
     returnCohortIdFromImpersonation,
     router,
+    cohortChoice,
   ]);
 
   useEffect(() => {
@@ -227,7 +282,7 @@ export default function Home() {
   }, [hasNavigated, lastNavigationUrl]);
 
   // 로딩 타임아웃 시 재시도 UI 표시 (스플래시 무한 표시 방지)
-  if (loadingTimeout && (isLoading || (isAdminUser && activeCohortsLoading))) {
+  if (loadingTimeout && (isLoading || activeCohortsLoading)) {
     return (
       <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-gray-50">
         <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-xs text-center space-y-4">
@@ -257,7 +312,40 @@ export default function Home() {
     );
   }
 
-  if (isLoading || !minSplashElapsed || (isAdminUser && activeCohortsLoading)) {
+  // Active Cohort 유저 선택 화면
+  const isNavReady =
+    participantStatus === 'ready' && participant && !activeCohortsLoading && !activeCohortsError;
+  const isActiveUser = isNavReady && activeCohorts.some((c) => c.id === participant.cohortId);
+  const showChoiceUI = isNavReady && isActiveUser && !isAdminUser && !isImpersonating && !isReturningFromImpersonation && !cohortChoice && !hasNavigated;
+
+  if (showChoiceUI) {
+    return (
+      <div className="app-shell flex min-h-screen items-center justify-center p-4 bg-white">
+        <div className="max-w-md w-full space-y-4">
+          <button
+            type="button"
+            onClick={() => {
+              // window.open은 user gesture에서만 안정적으로 동작하므로, 선택 즉시 처리한다.
+              setHasNavigated(true);
+              goToParty();
+            }}
+            className="w-full py-4 bg-black text-white rounded-xl font-bold text-lg hover:bg-neutral-900 transition-colors shadow-sm"
+          >
+            2025 X-mas 연말파티 참가자 보기
+          </button>
+          <button
+            type="button"
+            onClick={() => setCohortChoice('app')}
+            className="w-full py-4 bg-white text-black border border-black rounded-xl font-bold text-lg hover:bg-neutral-50 transition-colors shadow-sm"
+          >
+            독서 인증하러 가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading || !minSplashElapsed || activeCohortsLoading) {
     return <SplashScreen />;
   }
 

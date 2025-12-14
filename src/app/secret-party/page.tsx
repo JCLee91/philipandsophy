@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import LandingLayout from '@/components/landing/LandingLayout';
 import { getImageUrl } from '@/constants/landing';
 import { getLandingConfig } from '@/lib/firebase/landing';
@@ -65,17 +66,15 @@ export default function SecretPartyPage() {
                         priority
                     />
 
-                    {/* 신청하기 버튼 오버레이 */}
+                    {/* 신청하기 버튼 오버레이 - 마감 페이지로 연결 */}
                     <div ref={buttonRef} className="absolute left-0 right-0 top-[23.5%] z-10 flex flex-col items-center justify-center gap-3 px-4 sm:px-5">
-                        <a
-                            href="https://smore.im/form/ghjIyG9Bv8"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <Link
+                            href="/party-closed"
                             className="cta-button gray w-full max-w-[380px] min-h-[72px] rounded-[20px]"
                             aria-label="12월 멤버스 파티 신청하기"
                         >
                             <span className="cta-text text-[18px] sm:text-[20px] md:text-[21px]">12월 멤버스 파티 신청하기</span>
-                        </a>
+                        </Link>
                     </div>
                 </div>
 
@@ -93,15 +92,13 @@ export default function SecretPartyPage() {
                 className={`cta-section transition-all duration-500 ease-bounce ${showFloatingButton ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
                     }`}
             >
-                <a
-                    href="https://smore.im/form/ghjIyG9Bv8"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <Link
+                    href="/party-closed"
                     className="cta-button gray"
                     aria-label="12월 멤버스 파티 신청하기"
                 >
                     <span className="cta-text">12월 멤버스 파티 신청하기</span>
-                </a>
+                </Link>
             </div>
         </LandingLayout>
     );

@@ -38,6 +38,10 @@
       "form_factor": "narrow"
     }
   ],
-  "categories": ["education", "social", "books"],
+  "categories": [
+    "education",
+    "social",
+    "books"
+  ],
   "prefer_related_applications": false
 }
