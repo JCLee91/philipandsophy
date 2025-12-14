@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect, useMemo, useRef, use } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -73,11 +73,14 @@ const getSubmissionTime = (submission: ReadingSubmission): number => {
 
 export function ProfileBookContent({ params }: ProfileBookContentProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   // URL 디코딩: %EC%9D%B4%EC%9C%A4%EC%A7%80-4321 → 이윤지-4321
   const participantId = decodeURIComponent(params.participantId);
   const cohortId = searchParams.get('cohort');
-  const isPartyView = searchParams.get('from') === 'party';
+  // NOTE: 쿼리스트링만으로 "party view"를 판별하면 /app 경로에서도 우회가 가능하므로,
+  //       실제 라우트(/party...) 기준으로만 파티 뷰를 활성화한다.
+  const isPartyView = pathname.startsWith('/party');
 
   // ⚠️ 용어 정의:
   // matchingDate: 인증 기반 날짜 (이 날짜에 인증한 사람들의 프로필북)
@@ -434,7 +437,12 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
     canPreviewAccess;  // 랜덤 매칭 미인증자: 제한된 미리 보기 허용
 
   // 로딩 상태
-  if (sessionLoading || participantLoading || submissionsLoading || viewerSubmissionLoading) {
+  if (
+    sessionLoading ||
+    participantLoading ||
+    submissionsLoading ||
+    (!isPartyView && viewerSubmissionLoading)
+  ) {
     return <LoadingSpinner />;
   }
 
@@ -449,7 +457,7 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
   }
 
   // 접근 권한 없음
-  if (!hasAccess) {
+  if (!isPartyView && !hasAccess) {
     return <LockedScreen onBack={() => router.back()} />;
   }
 
@@ -461,9 +469,6 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
 
   // 이미지 클릭 핸들러
   const handleImageClick = () => {
-    if (isPartyView) {
-      return;
-    }
     // 원본 이미지는 오직 faceImage만 사용 (폴백 없음)
     const imageUrl = participant.faceImage;
     if (imageUrl) {
@@ -536,9 +541,9 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
             <div
               className={[
                 'relative w-[80px] h-[80px] transition-transform',
-                isPartyView ? 'cursor-default' : 'cursor-pointer active:scale-95',
+                'cursor-pointer active:scale-95',
               ].join(' ')}
-              onClick={isPartyView ? undefined : handleImageClick}
+              onClick={handleImageClick}
             >
               <Avatar className="w-full h-full border-[3px] border-[#31363e]">
                 {getResizedImageUrl(participant.profileImageCircle || participant.profileImage) !== (participant.profileImageCircle || participant.profileImage) && (
@@ -571,27 +576,23 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                 <div className="flex flex-col items-center gap-2 mb-[32px]">
                   <button
                     onClick={() => {
-                      if (isPartyView) return;
                       setProfileImageDialogOpen(true);
                     }}
                     className={[
                       'flex items-center gap-1 transition-opacity',
-                      isPartyView ? 'cursor-default' : 'hover:opacity-70',
+                      'hover:opacity-70',
                     ].join(' ')}
-                    disabled={isPartyView}
                   >
                     <h2 className="text-[20px] font-bold leading-[1.4] text-[#31363e]">
                       {firstName}
                     </h2>
-                    {!isPartyView && (
-                      <img
-                        src="/icons/chevron.svg"
-                        alt="프로필 이미지 보기"
-                        width={20}
-                        height={20}
-                        className="shrink-0"
-                      />
-                    )}
+                    <img
+                      src="/icons/chevron.svg"
+                      alt="프로필 이미지 보기"
+                      width={20}
+                      height={20}
+                      className="shrink-0"
+                    />
                   </button>
                 </div>
 
