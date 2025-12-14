@@ -41,6 +41,42 @@ function ensureAuthCookies(participantId: string, cohortId: string): boolean {
   return document.cookie.includes('pns-participant=');
 }
 
+function normalizeKoreanMobileNumber(phoneNumber?: string | null): string | null {
+  if (!phoneNumber) return null;
+  const digits = phoneNumber.replace(/\D/g, '');
+  if (!digits) return null;
+
+  // "+82 10xxxxxxxx" → "010xxxxxxxx"
+  if (digits.startsWith('8210') && digits.length >= 12) {
+    return `0${digits.slice(2)}`;
+  }
+
+  return digits;
+}
+
+// TEMP(2025-12): 활성 코호트 유저 중 "일부"에게만 /app 진입 선택지 노출
+const PARTY_CHOICE_ALLOWED_PHONES = new Set(
+  [
+    '010-5937-2468',
+    '010-6576-5519',
+    '010-7148-9964',
+    '010-6309-7066',
+    '010-5219-5549',
+    '010-7300-7523',
+    '010-2819-7727',
+    '010-4837-7668',
+    '010-2502-7842',
+  ]
+    .map((p) => normalizeKoreanMobileNumber(p))
+    .filter(Boolean) as string[]
+);
+
+function canShowPartyChoiceGate(phoneNumber?: string | null): boolean {
+  const normalized = normalizeKoreanMobileNumber(phoneNumber);
+  if (!normalized) return false;
+  return PARTY_CHOICE_ALLOWED_PHONES.has(normalized);
+}
+
 function goToParty(): void {
   const url = `${window.location.origin}/party`;
 
@@ -195,19 +231,25 @@ export default function Home() {
               return;
             }
 
-            // 활성 코호트 유저 -> 선택지 제공
-            if (!cohortChoice) {
-              // 아직 선택하지 않음 -> UI 렌더링 대기
+            // 활성 코호트 유저 -> (일부 유저만) 선택지 제공
+            if (canShowPartyChoiceGate(participant.phoneNumber)) {
+              if (!cohortChoice) {
+                // 아직 선택하지 않음 -> UI 렌더링 대기
+                return;
+              }
+
+              if (cohortChoice === 'party') {
+                setHasNavigated(true);
+                goToParty();
+                return;
+              }
+
+              // 'app' 선택 시 기존 로직 진행
+              targetCohortIdToNavigate = participant.cohortId;
               return;
             }
 
-            if (cohortChoice === 'party') {
-              setHasNavigated(true);
-              goToParty();
-              return;
-            }
-
-            // 'app' 선택 시 기존 로직 진행
+            // 선택지 대상이 아니면 기존처럼 /app로 바로 진입
             targetCohortIdToNavigate = participant.cohortId;
           }
         }
@@ -316,7 +358,15 @@ export default function Home() {
   const isNavReady =
     participantStatus === 'ready' && participant && !activeCohortsLoading && !activeCohortsError;
   const isActiveUser = isNavReady && activeCohorts.some((c) => c.id === participant.cohortId);
-  const showChoiceUI = isNavReady && isActiveUser && !isAdminUser && !isImpersonating && !isReturningFromImpersonation && !cohortChoice && !hasNavigated;
+  const showChoiceUI =
+    isNavReady &&
+    isActiveUser &&
+    canShowPartyChoiceGate(participant.phoneNumber) &&
+    !isAdminUser &&
+    !isImpersonating &&
+    !isReturningFromImpersonation &&
+    !cohortChoice &&
+    !hasNavigated;
 
   if (showChoiceUI) {
     return (
