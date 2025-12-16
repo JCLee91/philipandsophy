@@ -8,6 +8,13 @@ import { getImageUrl } from '@/constants/landing';
 export default function PartyFloatingButton() {
   const pathname = usePathname();
 
+  // TODO: 나중에 LandingConfig로 제어하도록 변경
+  const SHOW_PARTY_BUTTON = false;
+
+  if (!SHOW_PARTY_BUTTON) {
+    return null;
+  }
+
   // 시크릿 파티 페이지에서는 버튼 숨김
   if (pathname === '/secret-party') {
     return null;
