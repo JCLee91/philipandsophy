@@ -19,6 +19,14 @@ import { SEARCH_CONFIG } from '@/constants/search';
 import { SUBMISSION_VALIDATION } from '@/constants/validation';
 import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +67,7 @@ function Step2Content() {
   const [searchResults, setSearchResults] = useState<NaverBook[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -287,11 +296,15 @@ function Step2Content() {
   };
 
   const handleEditBook = () => {
-    if (!window.confirm('책을 변경하시겠습니까?\n변경하면 현재 선택된 책 정보가 초기화됩니다.')) return;
+    setShowConfirmDialog(true);
+  };
+
+  const confirmEditBook = () => {
     setSearchQuery('');
     setSelectedBook(null);
     setManualTitle('');
     if (isEBook) setImageStorageUrl(null);
+    setShowConfirmDialog(false);
   };
 
   const handleNext = async () => {
@@ -507,7 +520,34 @@ function Step2Content() {
         />
         {localReview.length > 0 && <p className="text-xs text-gray-400 px-1">작성 중인 내용은 자동으로 저장됩니다</p>}
       </div>
-    </SubmissionLayout>
+
+
+      {/* 책 변경 확인 다이얼로그 */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>책을 변경하시겠어요?</DialogTitle>
+            <DialogDescription>
+              변경하면 현재 선택된 책 정보가 초기화됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <UnifiedButton
+              variant="secondary"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              취소
+            </UnifiedButton>
+            <UnifiedButton
+              variant="primary"
+              onClick={confirmEditBook}
+            >
+              변경하기
+            </UnifiedButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </SubmissionLayout >
   );
 }
 
