@@ -105,7 +105,12 @@ export const formatShortDate = (timestamp: Timestamp | SerializedTimestamp | nul
  * 이름에서 이니셜 생성
  * 예: '홍길동' -> 'ㅎㄱ', 'John Doe' -> 'JD'
  */
-export const getInitials = (name: string): string => {
+/**
+ * 이름에서 이니셜 생성
+ * 예: '홍길동' -> 'ㅎㄱ', 'John Doe' -> 'JD'
+ */
+export const getInitials = (name?: string | null): string => {
+  if (!name) return '?';
   return name
     .split(' ')
     .map((n) => n[0])
@@ -118,7 +123,8 @@ export const getInitials = (name: string): string => {
  * 이름에서 성을 제거하고 이름만 반환
  * 예: '김철수' -> '철수', '홍길동' -> '길동', '이' -> '이'
  */
-export const getFirstName = (name: string): string => {
+export const getFirstName = (name?: string | null): string => {
+  if (!name) return '';
   return name.length > 2 ? name.slice(1) : name;
 };
 

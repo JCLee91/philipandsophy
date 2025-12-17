@@ -282,6 +282,11 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
     return [...submissions].sort((a, b) => getSubmissionTime(b) - getSubmissionTime(a));
   }, [submissions]);
 
+  // 최근 읽은 책 (가장 최근의 독서 인증 찾기, 회고 제외)
+  const latestBookSubmission = useMemo(() => {
+    return sortedSubmissions.find((s) => !s.isDailyRetrospective) || null;
+  }, [sortedSubmissions]);
+
   // 세션 검증 (리다이렉트 플래그로 중복 방지)
   const hasRedirectedRef = useRef(false);
 
@@ -520,10 +525,7 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
     }
   });
 
-  // 최근 읽은 책 (가장 최근의 독서 인증 찾기, 회고 제외)
-  const latestBookSubmission = useMemo(() => {
-    return sortedSubmissions.find((s) => !s.isDailyRetrospective) || null;
-  }, [sortedSubmissions]);
+
 
   return (
     <PageTransition>
@@ -557,7 +559,7 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                 )}
                 <AvatarImage
                   src={participant.profileImageCircle || participant.profileImage}
-                  alt={participant.name}
+                  alt={participant.name || 'Profile'}
                   className="object-cover"
                 />
                 <AvatarFallback className="bg-gray-200 text-2xl font-bold text-gray-700">
@@ -586,7 +588,7 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                     ].join(' ')}
                   >
                     <h2 className="text-[20px] font-bold leading-[1.4] text-[#31363e]">
-                      {firstName}
+                      {firstName || '알 수 없음'}
                     </h2>
                     <img
                       src="/icons/chevron.svg"
