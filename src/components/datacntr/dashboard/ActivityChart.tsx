@@ -1,6 +1,6 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar, ComposedChart } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { DailyActivity } from '@/types/datacntr';
@@ -52,7 +52,7 @@ export default function ActivityChart({
     <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
       <h3 className="text-lg font-bold text-gray-900 mb-4">{chartTitle}</h3>
       <ResponsiveContainer width="100%" height={350}>
-        <LineChart data={formattedData}>
+        <ComposedChart data={formattedData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="dateLabel"
@@ -101,6 +101,15 @@ export default function ActivityChart({
             name="독서 인증"
             dot={{ fill: '#3b82f6', r: 4 }}
           />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="likes"
+            stroke="#ec4899"
+            strokeWidth={2}
+            name="좋아요"
+            dot={{ fill: '#ec4899', r: 4 }}
+          />
           {/* 오른쪽 Y축: 평균 글자수 */}
           <Line
             yAxisId="right"
@@ -122,7 +131,7 @@ export default function ActivityChart({
             dot={{ fill: '#f59e0b', r: 4 }}
             strokeDasharray="5 5"
           />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );

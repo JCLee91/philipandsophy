@@ -23,6 +23,7 @@ import {
   Megaphone,
   Cog,
   Trophy,
+  Heart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -83,6 +84,11 @@ const navGroups: NavGroup[] = [
         href: '/datacntr/board',
         label: '독서 인증 현황판',
         icon: <Table className="h-5 w-5" />,
+      },
+      {
+        href: '/datacntr/likes',
+        label: '좋아요',
+        icon: <Heart className="h-5 w-5" />,
       },
     ],
   },

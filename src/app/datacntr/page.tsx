@@ -9,8 +9,10 @@ import { useDatacntrStore } from '@/stores/datacntr-store';
 import MetricCard from '@/components/datacntr/dashboard/MetricCard';
 import ActivityChart from '@/components/datacntr/dashboard/ActivityChart';
 import CohortDateBanner from '@/components/datacntr/dashboard/CohortDateBanner';
+import TopLikersList from '@/components/datacntr/dashboard/TopLikersList';
 import AIChatPanel from '@/components/datacntr/AIChatPanel';
-import { Users, BookOpen, FileText, BellRing, TrendingUp } from 'lucide-react';
+import { useLikesStats } from '@/hooks/datacntr/use-likes-stats';
+import { Users, BookOpen, FileText, BellRing, TrendingUp, Heart } from 'lucide-react';
 
 // ✅ Disable static generation - requires runtime data
 export const dynamic = 'force-dynamic';
@@ -56,6 +58,7 @@ export default function DataCenterPage() {
 
   const { data: stats, isLoading: statsLoading } = useDataCenterStats(statsSelectedCohortId);
   const { data: activities, isLoading: activityLoading } = useActivityChart(14, statsSelectedCohortId);
+  const { data: likesStats, isLoading: likesLoading } = useLikesStats(statsSelectedCohortId);
 
   const selectedCohort = statsSelectedCohortId ? cohorts.find(c => c.id === statsSelectedCohortId) : undefined;
 
@@ -135,6 +138,44 @@ export default function DataCenterPage() {
         cohortStartDate={selectedCohort?.startDate}
         cohortEndDate={selectedCohort?.endDate}
       />
+
+      {/* 좋아요 현황 */}
+      <div className="mt-8 mb-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">좋아요 현황</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <MetricCard
+              title="총 좋아요"
+              value={likesStats?.totalLikes ?? 0}
+              icon={Heart}
+              color="pink"
+              isLoading={likesLoading}
+            />
+            <MetricCard
+              title="오늘의 좋아요"
+              value={likesStats?.todayLikes ?? 0}
+              icon={Heart}
+              color="pink"
+              isLoading={likesLoading}
+              subtitle="오늘"
+            />
+            <MetricCard
+              title="인당 평균 좋아요"
+              value={likesStats?.likesPerUser ?? 0}
+              icon={Users}
+              color="pink"
+              isLoading={likesLoading}
+              subtitle="회/인"
+            />
+          </div>
+          <div className="lg:col-span-1 row-span-2">
+            <TopLikersList
+              receivers={likesStats?.topReceivers ?? []}
+              isLoading={likesLoading}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* AI 데이터 분석 챗봇 */}
       <div className="mt-8">

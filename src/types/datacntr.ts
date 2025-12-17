@@ -30,6 +30,7 @@ export interface DailyActivity {
   submissions: number; // 독서 인증 횟수
   avgReviewLength: number; // 리뷰 평균 글자수
   avgAnswerLength: number; // 가치관 답변 평균 글자수
+  likes: number; // 좋아요 발생 수
 }
 
 // 코호트 통계
@@ -180,4 +181,53 @@ export interface SubmissionAnalytics {
     count: number;
     participants: string[];
   }>;
+}
+
+// 좋아요 통계
+export interface TopReceiver {
+  userId: string;
+  userName: string;
+  count: number;
+}
+
+export interface TopGiver {
+  userId: string;
+  userName: string;
+  count: number;
+}
+
+export interface InteractionPair {
+  giverId: string;
+  giverName: string;
+  receiverId: string;
+  receiverName: string;
+  count: number;
+}
+
+export interface MostLikedSubmission {
+  submissionId: string;
+  userId: string;
+  userName: string;
+  targetType: 'review' | 'answer';
+  contentPreview: string; // 내용 미리보기 (앞부분만)
+  fullContent?: string; // 전체 내용 (모달용)
+  dailyQuestion?: string; // 가치관 질문 (모달용)
+  likeCount: number;
+}
+
+export interface LikesStats {
+  totalLikes: number;
+  todayLikes: number;
+  likesPerUser: number;
+  topReceivers: TopReceiver[];
+
+  // 상세 분석용 (Optional)
+  topGivers?: TopGiver[];
+  contentTypeStats?: {
+    review: number;
+    answer: number;
+  };
+  interactionPairs?: InteractionPair[];
+  mostLikedReviews?: MostLikedSubmission[]; // 감상평 베스트
+  mostLikedAnswers?: MostLikedSubmission[]; // 가치관 베스트
 }

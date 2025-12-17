@@ -9,6 +9,10 @@ interface MetricCardProps {
   color?: 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'gray' | 'indigo' | 'sky';
   isLoading?: boolean;
   subtitle?: string; // 부제목 (예: "회/인")
+  trend?: {
+    value: number;
+    label: string;
+  };
 }
 
 const colorClasses = {
@@ -29,6 +33,7 @@ export default function MetricCard({
   color = 'blue',
   isLoading,
   subtitle,
+  trend,
 }: MetricCardProps) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-xs border border-gray-200">
@@ -38,10 +43,17 @@ export default function MetricCard({
           {isLoading ? (
             <div className="h-8 w-24 shimmer rounded" />
           ) : (
-            <div className="flex items-baseline gap-1">
-              <p className="text-3xl font-bold text-gray-900">{value}</p>
-              {subtitle && (
-                <p className="text-sm text-gray-500">{subtitle}</p>
+            <div>
+              <div className="flex items-baseline gap-1">
+                <p className="text-3xl font-bold text-gray-900">{value}</p>
+                {subtitle && (
+                  <p className="text-sm text-gray-500">{subtitle}</p>
+                )}
+              </div>
+              {trend && (
+                <p className="text-xs text-gray-500 mt-1">
+                  <span className="font-medium text-green-600">+{trend.value}</span> {trend.label}
+                </p>
               )}
             </div>
           )}

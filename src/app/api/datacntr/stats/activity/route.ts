@@ -83,23 +83,23 @@ export async function GET(request: NextRequest) {
     const [submissionsSnapshot, allParticipantsSnapshot] = await Promise.all([
       cohortId
         ? db.collection(COLLECTIONS.READING_SUBMISSIONS).where('submittedAt', '>=', startDate).get().then(async snap => {
-            const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
-            const participantIds = participants.docs.map(d => d.id);
-            return {
-              // ✅ draft 제외: 활동 그래프에 임시저장 데이터 제외
-              docs: snap.docs.filter(d =>
-                participantIds.includes(d.data().participantId) &&
-                d.data().status !== 'draft'
-              )
-            };
-          })
+          const participants = await db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get();
+          const participantIds = participants.docs.map(d => d.id);
+          return {
+            // ✅ draft 제외: 활동 그래프에 임시저장 데이터 제외
+            docs: snap.docs.filter(d =>
+              participantIds.includes(d.data().participantId) &&
+              d.data().status !== 'draft'
+            )
+          };
+        })
         : db.collection(COLLECTIONS.READING_SUBMISSIONS)
-            .where('submittedAt', '>=', startDate)
-            .get()
-            .then(snap => ({
-              // ✅ draft 제외: 전체 보기 시에도 임시저장 데이터 제외
-              docs: snap.docs.filter(d => d.data().status !== 'draft')
-            })),
+          .where('submittedAt', '>=', startDate)
+          .get()
+          .then(snap => ({
+            // ✅ draft 제외: 전체 보기 시에도 임시저장 데이터 제외
+            docs: snap.docs.filter(d => d.data().status !== 'draft')
+          })),
       cohortId
         ? db.collection(COLLECTIONS.PARTICIPANTS).where('cohortId', '==', cohortId).get()
         : db.collection(COLLECTIONS.PARTICIPANTS).get(),
@@ -124,6 +124,7 @@ export async function GET(request: NextRequest) {
       totalAnswerLength: number;
       submissionCount: number;
       participantIds: Set<string>; // ✅ FIX: unique 참가자 추적
+      likes: number;
     }>();
 
     // 날짜 초기화 (startDate ~ endDate 기간)
@@ -158,6 +159,7 @@ export async function GET(request: NextRequest) {
         totalAnswerLength: 0,
         submissionCount: 0,
         participantIds: new Set<string>(), // ✅ FIX: unique 참가자 추적
+        likes: 0,
       });
     }
 
@@ -193,6 +195,44 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // 3. 좋아요 집계
+    const likesSnapshot = await db
+      .collection('likes')
+      .where('createdAt', '>=', startDate)
+      .get();
+
+    // 코호트 필터링을 위한 참가자 ID Set (코호트 선택 시에만 사용)
+    const cohortParticipantIds = cohortId
+      ? new Set(allParticipantsSnapshot.docs.map(d => d.id))
+      : null;
+
+    likesSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      const createdAt = safeTimestampToDate(data.createdAt);
+      if (!createdAt) return;
+
+      const dateStr = format(createdAt, 'yyyy-MM-dd');
+      const activity = activityMap.get(dateStr);
+
+      if (activity) {
+        const userId = data.userId;
+        const targetUserId = data.targetUserId;
+
+        // 1. 관리자/고스트/슈퍼어드민이 누른 좋아요 제외
+        if (excludedIds.has(userId)) return;
+
+        // 2. 관리자/고스트/슈퍼어드민이 받은 좋아요 제외 (선택 사항이나 데이터 순도 위해 적용)
+        if (excludedIds.has(targetUserId)) return;
+
+        // 3. 코호트 선택 시: 
+        // 좋아요를 '누른 사람'이 해당 코호트 소속이어야 함
+        // (활동량 지표이므로 액션을 수행한 주체 기준)
+        if (cohortParticipantIds && !cohortParticipantIds.has(userId)) return;
+
+        activity.likes += 1;
+      }
+    });
+
     // 배열로 변환 및 평균 계산
     const activities: DailyActivity[] = Array.from(activityMap.values())
       .map((activity) => ({
@@ -205,6 +245,7 @@ export async function GET(request: NextRequest) {
         avgAnswerLength: activity.submissionCount > 0
           ? Math.round(activity.totalAnswerLength / activity.submissionCount)
           : 0,
+        likes: activity.likes,
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
