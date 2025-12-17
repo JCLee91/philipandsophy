@@ -11,7 +11,7 @@ export default function GlassNavigation() {
 
   const navItems = [
     { label: '홈', href: '/' },
-    { label: '프로그램', href: '/service' },
+    { label: '프로그램', href: '/program' },
     { label: '멤버십', href: '/membership' },
     { label: '파티 후기', href: '/party-reviews' },
   ];

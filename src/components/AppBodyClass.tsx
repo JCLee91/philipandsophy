@@ -13,7 +13,7 @@ export default function AppBodyClass() {
   const pathname = usePathname();
   const isAppRoute = pathname?.startsWith('/app');
   const isSurveyPage = pathname?.startsWith('/application');
-  const isLandingPage = !isSurveyPage && (pathname === '/' || pathname === '/service' || pathname === '/membership' || pathname === '/program' || pathname === '/party-reviews' || pathname === '/secret-party');
+  const isLandingPage = !isSurveyPage && (pathname === '/' || pathname === '/program' || pathname === '/membership' || pathname === '/party-reviews' || pathname === '/secret-party');
 
   useEffect(() => {
     // 모든 속성 초기화

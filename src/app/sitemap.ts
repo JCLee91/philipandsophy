@@ -11,8 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/service`,
-      lastModified: new Date('2025-11-04'),
+      url: `${baseUrl}/program`,
+      lastModified: new Date('2025-12-17'),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
@@ -22,7 +22,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
-    // /program은 비밀 페이지 (robots: noindex)이므로 사이트맵에서 제외
     {
       url: `${baseUrl}/app`,
       lastModified: new Date('2025-11-04'),
