@@ -14,14 +14,30 @@ export default function ReadingProgramPage() {
     return (
         <LandingLayout>
             <div className="container p-0 max-w-[500px] mx-auto">
-                <Image
-                    src={getImageUrl('/image/landing/PnS_Program_reading_1.webp?v=1765966010154')}
-                    alt="2주 독서 프로그램 소개 1"
-                    width={1170}
-                    height={2000} // Approximate, will auto-adjust height with layout but good to have high val
-                    className="main-image"
-                    priority
-                />
+                {/* 첫 번째 이미지 + 동영상 오버레이 */}
+                <div className="image-with-video-overlay">
+                    <Image
+                        src={getImageUrl('/image/landing/PnS_Program_reading_1.webp?v=1765966010154')}
+                        alt="2주 독서 프로그램 소개 1"
+                        width={1170}
+                        height={2000} // Approximate, will auto-adjust height with layout but good to have high val
+                        className="main-image"
+                        priority
+                    />
+
+                    {/* 중간 비어있는 공간에 동영상 배치 */}
+                    <div className="video-overlay">
+                        <video
+                            className="overlay-video"
+                            src="/video/mockup.mp4"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            poster={getImageUrl('/image/landing/PnS_Program_reading_1.webp')}
+                        />
+                    </div>
+                </div>
                 <Image
                     src={getImageUrl('/image/landing/PnS_Program_reading_2.webp?v=1765966010154')}
                     alt="2주 독서 프로그램 소개 2"
