@@ -9,7 +9,7 @@ import { useSubmissionCommon } from '@/hooks/use-submission-common';
 import SubmissionLayout from '@/components/submission/SubmissionLayout';
 import UnifiedButton from '@/components/UnifiedButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { appRoutes } from '@/lib/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,7 +18,7 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-function Step1Content() {
+export function Step1Content() {
   const {
     router,
     cohortId,
@@ -34,6 +34,7 @@ function Step1Content() {
     handleBackToChat,
   } = useSubmissionCommon();
 
+
   const {
     imageFile,
     imagePreview,
@@ -47,6 +48,8 @@ function Step1Content() {
     setDailyAnswer,
     isEBook,
     setIsEBook,
+    isDailyRetrospective,
+    setIsDailyRetrospective,
   } = useSubmissionFlowStore();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,8 +70,9 @@ function Step1Content() {
       imageFile: imageFile ? 'exists' : null,
       imageStorageUrl,
       isEBook,
+      isDailyRetrospective,
     });
-  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingDraft, imageFile, imageStorageUrl, isEBook]);
+  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingDraft, imageFile, imageStorageUrl, isEBook, isDailyRetrospective]);
 
   // 임시저장 자동 불러오기
   useEffect(() => {
@@ -95,7 +99,9 @@ function Step1Content() {
         if (cancelled) return;
 
         if (draft) {
-          if (draft.bookImageUrl) {
+          if (draft.isDailyRetrospective) {
+            setIsDailyRetrospective(true);
+          } else if (draft.bookImageUrl) {
             try {
               const file = await createFileFromUrl(draft.bookImageUrl);
               if (!cancelled) {
@@ -124,7 +130,7 @@ function Step1Content() {
 
     loadDraft();
     return () => { cancelled = true; };
-  }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, setIsEBook, submissionDate]);
+  }, [participant, cohortId, existingSubmissionId, imageFile, setImageFile, setImageStorageUrl, setIsEBook, setIsDailyRetrospective, submissionDate]);
 
   // 기존 제출물 불러오기 (수정 모드)
   useEffect(() => {
@@ -140,7 +146,9 @@ function Step1Content() {
         const submission = await getSubmissionById(existingSubmissionId);
         if (!submission || cancelled) return;
 
-        if (submission.bookImageUrl) {
+        if (submission.isDailyRetrospective) {
+          setIsDailyRetrospective(true);
+        } else if (submission.bookImageUrl) {
           try {
             const file = await createFileFromUrl(submission.bookImageUrl);
             if (!cancelled) setImageFile(file, submission.bookImageUrl, submission.bookImageUrl);
@@ -181,7 +189,7 @@ function Step1Content() {
 
     loadExistingSubmission();
     return () => { cancelled = true; };
-  }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, setIsEBook, toast]);
+  }, [participant, cohortId, existingSubmissionId, setImageFile, setImageStorageUrl, setSelectedBook, setManualTitle, setReview, setDailyAnswer, setIsEBook, setIsDailyRetrospective, toast]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -200,6 +208,7 @@ function Step1Content() {
       reader.onloadend = () => {
         setImageFile(processedFile, reader.result as string);
         setIsEBook(false);
+        setIsDailyRetrospective(false); // 이미지 선택 시 회고 해제
       };
       reader.onerror = () => {
         setIsProcessing(false);
@@ -218,7 +227,28 @@ function Step1Content() {
     setImageStorageUrl(null);
   };
 
+  const handleDailyRetrospective = async () => {
+    if (!participantId || !participationCode) {
+      toast({ title: '세션 정보가 없습니다', variant: 'destructive' });
+      return;
+    }
+
+    setIsDailyRetrospective(true);
+    // 이미지/전자책 초기화
+    setImageFile(null, null);
+    setImageStorageUrl(null);
+    setIsEBook(false);
+
+    // 바로 Step 2로 이동 (임시저장은 안함 - Step 2에서 입력 시 자동저장됨)
+    router.push(`${appRoutes.submitStep2}?cohort=${cohortId}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
+  };
+
   const handleNext = async () => {
+    if (isDailyRetrospective) {
+      handleDailyRetrospective();
+      return;
+    }
+
     if (!imageFile && !imageStorageUrl && !isEBook) {
       toast({ title: '이미지를 선택해주세요', description: '책의 마지막 페이지를 촬영하거나 전자책 옵션을 선택해주세요.', variant: 'destructive' });
       return;
@@ -243,6 +273,7 @@ function Step1Content() {
       await saveDraft(participantId, participationCode, {
         ...(bookImageUrl && { bookImageUrl }),
         isEBook,
+        isDailyRetrospective: false, // 일반 제출임
         ...(cohortId && { cohortId }),
       }, participant?.name, submissionDate || undefined);
 
@@ -253,20 +284,18 @@ function Step1Content() {
     }
   };
 
-  if (sessionLoading || !participant || !cohortId || isLoadingDraft) {
+  if (sessionLoading || !participant || !cohortId) {
     return <LoadingSpinner message="로딩 중..." />;
   }
 
   return (
     <SubmissionLayout
-      currentStep={1}
-      onBack={handleBackToChat}
       mainPaddingBottom={mainPaddingBottom}
       footerPaddingBottom={footerPaddingBottom}
       footer={
         <UnifiedButton
           onClick={handleNext}
-          disabled={(!imageFile && !isEBook) || isProcessing}
+          disabled={(!imageFile && !isEBook && !isDailyRetrospective) || isProcessing}
           loading={isProcessing}
           loadingText="처리 중..."
         >
@@ -283,16 +312,15 @@ function Step1Content() {
       {!imagePreview ? (
         <label
           htmlFor="book-image"
-          className={`flex flex-col items-center justify-center aspect-4/3 w-full border-2 border-dashed rounded-2xl transition-colors ${
-            isEBook ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50' : 'border-blue-200 bg-blue-50/30 cursor-pointer hover:border-gray-400'
-          }`}
+          className={`flex flex-col items-center justify-center aspect-4/3 w-full border-2 border-dashed rounded-2xl transition-colors ${isEBook || isDailyRetrospective ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50' : 'border-blue-200 bg-blue-50/30 cursor-pointer hover:border-gray-400'
+            }`}
         >
-          <Upload className={`h-12 w-12 mb-4 ${isEBook ? 'text-gray-300' : 'text-blue-400'}`} />
-          <p className={`text-sm font-medium ${isEBook ? 'text-gray-400' : 'text-gray-700'}`}>
-            {isEBook ? '전자책은 표지 사진으로 대체됩니다' : '이미지를 업로드하려면 클릭하세요'}
+          <Upload className={`h-12 w-12 mb-4 ${isEBook || isDailyRetrospective ? 'text-gray-300' : 'text-blue-400'}`} />
+          <p className={`text-sm font-medium ${isEBook || isDailyRetrospective ? 'text-gray-400' : 'text-gray-700'}`}>
+            {isEBook ? '전자책은 표지 사진으로 대체됩니다' : isDailyRetrospective ? '회고 작성 중' : '이미지를 업로드하려면 클릭하세요'}
           </p>
-          {!isEBook && <p className="text-xs text-gray-500 mt-2">최대 50MB, JPG/PNG/HEIC</p>}
-          <input id="book-image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" disabled={isProcessing || isEBook} />
+          {!isEBook && !isDailyRetrospective && <p className="text-xs text-gray-500 mt-2">최대 50MB, JPG/PNG/HEIC</p>}
+          <input id="book-image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" disabled={isProcessing || isEBook || isDailyRetrospective} />
         </label>
       ) : (
         <div className="relative aspect-4/3 w-full rounded-2xl overflow-hidden border-2 border-blue-200">
@@ -310,21 +338,43 @@ function Step1Content() {
           checked={isEBook}
           onCheckedChange={(checked) => {
             setIsEBook(checked === true);
-            if (checked === true) handleRemoveImage();
+            if (checked === true) {
+              handleRemoveImage();
+              setIsDailyRetrospective(false);
+            }
           }}
         />
         <Label htmlFor="ebook-check" className="text-sm font-medium leading-none cursor-pointer">
           전자책으로 읽었어요 (표지 사진으로 대체)
         </Label>
       </div>
+
+      {/* 구분선 */}
+      <div className="relative py-4">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-xs font-medium text-gray-400">
+          <span className="bg-white px-2">또는</span>
+        </div>
+      </div>
+
+      {/* 하루 회고 버튼 */}
+      <button
+        type="button"
+        onClick={handleDailyRetrospective}
+        className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors group"
+      >
+        <div className="text-left">
+          <h3 className="text-sm font-semibold text-gray-800 mb-1">오늘 독서를 못하셨나요?</h3>
+          <p className="text-xs text-gray-500">하루 회고 작성하러 가기</p>
+        </div>
+        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+      </button>
     </SubmissionLayout>
   );
 }
 
 export default function Step1Page() {
-  return (
-    <Suspense fallback={<LoadingSpinner message="로딩 중..." />}>
-      <Step1Content />
-    </Suspense>
-  );
+  return <Step1Content />;
 }

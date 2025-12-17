@@ -20,7 +20,7 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-function Step3Content() {
+export function Step3Content() {
   const {
     router,
     cohortId,
@@ -36,6 +36,7 @@ function Step3Content() {
     handleBack,
   } = useSubmissionCommon();
 
+
   const queryClient = useQueryClient();
 
   const {
@@ -48,6 +49,7 @@ function Step3Content() {
     reset,
     isEBook,
     _hasHydrated,
+    isDailyRetrospective,
   } = useSubmissionFlowStore();
 
   const [localDailyAnswer, setLocalDailyAnswer] = useState(globalDailyAnswer);
@@ -77,8 +79,9 @@ function Step3Content() {
       review: review?.length,
       imageStorageUrl,
       isEBook,
+      isDailyRetrospective,
     });
-  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingQuestion, isSubmitting, selectedBook, manualTitle, review, imageStorageUrl, isEBook]);
+  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingQuestion, isSubmitting, selectedBook, manualTitle, review, imageStorageUrl, isEBook, isDailyRetrospective]);
 
   // Sync local state with global (외부 변경 시에만 - 순환 렌더링 방지)
   useEffect(() => {
@@ -112,6 +115,7 @@ function Step3Content() {
         dailyAnswer: currentAnswer,
         dailyQuestion: dailyQuestion,
         isEBook,
+        isDailyRetrospective,
       };
       if (cohortId) draftData.cohortId = cohortId;
       await saveDraft(participantId, participationCode, draftData, participant?.name, submissionDate || undefined);
@@ -254,6 +258,7 @@ function Step3Content() {
         dailyQuestion: dailyQuestion || '',
         dailyAnswer: localDailyAnswer,
         isEBook,
+        isDailyRetrospective,
         status: 'approved' as const,
       };
 
@@ -314,14 +319,12 @@ function Step3Content() {
     }
   };
 
-  if (sessionLoading || !participant || !cohortId || isLoadingQuestion) {
+  if (sessionLoading || !participant || !cohortId) {
     return <LoadingSpinner message="로딩 중..." />;
   }
 
   return (
     <SubmissionLayout
-      currentStep={3}
-      onBack={handleBack}
       mainPaddingBottom={mainPaddingBottom}
       footerPaddingBottom={footerPaddingBottom}
       footer={
@@ -344,7 +347,7 @@ function Step3Content() {
       {/* 오늘의 질문 */}
       <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
         <p className="text-sm text-blue-800 font-medium leading-relaxed">
-          💬 {dailyQuestion || '오늘 하루는 어떠셨나요?'}
+          💬 {isLoadingQuestion ? <span className="animate-pulse">오늘의 질문을 불러오는 중...</span> : (dailyQuestion || '오늘 하루는 어떠셨나요?')}
         </p>
       </div>
 
@@ -385,13 +388,15 @@ function Step3Content() {
           제출 전 확인
         </h3>
         <div className="space-y-2 text-xs text-gray-600">
+          {!isDailyRetrospective && (
+            <div className="flex items-start gap-2">
+              <span className="text-green-500">✓</span>
+              <span>책 제목: <span className="font-medium text-gray-800">{bookTitle || '미입력'}</span></span>
+            </div>
+          )}
           <div className="flex items-start gap-2">
             <span className="text-green-500">✓</span>
-            <span>책 제목: <span className="font-medium text-gray-800">{bookTitle || '미입력'}</span></span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-green-500">✓</span>
-            <span>감상평: <span className="font-medium text-gray-800">{review.length}자 작성</span></span>
+            <span>{isDailyRetrospective ? '회고' : '감상평'}: <span className="font-medium text-gray-800">{review.length}자 작성</span></span>
           </div>
           <div className="flex items-start gap-2">
             <span className={localDailyAnswer.length >= SUBMISSION_VALIDATION.MIN_DAILY_ANSWER_LENGTH ? 'text-green-500' : 'text-red-500'}>
@@ -405,6 +410,12 @@ function Step3Content() {
               <span>전자책 인증</span>
             </div>
           )}
+          {isDailyRetrospective && (
+            <div className="flex items-start gap-2">
+              <span className="text-purple-500">📝</span>
+              <span>하루 회고</span>
+            </div>
+          )}
         </div>
       </div>
     </SubmissionLayout>
@@ -412,9 +423,5 @@ function Step3Content() {
 }
 
 export default function Step3Page() {
-  return (
-    <Suspense fallback={<LoadingSpinner message="로딩 중..." />}>
-      <Step3Content />
-    </Suspense>
-  );
+  return <Step3Content />;
 }

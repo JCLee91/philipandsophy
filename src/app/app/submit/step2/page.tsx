@@ -30,7 +30,7 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-function Step2Content() {
+export function Step2Content() {
   const {
     router,
     cohortId,
@@ -46,6 +46,7 @@ function Step2Content() {
     handleBack,
   } = useSubmissionCommon();
 
+
   const {
     imageFile,
     imageStorageUrl,
@@ -59,6 +60,7 @@ function Step2Content() {
     setImageStorageUrl,
     isEBook,
     _hasHydrated,
+    isDailyRetrospective,
   } = useSubmissionFlowStore();
 
   // Local state for performance
@@ -77,8 +79,9 @@ function Step2Content() {
 
   // 🔍 DEBUG: 로딩 상태 추적
   useEffect(() => {
-    console.log('[Step2 DEBUG] 상태 변경:', {
+    console.log('[Step2 DEBUG] 상태:', {
       _hasHydrated,
+      participantName: participant?.name,
       sessionLoading,
       participant: participant ? `${participant.id} (${participant.name})` : null,
       cohortId,
@@ -86,11 +89,12 @@ function Step2Content() {
       imageFile: imageFile ? 'exists' : null,
       imageStorageUrl,
       isEBook,
+      isDailyRetrospective,
       selectedBook: selectedBook?.title,
       manualTitle,
       review: globalReview?.length,
     });
-  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingDraft, imageFile, imageStorageUrl, isEBook, selectedBook, manualTitle, globalReview]);
+  }, [_hasHydrated, sessionLoading, participant, cohortId, isLoadingDraft, imageFile, imageStorageUrl, isEBook, isDailyRetrospective, selectedBook, manualTitle, globalReview]);
 
   // Sync local state with global
   useEffect(() => {
@@ -119,6 +123,7 @@ function Step2Content() {
         review: currentReview,
         ...(existingSubmissionId && { editingSubmissionId: existingSubmissionId }),
         isEBook,
+        isDailyRetrospective,
       };
       if (selectedBook?.title || manualTitle) draftData.bookTitle = selectedBook?.title || manualTitle;
       if (isEBook && selectedBook?.image) {
@@ -138,12 +143,12 @@ function Step2Content() {
   // Step 1 검증 (hydration 완료 후에만 실행)
   useEffect(() => {
     if (!_hasHydrated) return; // hydration 대기
-    if (!imageFile && !imageStorageUrl && !existingSubmissionId && !isEBook) {
-      console.log('[Step2 DEBUG] Step1 검증 실패:', { imageFile: !!imageFile, imageStorageUrl, existingSubmissionId, isEBook, _hasHydrated });
+    if (!imageFile && !imageStorageUrl && !existingSubmissionId && !isEBook && !isDailyRetrospective) {
+      console.log('[Step2 DEBUG] Step1 검증 실패:', { imageFile: !!imageFile, imageStorageUrl, existingSubmissionId, isEBook, isDailyRetrospective, _hasHydrated });
       toast({ title: '이미지를 먼저 업로드해주세요', variant: 'destructive' });
       router.replace(`${appRoutes.submitStep1(cohortId!)}${existingSubmissionId ? `&edit=${existingSubmissionId}` : ''}`);
     }
-  }, [imageFile, imageStorageUrl, existingSubmissionId, cohortId, router, toast, isEBook, _hasHydrated]);
+  }, [imageFile, imageStorageUrl, existingSubmissionId, cohortId, router, toast, isEBook, isDailyRetrospective, _hasHydrated]);
 
   // 새로운 제출 시작 시 책 관련 상태 초기화
   useEffect(() => {
@@ -167,26 +172,39 @@ function Step2Content() {
         const draft = await getDraftSubmission(participant.id, cohortId, submissionDate || undefined);
         let bookDataLoaded = false;
 
-        if (draft?.bookTitle) {
-          if (draft.bookAuthor && draft.bookCoverUrl) {
-            setSelectedBook({
-              title: draft.bookTitle, author: draft.bookAuthor, image: draft.bookCoverUrl,
-              description: draft.bookDescription || '', isbn: '', publisher: '', pubdate: '', link: '', discount: '',
-            });
-          } else {
-            setManualTitle(draft.bookTitle);
+        if (draft) {
+          if (draft.isDailyRetrospective) {
+            // 하루 회고 모드: 책 정보 자동 로드 스킵
+            // 이미 Step 1에서 setIsDailyRetrospective(true)가 호출되었을 것임 (store persist or Step 1 logic)
+            // 혹시 모르니 여기서도 체크
+            if (!isDailyRetrospective) {
+              // Store might not be updated if we came directly? No, Step 1 handles entry.
+              // But if we refresh on Step 2? Store persist handles it.
+            }
+            // Title force set
+            setManualTitle('하루 회고');
+            bookDataLoaded = true;
+          } else if (draft.bookTitle) {
+            if (draft.bookAuthor && draft.bookCoverUrl) {
+              setSelectedBook({
+                title: draft.bookTitle, author: draft.bookAuthor, image: draft.bookCoverUrl,
+                description: draft.bookDescription || '', isbn: '', publisher: '', pubdate: '', link: '', discount: '',
+              });
+            } else {
+              setManualTitle(draft.bookTitle);
+            }
+            bookDataLoaded = true;
           }
-          bookDataLoaded = true;
+
+          if (draft.review) {
+            setGlobalReview(draft.review);
+            setLocalReview(draft.review);
+          }
         }
 
-        if (draft?.review) {
-          setGlobalReview(draft.review);
-          setLocalReview(draft.review);
-        }
-
-        if (!bookDataLoaded) {
+        if (!bookDataLoaded && !isDailyRetrospective) {
           const recentSubmissions = await getSubmissionsByParticipant(participant.id);
-          const latestApproved = recentSubmissions.find(s => s.status === 'approved');
+          const latestApproved = recentSubmissions.find(s => s.status === 'approved' && !s.isDailyRetrospective);
 
           if (latestApproved?.bookTitle) {
             if (latestApproved.bookAuthor && latestApproved.bookCoverUrl) {
@@ -210,7 +228,7 @@ function Step2Content() {
     };
 
     loadDraft();
-  }, [participant, cohortId, existingSubmissionId]);
+  }, [participant, cohortId, existingSubmissionId, isDailyRetrospective, setManualTitle]);
 
   // 기존 제출물 불러오기
   useEffect(() => {
@@ -224,7 +242,11 @@ function Step2Content() {
         const submission = await getSubmissionById(existingSubmissionId);
         if (!submission || cancelled) return;
 
-        if (submission.bookImageUrl && !imageStorageUrl) {
+        if (submission.isDailyRetrospective) {
+          // 기존 제출물이 회고인 경우
+          // Step 1에서 이미 store update 했겠지만 확실히
+          setManualTitle('하루 회고');
+        } else if (submission.bookImageUrl && !imageStorageUrl) {
           try {
             const file = await createFileFromUrl(submission.bookImageUrl);
             if (!cancelled) setImageFile(file, submission.bookImageUrl, submission.bookImageUrl);
@@ -234,16 +256,18 @@ function Step2Content() {
           if (!cancelled) setImageStorageUrl(submission.bookImageUrl);
         }
 
-        if (submission.bookTitle) {
-          if (submission.bookAuthor || submission.bookCoverUrl || submission.bookDescription) {
-            setSelectedBook({
-              title: submission.bookTitle, author: submission.bookAuthor || '', image: submission.bookCoverUrl || '',
-              description: submission.bookDescription || '', isbn: '', publisher: '', pubdate: '', link: '', discount: '',
-            });
-            setManualTitle('');
-          } else {
-            setSelectedBook(null);
-            setManualTitle(submission.bookTitle);
+        if (!submission.isDailyRetrospective) {
+          if (submission.bookTitle) {
+            if (submission.bookAuthor || submission.bookCoverUrl || submission.bookDescription) {
+              setSelectedBook({
+                title: submission.bookTitle, author: submission.bookAuthor || '', image: submission.bookCoverUrl || '',
+                description: submission.bookDescription || '', isbn: '', publisher: '', pubdate: '', link: '', discount: '',
+              });
+              setManualTitle('');
+            } else {
+              setSelectedBook(null);
+              setManualTitle(submission.bookTitle);
+            }
           }
         }
 
@@ -308,7 +332,7 @@ function Step2Content() {
   };
 
   const handleNext = async () => {
-    if (!selectedBook && !manualTitle.trim()) {
+    if (!selectedBook && !manualTitle.trim() && !isDailyRetrospective) {
       toast({ title: '책 제목을 입력해주세요', description: '검색 결과에서 선택하거나 직접 입력해주세요.', variant: 'destructive' });
       return;
     }
@@ -317,7 +341,7 @@ function Step2Content() {
       return;
     }
     if (!localReview.trim()) {
-      toast({ title: '감상평을 입력해주세요', variant: 'destructive' });
+      toast({ title: isDailyRetrospective ? '회고를 입력해주세요' : '감상평을 입력해주세요', variant: 'destructive' });
       return;
     }
     if (localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) {
@@ -329,7 +353,7 @@ function Step2Content() {
 
     if (!existingSubmissionId && participantId && participationCode) {
       try {
-        const draftData: any = { isEBook };
+        const draftData: any = { isEBook, isDailyRetrospective };
         if (imageFile && imageFile instanceof File && !imageStorageUrl) {
           const uploadedUrl = await uploadReadingImage(imageFile, participationCode, cohortId);
           draftData.bookImageUrl = uploadedUrl;
@@ -352,10 +376,16 @@ function Step2Content() {
           draftData.bookImageUrl = imageStorageUrl;
         }
 
-        if (selectedBook?.title || manualTitle) draftData.bookTitle = selectedBook?.title || manualTitle;
-        if (selectedBook?.author) draftData.bookAuthor = selectedBook.author;
-        if (selectedBook?.image) draftData.bookCoverUrl = selectedBook.image;
-        if (selectedBook?.description) draftData.bookDescription = selectedBook.description;
+        if (isDailyRetrospective) {
+          draftData.bookTitle = '하루 회고';
+          setManualTitle('하루 회고'); // Store 업데이트 (Step 3 전달용)
+        } else {
+          if (selectedBook?.title || manualTitle) draftData.bookTitle = selectedBook?.title || manualTitle;
+          if (selectedBook?.author) draftData.bookAuthor = selectedBook.author;
+          if (selectedBook?.image) draftData.bookCoverUrl = selectedBook.image;
+          if (selectedBook?.description) draftData.bookDescription = selectedBook.description;
+        }
+
         if (localReview) draftData.review = localReview;
         if (cohortId) draftData.cohortId = cohortId;
 
@@ -375,14 +405,12 @@ function Step2Content() {
     }
   };
 
-  if (sessionLoading || !participant || !cohortId || isLoadingDraft) {
+  if (sessionLoading || !participant || !cohortId) {
     return <LoadingSpinner message="로딩 중..." />;
   }
 
   return (
     <SubmissionLayout
-      currentStep={2}
-      onBack={handleBack}
       mainPaddingBottom={mainPaddingBottom}
       footerPaddingBottom={footerPaddingBottom}
       footer={
@@ -393,7 +421,7 @@ function Step2Content() {
           loadingText="저장 중..."
           className={cn(
             existingSubmissionId ? 'w-full' : 'flex-1',
-            ((!selectedBook && !manualTitle.trim()) || !localReview.trim() || localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) && "opacity-50"
+            (((!selectedBook && !manualTitle.trim()) && !isDailyRetrospective) || !localReview.trim() || localReview.length < SUBMISSION_VALIDATION.MIN_REVIEW_LENGTH) && "opacity-50"
           )}
         >
           다음
@@ -401,11 +429,11 @@ function Step2Content() {
       }
     >
       <div className="space-y-1">
-        <h2 className="text-lg font-bold">책 제목</h2>
+        <h2 className="text-lg font-bold">{isDailyRetrospective ? '하루 회고' : '책 제목'}</h2>
       </div>
 
-      {/* 검색 입력 */}
-      {!selectedBook && (
+      {/* 검색 입력 (일반 모드) */}
+      {!isDailyRetrospective && !selectedBook && (
         <div className="relative">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -451,8 +479,8 @@ function Step2Content() {
         </div>
       )}
 
-      {/* 수동 입력된 책 제목 */}
-      {!selectedBook && manualTitle && (
+      {/* 수동 입력된 책 제목 (일반 모드, 책 선택 안됨) */}
+      {!isDailyRetrospective && !selectedBook && manualTitle && (
         <div className="relative border-b-2 border-solid rounded-t-[4px] px-3 py-3 min-h-[67px] bg-gray-50" style={{ borderBottomColor: '#6b7280' }}>
           <div className="flex items-start gap-3">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
@@ -468,8 +496,8 @@ function Step2Content() {
         </div>
       )}
 
-      {/* 선택된 책 정보 */}
-      {selectedBook && (
+      {/* 선택된 책 정보 (일반 모드) */}
+      {!isDailyRetrospective && selectedBook && (
         <div className="relative border-b-2 border-solid rounded-t-[4px] px-3 py-3 min-h-[67px] bg-blue-50" style={{ borderBottomColor: '#3b82f6' }}>
           <div className="flex items-start gap-3 pr-[110px]">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
@@ -493,7 +521,11 @@ function Step2Content() {
       {/* 감상평 입력 */}
       <div className="space-y-3">
         <div className="flex justify-between items-end">
-          <h4 className="font-bold text-base">읽은 내용에 대한 생각이나 느낌을<br />자유롭게 작성해 주세요</h4>
+          <h4 className="font-bold text-base">
+            {isDailyRetrospective
+              ? `${participant?.name ? `${participant.name}님,` : ''} 오늘 하루는 어떠셨나요?`
+              : '읽은 내용에 대한 생각이나 느낌을\n자유롭게 작성해 주세요'}
+          </h4>
           <div className="flex items-center gap-2 mb-1">
             {isAutoSaving ? (
               <>
@@ -514,9 +546,9 @@ function Step2Content() {
         <Textarea
           value={localReview}
           onChange={(e) => setLocalReview(e.target.value)}
-          placeholder='예시) "너무 슬픈 일을 겪은 사람은, 슬프다는 말조차 쉽게 할 수 없게 돼." 이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다.'
+          placeholder={isDailyRetrospective ? '오늘 하루, 기억에 남는 순간이 있었나요?\n문득 든 생각, 특별했던 경험, 혹은 아쉬웠던 점까지...\n당신의 이야기를 자유롭게 들려주세요.' : '예시) "너무 슬픈 일을 겪은 사람은, 슬프다는 말조차 쉽게 할 수 없게 돼." 이 문장은 미도리의 밝음 뒤에 숨어 있는 깊은 슬픔을 보여준다.'}
           className="min-h-[280px] resize-none text-sm leading-relaxed rounded-xl border-gray-300 focus:border-blue-400 focus:ring-blue-400 p-4"
-          disabled={!selectedBook && !manualTitle.trim()}
+          disabled={!selectedBook && !manualTitle.trim() && !isDailyRetrospective}
         />
         {localReview.length > 0 && <p className="text-xs text-gray-400 px-1">작성 중인 내용은 자동으로 저장됩니다</p>}
       </div>
@@ -552,9 +584,5 @@ function Step2Content() {
 }
 
 export default function Step2Page() {
-  return (
-    <Suspense fallback={<LoadingSpinner message="로딩 중..." />}>
-      <Step2Content />
-    </Suspense>
-  );
+  return <Step2Content />;
 }
