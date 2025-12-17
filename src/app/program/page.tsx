@@ -1,34 +1,37 @@
-'use client';
+import type { Metadata } from 'next';
+import ServicePageClient from './ServicePageClient';
 
-import Image from 'next/image';
-import LandingLayout from '@/components/landing/LandingLayout';
+export const metadata: Metadata = {
+  title: '프로그램 | 필립앤소피 독서소셜클럽',
+  description: '2주간 온라인 독서 프로그램. 선별된 20명의 멤버와 함께 책을 읽고 깊이있는 대화를 나눕니다. 서울 25-40세 직장인 전문직 승인제 소셜클럽.',
+  keywords: ['독서모임', '독서소셜클럽', '서울 소셜클럽', '독서 프로그램', '네트워킹', '직장인 모임', '전문직 모임'],
+  alternates: {
+    canonical: 'https://www.philipandsophy.kr/program',
+  },
+  openGraph: {
+    title: '필립앤소피 독서 프로그램',
+    description: '2주간 온라인 독서 프로그램 - 선별된 멤버들과 함께하는 프리미엄 독서 경험',
+    url: 'https://www.philipandsophy.kr/program',
+    siteName: 'Philip & Sophy',
+    images: [
+      {
+        url: '/image/landing/PnS_Program_1.webp',
+        width: 1170,
+        height: 3963,
+        alt: '필립앤소피 독서 프로그램',
+      },
+    ],
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '필립앤소피 독서 프로그램',
+    description: '2주간 온라인 독서 프로그램 - 선별된 멤버들과 함께하는 프리미엄 독서 경험',
+    images: ['/image/landing/PnS_Program_1.webp'],
+  },
+};
 
-// ✅ Disable static generation - requires runtime data
-export const dynamic = 'force-dynamic';
-
-export default function ProgramPage() {
-  // Program_01.webp ~ Program_18.webp 경로 생성
-  const version = '5.0'; // 무손실 WebP 업데이트 (2025.10.24)
-  const images = Array.from({ length: 18 }, (_, i) => ({
-    src: `/image/Program/Program_${String(i + 1).padStart(2, '0')}.webp?v=${version}`,
-    alt: `필립앤소피 프로그램 소개 ${i + 1}`,
-  }));
-
-  return (
-    <LandingLayout>
-      <div className="container">
-        {images.map((image, idx) => (
-          <Image
-            key={idx}
-            src={image.src}
-            alt={image.alt}
-            width={3240}
-            height={2880}
-            className="main-image"
-            priority={idx === 0}
-          />
-        ))}
-      </div>
-    </LandingLayout>
-  );
+export default function ServicePage() {
+  return <ServicePageClient />;
 }
