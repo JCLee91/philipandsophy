@@ -34,7 +34,7 @@ export default function HomePage() {
         <p>NO 일회성 만남 - 나와 같이 맞는 오래갈 인연을 발견할 수 있습니다.</p>
       </div>
 
-      <div className="container p-0 max-w-[500px] mx-auto !pt-10">
+      <div className="container p-0 max-w-[500px] mx-auto" style={{ paddingTop: '40px' }}>
         <HeroImageSlider />
 
         <Image
