@@ -44,6 +44,9 @@ interface SubmissionFlowState {
   isEBook: boolean;
   setIsEBook: (isEBook: boolean) => void;
 
+  isDailyRetrospective: boolean;
+  setIsDailyRetrospective: (isDailyRetrospective: boolean) => void;
+
   reset: () => void;
 }
 
@@ -62,6 +65,7 @@ const initialState = {
   existingSubmissionId: null,
   submissionDate: null,
   isEBook: false,
+  isDailyRetrospective: false,
 };
 
 export const useSubmissionFlowStore = create<SubmissionFlowState>()(
@@ -93,6 +97,9 @@ export const useSubmissionFlowStore = create<SubmissionFlowState>()(
 
       isEBook: false,
       setIsEBook: (isEBook: boolean) => set({ isEBook }),
+
+      isDailyRetrospective: false,
+      setIsDailyRetrospective: (isDailyRetrospective: boolean) => set({ isDailyRetrospective }),
 
       reset: () => set({ ...initialState, _hasHydrated: true }), // hydration 상태는 유지
     }),
@@ -126,6 +133,7 @@ export const useSubmissionFlowStore = create<SubmissionFlowState>()(
           existingSubmissionId: state.existingSubmissionId,
           submissionDate: state.submissionDate,
           isEBook: state.isEBook,
+          isDailyRetrospective: state.isDailyRetrospective,
           imageStorageUrl: state.imageStorageUrl,
           // imageFile, imagePreview는 File/base64라서 제외
         }) as SubmissionFlowState,

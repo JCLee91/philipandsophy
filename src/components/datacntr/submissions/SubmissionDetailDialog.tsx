@@ -35,7 +35,7 @@ export default function SubmissionDetailDialog({
       size="lg"
       contentClassName="max-h-[60vh]"
     >
-      {/* 헤더 메타 정보 */}
+      {/* 유저 이름 & 기수 */}
       <div className="px-5 py-3 border-b bg-muted/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -46,6 +46,11 @@ export default function SubmissionDetailDialog({
             <Badge variant="outline" className="font-normal">
               {submission.cohortName}
             </Badge>
+            {submission.isDailyRetrospective && (
+              <Badge variant="default" className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200">
+                하루 회고
+              </Badge>
+            )}
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
             <Calendar className="h-3 w-3 mr-1" />
@@ -68,11 +73,11 @@ export default function SubmissionDetailDialog({
           </div>
         )}
 
-        {/* 리뷰 */}
+        {/* 리뷰 / 회고 */}
         <div className="space-y-2">
           <h3 className="font-semibold flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
-            감상평
+            {submission.isDailyRetrospective ? '하루 회고' : '감상평'}
           </h3>
           <div className="bg-muted/30 p-4 rounded-lg text-sm leading-relaxed whitespace-pre-wrap">
             {submission.review}

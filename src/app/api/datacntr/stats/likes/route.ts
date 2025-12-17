@@ -3,7 +3,7 @@ import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
-import type { LikesStats, TopReceiver } from '@/types/datacntr';
+import type { LikesStats, TopReceiver, MostLikedSubmission } from '@/types/datacntr';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 
 export async function GET(request: NextRequest) {
@@ -212,16 +212,7 @@ export async function GET(request: NextRequest) {
 
             const allTopIds = [...topReviewIds, ...topAnswerIds];
 
-            type MostLikedSubmission = {
-                submissionId: string;
-                userId: string;
-                userName: string;
-                targetType: 'review' | 'answer';
-                contentPreview: string; // Keep for compatibility, but we might fetch full content if needed or just use this for list
-                fullContent?: string; // Add full content for modal
-                dailyQuestion?: string; // 질문 추가
-                likeCount: number;
-            };
+
 
             const mostLikedReviews: MostLikedSubmission[] = [];
             const mostLikedAnswers: MostLikedSubmission[] = [];
@@ -251,6 +242,7 @@ export async function GET(request: NextRequest) {
 
                     let content = '';
                     let dailyQuestion = '';
+                    let isDailyRetrospective = false;
 
                     if (subData) {
                         const data = subData as any;
@@ -259,6 +251,7 @@ export async function GET(request: NextRequest) {
                         if (type === 'answer') {
                             dailyQuestion = data.dailyQuestion || '';
                         }
+                        isDailyRetrospective = !!data.isDailyRetrospective;
                     }
 
                     return {
@@ -269,6 +262,7 @@ export async function GET(request: NextRequest) {
                         contentPreview: content ? content.slice(0, 50) + (content.length > 50 ? '...' : '') : '(삭제된 글)',
                         fullContent: content, // Full content for modal
                         dailyQuestion: dailyQuestion,
+                        isDailyRetrospective,
                         likeCount: count
                     };
                 };

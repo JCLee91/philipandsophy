@@ -310,6 +310,7 @@ export async function saveDraft(
     dailyQuestion?: string;
     editingSubmissionId?: string; // 🆕 수정 모드에서 원본 제출물 ID 추적
     isEBook?: boolean; // 🆕 전자책 여부
+    isDailyRetrospective?: boolean; // 🆕 하루 회고 여부
   },
   participantName?: string,
   targetSubmissionDate?: string

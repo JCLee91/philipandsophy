@@ -309,6 +309,7 @@ export interface ReadingSubmission {
   updatedAt: Timestamp; // 수정 일시
   metadata?: Record<string, any>; // 추가 메타데이터 (확장 가능)
   isEBook?: boolean; // 🆕 전자책 여부 (2025-12-01 추가)
+  isDailyRetrospective?: boolean; // 🆕 하루 회고 여부 (2025-12-17 추가)
 }
 
 /**

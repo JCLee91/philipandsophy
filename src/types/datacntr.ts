@@ -212,6 +212,7 @@ export interface MostLikedSubmission {
   contentPreview: string; // 내용 미리보기 (앞부분만)
   fullContent?: string; // 전체 내용 (모달용)
   dailyQuestion?: string; // 가치관 질문 (모달용)
+  isDailyRetrospective?: boolean; // 하루 회고 여부
   likeCount: number;
 }
 

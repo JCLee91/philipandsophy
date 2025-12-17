@@ -112,13 +112,30 @@ export default function ContentStats({ typeStats, mostLikedReviews, mostLikedAns
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             {selectedSubmission?.targetType === 'review' ? (
-                                <BookOpen className="w-5 h-5 text-blue-600" />
+                                selectedSubmission.isDailyRetrospective ? (
+                                    <>
+                                        {/* 회고일 때 배지 표시 */}
+                                        {/* (아이콘은 선택사항, BookOpen 그대로 쓰거나 변경) */}
+                                        <div className="flex items-center gap-2">
+                                            <BookOpen className="w-5 h-5 text-purple-600" />
+                                            <span className="text-gray-900">하루 회고</span>
+                                            <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-bold">
+                                                Retrospective
+                                            </span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <BookOpen className="w-5 h-5 text-blue-600" />
+                                        <span className="text-gray-900">독서 인증</span>
+                                    </>
+                                )
                             ) : (
-                                <MapPin className="w-5 h-5 text-orange-600" />
+                                <>
+                                    <MapPin className="w-5 h-5 text-orange-600" />
+                                    <span className="text-gray-900">가치관 질문</span>
+                                </>
                             )}
-                            <span className="text-gray-900">
-                                {selectedSubmission?.targetType === 'review' ? '독서 인증' : '가치관 질문'}
-                            </span>
                         </DialogTitle>
                     </DialogHeader>
 

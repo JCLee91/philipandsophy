@@ -520,8 +520,10 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
     }
   });
 
-  // 최근 제출물 (가장 최근 1개) - submissions는 desc 정렬이므로 첫 번째 항목이 최신
-  const latestSubmission = sortedSubmissions.length > 0 ? sortedSubmissions[0] : null;
+  // 최근 읽은 책 (가장 최근의 독서 인증 찾기, 회고 제외)
+  const latestBookSubmission = useMemo(() => {
+    return sortedSubmissions.find((s) => !s.isDailyRetrospective) || null;
+  }, [sortedSubmissions]);
 
   return (
     <PageTransition>
@@ -596,8 +598,8 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                   </button>
                 </div>
 
-                {/* 최근 본 도서 */}
-                {latestSubmission && (
+                {/* 최근 본 도서 (독서 인증만 표시) */}
+                {latestBookSubmission && (
                   <div className="w-full mb-[60px]">
                     <h3 className="text-[18px] md:text-[20px] font-bold leading-[1.4] text-[#31363e] mb-4">최근 본 도서</h3>
                     <div className="flex flex-col gap-3">
@@ -605,20 +607,20 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                         <div className="flex items-start gap-3 pr-[72px]">
                           <div className="flex flex-col gap-1 flex-1 min-w-0">
                             <p className="text-[14px] font-bold leading-[1.4] text-[#31363e] truncate tracking-[-0.14px]">
-                              {latestSubmission.bookTitle}
+                              {latestBookSubmission.bookTitle}
                             </p>
-                            {latestSubmission.bookAuthor && (
+                            {latestBookSubmission.bookAuthor && (
                               <p className="text-[12px] leading-[1.4] text-[#8f98a3] tracking-[-0.12px]">
-                                {latestSubmission.bookAuthor}
+                                {latestBookSubmission.bookAuthor}
                               </p>
                             )}
                           </div>
                         </div>
-                        {/* 책 표지 표시: bookCoverUrl 우선, 없으면 bookImageUrl 사용 */}
-                        {(latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl) && (
+                        {/* 책 표지 표시 */}
+                        {(latestBookSubmission.bookCoverUrl || latestBookSubmission.bookImageUrl) && (
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-[60px] h-[88px] bg-white rounded-[4px] overflow-hidden shadow-xs">
                             <Image
-                              src={getResizedImageUrl(latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl) || latestSubmission.bookCoverUrl || latestSubmission.bookImageUrl}
+                              src={getResizedImageUrl(latestBookSubmission.bookCoverUrl || latestBookSubmission.bookImageUrl) || latestBookSubmission.bookCoverUrl || latestBookSubmission.bookImageUrl}
                               alt="책 표지"
                               fill
                               sizes="60px"
@@ -627,10 +629,10 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                           </div>
                         )}
                       </div>
-                      {latestSubmission.bookDescription && (
+                      {latestBookSubmission.bookDescription && (
                         <p className="text-[14px] font-medium leading-[1.4] text-[#575e68] tracking-[-0.14px]">
-                          {latestSubmission.bookDescription.slice(0, 100)}
-                          {latestSubmission.bookDescription.length > 100 ? '...' : ''}
+                          {latestBookSubmission.bookDescription.slice(0, 100)}
+                          {latestBookSubmission.bookDescription.length > 100 ? '...' : ''}
                         </p>
                       )}
                     </div>
@@ -773,10 +775,11 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                     </div>
                   </button>
                 )}
-                {/* 읽은 책 */}
+
+                {/* 읽은 책 / 기록 유형 */}
                 <div className="space-y-1.5">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    읽은 책
+                    {selectedSubmission.isDailyRetrospective ? '기록 유형' : '읽은 책'}
                   </p>
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium text-foreground">
@@ -789,10 +792,11 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                     )}
                   </div>
                 </div>
-                {/* 한 줄 감상평 */}
+
+                {/* 한 줄 감상평 / 회고 */}
                 <div className="space-y-1.5">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    한 줄 감상평
+                    {selectedSubmission.isDailyRetrospective ? '하루 회고' : '한 줄 감상평'}
                   </p>
                   <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap wrap-break-word">
                     {selectedSubmission.review}

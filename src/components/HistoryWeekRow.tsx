@@ -48,12 +48,17 @@ const HistoryWeekRow = memo(function HistoryWeekRow({
                   <span className="text-xs font-bold text-blue-700">OT</span>
                 </div>
               ) : day.hasSubmission ? (
-                <Image
-                  src={bookmarkCompleted}
-                  alt="완료"
-                  width={40}
-                  height={40}
-                />
+                <div className="relative w-full h-full">
+                  <Image
+                    src={bookmarkCompleted}
+                    alt="완료"
+                    width={40}
+                    height={40}
+                  />
+                  {day.submission?.isDailyRetrospective && (
+                    <span className="absolute bottom-0 right-0 text-[10px] bg-white rounded-full p-0.5 shadow-sm">📝</span>
+                  )}
+                </div>
               ) : (
                 <Image
                   src={bookmarkEmpty}
