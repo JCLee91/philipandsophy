@@ -13,7 +13,9 @@ export default function AppBodyClass() {
   const pathname = usePathname();
   const isAppRoute = pathname?.startsWith('/app');
   const isSurveyPage = pathname?.startsWith('/application');
-  const isLandingPage = !isSurveyPage && (pathname === '/' || pathname === '/program' || pathname === '/membership' || pathname === '/party-reviews' || pathname === '/secret-party');
+  const isDataCenterPage = pathname?.startsWith('/datacntr');
+  // 앱, 설문, 데이터센터가 아닌 모든 페이지는 랜딩페이지로 취급 (검정색 배경)
+  const isLandingPage = !isAppRoute && !isSurveyPage && !isDataCenterPage;
 
   useEffect(() => {
     // 모든 속성 초기화
