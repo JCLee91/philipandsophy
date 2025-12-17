@@ -7,13 +7,21 @@ import { Menu, X } from 'lucide-react';
 
 export default function GlassNavigation() {
   const pathname = usePathname();
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
     { label: '홈', href: '/' },
-    { label: '프로그램', href: '/service' },
-    { label: '멤버십', href: '/membership' },
-    { label: '파티 후기', href: '/party-reviews' },
+    {
+      label: '프로그램',
+      href: '/programs',
+      subItems: [
+        { label: '2주 독서', href: '/programs/reading' },
+        { label: '멤버십', href: '/programs/membership' },
+      ],
+    },
+    { label: '가격', href: '/pricing' },
+    { label: '후기', href: '/reviews' },
   ];
 
   const isActive = (href: string) => {
@@ -23,6 +31,15 @@ export default function GlassNavigation() {
     return pathname.startsWith(href);
   };
 
+  const handleItemClick = (e: React.MouseEvent, item: any) => {
+    if (item.subItems) {
+      e.preventDefault();
+      setOpenSubmenu(openSubmenu === item.label ? null : item.label);
+    } else {
+      setOpenSubmenu(null);
+    }
+  };
+
   return (
     <>
       {/* Desktop Navigation */}
@@ -30,13 +47,29 @@ export default function GlassNavigation() {
         <div className="nav-container">
           <div className="nav-tabs">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`nav-tab ${isActive(item.href) ? 'nav-tab-active' : ''}`}
-              >
-                {item.label}
-              </Link>
+              <div key={item.href} className={`nav-item-wrapper ${openSubmenu === item.label ? 'active' : ''}`}>
+                <Link
+                  href={item.href}
+                  className={`nav-tab ${isActive(item.href) ? 'nav-tab-active' : ''}`}
+                  onClick={(e) => handleItemClick(e, item)}
+                >
+                  {item.label}
+                </Link>
+                {item.subItems && (
+                  <div className="nav-dropdown">
+                    {item.subItems.map((subItem) => (
+                      <Link
+                        key={subItem.label}
+                        href={subItem.href}
+                        className="nav-dropdown-item"
+                        onClick={() => setOpenSubmenu(null)}
+                      >
+                        {subItem.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -56,14 +89,30 @@ export default function GlassNavigation() {
           {isMobileMenuOpen && (
             <div className="nav-mobile-menu">
               {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`nav-mobile-item ${isActive(item.href) ? 'nav-mobile-item-active' : ''}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
+                <div key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={`nav-mobile-item ${isActive(item.href) ? 'nav-mobile-item-active' : ''}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                  {item.subItems && (
+                    <div style={{ paddingLeft: '20px' }}>
+                      {item.subItems.map((subItem) => (
+                        <Link
+                          key={subItem.label}
+                          href={subItem.href}
+                          className="nav-mobile-item"
+                          style={{ fontSize: '14px', padding: '10px 20px' }}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          {subItem.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}

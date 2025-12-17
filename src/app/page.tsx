@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Script from 'next/script';
 import LandingLayout from '@/components/landing/LandingLayout';
 import CtaButton from '@/components/landing/CtaButton';
-import HeroSection from '@/components/landing/HeroSection';
+import HeroImageSlider from '@/components/landing/HeroImageSlider';
 import { getImageUrl } from '@/constants/landing';
 import { ORGANIZATION_SCHEMA } from '@/constants/seo';
 import { ANALYTICS_EVENTS } from '@/constants/landing';
@@ -34,23 +34,14 @@ export default function HomePage() {
         <p>NO 일회성 만남 - 나와 같이 맞는 오래갈 인연을 발견할 수 있습니다.</p>
       </div>
 
-      <div className="container p-0 max-w-[500px] mx-auto">
-        <HeroSection />
+      <div className="container p-0 max-w-[500px] mx-auto !pt-10">
+        <HeroImageSlider />
 
         <Image
-          src={config?.images?.['home_main_2'] || getImageUrl('/image/landing/PnS_2.webp')}
-          alt="필립앤소피 소셜클럽 소개"
+          src={getImageUrl('/image/landing/PnS_2.webp?v=1765966010154')}
+          alt="필립앤소피 소개"
           width={1170}
           height={5526}
-          className="main-image"
-          priority
-        />
-
-        <Image
-          src={config?.images?.['home_main_3'] || getImageUrl('/image/landing/PnS_3.webp')}
-          alt="필립앤소피 서비스 특징"
-          width={1170}
-          height={6930}
           className="main-image"
         />
 

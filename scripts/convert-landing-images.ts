@@ -13,7 +13,7 @@ import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 
-const SOURCE_DIR = '업데이트용 이미지(복사해서 활용)';
+const SOURCE_DIR = '업데이트 자료';
 const TARGET_DIR = 'public/image/landing';
 
 interface ImageFile {
@@ -26,9 +26,11 @@ async function getImageFiles(): Promise<ImageFile[]> {
   const files: ImageFile[] = [];
 
   const categories = [
-    { folder: '랜딩페이지 - 홈', prefix: 'PnS' },
-    { folder: '랜딩페이지 - 멤버십', prefix: 'PnS_Membership' },
-    { folder: '랜딩페이지 - 프로그램', prefix: 'PnS_Service' },
+    { folder: '홈', prefix: 'PnS' },
+    { folder: '가격', prefix: 'PnS_Pricing' },
+    { folder: '프로그램-2주 독서', prefix: 'PnS_Program_reading' },
+    { folder: '프로그램-멤버십', prefix: 'PnS_Program_membership' },
+    { folder: '후기', prefix: 'PnS_Review' },
   ];
 
   for (const category of categories) {
@@ -128,12 +130,12 @@ async function main() {
   }
 
   // 결과 요약
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
   console.log('📊 변환 결과 요약');
   console.log(`✅ 성공: ${successCount}개`);
   console.log(`❌ 실패: ${failCount}개`);
   console.log(`📁 저장 위치: ${TARGET_DIR}`);
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   // 캐시버스트 정보
   const timestamp = Date.now();
