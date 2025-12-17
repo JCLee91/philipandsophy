@@ -5,6 +5,20 @@
 /* Tailwind v4: class 기반 dark mode 사용 (prefers-color-scheme 기본값 비활성화) */
 @custom-variant dark (&:where(.dark, .dark *));
 
+@font-face {
+  font-family: 'S-CoreDream-3Light';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-3Light.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Paperlogy-4Regular';
+  src: url('https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-4Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+
 /* 시스템 다크모드 무시하고 항상 라이트 모드 강제 */
 :root {
   color-scheme: light only;
@@ -19,6 +33,7 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+
   *,
   ::after,
   ::before,
@@ -41,23 +56,29 @@
     will-change: auto;
   }
 }
+
 @utility duration-fast {
   /* 표준 애니메이션 duration - 기본값 덮어쓰기 */
   transition-duration: var(--duration-fast);
 }
+
 @utility duration-normal {
   transition-duration: var(--duration-normal);
 }
+
 @utility duration-slow {
   transition-duration: var(--duration-slow);
 }
+
 @utility ease-smooth {
   /* 표준 easing 함수 */
   transition-timing-function: var(--ease-smooth);
 }
+
 @utility ease-out {
   transition-timing-function: var(--ease-out);
 }
+
 @utility sr-only {
   /* 스크린 리더 전용 텍스트 (접근성) */
   position: absolute;
@@ -70,6 +91,7 @@
   white-space: nowrap;
   border-width: 0;
 }
+
 @utility cta-button {
   /* CTA 버튼 - 글래스모피즘 */
   display: inline-flex;
@@ -112,12 +134,10 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent);
     transition: left 0.8s ease;
     z-index: 1;
   }
@@ -161,11 +181,13 @@
     height: 28px;
   }
 }
+
 @utility cta-text {
   position: relative;
   z-index: 2;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
 @utility cta-arrow {
   position: relative;
   z-index: 2;
@@ -190,6 +212,7 @@
     height: 28px;
   }
 }
+
 @utility cta-button-white {
   /* CTA Button White Version (For Dark Backgrounds) - 모바일 퍼스트 */
   display: inline-flex;
@@ -243,6 +266,7 @@
     cursor: not-allowed;
     transform: none;
   }
+
   @media (min-width: 768px) {
     min-width: 160px;
     height: 52px;
@@ -253,6 +277,7 @@
     margin-top: 16px;
   }
 }
+
 @utility cta-button-white-full {
   /* CTA Button White Full Width (선택 옵션용) - 모바일 퍼스트 */
   display: flex;
@@ -307,6 +332,7 @@
       inset 0 1px 0 rgba(255, 255, 255, 1);
     border: 1px solid rgba(255, 255, 255, 1);
   }
+
   @media (min-width: 768px) {
     height: 56px;
     padding: 16px 24px;
@@ -314,7 +340,9 @@
     border-radius: 12px;
   }
 }
+
 @utility selected {
+
   /* 선택된 상태 - 더 밝게 빛나는 효과 */
   &.cta-button-white-full {
     background: #ffffff;
@@ -325,7 +353,9 @@
     border: 1px solid rgba(255, 255, 255, 1);
   }
 }
+
 @utility compact {
+
   /* 컴팩트 버전 */
   &.cta-button {
     max-width: 280px;
@@ -339,6 +369,7 @@
     height: 28px;
   }
 }
+
 @utility form-input-dark {
   /* 반응형 - 데스크탑에서 확대 (모바일 퍼스트) */
 
@@ -347,11 +378,13 @@
 }
 
 @layer utilities {
+
   /* Shimmer 키프레임 정의 */
   @keyframes shimmer {
     0% {
       background-position: -200% 0;
     }
+
     100% {
       background-position: 200% 0;
     }
@@ -366,7 +399,8 @@
   :root {
     /* 필립앤소피 브랜드 컬러 팔레트 */
     --app-viewport-height: 100vh;
-    --app-real-height: 100vh; /* JavaScript로 업데이트됨 */
+    --app-real-height: 100vh;
+    /* JavaScript로 업데이트됨 */
     --background: 0 0% 100%;
     --foreground: 222 47% 5%;
     --card: 0 0% 100%;
@@ -469,14 +503,16 @@
     background: #000 !important;
     overscroll-behavior: none;
   }
-  
+
   /* 설문페이지 전용 - 검정색 배경 + 스크롤 잠금 (body 스크롤 방지) */
   html[data-survey="true"],
   body[data-survey="true"] {
     background: #000000 !important;
     overscroll-behavior: none;
-    overflow: hidden !important; /* body 스크롤 완전 차단 */
-    touch-action: none; /* 기본 터치 동작 방지 (선택적) */
+    overflow: hidden !important;
+    /* body 스크롤 완전 차단 */
+    touch-action: none;
+    /* 기본 터치 동작 방지 (선택적) */
   }
 
   /* PWA 설정 - 웹앱(/app)에서만 적용 */
@@ -547,17 +583,18 @@
   }
 
 
-  /* Pretendard 폰트를 모든 요소에 강제 적용 */
+  /* Pretendard 폰트를 모든 요소에 기본 적용 (커스텀 폰트 오버라이드 허용) */
   *,
   *::before,
   *::after {
     box-sizing: inherit;
     font-family: 'Pretendard Variable', Pretendard, -apple-system,
-      BlinkMacSystemFont, system-ui, sans-serif !important;
+      BlinkMacSystemFont, system-ui, sans-serif;
   }
 }
 
 @layer utilities {
+
   /* 앱 전용 뷰포트 헬퍼 클래스 */
   .app-shell {
     min-height: var(--app-viewport-height, 100vh);
@@ -605,7 +642,8 @@
 
   .app-footer {
     padding-top: 16px;
-    padding-bottom: 24px; /* 브라우저 기본값 */
+    padding-bottom: 24px;
+    /* 브라우저 기본값 */
   }
 
   /* PWA 환경에서만 safe-area 고려한 추가 여백 */
@@ -622,7 +660,9 @@
 
   /* 모든 버튼과 인터랙티브 요소에 cursor pointer 적용 - utilities 레이어로 최상위 우선순위 보장 */
 }
+
 @layer utilities {
+
   button,
   a,
   label,
@@ -636,12 +676,13 @@
 
 /* 글래스모피즘 CTA 버튼 컴포넌트 */
 @layer components {
+
   /* 글래스모피즘 디자인 토큰 */
   :root {
     /* 포인트 컬러 (프리미엄 블루 - 흰색 배경용) */
     --brand-blue-1: rgba(30, 58, 138, 0.9);
     --brand-blue-2: rgba(37, 99, 235, 0.85);
-    
+
     /* 글래스 레이어 */
     --glass-bg-strong: linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(30, 58, 138, 0.9) 100%);
     --glass-bg-hover: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(30, 58, 138, 1) 100%);
@@ -649,7 +690,7 @@
     --glass-highlight: rgba(255, 255, 255, 0.4);
     --glass-shadow-strong: 0 12px 32px rgba(30, 58, 138, 0.25), 0 4px 12px rgba(0, 0, 0, 0.15);
     --glass-shadow-hover: 0 16px 48px rgba(30, 58, 138, 0.35), 0 8px 16px rgba(0, 0, 0, 0.2);
-    
+
     /* 블러 */
     --blur-xl: blur(20px);
     --blur-lg: blur(10px);
@@ -676,19 +717,24 @@
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  height: 100dvh; /* 모바일 브라우저 주소창 대응 */
-  overflow: hidden; /* 스크롤바 깜빡임 방지 */
+  height: 100dvh;
+  /* 모바일 브라우저 주소창 대응 */
+  overflow: hidden;
+  /* 스크롤바 깜빡임 방지 */
   background: #000000;
   font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  overscroll-behavior: none; /* 모바일 오버스크롤 방지 */
-  z-index: 9999; /* 다른 요소보다 위에 배치 */
+  overscroll-behavior: none;
+  /* 모바일 오버스크롤 방지 */
+  z-index: 9999;
+  /* 다른 요소보다 위에 배치 */
 }
 
 .application-container {
   max-width: 500px;
   margin: 0 auto;
   padding: 0 20px;
-  min-height: 100%; /* height 대신 min-height 사용 (스크롤 대응) */
+  min-height: 100%;
+  /* height 대신 min-height 사용 (스크롤 대응) */
   display: flex;
   flex-direction: column;
 }
@@ -803,7 +849,8 @@
 /* 인트로 화면은 왼쪽 정렬 */
 .question-header-intro {
   text-align: left;
-  margin-bottom: 40px; /* 헤더 전체와 버튼 사이 여백은 적절히 유지 */
+  margin-bottom: 40px;
+  /* 헤더 전체와 버튼 사이 여백은 적절히 유지 */
 }
 
 .question-title {
@@ -818,7 +865,8 @@
 .question-title-intro {
   font-size: 22px;
   font-weight: 700;
-  margin-bottom: 40px; /* 제목(헤더)과 설명(본문) 사이 여백 조정 (80px -> 40px) */
+  margin-bottom: 40px;
+  /* 제목(헤더)과 설명(본문) 사이 여백 조정 (80px -> 40px) */
   text-align: left;
 }
 
@@ -846,7 +894,8 @@
 
   .question-title-intro {
     font-size: 28px;
-    margin-bottom: 60px; /* 데스크탑에서 제목과 설명 사이 여백 조정 (120px -> 60px) */
+    margin-bottom: 60px;
+    /* 데스크탑에서 제목과 설명 사이 여백 조정 (120px -> 60px) */
   }
 
   .question-title {
