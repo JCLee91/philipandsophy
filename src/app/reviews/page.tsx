@@ -15,7 +15,7 @@ export default function ReviewsPage() {
         <LandingLayout>
             <div className="container p-0 max-w-[500px] mx-auto">
                 <Image
-                    src={getImageUrl('/image/landing/PnS_Review.webp?v=1765966010154')}
+                    src={getImageUrl('/image/landing/PnS_Review.webp')}
                     alt="후기"
                     width={1170}
                     height={2000}

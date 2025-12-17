@@ -17,7 +17,7 @@ export default function ReadingProgramPage() {
                 {/* 첫 번째 이미지 + 동영상 오버레이 */}
                 <div className="image-with-video-overlay">
                     <Image
-                        src={getImageUrl('/image/landing/PnS_Program_reading_1.webp?v=1765966010154')}
+                        src={getImageUrl('/image/landing/PnS_Program_reading_1.webp')}
                         alt="2주 독서 프로그램 소개 1"
                         width={1170}
                         height={2000} // Approximate, will auto-adjust height with layout but good to have high val
@@ -39,7 +39,7 @@ export default function ReadingProgramPage() {
                     </div>
                 </div>
                 <Image
-                    src={getImageUrl('/image/landing/PnS_Program_reading_2.webp?v=1765966010154')}
+                    src={getImageUrl('/image/landing/PnS_Program_reading_2.webp')}
                     alt="2주 독서 프로그램 소개 2"
                     width={1170}
                     height={2000}

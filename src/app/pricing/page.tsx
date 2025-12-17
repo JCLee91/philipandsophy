@@ -15,7 +15,7 @@ export default function PricingPage() {
         <LandingLayout>
             <div className="container p-0 max-w-[500px] mx-auto">
                 <Image
-                    src={getImageUrl('/image/landing/PnS_Pricing_1.webp?v=1765966010154')}
+                    src={getImageUrl('/image/landing/PnS_Pricing_1.webp')}
                     alt="가격 안내 1"
                     width={1170}
                     height={2000}
@@ -23,7 +23,7 @@ export default function PricingPage() {
                     priority
                 />
                 <Image
-                    src={getImageUrl('/image/landing/PnS_Pricing_2.webp?v=1765966010154')}
+                    src={getImageUrl('/image/landing/PnS_Pricing_2.webp')}
                     alt="가격 안내 2"
                     width={1170}
                     height={2000}
