@@ -19,7 +19,7 @@ export default function HeroImageSlider() {
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % images.length);
-        }, 3000); // Change image every 3 seconds
+        }, 2000); // Change image every 2 seconds
 
         return () => clearInterval(timer);
     }, []);
@@ -32,7 +32,7 @@ export default function HeroImageSlider() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
                     className="absolute inset-0 w-full h-full"
                 >
                     <Image
