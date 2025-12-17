@@ -359,8 +359,8 @@ export function Step1Content() {
         </div>
       </div>
 
-      {/* 하루 회고 버튼 */}
-      <button
+      {/* 하루 회고 버튼 - 2024.12.17 잠시 숨김 (아직 오픈 전) */}
+      {/* <button
         type="button"
         onClick={handleDailyRetrospective}
         className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors group"
@@ -370,7 +370,7 @@ export function Step1Content() {
           <p className="text-xs text-gray-500">하루 회고 작성하러 가기</p>
         </div>
         <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
-      </button>
+      </button> */}
     </SubmissionLayout>
   );
 }

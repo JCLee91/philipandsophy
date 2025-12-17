@@ -405,7 +405,7 @@ export function Step2Content() {
     }
   };
 
-  if (sessionLoading || !participant || !cohortId) {
+  if (sessionLoading || !participant || !cohortId || isLoadingDraft) {
     return <LoadingSpinner message="로딩 중..." />;
   }
 
