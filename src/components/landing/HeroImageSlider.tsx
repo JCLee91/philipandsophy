@@ -19,7 +19,7 @@ export default function HeroImageSlider() {
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % images.length);
-        }, 4000); // Change image every 4 seconds
+        }, 3000); // Change image every 3 seconds
 
         return () => clearInterval(timer);
     }, []);
