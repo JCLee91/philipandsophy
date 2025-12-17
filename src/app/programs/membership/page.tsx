@@ -15,7 +15,7 @@ export default function MembershipProgramPage() {
         <LandingLayout>
             <div className="container p-0 max-w-[500px] mx-auto">
                 <Image
-                    src={getImageUrl('/image/landing/PnS_Program_membership.webp?v=1765966010154')}
+                    src={getImageUrl('/image/landing/PnS_Program_membership.webp')}
                     alt="멤버십 프로그램 소개"
                     width={1170}
                     height={2000}
