@@ -172,7 +172,7 @@ export const QUESTIONS: Record<string, Question> = {
         ],
         required: true,
         isLastStep: true,
-        submitButtonText: '인터뷰 없이 신청 완료',
+        submitButtonText: '재참가 신청 완료',
         // End of Existing Member flow
     },
 };
