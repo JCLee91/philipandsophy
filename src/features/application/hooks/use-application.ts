@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { logger } from '@/lib/logger';
 import { logFunnelEvent, getStepIndex } from '@/lib/firebase/funnel';
 import { trackRegistration } from '@/lib/analytics';
-import { Question, QUESTIONS, START_QUESTION_ID } from '../constants/questions';
+import { Question, QUESTIONS, START_QUESTION_ID, COHORT_INFO } from '../constants/questions';
 
 /**
  * 세션 ID 생성 및 관리
@@ -182,6 +182,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                 연락처: answers['phone'] || '',
                 성별: genderMap[gender] || '',
                 회원유형: isNewMember ? '신규' : '기존',
+                신청기수: COHORT_INFO.number,
                 신청일시: new Date().toISOString(),
 
                 // 신규 멤버 전용 필드
@@ -191,8 +192,8 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                 생년월일: answers['birthdate'] || '',
                 사진URL: photoUrl,
 
-                // 기존 멤버 전용 필드
-                기수: answers['cohort_check'] || '',
+                // 기존 멤버 전용 필드 (이전에 참여했던 기수)
+                이전참여기수: answers['cohort_check'] || '',
             };
 
             // 5. Make 웹훅으로 전송 (keepalive 옵션으로 페이지 이동해도 전송 보장)
