@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Users } from 'lucide-react';
@@ -84,26 +86,33 @@ export default function MemberShowcase({
         )}
       </div>
 
-      <style jsx global>{`
-        @keyframes pns-marquee-left {
-          0% { transform: translate3d(0, 0, 0); }
-          100% { transform: translate3d(-50%, 0, 0); }
-        }
+	      <style jsx global>{`
+	        @keyframes pns-marquee-left {
+	          from { transform: translate3d(0, 0, 0); }
+	          to { transform: translate3d(var(--pns-marquee-distance, -50%), 0, 0); }
+	        }
 
-        @keyframes pns-marquee-right {
-          0% { transform: translate3d(-50%, 0, 0); }
-          100% { transform: translate3d(0, 0, 0); }
-        }
+	        @keyframes pns-marquee-right {
+	          from { transform: translate3d(var(--pns-marquee-distance, -50%), 0, 0); }
+	          to { transform: translate3d(0, 0, 0); }
+	        }
 
-        .pns-marquee-track {
-          will-change: transform;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          transform: translate3d(0, 0, 0);
-        }
-      `}</style>
-    </section>
-  );
+	        .pns-marquee-track {
+	          will-change: transform;
+	          backface-visibility: hidden;
+	          -webkit-backface-visibility: hidden;
+	          transform: translate3d(0, 0, 0);
+	        }
+
+	        @media (prefers-reduced-motion: reduce) {
+	          .pns-marquee-track {
+	            animation: none !important;
+	            transform: none !important;
+	          }
+	        }
+	      `}</style>
+	    </section>
+	  );
 }
 
 interface ScrollingRowProps {
@@ -119,7 +128,42 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
   const validMembers = members.filter(m => m.profileImage);
   if (validMembers.length === 0) return null;
 
-  const gap = 16; // px (mobile-friendly, WebView-safe)
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [marqueeDistancePx, setMarqueeDistancePx] = useState<number>(0);
+
+  const doubledMembers = useMemo(() => [...validMembers, ...validMembers], [validMembers]);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const measure = () => {
+      const duplicateStart = track.querySelector<HTMLElement>('[data-marquee-dup-start="true"]');
+      if (!duplicateStart) return;
+
+      const distance = duplicateStart.offsetLeft - track.offsetLeft;
+      if (distance > 0) setMarqueeDistancePx(distance);
+    };
+
+    measure();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(track);
+    return () => ro.disconnect();
+  }, [validMembers.length]);
+
+  const trackStyle: CSSProperties & Record<string, string> = {
+    animation: `${direction === 'left' ? 'pns-marquee-left' : 'pns-marquee-right'} ${duration}s linear infinite`,
+  };
+
+  if (marqueeDistancePx > 0) {
+    trackStyle['--pns-marquee-distance'] = `-${marqueeDistancePx}px`;
+  }
 
   return (
     <div className="relative overflow-hidden">
@@ -127,18 +171,20 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
       <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
 
       <div
-        className="flex pns-marquee-track"
-        style={{
-          animation: `${direction === 'left' ? 'pns-marquee-left' : 'pns-marquee-right'} ${duration}s linear infinite`,
-        }}
+        ref={trackRef}
+        className="flex w-max gap-4 pns-marquee-track"
+        style={trackStyle}
       >
-        {/* First track */}
-        <div className="flex flex-shrink-0">
-          {validMembers.map((member, index) => (
+        {doubledMembers.map((member, index) => {
+          const isDuplicate = index >= validMembers.length;
+          const isDuplicateStart = index === validMembers.length;
+
+          return (
             <div
-              key={`a-${member.id}-${index}`}
+              key={`${isDuplicate ? 'b' : 'a'}-${member.id}-${index}`}
+              data-marquee-dup-start={isDuplicateStart ? 'true' : undefined}
+              aria-hidden={isDuplicate ? true : undefined}
               className="flex-shrink-0 relative w-14 h-[76px] md:w-16 md:h-24 rounded-lg overflow-hidden bg-gray-900 border border-gray-800 select-none"
-              style={{ marginRight: gap }}
               onContextMenu={(e) => e.preventDefault()}
               onDragStart={(e) => e.preventDefault()}
             >
@@ -152,30 +198,8 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
                 draggable={false}
               />
             </div>
-          ))}
-        </div>
-        {/* Second track (duplicate for seamless loop) */}
-        <div className="flex flex-shrink-0">
-          {validMembers.map((member, index) => (
-            <div
-              key={`b-${member.id}-${index}`}
-              className="flex-shrink-0 relative w-14 h-[76px] md:w-16 md:h-24 rounded-lg overflow-hidden bg-gray-900 border border-gray-800 select-none"
-              style={{ marginRight: gap }}
-              onContextMenu={(e) => e.preventDefault()}
-              onDragStart={(e) => e.preventDefault()}
-            >
-              <Image
-                src={member.profileImage!}
-                alt=""
-                fill
-                className="object-cover object-top pointer-events-none"
-                sizes="(min-width: 768px) 64px, 56px"
-                loading="eager"
-                draggable={false}
-              />
-            </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
