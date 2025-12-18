@@ -122,7 +122,7 @@ export default function ReviewsPage() {
             {/* Additional Review Image */}
             <div className="container p-0 max-w-[500px] mx-auto">
                 <Image
-                    src={getImageUrl('/image/reviews/PnS_Review_2.webp?v=1734510000000')}
+                    src={getImageUrl('/image/reviews/PnS_Review_2.webp?v=1734526000000')}
                     alt="멤버 후기 상세"
                     width={1170}
                     height={5103}

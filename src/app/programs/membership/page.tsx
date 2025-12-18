@@ -41,7 +41,7 @@ export default function MembershipProgramPage() {
 
             <div className="container p-0 max-w-[500px] mx-auto">
                 <Image
-                    src={getImageUrl('/image/landing/PnS_Program_membership.webp?v=1765966010156')}
+                    src={getImageUrl('/image/landing/PnS_Program_membership.webp?v=1734526000000')}
                     alt="멤버십 프로그램 소개 - 검증된 멤버들과 즐기는 도심 속 문화 생활"
                     width={1170}
                     height={2000}
