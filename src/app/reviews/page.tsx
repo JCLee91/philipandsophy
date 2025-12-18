@@ -112,7 +112,7 @@ export default function ReviewsPage() {
             />
 
             {/* Spacer for clear visual separation */}
-            <div className="h-16 w-full bg-black" />
+            <div className="h-8 w-full bg-black" />
 
             {/* Additional Review Image */}
             <div className="container p-0 max-w-[500px] mx-auto">

@@ -14,7 +14,7 @@ export default function SocialProofSection({
   genderRatio = { male: 5, female: 5 },
 }: SocialProofSectionProps) {
   return (
-    <section className="relative w-full bg-black py-12 mt-0 overflow-hidden border-t border-white/5">
+    <section className="relative w-full bg-black py-12 mt-0 overflow-hidden">
       <div className="relative z-10 max-w-[500px] mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
