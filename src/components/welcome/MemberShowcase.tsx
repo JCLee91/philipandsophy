@@ -60,7 +60,7 @@ export default function MemberShowcase({
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: showHeader ? 0.2 : 0 }}
-          className="space-y-4"
+          className="space-y-4 max-w-[500px] mx-auto"
         >
           <ScrollingRow members={row1} direction="left" duration={20} />
           <ScrollingRow members={row2} direction="right" duration={25} />
