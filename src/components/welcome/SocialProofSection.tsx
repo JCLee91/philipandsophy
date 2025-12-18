@@ -32,7 +32,7 @@ export default function SocialProofSection({
 
           <div className="text-center px-4 md:px-12">
             <h3 className="text-gray-400 text-sm md:text-base mb-2 font-medium">승인된 멤버</h3>
-            <div className="text-3xl md:text-5xl font-bold text-white tracking-tight">
+            <div className="text-3xl md:text-5xl font-bold text-cyan-300 tracking-tight">
               {memberCount.toLocaleString()}명+
             </div>
           </div>

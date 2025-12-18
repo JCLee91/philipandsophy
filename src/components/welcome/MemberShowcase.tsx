@@ -33,7 +33,7 @@ export default function MemberShowcase({
   const row4 = validMembers.slice(perRow * 3);
 
   return (
-    <section className={`relative w-full bg-black overflow-hidden ${showHeader ? 'py-16' : 'py-6'}`}>
+    <section className={`relative w-full bg-black overflow-hidden ${showHeader ? 'py-16' : 'pt-3 pb-6'}`}>
       <div className="relative z-20">
         {showHeader && (
           <motion.div
