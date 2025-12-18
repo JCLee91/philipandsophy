@@ -53,9 +53,9 @@ export const START_QUESTION_ID = 'intro';
 export const COHORT_INFO = {
     number: 6,
     timeline: [
-        { date: '1/3 오후 2시', event: '온라인 오리엔테이션' },
-        { date: '1/4~1/16', event: '온라인 독서프로그램' },
-        { date: '1/17 저녁 6시', event: '웰컴 파티' },
+        { date: '1/3 오후 2시', event: '온라인 OT' },
+        { date: '1/4~1/16', event: '2주 독서 프로그램' },
+        { date: '1/17 저녁 7시', event: '웰컴 파티' },
     ],
 };
 
