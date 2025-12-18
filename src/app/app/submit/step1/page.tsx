@@ -349,15 +349,15 @@ export function Step1Content() {
         </Label>
       </div>
 
-      {/* 구분선 */}
-      <div className="relative py-4">
+      {/* 구분선 - 2024.12.18 잠시 숨김 (회고 버튼과 함께) */}
+      {/* <div className="relative py-4">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
           <div className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-xs font-medium text-gray-400">
           <span className="bg-white px-2">또는</span>
         </div>
-      </div>
+      </div> */}
 
       {/* 하루 회고 버튼 - 2024.12.17 잠시 숨김 (아직 오픈 전) */}
       {/* <button
