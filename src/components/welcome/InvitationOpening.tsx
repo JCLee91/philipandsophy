@@ -20,7 +20,7 @@ export default function InvitationOpening({ name, welcomeMessage }: InvitationOp
     };
 
     return (
-        <section className="relative min-h-screen flex flex-col items-center justify-center px-6 bg-black">
+        <section className="relative min-h-screen flex flex-col items-center justify-center px-4 bg-black">
             {/* Subtle ambient glow */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/[0.02] rounded-full blur-3xl" />
@@ -30,7 +30,7 @@ export default function InvitationOpening({ name, welcomeMessage }: InvitationOp
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1.2, ease: 'easeOut' }}
-                className="relative z-10 text-center max-w-lg"
+                className="relative z-10 text-center max-w-[500px]"
             >
                 {/* Main greeting */}
                 <motion.h1

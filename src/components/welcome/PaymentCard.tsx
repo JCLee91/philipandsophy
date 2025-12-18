@@ -25,8 +25,8 @@ export default function PaymentCard({ bankAccount }: PaymentCardProps) {
   };
 
   return (
-    <section className="w-full bg-black py-20 px-6">
-      <div className="max-w-lg mx-auto">
+    <section className="w-full bg-black py-20 px-4">
+      <div className="max-w-[500px] mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

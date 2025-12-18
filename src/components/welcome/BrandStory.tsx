@@ -46,8 +46,8 @@ const afterProgram = [
 
 export default function BrandStory() {
     return (
-        <section className="w-full bg-black py-20 md:py-28 px-6">
-            <div className="max-w-lg mx-auto">
+        <section className="w-full bg-black py-20 md:py-28 px-4">
+            <div className="max-w-[500px] mx-auto">
                 {/* Section 1: Program Timeline */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

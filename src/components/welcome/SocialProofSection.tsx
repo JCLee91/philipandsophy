@@ -15,7 +15,7 @@ export default function SocialProofSection({
 }: SocialProofSectionProps) {
   return (
     <section className="relative w-full bg-black py-12 mt-0 overflow-hidden border-t border-white/5">
-      <div className="relative z-10 max-w-4xl mx-auto px-6">
+      <div className="relative z-10 max-w-[500px] mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
