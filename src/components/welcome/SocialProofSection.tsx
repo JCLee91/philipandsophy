@@ -25,28 +25,28 @@ export default function SocialProofSection({
         >
           <div className="text-center px-4 md:px-12 border-r border-white/10">
             <h3 className="text-gray-400 text-sm md:text-base mb-2 font-medium">누적 지원자 수</h3>
-            <div className="text-3xl md:text-5xl font-bold text-white tracking-tight">
+            <div className="text-3xl font-bold text-white tracking-tight whitespace-nowrap">
               {applicantCount.toLocaleString()}명+
             </div>
           </div>
 
           <div className="text-center px-4 md:px-12">
             <h3 className="text-gray-400 text-sm md:text-base mb-2 font-medium">승인된 멤버</h3>
-            <div className="text-3xl md:text-5xl font-bold text-library-blue tracking-tight">
+            <div className="text-3xl font-bold text-library-blue tracking-tight whitespace-nowrap">
               {memberCount.toLocaleString()}명+
             </div>
           </div>
 
           <div className="text-center px-4 md:px-12 border-r border-white/10">
             <h3 className="text-gray-400 text-sm md:text-base mb-2 font-medium">남자 멤버</h3>
-            <div className="text-3xl md:text-5xl font-bold text-white tracking-tight">
+            <div className="text-3xl font-bold text-white tracking-tight whitespace-nowrap">
               {genderRatio.male}명+
             </div>
           </div>
 
           <div className="text-center px-4 md:px-12">
             <h3 className="text-gray-400 text-sm md:text-base mb-2 font-medium">여자 멤버</h3>
-            <div className="text-3xl md:text-5xl font-bold text-white tracking-tight">
+            <div className="text-3xl font-bold text-white tracking-tight whitespace-nowrap">
               {genderRatio.female}명+
             </div>
           </div>

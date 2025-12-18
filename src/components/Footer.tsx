@@ -58,13 +58,11 @@ export default function Footer() {
         {/* 푸터 하단 네비게이션 */}
         <div className="footer-bottom">
           <div className="footer-nav">
-            <a href="https://philipandsophy.notion.site/10-27679c8ade7980faace7d0e2076e4570" target="_blank" rel="noopener" className="footer-nav-link">About</a>
-            <span className="footer-divider">•</span>
-            <a href="https://philipandsophy.notion.site/FAQ-27679c8ade7980909527fe9606c05af3" target="_blank" rel="noopener" className="footer-nav-link">FAQ</a>
-            <span className="footer-divider">•</span>
             <a href="/privacy-policy.html" target="_blank" rel="noopener" className="footer-nav-link">개인정보처리방침</a>
             <span className="footer-divider">•</span>
             <a href="/terms-of-service.html" target="_blank" rel="noopener" className="footer-nav-link">이용약관</a>
+            <span className="footer-divider">•</span>
+            <a href="/refund-policy.html" target="_blank" rel="noopener" className="footer-nav-link">환불정책</a>
           </div>
           <div className="footer-copyright">
             <p>&copy; 2025 필립앤소피. All Rights Reserved.</p>
