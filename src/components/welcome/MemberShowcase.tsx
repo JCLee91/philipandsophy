@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -129,7 +129,7 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
   if (validMembers.length === 0) return null;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const [marqueeDistancePx, setMarqueeDistancePx] = useState<number>(0);
+  const lastDistanceRef = useRef<number>(0);
 
   const doubledMembers = useMemo(() => [...validMembers, ...validMembers], [validMembers]);
 
@@ -142,7 +142,11 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
       if (!duplicateStart) return;
 
       const distance = duplicateStart.offsetLeft - track.offsetLeft;
-      if (distance > 0) setMarqueeDistancePx(distance);
+      // 값이 변경되었을 때만 DOM 업데이트 (리렌더링 없이)
+      if (distance > 0 && distance !== lastDistanceRef.current) {
+        lastDistanceRef.current = distance;
+        track.style.setProperty('--pns-marquee-distance', `-${distance}px`);
+      }
     };
 
     measure();
@@ -157,13 +161,9 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
     return () => ro.disconnect();
   }, [validMembers.length]);
 
-  const trackStyle: CSSProperties & Record<string, string> = {
+  const trackStyle: CSSProperties = {
     animation: `${direction === 'left' ? 'pns-marquee-left' : 'pns-marquee-right'} ${duration}s linear infinite`,
   };
-
-  if (marqueeDistancePx > 0) {
-    trackStyle['--pns-marquee-distance'] = `-${marqueeDistancePx}px`;
-  }
 
   return (
     <div className="relative overflow-hidden">
