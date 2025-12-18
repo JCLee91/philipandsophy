@@ -97,11 +97,31 @@ export default function MemberShowcase({
 	          to { transform: translate3d(0, 0, 0); }
 	        }
 
+	        .pns-marquee-row {
+	          isolation: isolate;
+	          contain: layout paint;
+	        }
+
 	        .pns-marquee-track {
 	          will-change: transform;
 	          backface-visibility: hidden;
 	          -webkit-backface-visibility: hidden;
 	          transform: translate3d(0, 0, 0);
+	          -webkit-transform-style: preserve-3d;
+	          transform-style: preserve-3d;
+	        }
+
+	        .pns-marquee-item {
+	          backface-visibility: hidden;
+	          -webkit-backface-visibility: hidden;
+	          transform: translate3d(0, 0, 0);
+	          -webkit-transform-style: preserve-3d;
+	          transform-style: preserve-3d;
+	        }
+
+	        .pns-marquee-item img {
+	          backface-visibility: hidden;
+	          -webkit-backface-visibility: hidden;
 	        }
 
 	        @media (prefers-reduced-motion: reduce) {
@@ -166,7 +186,7 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
   };
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-hidden pns-marquee-row">
       <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
 
@@ -184,7 +204,7 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
               key={`${isDuplicate ? 'b' : 'a'}-${member.id}-${index}`}
               data-marquee-dup-start={isDuplicateStart ? 'true' : undefined}
               aria-hidden={isDuplicate ? true : undefined}
-              className="flex-shrink-0 relative w-14 h-[76px] md:w-16 md:h-24 rounded-lg overflow-hidden bg-gray-900 border border-gray-800 select-none"
+              className="flex-shrink-0 relative w-14 h-[76px] md:w-16 md:h-24 rounded-lg overflow-hidden bg-gray-900 border border-gray-800 select-none pns-marquee-item"
               onContextMenu={(e) => e.preventDefault()}
               onDragStart={(e) => e.preventDefault()}
             >
