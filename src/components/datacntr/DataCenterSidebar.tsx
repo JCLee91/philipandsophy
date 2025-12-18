@@ -24,6 +24,7 @@ import {
   Cog,
   Trophy,
   Heart,
+  Gift,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,6 +57,11 @@ const navGroups: NavGroup[] = [
         href: '/datacntr/landing',
         label: '랜딩 페이지',
         icon: <Megaphone className="h-5 w-5" />,
+      },
+      {
+        href: '/datacntr/welcome',
+        label: '환영 페이지',
+        icon: <Gift className="h-5 w-5" />,
       },
       {
         href: '/datacntr/notifications',

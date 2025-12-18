@@ -278,6 +278,11 @@ export interface Participant {
   // 🆕 파티 프로필북 선택 (재참여자용)
   partyPreferredCohortId?: string; // 파티에서 보여줄 프로필북 기수 ID
 
+  // 🆕 환영 페이지 토큰 (CRM 연동용)
+  welcomeToken?: string; // 고유 토큰 (UUID v4)
+  welcomeTokenExpiresAt?: Timestamp; // 만료 시간 (생성 후 30일)
+  welcomeTokenCreatedAt?: Timestamp; // 토큰 생성 시간
+
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
 }
