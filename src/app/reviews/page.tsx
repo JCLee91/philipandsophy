@@ -93,12 +93,17 @@ export default function ReviewsPage() {
 
             {/* 프로필카드 캐러셀 - 헤딩/푸터 숨김 */}
             {members.length > 0 && (
-                <MemberShowcase
-                    members={members}
-                    totalCount={totalCount}
-                    showHeader={false}
-                    showFooter={false}
-                />
+                <>
+                    <MemberShowcase
+                        members={members}
+                        totalCount={totalCount}
+                        showHeader={false}
+                        showFooter={false}
+                    />
+                    <p className="text-center text-gray-600 text-xs mt-3 mb-4">
+                        * 개인정보 보호를 위해 실제 멤버 대신 AI 생성 이미지를 사용했습니다
+                    </p>
+                </>
             )}
 
             {/* Spacer for clear visual separation */}
