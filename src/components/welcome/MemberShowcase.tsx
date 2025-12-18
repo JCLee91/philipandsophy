@@ -83,6 +83,25 @@ export default function MemberShowcase({
           </motion.div>
         )}
       </div>
+
+      <style jsx global>{`
+        @keyframes pns-marquee-left {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        @keyframes pns-marquee-right {
+          0% { transform: translate3d(-50%, 0, 0); }
+          100% { transform: translate3d(0, 0, 0); }
+        }
+
+        .pns-marquee-track {
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          transform: translate3d(0, 0, 0);
+        }
+      `}</style>
     </section>
   );
 }
@@ -100,10 +119,7 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
   const validMembers = members.filter(m => m.profileImage);
   if (validMembers.length === 0) return null;
 
-  // Card dimensions for animation calculation
-  const cardWidth = 56; // w-14
   const gap = 16; // px (mobile-friendly, WebView-safe)
-  const trackWidth = validMembers.length * (cardWidth + gap);
 
   return (
     <div className="relative overflow-hidden">
@@ -111,9 +127,9 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
       <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
 
       <div
-        className="flex"
+        className="flex pns-marquee-track"
         style={{
-          animation: `scroll-${direction} ${duration}s linear infinite`,
+          animation: `${direction === 'left' ? 'pns-marquee-left' : 'pns-marquee-right'} ${duration}s linear infinite`,
         }}
       >
         {/* First track */}
@@ -131,8 +147,9 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
                 alt=""
                 fill
                 className="object-cover object-top pointer-events-none"
-                sizes="64px"
-                loading="lazy"
+                sizes="(min-width: 768px) 64px, 56px"
+                loading="eager"
+                draggable={false}
               />
             </div>
           ))}
@@ -152,24 +169,14 @@ function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
                 alt=""
                 fill
                 className="object-cover object-top pointer-events-none"
-                sizes="64px"
-                loading="lazy"
+                sizes="(min-width: 768px) 64px, 56px"
+                loading="eager"
+                draggable={false}
               />
             </div>
           ))}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes scroll-left {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-${trackWidth}px); }
-        }
-        @keyframes scroll-right {
-          0% { transform: translateX(-${trackWidth}px); }
-          100% { transform: translateX(0); }
-        }
-      `}</style>
     </div>
   );
 }

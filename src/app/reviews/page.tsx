@@ -86,7 +86,7 @@ export default function ReviewsPage() {
                     alt="멤버 후기 - 좋은 사람들과 함께하는 특별한 경험"
                     width={1170}
                     height={813}
-                    className="main-image"
+                    className="main-image !mb-5"
                     priority
                 />
             </div>
