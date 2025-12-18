@@ -1,17 +1,37 @@
 import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase/admin';
-import { logger } from '@/lib/logger';
 
 /**
- * 이름을 마스킹합니다 (김OO, 이종O 형식)
+ * 더미 프로필 이미지 목록 (개인정보 보호)
  */
-function maskName(name: string): string {
-  if (!name || name.length === 0) return 'OOO';
-  if (name.length === 1) return name + 'OO';
-  if (name.length === 2) return name[0] + 'O' + name[1];
-  // 3글자 이상: 첫 글자 + O + 마지막 글자
-  return name[0] + 'O'.repeat(name.length - 2) + name[name.length - 1];
-}
+const DUMMY_PROFILES = {
+  female: [
+    'profile_female_01', 'profile_female_02', 'profile_female_03', 'profile_female_04',
+    'profile_female_05', 'profile_female_07', 'profile_female_08', 'profile_female_10',
+    'profile_female_11', 'profile_female_12', 'profile_female_13', 'profile_female_14',
+    'profile_female_16', 'profile_female_17', 'profile_female_18', 'profile_female_19',
+    'profile_female_20', 'profile_female_21', 'profile_female_22', 'profile_female_23',
+    'profile_female_24', 'profile_female_25', 'profile_female_26', 'profile_female_27',
+    'profile_female_28', 'profile_female_29', 'profile_female_30', 'profile_female_31',
+    'profile_female_32', 'profile_female_36', 'profile_female_37',
+  ],
+  male: [
+    'profile_male_01', 'profile_male_02', 'profile_male_03', 'profile_male_04',
+    'profile_male_06', 'profile_male_07', 'profile_male_08', 'profile_male_09',
+    'profile_male_10', 'profile_male_12', 'profile_male_13', 'profile_male_14',
+    'profile_male_15', 'profile_male_16', 'profile_male_17', 'profile_male_18',
+    'profile_male_19', 'profile_male_21', 'profile_male_22', 'profile_male_23',
+    'profile_male_24', 'profile_male_25', 'profile_male_26', 'profile_male_27',
+    'profile_male_29', 'profile_male_30', 'profile_male_31', 'profile_male_32',
+    'profile_male_33', 'profile_male_35', 'profile_male_36', 'profile_male_39',
+  ],
+};
+
+// 통계 데이터 (하드코딩 - 개인정보 보호)
+const STATS = {
+  total: 350,
+  female: 228,
+  male: 122,
+};
 
 /**
  * 배열을 셔플합니다 (Fisher-Yates 알고리즘)
@@ -27,57 +47,30 @@ function shuffleArray<T>(array: T[]): T[] {
 
 /**
  * GET /api/welcome/members
- * 환영 페이지 캐러셀용 멤버 데이터를 반환합니다.
- * 모든 기수에서 랜덤 20명을 선별합니다.
+ * 환영 페이지 캐러셀용 더미 멤버 데이터를 반환합니다.
+ * 개인정보 보호를 위해 실제 유저 프로필 대신 더미 이미지 사용
  */
 export async function GET() {
-  try {
-    const db = getAdminDb();
+  // 더미 이미지로 멤버 데이터 생성 (여성:남성 = 228:122 비율 유지)
+  const femaleProfiles = DUMMY_PROFILES.female.map((name, i) => ({
+    id: `dummy-female-${i}`,
+    profileImage: `/image/dummy-profiles/${name}.webp`,
+  }));
 
-    // 모든 참가자 조회 (고스트 제외)
-    const participantsSnapshot = await db
-      .collection('participants')
-      .where('isGhost', '!=', true)
-      .get();
+  const maleProfiles = DUMMY_PROFILES.male.map((name, i) => ({
+    id: `dummy-male-${i}`,
+    profileImage: `/image/dummy-profiles/${name}.webp`,
+  }));
 
-    const allParticipants: {
-      id: string;
-      name: string;
-      profileImage: string | null;
-    }[] = [];
+  // 전체 프로필 합치고 셔플
+  const allProfiles = [...femaleProfiles, ...maleProfiles];
+  const shuffled = shuffleArray(allProfiles);
 
-    participantsSnapshot.forEach((doc) => {
-      const data = doc.data();
-      // 프로필 이미지가 있는 멤버만 포함
-      if (data.profileImageCircle || data.profileImage) {
-        allParticipants.push({
-          id: doc.id,
-          name: data.name || '',
-          profileImage: data.profileImageCircle || data.profileImage || null,
-        });
-      }
-    });
+  // 60개 선별 (4줄 x 15개)
+  const showcase = shuffled.slice(0, 60);
 
-    // 랜덤 셔플 후 20명 선별
-    const shuffled = shuffleArray(allParticipants);
-    const selected = shuffled.slice(0, 20);
-
-    // 이름 마스킹 및 응답 형식 변환
-    const showcase = selected.map((member) => ({
-      id: member.id,
-      profileImage: member.profileImage,
-      displayName: maskName(member.name),
-    }));
-
-    return NextResponse.json({
-      total: allParticipants.length,
-      showcase,
-    });
-  } catch (error) {
-    logger.error('Failed to fetch members for welcome page', error);
-    return NextResponse.json(
-      { error: '멤버 데이터를 불러오는데 실패했습니다.' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    total: STATS.total,
+    showcase,
+  });
 }

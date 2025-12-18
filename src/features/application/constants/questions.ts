@@ -49,13 +49,13 @@ export interface Question {
 
 export const START_QUESTION_ID = 'intro';
 
-// 5기 멤버십 일정 (필요시 동적으로 변경 가능하도록 분리)
+// 6기 멤버십 일정 (필요시 동적으로 변경 가능하도록 분리)
 export const COHORT_INFO = {
-    number: 5,
+    number: 6,
     timeline: [
-        { date: '12/6 오후 2시', event: '온라인 오리엔테이션' },
-        { date: '12/7~12/20', event: '온라인 독서프로그램' },
-        { date: '12/21 저녁 6시', event: '강남 소재 호텔 라운지 바' },
+        { date: '1/3 오후 2시', event: '온라인 오리엔테이션' },
+        { date: '1/4~1/16', event: '온라인 독서프로그램' },
+        { date: '1/17 저녁 6시', event: '웰컴 파티' },
     ],
 };
 
@@ -94,10 +94,12 @@ export const QUESTIONS: Record<string, Question> = {
         fields: [
             { id: 'name', type: 'text', label: '이름', placeholder: '홍길동' },
             { id: 'phone', type: 'phone', label: '연락처', placeholder: '010-0000-0000' },
-            { id: 'gender', type: 'select', label: '성별', options: [
-                { label: '남성', value: 'male' },
-                { label: '여성', value: 'female' },
-            ]},
+            {
+                id: 'gender', type: 'select', label: '성별', options: [
+                    { label: '남성', value: 'male' },
+                    { label: '여성', value: 'female' },
+                ]
+            },
         ],
         required: true,
         nextQuestionId: 'job_info',

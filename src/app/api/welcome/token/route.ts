@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateWelcomeToken } from '@/lib/firebase/welcome';
+import {
+  generateWelcomeToken,
+  updateParticipantWelcomeMessage,
+} from '@/lib/firebase/welcome';
+import { generateWelcomeMessage } from '@/lib/ai/welcome-message';
 import { WelcomeTokenResponse } from '@/types/welcome';
 import { logger } from '@/lib/logger';
 
@@ -12,7 +16,7 @@ const WELCOME_API_SECRET = process.env.WELCOME_API_SECRET;
 export async function POST(request: NextRequest): Promise<NextResponse<WelcomeTokenResponse>> {
   try {
     const body = await request.json();
-    const { phoneNumber, secretKey } = body;
+    const { phoneNumber, secretKey, callSummary } = body;
 
     // Secret key 검증
     if (!WELCOME_API_SECRET || secretKey !== WELCOME_API_SECRET) {
@@ -60,6 +64,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<WelcomeTo
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://philipandsophy.com';
     const welcomePageUrl = `${baseUrl}/welcome?token=${result.token}`;
 
+    // AI 맞춤 환영 메시지 생성 (callSummary가 있고 50자 이상인 경우)
+    let welcomeMessageGenerated = false;
+    if (callSummary && callSummary.trim().length > 50 && result.participantId) {
+      try {
+        const aiResult = await generateWelcomeMessage({
+          memberName: result.participantName || '멤버',
+          callSummary: callSummary.trim(),
+        });
+
+        if (aiResult.success && aiResult.message) {
+          await updateParticipantWelcomeMessage(
+            result.participantId,
+            aiResult.message,
+            callSummary.trim()
+          );
+          welcomeMessageGenerated = true;
+          logger.info(`AI welcome message generated for participant: ${result.participantId}`);
+        } else {
+          logger.warn('AI welcome message generation failed', {
+            participantId: result.participantId,
+            error: aiResult.error,
+          });
+        }
+      } catch (aiError) {
+        // AI 생성 실패해도 토큰 생성은 정상 진행
+        logger.error('AI welcome message generation error (non-blocking)', aiError);
+      }
+    }
+
     logger.info(`Welcome token generated successfully for phone: ${normalizedPhone}`);
 
     return NextResponse.json({
@@ -68,6 +101,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<WelcomeTo
       welcomePageUrl,
       participantName: result.participantName,
       expiresAt: result.expiresAt?.toISOString(),
+      welcomeMessageGenerated,
     });
   } catch (error) {
     logger.error('Error in welcome token generation API', error);

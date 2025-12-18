@@ -177,6 +177,7 @@ export async function verifyWelcomeToken(token: string): Promise<WelcomeVerifyRe
       participant: {
         name: participantData.name,
         cohortName,
+        welcomeMessage: participantData.welcomeMessage || undefined,
       },
       bankAccount,
     };
@@ -186,6 +187,79 @@ export async function verifyWelcomeToken(token: string): Promise<WelcomeVerifyRe
       success: false,
       error: '토큰 검증 중 오류가 발생했습니다.',
       code: 'INVALID_TOKEN',
+    };
+  }
+}
+
+/**
+ * 참가자의 AI 생성 환영 메시지를 업데이트합니다.
+ * @param participantId 참가자 ID
+ * @param welcomeMessage AI 생성 환영 메시지
+ * @param callSummary 원본 통화 요약본 (감사/디버깅용)
+ */
+export async function updateParticipantWelcomeMessage(
+  participantId: string,
+  welcomeMessage: string,
+  callSummary: string
+): Promise<void> {
+  try {
+    const db = getAdminDb();
+    const participantRef = db.collection('participants').doc(participantId);
+
+    await participantRef.update({
+      welcomeMessage,
+      welcomeCallSummary: callSummary,
+      welcomeMessageGeneratedAt: Timestamp.now(),
+    });
+
+    logger.info(`Welcome message updated for participant: ${participantId}`);
+  } catch (error) {
+    logger.error('Failed to update participant welcome message', error);
+    throw error;
+  }
+}
+
+/**
+ * 환영 페이지용 멤버 프로필 이미지 목록을 가져옵니다.
+ * 프로필 이미지가 있는 모든 참가자를 반환합니다.
+ */
+export async function getWelcomeMembers(): Promise<{
+  total: number;
+  showcase: { id: string; profileImage: string }[];
+}> {
+  try {
+    const db = getAdminDb();
+
+    // 모든 참가자 중 프로필 이미지가 있는 멤버 조회
+    const participantsRef = db.collection('participants');
+    const snapshot = await participantsRef.get();
+
+    const membersWithImages: { id: string; profileImage: string }[] = [];
+
+    snapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      // profileImage 또는 profileImageCircle이 있는 경우
+      const profileImage = data.profileImage || data.profileImageCircle;
+      if (profileImage) {
+        membersWithImages.push({
+          id: doc.id,
+          profileImage,
+        });
+      }
+    });
+
+    // 랜덤하게 섞기
+    const shuffled = membersWithImages.sort(() => Math.random() - 0.5);
+
+    return {
+      total: snapshot.size,
+      showcase: shuffled,
+    };
+  } catch (error) {
+    logger.error('Failed to fetch welcome members', error);
+    return {
+      total: 0,
+      showcase: [],
     };
   }
 }

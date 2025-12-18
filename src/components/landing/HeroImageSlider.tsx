@@ -36,7 +36,7 @@ export default function HeroImageSlider() {
                     className="absolute inset-0 w-full h-full"
                 >
                     <Image
-                        src={getImageUrl(`/image/landing/${images[currentIndex]}`)}
+                        src={getImageUrl(`/image/landing/${images[currentIndex]}?v=1765966010156`)}
                         alt={`필립앤소피 메인 ${currentIndex + 1}`}
                         fill
                         className="object-cover"

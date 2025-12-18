@@ -14,11 +14,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: '필립앤소피 | 승인제 독서소셜클럽',
+    default: '필립앤소피 | 승인제 소셜클럽',
     template: '%s | 필립앤소피',
   },
-  description: '깊이 있는 대화가 설레는 만남으로 - 결이 맞는 사람을 만나는 가장 안전하고 쉬운 공간',
-  keywords: ['독서모임', '독서소셜클럽', '승인제', '네트워킹', '직장인 모임', '서울 소셜클럽', '독서클럽', '프리미엄 모임', '25-40세'],
+  description: '검증된 사람들과 함께 즐기는 문화 생활 - 깊이 있는 대화가 있는 승인제 소셜클럽',
+  keywords: ['소셜클럽', '승인제', '네트워킹', '직장인 모임', '서울 소셜클럽', '문화생활', '프리미엄 모임', '25-40세', '멤버십', '취미'],
   metadataBase: new URL('https://www.philipandsophy.kr'),
   formatDetection: {
     telephone: false,
@@ -55,8 +55,8 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ko_KR',
     siteName: 'Philip & Sophy',
-    title: '필립앤소피 | 승인제 독서소셜클럽',
-    description: '깊이 있는 대화가 설레는 만남으로 - 결이 맞는 사람을 만나는 가장 안전하고 쉬운 공간',
+    title: '필립앤소피 | 승인제 소셜클럽',
+    description: '검증된 사람들과 함께 즐기는 문화 생활 - 깊이 있는 대화가 있는 승인제 소셜클럽',
     url: 'https://www.philipandsophy.kr/',
     images: [
       {
@@ -69,8 +69,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '필립앤소피 | 승인제 독서소셜클럽',
-    description: '깊이 있는 대화가 설레는 만남으로 - 결이 맞는 사람을 만나는 가장 안전하고 쉬운 공간',
+    title: '필립앤소피 | 승인제 소셜클럽',
+    description: '검증된 사람들과 함께 즐기는 문화 생활 - 깊이 있는 대화가 있는 승인제 소셜클럽',
     images: ['/image/Thumbnail_V2.webp'],
   },
   alternates: {

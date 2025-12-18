@@ -1,26 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import WelcomeHero from '@/components/welcome/WelcomeHero';
-import WelcomeVideo from '@/components/welcome/WelcomeVideo';
-import WelcomeContent from '@/components/welcome/WelcomeContent';
-import BankAccountCard from '@/components/welcome/BankAccountCard';
+import InvitationOpening from '@/components/welcome/InvitationOpening';
 import MemberShowcase from '@/components/welcome/MemberShowcase';
-import { WelcomeConfig } from '@/types/welcome';
+import BrandStory from '@/components/welcome/BrandStory';
+import PaymentCard from '@/components/welcome/PaymentCard';
 
 // 테스트용 더미 데이터
 const PREVIEW_DATA = {
   participant: {
-    name: '이종찬',
+    name: '정재환',
     cohortName: '5기',
+    welcomeMessage:
+      '바쁜 수의사 일과 중에도 석촌호수를 달리며 일상의 균형을 찾으시는 모습이 무척 인상 깊었어요. 전공 서적을 넘어 다양한 분야의 책을 통해 안목을 넓히고 싶다는 재환님의 열정이 이곳에서 빛나길 바랍니다. 필립앤소피에서 좋은 분들과 영감을 나누며 뜻깊은 시간 보내시길 기대하며 함께하게 되어 정말 반갑습니다.',
   },
   bankAccount: {
     bankName: '신한은행',
     accountNumber: '110-123-456789',
     accountHolder: '필립앤소피',
-    amountDescription: '10만원',
+    amountDescription: '120,000원',
     note: '입금 확인 후 안내 메시지가 발송됩니다.',
-  } as WelcomeConfig,
+  },
 };
 
 interface MemberShowcaseData {
@@ -63,10 +63,10 @@ export default function PreviewWelcomePage() {
       </div>
 
       <div className="pt-10">
-        {/* 섹션 1: 히어로 */}
-        <WelcomeHero
-          participantName={PREVIEW_DATA.participant.name}
-          cohortName={PREVIEW_DATA.participant.cohortName}
+        {/* 섹션 1: 오프닝 (승인 메시지) */}
+        <InvitationOpening
+          name={PREVIEW_DATA.participant.name}
+          welcomeMessage={PREVIEW_DATA.participant.welcomeMessage}
         />
 
         {/* 섹션 2: 멤버 캐러셀 */}
@@ -77,14 +77,11 @@ export default function PreviewWelcomePage() {
           />
         )}
 
-        {/* 섹션 3: 현장 영상 */}
-        <WelcomeVideo />
-
-        {/* 섹션 4: 프로그램 하이라이트 */}
-        <WelcomeContent />
+        {/* 섹션 3: 브랜드 스토리 */}
+        <BrandStory />
 
         {/* 섹션 5: 입금 안내 */}
-        <BankAccountCard bankAccount={PREVIEW_DATA.bankAccount} />
+        <PaymentCard bankAccount={PREVIEW_DATA.bankAccount} />
 
         {/* 푸터 */}
         <footer className="bg-gray-900 py-8 text-center">

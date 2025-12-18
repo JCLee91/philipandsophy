@@ -35,7 +35,6 @@ const NOTIFICATION_ROUTES = [
   { value: '/app/chat', label: '채팅방' },
   { value: '/app/chat/today-library', label: '오늘의 서재' },
   { value: '/app/profile', label: '프로필' },
-  { value: '/app/program', label: '프로그램' },
 ];
 
 const NOTIFICATION_TYPES = [

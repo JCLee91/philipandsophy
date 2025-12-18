@@ -24,11 +24,12 @@ export default function SubmissionLayout({
 }: SubmissionLayoutProps) {
   // 키보드가 올라왔을 때만 동적 패딩 적용
   const hasKeyboardPadding = mainPaddingBottom && mainPaddingBottom > 32;
+  const keyboardOffset = hasKeyboardPadding && mainPaddingBottom ? Math.max(0, mainPaddingBottom - 32) : 0;
 
   return (
-    <>
+    <div className="flex min-h-full flex-col">
       <main
-        className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-6"
+        className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-6"
         style={hasKeyboardPadding ? { paddingBottom: mainPaddingBottom } : undefined}
       >
         {children}
@@ -36,8 +37,8 @@ export default function SubmissionLayout({
 
       {/* 하단 버튼 - FooterActions로 통일 */}
       {hasKeyboardPadding ? (
-        // 키보드 올라왔을 때: 동적 패딩
-        <div className="border-t bg-white">
+        // 키보드 올라왔을 때: 버튼이 키보드에 가려지지 않도록 offset 적용
+        <div className="sticky z-40 border-t bg-white" style={{ bottom: keyboardOffset }}>
           <div
             className="mx-auto flex w-full max-w-xl flex-col gap-2 px-6 pt-4"
             style={{ paddingBottom: footerPaddingBottom }}
@@ -46,11 +47,11 @@ export default function SubmissionLayout({
           </div>
         </div>
       ) : (
-        // 기본 상태: FooterActions 사용 (CSS로 Safe Area 처리)
-        <FooterActions maxWidth="xl">
-          {footer}
-        </FooterActions>
+        // 기본 상태: 스크롤 중에도 하단 버튼 고정 (Safe Area는 CSS app-footer로 처리)
+        <div className="sticky z-40" style={{ bottom: keyboardOffset }}>
+          <FooterActions maxWidth="xl">{footer}</FooterActions>
+        </div>
       )}
-    </>
+    </div>
   );
 }

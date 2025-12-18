@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Users } from 'lucide-react';
@@ -8,154 +7,169 @@ import { Users } from 'lucide-react';
 interface Member {
   id: string;
   profileImage: string | null;
-  displayName: string;
 }
 
 interface MemberShowcaseProps {
   members: Member[];
   totalCount: number;
+  showHeader?: boolean;
+  showFooter?: boolean;
 }
 
-export default function MemberShowcase({ members, totalCount }: MemberShowcaseProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-
-  // 무한 스크롤을 위해 멤버 배열 복제
-  const extendedMembers = [...members, ...members, ...members];
-
-  // 자동 스크롤
-  useEffect(() => {
-    if (!isAutoScrolling || !scrollRef.current) return;
-
-    const scrollContainer = scrollRef.current;
-    let animationId: number;
-    let scrollPosition = scrollContainer.scrollLeft;
-
-    const scroll = () => {
-      scrollPosition += 0.5; // 스크롤 속도
-
-      // 무한 루프: 중간 지점에서 시작, 끝에 도달하면 중간으로 리셋
-      const maxScroll = scrollContainer.scrollWidth / 3;
-      if (scrollPosition >= maxScroll * 2) {
-        scrollPosition = maxScroll;
-      }
-
-      scrollContainer.scrollLeft = scrollPosition;
-      animationId = requestAnimationFrame(scroll);
-    };
-
-    // 초기 위치를 중간으로 설정
-    scrollContainer.scrollLeft = scrollContainer.scrollWidth / 3;
-    scrollPosition = scrollContainer.scrollLeft;
-
-    animationId = requestAnimationFrame(scroll);
-
-    return () => cancelAnimationFrame(animationId);
-  }, [isAutoScrolling, members]);
-
-  // 터치/마우스 인터랙션 시 자동 스크롤 일시 정지
-  const handleInteractionStart = () => setIsAutoScrolling(false);
-  const handleInteractionEnd = () => {
-    // 3초 후 자동 스크롤 재개
-    setTimeout(() => setIsAutoScrolling(true), 3000);
-  };
-
+export default function MemberShowcase({
+  members,
+  totalCount,
+  showHeader = true,
+  showFooter = true
+}: MemberShowcaseProps) {
   if (!members || members.length === 0) return null;
 
-  return (
-    <section className="w-full bg-gradient-to-b from-black to-gray-900 py-12 md:py-16 overflow-hidden">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* 섹션 제목 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-8"
-        >
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-            함께할 멤버들을 소개합니다
-          </h2>
-          <p className="text-gray-400">
-            다양한 분야의 멤버들이 함께하고 있어요
-          </p>
-        </motion.div>
+  const validMembers = members.filter(m => m.profileImage);
+  const perRow = Math.ceil(validMembers.length / 4);
 
-        {/* 멤버 캐러셀 */}
+  const row1 = validMembers.slice(0, perRow);
+  const row2 = validMembers.slice(perRow, perRow * 2);
+  const row3 = validMembers.slice(perRow * 2, perRow * 3);
+  const row4 = validMembers.slice(perRow * 3);
+
+  return (
+    <section className={`relative w-full bg-black overflow-hidden ${showHeader ? 'py-20' : 'py-6'}`}>
+      <div className="relative z-20">
+        {showHeader && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12 px-4"
+          >
+            <span className="text-gray-500 font-medium tracking-widest text-xs uppercase mb-3 block">
+              Community
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+              함께하는 멤버들
+            </h2>
+            <p className="text-gray-400">
+              다양한 분야의 검증된 멤버들이 당신을 기다립니다
+            </p>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.8, delay: showHeader ? 0.2 : 0 }}
+          className="space-y-4"
         >
-          <div
-            ref={scrollRef}
-            className="flex gap-4 overflow-x-auto scrollbar-hide py-4"
-            style={{ scrollBehavior: 'auto' }}
-            onMouseDown={handleInteractionStart}
-            onMouseUp={handleInteractionEnd}
-            onMouseLeave={handleInteractionEnd}
-            onTouchStart={handleInteractionStart}
-            onTouchEnd={handleInteractionEnd}
+          <ScrollingRow members={row1} direction="left" duration={20} />
+          <ScrollingRow members={row2} direction="right" duration={25} />
+          <ScrollingRow members={row3} direction="left" duration={30} />
+          <ScrollingRow members={row4} direction="right" duration={22} />
+        </motion.div>
+
+        {showFooter && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex items-center justify-center gap-2 mt-10"
           >
-            {extendedMembers.map((member, index) => (
-              <div
-                key={`${member.id}-${index}`}
-                className="flex-shrink-0 flex flex-col items-center gap-2"
-              >
-                {/* 프로필 이미지 */}
-                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-800 border-2 border-gray-700 shadow-lg">
-                  {member.profileImage ? (
-                    <Image
-                      src={member.profileImage}
-                      alt={member.displayName}
-                      fill
-                      className="object-cover"
-                      sizes="80px"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-500/20 to-orange-500/20">
-                      <span className="text-2xl text-amber-400 font-bold">
-                        {member.displayName[0]}
-                      </span>
-                    </div>
-                  )}
-                </div>
+            <Users className="w-5 h-5 text-[#62bbff]" />
+            <span className="text-gray-300 font-medium">
+              <span className="text-[#62bbff] font-bold">{totalCount}명</span>의 멤버가 활동 중
+            </span>
+          </motion.div>
+        )}
+      </div>
+    </section>
+  );
+}
 
-                {/* 마스킹된 이름 */}
-                <span className="text-xs md:text-sm text-gray-400 font-medium">
-                  {member.displayName}
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+interface ScrollingRowProps {
+  members: Member[];
+  direction: 'left' | 'right';
+  duration: number;
+}
 
-        {/* 총 멤버 수 */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="flex items-center justify-center gap-2 mt-6"
-        >
-          <Users className="w-5 h-5 text-amber-400" />
-          <span className="text-gray-300 font-medium">
-            현재 <span className="text-amber-400 font-bold">{totalCount}명</span>의 멤버가 활동 중
-          </span>
-        </motion.div>
+function ScrollingRow({ members, direction, duration }: ScrollingRowProps) {
+  if (members.length === 0) return null;
+
+  // 이미지가 있는 멤버만 필터링
+  const validMembers = members.filter(m => m.profileImage);
+  if (validMembers.length === 0) return null;
+
+  // Card dimensions for animation calculation
+  const cardWidth = 56; // w-14
+  const gap = 16; // px (mobile-friendly, WebView-safe)
+  const trackWidth = validMembers.length * (cardWidth + gap);
+
+  return (
+    <div className="relative overflow-hidden">
+      <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+
+      <div
+        className="flex"
+        style={{
+          animation: `scroll-${direction} ${duration}s linear infinite`,
+        }}
+      >
+        {/* First track */}
+        <div className="flex flex-shrink-0">
+          {validMembers.map((member, index) => (
+            <div
+              key={`a-${member.id}-${index}`}
+              className="flex-shrink-0 relative w-14 h-[76px] md:w-16 md:h-24 rounded-lg overflow-hidden bg-gray-900 border border-gray-800 select-none"
+              style={{ marginRight: gap }}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+            >
+              <Image
+                src={member.profileImage!}
+                alt=""
+                fill
+                className="object-cover object-top pointer-events-none"
+                sizes="64px"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+        {/* Second track (duplicate for seamless loop) */}
+        <div className="flex flex-shrink-0">
+          {validMembers.map((member, index) => (
+            <div
+              key={`b-${member.id}-${index}`}
+              className="flex-shrink-0 relative w-14 h-[76px] md:w-16 md:h-24 rounded-lg overflow-hidden bg-gray-900 border border-gray-800 select-none"
+              style={{ marginRight: gap }}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+            >
+              <Image
+                src={member.profileImage!}
+                alt=""
+                fill
+                className="object-cover object-top pointer-events-none"
+                sizes="64px"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* 스크롤바 숨기기 */}
-      <style jsx global>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+      <style jsx>{`
+        @keyframes scroll-left {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-${trackWidth}px); }
         }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
+        @keyframes scroll-right {
+          0% { transform: translateX(-${trackWidth}px); }
+          100% { transform: translateX(0); }
         }
       `}</style>
-    </section>
+    </div>
   );
 }

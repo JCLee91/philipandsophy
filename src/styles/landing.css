@@ -1,10 +1,13 @@
 /* 랜딩 페이지 전용 스타일 - 다른 페이지에 영향 없도록 .landing-page로 스코프 제한 */
 
-/* 기본 설정 - 랜딩 페이지에만 적용 */
-.landing-page * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* 기본 설정 - 랜딩 페이지에만 적용
+   Tailwind v4 유틸리티와 충돌하지 않도록 낮은 우선순위(@layer base)에 둠 */
+@layer base {
+    .landing-page :where(*, *::before, *::after) {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 }
 
 /* SEO를 위한 숨김 텍스트 */

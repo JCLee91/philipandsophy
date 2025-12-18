@@ -28,6 +28,7 @@ export interface WelcomeVerifyResponse {
   participant?: {
     name: string;
     cohortName: string;
+    welcomeMessage?: string; // AI 생성 맞춤 환영 메시지
   };
   bankAccount?: WelcomeConfig;
   error?: string;
@@ -43,6 +44,7 @@ export interface WelcomeTokenResponse {
   welcomePageUrl?: string;
   participantName?: string;
   expiresAt?: string;
+  welcomeMessageGenerated?: boolean; // AI 맞춤 메시지 생성 여부
   error?: string;
   code?:
     | 'INVALID_SECRET'
