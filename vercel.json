@@ -3,11 +3,20 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/welcome-url",
+      "schedule": "0 15 * * *"
+    }
+  ],
   "functions": {
     "src/app/api/admin/matching/route.ts": {
       "maxDuration": 60
     },
     "src/app/api/admin/matching/preview/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/welcome-url/route.ts": {
       "maxDuration": 60
     }
   },

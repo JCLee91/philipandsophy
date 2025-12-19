@@ -229,11 +229,20 @@ export interface WebPushSubscriptionData {
 }
 
 /**
+ * 참가자 상태
+ * - applicant: 합격했지만 아직 입금/가입 전 (에어테이블 연동)
+ * - active: 활동 중인 참가자
+ * - inactive: 휴면/탈퇴
+ */
+export type ParticipantStatus = 'applicant' | 'active' | 'inactive';
+
+/**
  * 참가자 정보
  */
 export interface Participant {
   id: string; // 문서 ID
   cohortId: string; // 기수 ID
+  status?: ParticipantStatus; // 참가자 상태 (기본값: active)
   participationCode?: string; // 참여 코드 (Firebase Storage 경로용)
   name: string; // 참가자 이름
   phoneNumber: string; // 전화번호
