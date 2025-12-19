@@ -2,12 +2,15 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import LikesTab from '@/components/today-library/v3/LikesTab';
 
 import TopBar from '@/components/TopBar';
 import UnifiedButton from '@/components/UnifiedButton';
@@ -230,6 +233,7 @@ export default function PostProgramView({
 }: PostProgramViewProps) {
     const router = useRouter();
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [activeTab, setActiveTab] = useState<'journey' | 'likes'>('journey');
 
     // 전체 참가자 목록 조회
     const { data: allParticipants = [], isLoading: participantsLoading } = useQuery<Participant[]>({
@@ -310,174 +314,216 @@ export default function PostProgramView({
                     title="우리의 여정"
                     onBack={() => router.push(appRoutes.chat(cohortId))}
                     align="center"
-                    className="bg-[#F6F6F6] border-b-0"
+                    className="bg-white border-b-0"
                 />
 
                 <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F6F6F6]">
-                    {/* Gray Section: Title + Stats */}
-                    <section className="bg-[#F6F6F6] px-6 pt-4 pb-3">
-                        {/* Title */}
-                        <div className="text-center mb-6">
-                            <h1 className="text-[22px] font-bold text-[#333D4B] mb-2">
-                                🎉 2주간의 여정이 끝났어요!
-                            </h1>
-                            <p className="text-[14px] text-[#6B7684]">
-                                {isLoading ? (
-                                    <span className="inline-block w-32 h-4 bg-gray-200 rounded animate-pulse" />
-                                ) : (
-                                    `${allParticipants.length}명의 독서친구들과 함께한 시간`
+                    {/* Sticky Tab Switcher (Sticks to top) */}
+                    <div className="sticky top-0 z-20 bg-white px-4 border-b border-[#F2F4F6]">
+                        <div className="flex items-center justify-around">
+                            <button
+                                onClick={() => setActiveTab('journey')}
+                                className="flex flex-col items-center gap-1 py-3 px-2 flex-1 relative"
+                            >
+                                <span className={cn("text-[15px] font-bold transition-colors", activeTab === 'journey' ? "text-[#333D4B]" : "text-[#B0B8C1]")}>
+                                    나의 여정
+                                </span>
+                                {activeTab === 'journey' && (
+                                    <motion.div layoutId="activeTab" className="absolute bottom-0 w-full h-[2px] bg-[#333D4B]" />
                                 )}
-                            </p>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('likes')}
+                                className="flex flex-col items-center gap-1 py-3 px-2 flex-1 relative"
+                            >
+                                <span className={cn("text-[15px] font-bold transition-colors", activeTab === 'likes' ? "text-[#333D4B]" : "text-[#B0B8C1]")}>
+                                    좋아요
+                                </span>
+                                {activeTab === 'likes' && (
+                                    <motion.div layoutId="activeTab" className="absolute bottom-0 w-full h-[2px] bg-[#333D4B]" />
+                                )}
+                            </button>
                         </div>
+                    </div>
 
-                        {/* Stats Cards */}
-                        {isLoading ? (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex gap-2">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="flex-1 bg-white rounded-[12px] h-24 animate-pulse" />
-                                    ))}
-                                </div>
-                                <div className="bg-white rounded-[12px] h-32 animate-pulse" />
-                                <div className="bg-white rounded-[12px] h-32 animate-pulse" />
-                            </div>
-                        ) : (
-                            activityRecap && (
-                                <div className="flex flex-col gap-3">
-                                    {/* 3개 통계 가로 배치 */}
-                                    <div className="flex gap-2">
-                                        <MiniStatCard
-                                            title="독서 기록"
-                                            mainValue={`${activityRecap.certifiedDays}/${activityRecap.totalDays}일`}
-                                        />
-                                        <MiniStatCard
-                                            title="감상평 평균"
-                                            mainValue={`${activityRecap.avgReviewLength}자`}
-                                        />
-                                        <MiniStatCard
-                                            title="가치관 평균"
-                                            mainValue={`${activityRecap.avgDailyAnswerLength}자`}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2 items-stretch">
-                                        <CompanionCard
-                                            title="자주 같은 모임이 된 친구"
-                                            companions={activityRecap.mostFrequentCompanions}
-                                            onProfileClick={handleProfileClick}
-                                        />
-                                        <CompanionCard
-                                            title="자주 다른 모임이었던 친구"
-                                            companions={activityRecap.mostDifferentCompanions}
-                                            onProfileClick={handleProfileClick}
-                                            showCount={false}
-                                        />
-                                    </div>
-                                </div>
-                            )
-                        )}
-                    </section>
-
-                    {/* Cluster Journey */}
-                    {isLoading ? (
-                        <section className="px-6 mb-3">
-                            <div className="bg-white rounded-[12px] p-4 shadow-xs">
-                                <div className="w-40 h-4 bg-gray-200 rounded mb-3 animate-pulse" />
-                                <div className="w-full h-32 bg-gray-100 rounded-[12px] animate-pulse" />
-                            </div>
-                        </section>
-                    ) : (
-                        activityRecap && activityRecap.myClusterJourney.length > 0 && (
-                            <section className="px-6 mb-3">
-                                <div className="bg-white rounded-[12px] p-4 shadow-xs">
-                                    <p className="text-[13px] font-bold text-[#333D4B] mb-3">나의 모임 히스토리</p>
-                                    {/* Carousel */}
-                                    <div className="relative -mx-1">
-                                        <div
-                                            ref={dragScroll.ref}
-                                            className="flex overflow-x-auto snap-x snap-mandatory gap-2 pb-3 px-1 scrollbar-hide cursor-grab select-none"
-                                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                            onMouseDown={dragScroll.onMouseDown}
-                                            onMouseUp={dragScroll.onMouseUp}
-                                            onMouseMove={dragScroll.onMouseMove}
-                                            onMouseLeave={dragScroll.onMouseLeave}
-                                            onClickCapture={dragScroll.onClickCapture}
-                                            onScroll={handleScroll}
-                                        >
-                                            {activityRecap.myClusterJourney.map((item) => (
-                                                <ClusterCard
-                                                    key={item.date}
-                                                    item={item}
-                                                    members={getClusterMembers(item.memberIds)}
-                                                    onClick={() => router.push(`${appRoutes.todayLibrary(cohortId)}&matchingDate=${item.date}&from=recap`)}
-                                                />
-                                            ))}
-                                        </div>
-
-                                        {/* Indicators */}
-                                        <div className="flex justify-center gap-1.5">
-                                            {activityRecap.myClusterJourney.map((_, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() => goToSlide(idx)}
-                                                    className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentSlide ? 'bg-black' : 'bg-gray-300'
-                                                        }`}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-                        )
-                    )}
-
-                    {/* All Members List */}
-                    {isLoading ? (
-                        <section className="px-6 pb-32">
-                            <div className="w-32 h-6 bg-gray-200 rounded mb-4 animate-pulse" />
-                            <div className="bg-white rounded-[12px] p-4 shadow-xs">
-                                <div className="flex flex-col gap-2">
-                                    {[1, 2, 3, 4, 5].map(i => (
-                                        <div key={i} className="w-full h-14 bg-gray-100 rounded-[8px] animate-pulse" />
-                                    ))}
-                                </div>
-                            </div>
-                        </section>
-                    ) : (
-                        activityRecap && (
-                            <section className="px-6 pb-32">
-                                <div className="bg-white rounded-[12px] p-4 shadow-xs">
-                                    <p className="text-[13px] font-bold text-[#333D4B] mb-1">전체 멤버</p>
-                                    <p className="text-[12px] text-[#8B95A1] mb-3">
-                                        모든 프로필북이 개방됐어요. 파티 전에 미리 살펴보세요!
+                    {activeTab === 'journey' ? (
+                        <>
+                            {/* Title Section (Moved inside Journey Tab) */}
+                            <div className="bg-[#F6F6F6] pt-6 pb-6 px-6">
+                                <div className="text-center">
+                                    <h1 className="text-[22px] font-bold text-[#333D4B] mb-2">
+                                        🎉 2주간의 여정이 끝났어요!
+                                    </h1>
+                                    <p className="text-[14px] text-[#6B7684]">
+                                        {isLoading ? (
+                                            <span className="inline-block w-32 h-4 bg-gray-200 rounded animate-pulse" />
+                                        ) : (
+                                            `${allParticipants.length}명의 독서친구들과 함께한 시간`
+                                        )}
                                     </p>
-                                    <div className="flex flex-col gap-2">
-                                        {activityRecap.allCompanions.map((companion, idx) => (
-                                            <button
-                                                key={companion.participantId}
-                                                onClick={() => handleProfileClick(companion.participantId)}
-                                                className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-[10px] hover:bg-gray-100 transition-colors"
-                                            >
-                                                <span className="text-[12px] text-[#8B95A1] w-6 text-center">{idx + 1}</span>
-                                                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0">
-                                                    <Image
-                                                        src={getResizedImageUrl(companion.profileImage) || '/image/default-profile.svg'}
-                                                        alt={companion.name}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                </div>
-                                                <span className="flex-1 text-[14px] font-medium text-[#333D4B] text-left">
-                                                    {companion.name}
-                                                </span>
-                                                <span className="text-[12px] text-[#8B95A1]">
-                                                    {companion.count > 0 ? `같은 모임 ${companion.count}회` : '아직 만남 없음'}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
                                 </div>
+                            </div>
+
+                            {/* Stats Cards */}
+                            <section className="bg-[#F6F6F6] px-6 pb-3">
+                                {isLoading ? (
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3].map(i => (
+                                                <div key={i} className="flex-1 bg-white rounded-[12px] h-24 animate-pulse" />
+                                            ))}
+                                        </div>
+                                        <div className="bg-white rounded-[12px] h-32 animate-pulse" />
+                                        <div className="bg-white rounded-[12px] h-32 animate-pulse" />
+                                    </div>
+                                ) : (
+                                    activityRecap && (
+                                        <div className="flex flex-col gap-3">
+                                            {/* 3개 통계 가로 배치 */}
+                                            <div className="flex gap-2">
+                                                <MiniStatCard
+                                                    title="독서 기록"
+                                                    mainValue={`${activityRecap.certifiedDays}/${activityRecap.totalDays}일`}
+                                                />
+                                                <MiniStatCard
+                                                    title="감상평 평균"
+                                                    mainValue={`${activityRecap.avgReviewLength}자`}
+                                                />
+                                                <MiniStatCard
+                                                    title="가치관 평균"
+                                                    mainValue={`${activityRecap.avgDailyAnswerLength}자`}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 items-stretch">
+                                                <CompanionCard
+                                                    title="자주 같은 모임이 된 친구"
+                                                    companions={activityRecap.mostFrequentCompanions}
+                                                    onProfileClick={handleProfileClick}
+                                                />
+                                                <CompanionCard
+                                                    title="자주 다른 모임이었던 친구"
+                                                    companions={activityRecap.mostDifferentCompanions}
+                                                    onProfileClick={handleProfileClick}
+                                                    showCount={false}
+                                                />
+                                            </div>
+                                        </div>
+                                    )
+                                )}
                             </section>
-                        )
+
+                            {/* Cluster Journey */}
+                            {isLoading ? (
+                                <section className="px-6 mb-3">
+                                    <div className="bg-white rounded-[12px] p-4 shadow-xs">
+                                        <div className="w-40 h-4 bg-gray-200 rounded mb-3 animate-pulse" />
+                                        <div className="w-full h-32 bg-gray-100 rounded-[12px] animate-pulse" />
+                                    </div>
+                                </section>
+                            ) : (
+                                activityRecap && activityRecap.myClusterJourney.length > 0 && (
+                                    <section className="px-6 mb-3">
+                                        <div className="bg-white rounded-[12px] p-4 shadow-xs">
+                                            <p className="text-[13px] font-bold text-[#333D4B] mb-3">나의 모임 히스토리</p>
+                                            {/* Carousel */}
+                                            <div className="relative -mx-1">
+                                                <div
+                                                    ref={dragScroll.ref}
+                                                    className="flex overflow-x-auto snap-x snap-mandatory gap-2 pb-3 px-1 scrollbar-hide cursor-grab select-none"
+                                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                                    onMouseDown={dragScroll.onMouseDown}
+                                                    onMouseUp={dragScroll.onMouseUp}
+                                                    onMouseMove={dragScroll.onMouseMove}
+                                                    onMouseLeave={dragScroll.onMouseLeave}
+                                                    onClickCapture={dragScroll.onClickCapture}
+                                                    onScroll={handleScroll}
+                                                >
+                                                    {activityRecap.myClusterJourney.map((item) => (
+                                                        <ClusterCard
+                                                            key={item.date}
+                                                            item={item}
+                                                            members={getClusterMembers(item.memberIds)}
+                                                            onClick={() => router.push(`${appRoutes.todayLibrary(cohortId)}&matchingDate=${item.date}&from=recap`)}
+                                                        />
+                                                    ))}
+                                                </div>
+
+                                                {/* Indicators */}
+                                                <div className="flex justify-center gap-1.5">
+                                                    {activityRecap.myClusterJourney.map((_, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => goToSlide(idx)}
+                                                            className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentSlide ? 'bg-black' : 'bg-gray-300'
+                                                                }`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                )
+                            )}
+
+                            {/* All Members List */}
+                            {isLoading ? (
+                                <section className="px-6 pb-32">
+                                    <div className="w-32 h-6 bg-gray-200 rounded mb-4 animate-pulse" />
+                                    <div className="bg-white rounded-[12px] p-4 shadow-xs">
+                                        <div className="flex flex-col gap-2">
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <div key={i} className="w-full h-14 bg-gray-100 rounded-[8px] animate-pulse" />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
+                            ) : (
+                                activityRecap && (
+                                    <section className="px-6 pb-32">
+                                        <div className="bg-white rounded-[12px] p-4 shadow-xs">
+                                            <p className="text-[13px] font-bold text-[#333D4B] mb-1">전체 멤버</p>
+                                            <p className="text-[12px] text-[#8B95A1] mb-3">
+                                                모든 프로필북이 개방됐어요. 파티 전에 미리 살펴보세요!
+                                            </p>
+                                            <div className="flex flex-col gap-2">
+                                                {activityRecap.allCompanions.map((companion, idx) => (
+                                                    <button
+                                                        key={companion.participantId}
+                                                        onClick={() => handleProfileClick(companion.participantId)}
+                                                        className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-[10px] hover:bg-gray-100 transition-colors"
+                                                    >
+                                                        <span className="text-[12px] text-[#8B95A1] w-6 text-center">{idx + 1}</span>
+                                                        <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0">
+                                                            <Image
+                                                                src={getResizedImageUrl(companion.profileImage) || '/image/default-profile.svg'}
+                                                                alt={companion.name}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        </div>
+                                                        <span className="flex-1 text-[14px] font-medium text-[#333D4B] text-left">
+                                                            {companion.name}
+                                                        </span>
+                                                        <span className="text-[12px] text-[#8B95A1]">
+                                                            {companion.count > 0 ? `같은 모임 ${companion.count}회` : '아직 만남 없음'}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </section>
+                                )
+                            )}
+                        </>
+                    ) : (
+                        <div className="pb-24">
+                            <LikesTab
+                                currentUserId={currentUserId}
+                                allParticipants={allParticipants}
+                                onProfileClick={handleProfileClick}
+                                cohortId={cohortId}
+                            />
+                        </div>
                     )}
                 </main>
 
