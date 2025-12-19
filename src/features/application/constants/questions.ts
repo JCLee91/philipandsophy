@@ -147,7 +147,7 @@ export const QUESTIONS: Record<string, Question> = {
         required: true,
         isLastStep: true,
         submitButtonText: '인터뷰 예약하기',
-        externalLink: 'https://whattime.co.kr/pns/10m_interview',
+        externalLink: 'https://whattime.co.kr/philipandsophy/10minute_interviews',
         // End of New Member flow
     },
 
