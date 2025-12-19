@@ -8,7 +8,7 @@ export const FUNNEL_STEPS = [
   { stepId: 'intro', stepIndex: 4, label: '인트로' },
   { stepId: 'membership_status', stepIndex: 5, label: '회원 유형 선택' },
   { stepId: 'personal_info', stepIndex: 6, label: '기본 정보' },
-  { stepId: 'job_info', stepIndex: 7, label: '직장 정보' },
+  { stepId: 'job_info', stepIndex: 7, label: '직업/문화생활' },
   { stepId: 'channel', stepIndex: 8, label: '유입 채널' },
   { stepId: 'photo', stepIndex: 9, label: '사진 업로드' },
   { stepId: 'birthdate', stepIndex: 10, label: '생년월일' },

@@ -186,8 +186,8 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
                 신청일시: new Date().toISOString(),
 
                 // 신규 멤버 전용 필드
-                회사명: answers['company'] || '',
-                직군: answers['job_detail'] || '',
+                '직업/하는일': answers['job_detail'] || '',
+                문화생활: answers['culture_interest'] || '',
                 유입채널: channelMap[channel] || channel || '',
                 생년월일: answers['birthdate'] || '',
                 사진URL: photoUrl,
