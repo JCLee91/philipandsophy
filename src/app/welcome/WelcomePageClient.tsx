@@ -20,8 +20,11 @@ interface MemberShowcaseData {
 
 type PageState = 'loading' | 'success' | 'error' | 'expired' | 'invalid';
 
+const MIN_SPLASH_TIME_MS = 1000;
+
 export default function WelcomePageClient({ token }: WelcomePageClientProps) {
   const [state, setState] = useState<PageState>('loading');
+  const [minSplashElapsed, setMinSplashElapsed] = useState(false);
   const [participant, setParticipant] = useState<{
     name: string;
     cohortName: string;
@@ -30,6 +33,14 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
   const [bankAccount, setBankAccount] = useState<WelcomeConfig | null>(null);
   const [members, setMembers] = useState<MemberShowcaseData | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  // 최소 스플래시 시간 보장
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinSplashElapsed(true);
+    }, MIN_SPLASH_TIME_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,8 +89,8 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
     fetchData();
   }, [token]);
 
-  // Loading
-  if (state === 'loading') {
+  // Loading (API 로딩 중이거나 최소 스플래시 시간 미경과)
+  if (state === 'loading' || !minSplashElapsed) {
     return <WelcomeSplash />;
   }
 
