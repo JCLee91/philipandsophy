@@ -73,7 +73,7 @@ function RankingCard({
               <div className={cn(
                 "relative w-12 h-12 rounded-full overflow-hidden border-2",
                 idx === 0 ? "border-[#FFD700] w-14 h-14 shadow-md" :
-                idx === 1 ? "border-[#C0C0C0]" : "border-[#CD7F32]"
+                  idx === 1 ? "border-[#C0C0C0]" : "border-[#CD7F32]"
               )}>
                 <Image
                   src={getResizedImageUrl(item.profileImage) || '/image/default-profile.svg'}
@@ -85,7 +85,7 @@ function RankingCard({
               <div className={cn(
                 "absolute -top-1 -right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white shadow-sm",
                 idx === 0 ? "bg-[#FFD700]" :
-                idx === 1 ? "bg-[#C0C0C0]" : "bg-[#CD7F32]"
+                  idx === 1 ? "bg-[#C0C0C0]" : "bg-[#CD7F32]"
               )}>
                 {idx + 1}
               </div>
@@ -744,19 +744,19 @@ export default function LikesTab({
               가치관 답변 상세 내용입니다.
             </DialogDescription>
           </DialogHeader>
-          
+
           {answerModalData && (
             <div className="space-y-4">
               {/* 질문 */}
               <div className="bg-[#FFF8E1] rounded-[12px] p-4">
-                <div className="bg-black rounded-[8px] px-2 py-1 inline-block mb-2">
+                <div className="bg-black rounded-[8px] px-2 py-1 inline-flex items-center justify-center mb-2">
                   <span className="text-white text-[11px] font-bold">가치관</span>
                 </div>
                 <p className="text-[14px] font-medium text-[#333D4B] leading-normal">
                   {answerModalData.submission.dailyQuestion}
                 </p>
               </div>
-              
+
               {/* 답변 */}
               <div className="px-1">
                 <p className="text-[15px] text-[#333D4B] leading-[1.7] whitespace-pre-wrap">

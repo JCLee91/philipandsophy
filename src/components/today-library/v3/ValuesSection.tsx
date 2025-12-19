@@ -35,7 +35,7 @@ export default function ValuesSection({
 
       {/* Question Card */}
       <div className="bg-[#F9FAFB] rounded-[16px] p-4 mb-4">
-        <div className="bg-black rounded-[12px] px-3 py-1.5 inline-block mb-3">
+        <div className="bg-black rounded-[12px] px-3 py-1.5 inline-flex items-center justify-center mb-3">
           <span className="text-white text-[12px] font-bold">가치관</span>
         </div>
         <h2 className="text-[15px] font-medium text-[#333D4B] leading-normal">
