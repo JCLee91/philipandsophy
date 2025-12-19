@@ -55,7 +55,7 @@ export const COHORT_INFO = {
     timeline: [
         { date: '1/3 오후 2시', event: '온라인 OT' },
         { date: '1/4~1/16', event: '2주 독서 프로그램' },
-        { date: '1/17 저녁 7시', event: '웰컴 파티' },
+        { date: '1/17 오후 7시', event: '웰컴 파티' },
     ],
 };
 
@@ -64,7 +64,7 @@ export const QUESTIONS: Record<string, Question> = {
     'intro': {
         id: 'intro',
         type: 'intro',
-        title: '승인제 독서소셜클럽\n필립앤소피에 오신 것을 환영합니다.',
+        title: '승인제 소셜클럽\n필립앤소피에 오신 것을 환영합니다.',
         description: `${COHORT_INFO.number}기 멤버십 타임라인은 다음과 같습니다.\n📍 ${COHORT_INFO.timeline[0].date}: ${COHORT_INFO.timeline[0].event}\n📍 ${COHORT_INFO.timeline[1].date} : ${COHORT_INFO.timeline[1].event}\n📍 ${COHORT_INFO.timeline[2].date}: ${COHORT_INFO.timeline[2].event}\n\n위 일정에 참여 가능하시면\n"다음" 을 눌러주세요.`,
         buttonText: '다음',
         nextQuestionId: 'membership_status',
@@ -165,7 +165,7 @@ export const QUESTIONS: Record<string, Question> = {
     'personal_info_existing': {
         id: 'personal_info_existing',
         type: 'composite',
-        title: '기본 정보를 입력해주세요.',
+        title: '다시 만나게 되어 반가워요 👋\n아래 정보를 작성해주시면 바로 연락드릴게요!',
         fields: [
             { id: 'name', type: 'text', label: '이름', placeholder: '홍길동' },
             { id: 'phone', type: 'phone', label: '연락처', placeholder: '010-0000-0000' },

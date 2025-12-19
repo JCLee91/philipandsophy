@@ -1,9 +1,9 @@
 {
   "id": "com.philipandsophy.app",
   "gcm_sender_id": "103953800507",
-  "name": "필립앤소피 - 독서 소셜 클럽",
+  "name": "필립앤소피 - 승인제 소셜클럽",
   "short_name": "필립앤소피",
-  "description": "책과 사람을 연결하는 독서 소셜 클럽",
+  "description": "사람과 사람을 문화로 연결하는 승인제 소셜클럽",
   "start_url": "/app",
   "display": "standalone",
   "background_color": "#ffffff",

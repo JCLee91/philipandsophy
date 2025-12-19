@@ -10,7 +10,7 @@ export const ORGANIZATION_SCHEMA = {
   "@type": "Organization",
   "name": "Philip & Sophy",
   "alternateName": "필립앤소피",
-  "description": "25-40세 직장인 전문직을 위한 승인제 독서소셜클럽",
+  "description": "검증된 사람들과 함께 문화생활을 즐기는 승인제 소셜클럽",
   "url": "https://www.philipandsophy.kr/",
   "logo": "https://www.philipandsophy.kr/image/app-icon.webp",
   "sameAs": [
@@ -37,7 +37,7 @@ export const MEMBERSHIP_SCHEMA = {
     "@type": "Organization",
     "name": "Philip & Sophy"
   },
-  "description": "승인제 독서소셜클럽 멤버십 - 품격있는 만남과 깊이있는 대화",
+  "description": "검증된 사람들과 다양한 문화생활을 즐기는 승인제 멤버십",
   "membershipType": "승인제",
   "areaServed": "서울"
 } as const;
@@ -69,11 +69,11 @@ export const PARTY_REVIEWS_SCHEMA = {
   "@type": "Review",
   "itemReviewed": {
     "@type": "Event",
-    "name": "필립앤소피 독서 파티",
+    "name": "필립앤소피 웰컴 파티",
     "organizer": {
       "@type": "Organization",
       "name": "Philip & Sophy"
     }
   },
-  "description": "필립앤소피 독서소셜클럽 참여자들의 실제 후기와 경험담"
+  "description": "필립앤소피 소셜클럽 참여자들의 실제 후기와 경험담"
 } as const;
