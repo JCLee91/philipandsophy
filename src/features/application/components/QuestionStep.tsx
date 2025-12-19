@@ -194,14 +194,16 @@ export function QuestionStep({ question }: QuestionStepProps) {
 
     return (
         <motion.div className="question-step" {...fadeInUp}>
-            <div className={cn("question-header", isIntro && "question-header-intro")}>
-                <h2 className={cn("question-title", isIntro && "question-title-intro")}>
-                    {question.title}
-                </h2>
-                {question.description && (
-                    <p className={cn("question-description", isIntro && "text-left")}>{question.description}</p>
-                )}
-            </div>
+            {question.title && (
+                <div className={cn("question-header", isIntro && "question-header-intro")}>
+                    <h2 className={cn("question-title", isIntro && "question-title-intro")}>
+                        {question.title}
+                    </h2>
+                    {question.description && (
+                        <p className={cn("question-description", isIntro && "text-left")}>{question.description}</p>
+                    )}
+                </div>
+            )}
 
             <div className="question-body">
                 {/* Intro Type */}
