@@ -123,7 +123,7 @@ export const QUESTIONS: Record<string, Question> = {
             {
                 id: 'culture_interest',
                 type: 'text',
-                title: '(선택) 멤버들과 함께 하고싶은 취미나 문화생활이 있나요?',
+                title: '(선택)\n멤버들과 함께 하고싶은 취미나 문화생활이 있나요?',
                 description: '책, 영화, 전시, 공연, 미식 등 무엇이든 좋아요.',
                 label: '문화생활',
                 placeholder: '같이 뮤지컬 보고 얘기 나누면 재밌을 것 같아요 ㅎㅎ!',
