@@ -60,6 +60,9 @@ export function QuestionStep({ question }: QuestionStepProps) {
             // Composite 타입 검증
             if (question.type === 'composite' && question.fields) {
                 for (const field of question.fields) {
+                    // 선택 필드는 검증 건너뛰기
+                    if (field.required === false) continue;
+
                     const value = (answers[field.id] as string)?.trim();
                     if (!value) {
                         setValidationError(`${field.label}을(를) 입력해주세요.`);
@@ -301,6 +304,14 @@ export function QuestionStep({ question }: QuestionStepProps) {
                     <div className="question-input-wrap">
                         {question.fields.map((field, index) => (
                             <div key={field.id} className="composite-field">
+                                {field.title && (
+                                    <div className="question-header">
+                                        <h2 className="question-title">{field.title}</h2>
+                                        {field.description && (
+                                            <p className="question-description">{field.description}</p>
+                                        )}
+                                    </div>
+                                )}
                                 <label className="composite-label">{field.label}</label>
                                 {field.type === 'text' && (
                                     <input
@@ -384,6 +395,12 @@ export function QuestionStep({ question }: QuestionStepProps) {
                         </label>
                         <PrivacyPolicyModal open={privacyModalOpen} onOpenChange={setPrivacyModalOpen} />
                     </div>
+                )}
+
+                {question.submitDescription && (
+                    <p className="text-white/70 text-sm text-center whitespace-pre-line mb-4">
+                        {question.submitDescription}
+                    </p>
                 )}
 
                 <button

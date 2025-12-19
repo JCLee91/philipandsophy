@@ -994,6 +994,17 @@
   margin-bottom: 16px;
 }
 
+/* 필드에 title(question-header)이 있는 경우에만 스타일 조정 */
+.composite-field .question-header {
+  margin-top: 32px;
+  margin-bottom: 16px;
+}
+
+/* 첫 번째 필드의 question-header는 위쪽 여백 제거 */
+.composite-field:first-child .question-header {
+  margin-top: 0;
+}
+
 .composite-label {
   display: block;
   font-size: 13px;

@@ -20,9 +20,12 @@ export interface FieldOption {
 export interface Field {
     id: string;
     type: 'text' | 'phone' | 'select';
-    label: string;
+    title?: string; // 필드 메인 제목
+    description?: string; // 필드 서브 설명
+    label: string; // 인풋 라벨
     placeholder?: string;
     options?: FieldOption[]; // select 타입용
+    required?: boolean; // 필드별 필수 여부 (기본 true)
 }
 
 export interface Question {
@@ -38,6 +41,7 @@ export interface Question {
     buttonText?: string; // For intro pages
     isLastStep?: boolean; // 마지막 단계 여부 (제출 버튼 표시용)
     submitButtonText?: string; // 제출 버튼 텍스트 (기존/신규 멤버에 따라 다름)
+    submitDescription?: string; // 제출 버튼 위에 표시할 설명 텍스트
     externalLink?: string; // 제출 후 이동할 외부 링크
     style?: {
         textAlign?: 'left' | 'center' | 'right';
@@ -53,9 +57,9 @@ export const START_QUESTION_ID = 'intro';
 export const COHORT_INFO = {
     number: 6,
     timeline: [
-        { date: '1/3 오후 2시', event: '온라인 OT' },
+        { date: '1/3(토) 오후 2시', event: '온라인 OT' },
         { date: '1/4~1/16', event: '2주 독서 프로그램' },
-        { date: '1/17 오후 7시', event: '웰컴 파티' },
+        { date: '1/17(토) 오후 7시', event: '웰컴 파티' },
     ],
 };
 
@@ -107,11 +111,24 @@ export const QUESTIONS: Record<string, Question> = {
     'job_info': {
         id: 'job_info',
         type: 'composite',
-        title: '어떤 일을 하시나요?',
-        description: '해당 없으신 분은 "해당 없음"으로 적어주세요.',
         fields: [
-            { id: 'company', type: 'text', label: '회사명', placeholder: '회사명 또는 소속' },
-            { id: 'job_detail', type: 'text', label: '직군', placeholder: '예: 마케팅, 개발, 디자인' },
+            {
+                id: 'job_detail',
+                type: 'text',
+                title: '어떤 일을 하며 일상을 채우고 계신가요?',
+                description: '준비 중인 일이 있다면 그걸 적어주셔도 괜찮아요!',
+                label: '직업/하는 일',
+                placeholder: '예) 삼성전자 인사팀에서 조직문화 기획하고 있어요.',
+            },
+            {
+                id: 'culture_interest',
+                type: 'text',
+                title: '(선택) 멤버들과 함께 하고싶은 취미나 문화생활이 있나요?',
+                description: '책, 영화, 전시, 공연, 미식 등 무엇이든 좋아요.',
+                label: '문화생활',
+                placeholder: '같이 뮤지컬 보고 얘기 나누면 재밌을 것 같아요 ㅎㅎ!',
+                required: false,
+            },
         ],
         required: true,
         nextQuestionId: 'channel',
@@ -133,19 +150,20 @@ export const QUESTIONS: Record<string, Question> = {
     'photo': {
         id: 'photo',
         type: 'file',
-        title: '본인 확인을 위해,\n자신의 매력을 잘 드러낼 수 있는\n사진 한 장을 첨부해주세요.',
-        description: '(남이 찍어준 사진도 괜찮아요)',
+        title: '프로그램에서 사용될\n본인 사진 한 장을 첨부해주세요.',
+        description: '남이 찍어준 자연스러운 사진도 괜찮아요.',
         required: true,
         nextQuestionId: 'birthdate',
     },
     'birthdate': {
         id: 'birthdate',
         type: 'birthdate',
-        title: '나이(생년월일 8자리)를 입력해 주세요.',
-        description: '*미성년자는 참여할 수 없습니다.',
+        title: '생년월일 8자리를 입력해주세요.',
+        description: '미성년자는 참여할 수 없어요.',
         placeholder: 'ex. 19950101 / 20020202',
         required: true,
         isLastStep: true,
+        submitDescription: '간단한 8분 인터뷰가 끝나면\n멤버들과 함께 문화생활을 즐길 수 있어요!',
         submitButtonText: '인터뷰 예약하기',
         externalLink: 'https://whattime.co.kr/philipandsophy/10minute_interviews',
         // End of New Member flow
