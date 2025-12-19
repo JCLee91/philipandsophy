@@ -9,7 +9,7 @@ interface SocialProofSectionProps {
 }
 
 export default function SocialProofSection({
-  memberCount = 350,
+  memberCount = 332,
   applicantCount = 1200,
   genderRatio = { male: 5, female: 5 },
 }: SocialProofSectionProps) {

@@ -7,7 +7,7 @@ import { Video, BookOpen, PartyPopper } from 'lucide-react';
 const timeline = [
     {
         date: '1/3 (금) 오후 2시',
-        title: '온라인 오리엔테이션',
+        title: '온라인 OT',
         desc: 'Zoom으로 진행하는 간단한 인사와 프로그램 안내',
         icon: Video,
     },
@@ -18,21 +18,21 @@ const timeline = [
         icon: BookOpen,
     },
     {
-        date: '1/17 (금) 저녁 6시',
+        date: '1/17 (토) 저녁 7시',
         title: '웰컴 파티',
-        desc: '서울 시내 프라이빗 라운지에서 멤버들과 직접 만남',
+        desc: '분위기 좋은 공간에서 멤버들과 함께 즐기는 특별한 밤',
         icon: PartyPopper,
     },
 ];
 
 const afterProgram = [
     {
-        title: '정규 멤버 승격',
-        desc: '2주 프로그램을 완료하면 커뮤니티 정규 멤버가 됩니다',
+        title: '정식 멤버 승인',
+        desc: '2주 프로그램이 끝나면 필립앤소피 정식 멤버가 돼요',
     },
     {
-        title: '문화생활 플랫폼',
-        desc: '멤버 전용 앱에서 전시, 공연, 와인 모임 등 함께할 멤버 모집',
+        title: '함께 즐기는 문화생활',
+        desc: '멤버 전용 앱에서 전시, 공연, 파티 등 도심 속 낭만을 함께 즐겨요',
     },
     {
         title: '다른 기수와 교류',
@@ -111,7 +111,7 @@ export default function BrandStory() {
                     <span className="text-gray-500 text-sm font-medium tracking-widest uppercase block mb-4">
                         After Program
                     </span>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white">
                         프로그램 이후에는
                     </h2>
                 </motion.div>

@@ -91,7 +91,7 @@ export default function InvitationOpening({ name, welcomeMessage }: InvitationOp
                         transition={{ duration: 0.8, delay: welcomeMessage ? 1.2 : 0.9, ease: [0.16, 1, 0.3, 1] }}
                         className="text-lg text-gray-400 font-light leading-relaxed mt-8"
                     >
-                        저희 클럽의 멤버가 되신 걸<br />
+                        저희 소셜클럽의 멤버가 되신 걸<br />
                         진심으로 환영합니다.
                     </motion.p>
                 </motion.div>
