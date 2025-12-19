@@ -90,7 +90,7 @@ export const QUESTIONS: Record<string, Question> = {
     'personal_info': {
         id: 'personal_info',
         type: 'composite',
-        title: '기본 정보를 입력해주세요.',
+        title: '만나서 반갑습니다 👋\n먼저 아래 정보를 작성해주세요.',
         fields: [
             { id: 'name', type: 'text', label: '이름', placeholder: '홍길동' },
             { id: 'phone', type: 'phone', label: '연락처', placeholder: '010-0000-0000' },
