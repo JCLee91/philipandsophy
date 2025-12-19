@@ -31,7 +31,7 @@ export interface Field {
 export interface Question {
     id: string;
     type: QuestionType;
-    title: string;
+    title?: string; // composite 타입에서 field.title 사용 시 생략 가능
     description?: string;
     options?: Option[];
     fields?: Field[]; // composite 타입용
