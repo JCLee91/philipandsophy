@@ -61,9 +61,9 @@ export const metadata: Metadata = {
     url: 'https://www.philipandsophy.kr/',
     images: [
       {
-        url: '/image/Thumbnail_V2.webp',
-        width: 2400,
-        height: 1260,
+        url: '/image/Thumbnail_251219.webp',
+        width: 1200,
+        height: 630,
         alt: '필립앤소피 썸네일',
       },
     ],
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '필립앤소피 | 승인제 소셜클럽',
     description: '검증된 사람들과 함께 즐기는 문화 생활 - 깊이 있는 대화가 있는 승인제 소셜클럽',
-    images: ['/image/Thumbnail_V2.webp'],
+    images: ['/image/Thumbnail_251219.webp'],
   },
   alternates: {
     canonical: 'https://www.philipandsophy.kr/',

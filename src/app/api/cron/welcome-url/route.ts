@@ -16,8 +16,34 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const CRON_SECRET = process.env.CRON_SECRET;
-const CURRENT_COHORT_ID = process.env.CURRENT_COHORT_ID || '6';
-const WELCOME_API_SECRET = process.env.WELCOME_API_SECRET;
+const FALLBACK_COHORT_ID = process.env.CURRENT_COHORT_ID || '6';
+
+/**
+ * 데이터센터 랜딩 설정에서 현재 모집중인 기수 가져오기
+ * config/landing 문서의 cohortNumber 필드 사용
+ */
+async function getRecruitingCohortId(): Promise<string> {
+  const db = getAdminDb();
+  const docRef = db.collection('config').doc('landing');
+  const docSnap = await docRef.get();
+
+  if (!docSnap.exists) {
+    logger.warn('Landing config not found, using fallback', { fallbackCohortId: FALLBACK_COHORT_ID });
+    return FALLBACK_COHORT_ID;
+  }
+
+  const data = docSnap.data();
+  const cohortNumber = data?.cohortNumber;
+
+  if (!cohortNumber) {
+    logger.warn('cohortNumber not found in landing config, using fallback', { fallbackCohortId: FALLBACK_COHORT_ID });
+    return FALLBACK_COHORT_ID;
+  }
+
+  const cohortId = String(cohortNumber);
+  logger.info('Found recruiting cohort from landing config', { cohortId });
+  return cohortId;
+}
 
 /**
  * 전화번호로 Firestore에서 참가자 찾기
@@ -82,9 +108,10 @@ async function processRecord(
   recordId: string,
   name: string,
   phoneNumber: string,
-  callSummary: string | undefined
+  callSummary: string | undefined,
+  cohortId: string
 ): Promise<ProcessResult> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://philipandsophy.com';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://philipandsophy.kr';
 
   try {
     // 1. Firestore에서 기존 참가자 확인
@@ -93,7 +120,7 @@ async function processRecord(
 
     // 2. 없으면 새로 등록
     if (!existingParticipant) {
-      const newParticipantId = await createApplicant(name, phoneNumber, CURRENT_COHORT_ID);
+      const newParticipantId = await createApplicant(name, phoneNumber, cohortId);
       existingParticipant = {
         id: newParticipantId,
         data: { name },
@@ -220,8 +247,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
       );
     }
 
+    // 2.5 현재 모집중인 기수 가져오기
+    const cohortId = await getRecruitingCohortId();
+
     logger.info('Welcome URL cron job started', {
-      cohortId: CURRENT_COHORT_ID,
+      cohortId,
     });
 
     // 3. 에어테이블에서 처리 대상 레코드 조회
@@ -265,7 +295,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
       const normalizedPhone = phoneNumber.replace(/-/g, '');
 
       // 레코드 처리
-      const result = await processRecord(record.id, name, normalizedPhone, callSummary);
+      const result = await processRecord(record.id, name, normalizedPhone, callSummary, cohortId);
       results.push(result);
 
       // Rate limit 방지 (에어테이블 5 req/sec)
