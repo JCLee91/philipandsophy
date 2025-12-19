@@ -40,7 +40,10 @@ function getHeaders(): HeadersInit {
 
 /**
  * 합격이고 웰컴 페이지가 비어있는 레코드 조회
- * 필터 조건: 인터뷰 결과 = "합격-" AND 월컴 페이지 = 빈값
+ * 필터 조건:
+ * - 인터뷰 결과 = "합격"
+ * - 월컴 페이지 = 빈값
+ * - Created >= 2025년 12월 1일 (옛날 레코드 제외)
  */
 export async function fetchPendingRecords(): Promise<AirtableRecord[]> {
   const filterFormula = `AND(
@@ -48,7 +51,8 @@ export async function fetchPendingRecords(): Promise<AirtableRecord[]> {
     OR(
       {${AIRTABLE_FIELDS.WELCOME_PAGE_URL}} = '',
       {${AIRTABLE_FIELDS.WELCOME_PAGE_URL}} = BLANK()
-    )
+    ),
+    IS_AFTER({Created}, '2025-11-30')
   )`;
 
   const params = new URLSearchParams({
