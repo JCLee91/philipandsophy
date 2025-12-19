@@ -2,10 +2,11 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import '@/styles/landing.css';
 
 export default function WelcomeSplash() {
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black">
+    <div className="landing-page fixed inset-0 z-[10000] flex items-center justify-center bg-black">
       {/* Subtle ambient glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-white/[0.02] rounded-full blur-3xl" />

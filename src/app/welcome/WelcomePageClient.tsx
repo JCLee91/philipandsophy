@@ -8,6 +8,7 @@ import MemberShowcase from '@/components/welcome/MemberShowcase';
 import BrandStory from '@/components/welcome/BrandStory';
 import PaymentCard from '@/components/welcome/PaymentCard';
 import { WelcomeVerifyResponse, WelcomeConfig } from '@/types/welcome';
+import '@/styles/landing.css';
 
 interface WelcomePageClientProps {
   token?: string;
@@ -97,7 +98,7 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
   // Error states
   if (state !== 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white px-6">
+      <div className="landing-page min-h-screen flex items-center justify-center bg-black text-white px-6">
         <div className="text-center max-w-md">
           <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-500" />
           <h1 className="text-xl font-semibold mb-2">
@@ -111,7 +112,7 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
 
   // Success
   return (
-    <main className="min-h-screen bg-black text-white selection:bg-white/20 selection:text-white">
+    <main className="landing-page min-h-screen bg-black text-white selection:bg-white/20 selection:text-white">
       {/* Section 1: Opening */}
       <InvitationOpening
         name={participant?.name || '멤버'}
