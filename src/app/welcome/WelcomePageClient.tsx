@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import InvitationOpening from '@/components/welcome/InvitationOpening';
+import WelcomeSplash from '@/components/welcome/WelcomeSplash';
 import MemberShowcase from '@/components/welcome/MemberShowcase';
 import BrandStory from '@/components/welcome/BrandStory';
 import PaymentCard from '@/components/welcome/PaymentCard';
@@ -79,11 +80,7 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
 
   // Loading
   if (state === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
+    return <WelcomeSplash />;
   }
 
   // Error states

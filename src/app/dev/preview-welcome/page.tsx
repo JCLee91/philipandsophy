@@ -5,6 +5,7 @@ import InvitationOpening from '@/components/welcome/InvitationOpening';
 import MemberShowcase from '@/components/welcome/MemberShowcase';
 import BrandStory from '@/components/welcome/BrandStory';
 import PaymentCard from '@/components/welcome/PaymentCard';
+import WelcomeSplash from '@/components/welcome/WelcomeSplash';
 
 // 테스트용 더미 데이터
 const PREVIEW_DATA = {
@@ -35,6 +36,15 @@ interface MemberShowcaseData {
 export default function PreviewWelcomePage() {
   const [members, setMembers] = useState<MemberShowcaseData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+
+  // 스플래시 2초 후 콘텐츠 표시
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // 실제 멤버 데이터 로드 (개발용)
   useEffect(() => {
@@ -54,6 +64,10 @@ export default function PreviewWelcomePage() {
 
     fetchMembers();
   }, []);
+
+  if (showSplash) {
+    return <WelcomeSplash />;
+  }
 
   return (
     <main className="min-h-screen bg-black">

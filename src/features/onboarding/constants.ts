@@ -22,4 +22,4 @@ export const ONBOARDING_STEPS = [
   },
 ] as const;
 
-export const ONBOARDING_VIDEO_SRC = '/video/onboarding_v3.mp4?v=1.2';
+export const ONBOARDING_VIDEO_SRC = '/video/onboarding_v4.mp4?v=1.0';
