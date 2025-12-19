@@ -4,11 +4,7 @@
  */
 
 import { logger } from '@/lib/logger';
-import {
-  AIRTABLE_FIELDS,
-  AIRTABLE_CONFIG,
-  INTERVIEW_RESULT_PASS,
-} from '@/constants/airtable';
+import { AIRTABLE_FIELDS, AIRTABLE_CONFIG } from '@/constants/airtable';
 import type { AirtableRecord, AirtableResponse } from './types';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
@@ -39,30 +35,26 @@ function getHeaders(): HeadersInit {
 }
 
 /**
- * 합격이고 웰컴 페이지가 비어있는 레코드 조회
- * 필터 조건:
- * - 인터뷰 결과 = "합격"
- * - 월컴 페이지 = 빈값
- * - Created >= 2025년 12월 1일 (옛날 레코드 제외)
+ * 웰컴 자동화 대상 레코드 조회
+ * 에어테이블에서 설정한 뷰(View)를 사용하여 필터링
+ * - 뷰에서 필터 조건 관리 (합격, URL 없음 등)
  */
 export async function fetchPendingRecords(): Promise<AirtableRecord[]> {
-  const filterFormula = `AND(
-    {${AIRTABLE_FIELDS.INTERVIEW_RESULT}} = '${INTERVIEW_RESULT_PASS}',
-    OR(
-      {${AIRTABLE_FIELDS.WELCOME_PAGE_URL}} = '',
-      {${AIRTABLE_FIELDS.WELCOME_PAGE_URL}} = BLANK()
-    ),
-    IS_AFTER({Created}, '2025-11-30')
-  )`;
+  const viewId = process.env.AIRTABLE_VIEW_ID;
 
-  const params = new URLSearchParams({
-    filterByFormula: filterFormula,
-  });
+  if (!viewId) {
+    logger.warn('AIRTABLE_VIEW_ID not set, fetching all records');
+  }
+
+  const params = new URLSearchParams();
+  if (viewId) {
+    params.set('view', viewId);
+  }
 
   const url = `${getApiUrl()}?${params.toString()}`;
 
   logger.info('Fetching pending records from Airtable', {
-    filterFormula: filterFormula.replace(/\s+/g, ' ').trim(),
+    viewId: viewId || 'none',
   });
 
   const response = await fetch(url, {
