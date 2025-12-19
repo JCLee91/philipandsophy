@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Providers from './providers';
 import AppBodyClass from '@/components/AppBodyClass';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -127,6 +128,7 @@ fbq('track', 'PageView');`,
         <link href="https://fonts.cdnfonts.com/css/karina" rel="stylesheet" />
       </head>
       <body className="font-sans antialiased">
+        <GoogleAnalytics />
         <AppBodyClass />
         <Providers>{children}</Providers>
       </body>
