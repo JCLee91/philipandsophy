@@ -108,7 +108,7 @@ async function processRecord(
   recordId: string,
   name: string,
   phoneNumber: string,
-  callSummary: string | undefined,
+  callScript: string | undefined,
   cohortId: string
 ): Promise<ProcessResult> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://philipandsophy.kr';
@@ -142,19 +142,19 @@ async function processRecord(
       };
     }
 
-    // 4. AI 환영 메시지 생성 (callSummary가 50자 이상인 경우)
-    if (callSummary && callSummary.trim().length > 50 && tokenResult.participantId) {
+    // 4. AI 환영 메시지 생성 (callScript가 50자 이상인 경우)
+    if (callScript && callScript.trim().length > 50 && tokenResult.participantId) {
       try {
         const aiResult = await generateWelcomeMessage({
           memberName: name,
-          callSummary: callSummary.trim(),
+          callScript: callScript.trim(),
         });
 
         if (aiResult.success && aiResult.message) {
           await updateParticipantWelcomeMessage(
             tokenResult.participantId,
             aiResult.message,
-            callSummary.trim()
+            callScript.trim()
           );
           logger.info('AI welcome message generated', {
             participantId: tokenResult.participantId,
@@ -277,7 +277,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
     for (const record of pendingRecords) {
       const name = record.fields[AIRTABLE_FIELDS.NAME];
       const phoneNumber = record.fields[AIRTABLE_FIELDS.PHONE_NUMBER];
-      const callSummary = record.fields[AIRTABLE_FIELDS.INTERVIEW_SUMMARY];
+      const callScript = record.fields[AIRTABLE_FIELDS.CALL_SCRIPT];
 
       // 필수 필드 체크
       if (!name || !phoneNumber) {
@@ -295,7 +295,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
       const normalizedPhone = phoneNumber.replace(/-/g, '');
 
       // 레코드 처리
-      const result = await processRecord(record.id, name, normalizedPhone, callSummary, cohortId);
+      const result = await processRecord(record.id, name, normalizedPhone, callScript, cohortId);
       results.push(result);
 
       // Rate limit 방지 (에어테이블 5 req/sec)

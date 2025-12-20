@@ -16,7 +16,7 @@ const WELCOME_API_SECRET = process.env.WELCOME_API_SECRET;
 export async function POST(request: NextRequest): Promise<NextResponse<WelcomeTokenResponse>> {
   try {
     const body = await request.json();
-    const { phoneNumber, secretKey, callSummary } = body;
+    const { phoneNumber, secretKey, callScript } = body;
 
     // Secret key 검증
     if (!WELCOME_API_SECRET || secretKey !== WELCOME_API_SECRET) {
@@ -64,20 +64,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<WelcomeTo
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://philipandsophy.com';
     const welcomePageUrl = `${baseUrl}/welcome?token=${result.token}`;
 
-    // AI 맞춤 환영 메시지 생성 (callSummary가 있고 50자 이상인 경우)
+    // AI 맞춤 환영 메시지 생성 (callScript가 있고 50자 이상인 경우)
     let welcomeMessageGenerated = false;
-    if (callSummary && callSummary.trim().length > 50 && result.participantId) {
+    if (callScript && callScript.trim().length > 50 && result.participantId) {
       try {
         const aiResult = await generateWelcomeMessage({
           memberName: result.participantName || '멤버',
-          callSummary: callSummary.trim(),
+          callScript: callScript.trim(),
         });
 
         if (aiResult.success && aiResult.message) {
           await updateParticipantWelcomeMessage(
             result.participantId,
             aiResult.message,
-            callSummary.trim()
+            callScript.trim()
           );
           welcomeMessageGenerated = true;
           logger.info(`AI welcome message generated for participant: ${result.participantId}`);

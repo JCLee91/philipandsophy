@@ -12,8 +12,8 @@ export const AIRTABLE_FIELDS = {
   NAME: '이름',
   /** 웰컴 페이지 URL 저장 필드 */
   WELCOME_PAGE_URL: '월컴 페이지',
-  /** 인터뷰 요약 (AI 환영 메시지 생성용) */
-  INTERVIEW_SUMMARY: '인터뷰 요약',
+  /** 통화 스크립트 (AI 환영 메시지 생성용) */
+  CALL_SCRIPT: '대화내용',
 } as const;
 
 /** 합격 상태 값 */

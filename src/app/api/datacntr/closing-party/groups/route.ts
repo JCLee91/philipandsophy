@@ -133,6 +133,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { cohortId, targetGroupSize = 6 } = body;
+    const normalizedTargetGroupSize = Math.min(
+      Math.max(targetGroupSize, GROUP_SIZE.MIN),
+      GROUP_SIZE.MAX
+    );
 
     if (!cohortId) {
       return NextResponse.json({ error: 'cohortId가 필요합니다' }, { status: 400 });
@@ -224,7 +228,7 @@ export async function POST(request: NextRequest) {
       clusterCounts,
       actualSubmissionCounts,
       participantInfoMap,
-      targetGroupSize,
+      normalizedTargetGroupSize,
       hasClusterData
     );
 
@@ -245,7 +249,7 @@ export async function POST(request: NextRequest) {
       hasClusterData,
       message: hasClusterData
         ? '친밀도 기반으로 조가 편성되었습니다.'
-        : '인증 횟수 기반으로 조가 편성되었습니다.',
+        : '친밀도 데이터가 없어 기본 규칙으로 조가 편성되었습니다.',
     });
   } catch (error) {
     logger.error('조 편성 실패:', error);
@@ -534,6 +538,8 @@ function handleRemainingParticipants(
   targetSize: number,
   nextGroupNumber: number
 ): void {
+  if (remaining.length === 0) return;
+
   // GROUP_SIZE.MIN(4명) 이상이면 새 조 생성
   if (remaining.length >= GROUP_SIZE.MIN) {
     const members: ClosingPartyGroupMember[] = remaining.map((pid) => {
@@ -561,14 +567,68 @@ function handleRemainingParticipants(
     return;
   }
 
+  // 그룹이 없으면(또는 남은 인원이 3명 이하) 새 조 생성
+  if (groups.length === 0) {
+    const members: ClosingPartyGroupMember[] = remaining.map((pid) => {
+      const info = participantInfoMap.get(pid);
+      return {
+        participantId: pid,
+        name: info?.name || 'Unknown',
+        profileImageCircle: info?.profileImageCircle,
+        submissionCount: actualSubmissionCounts.get(pid) || 0,
+      };
+    });
+
+    const avgSubmissions = members.reduce((sum, m) => sum + m.submissionCount, 0) / members.length;
+    const avgRatio = avgSubmissions / maxSubmissions;
+    const tier: Tier = avgRatio >= 0.7 ? 'active' : avgRatio >= 0.3 ? 'moderate' : 'inactive';
+
+    groups.push({
+      groupId: `group-${nextGroupNumber}`,
+      groupNumber: nextGroupNumber,
+      members,
+      tier,
+      averageAffinity: calculateAverageAffinity(remaining, matrix),
+    });
+    return;
+  }
+
   // 3명 이하면 기존 조에 분배 (GROUP_SIZE.MAX까지 허용, 친밀도 높은 조 우선)
-  for (const pid of remaining) {
-    let bestGroup = groups[0];
+  for (let i = 0; i < remaining.length; i++) {
+    const pid = remaining[i];
+    const eligibleGroups = groups.filter((group) => group.members.length < GROUP_SIZE.MAX);
+
+    if (eligibleGroups.length === 0) {
+      const rest = remaining.slice(i);
+      const members: ClosingPartyGroupMember[] = rest.map((rid) => {
+        const info = participantInfoMap.get(rid);
+        return {
+          participantId: rid,
+          name: info?.name || 'Unknown',
+          profileImageCircle: info?.profileImageCircle,
+          submissionCount: actualSubmissionCounts.get(rid) || 0,
+        };
+      });
+
+      const avgSubmissions =
+        members.reduce((sum, m) => sum + m.submissionCount, 0) / members.length;
+      const avgRatio = avgSubmissions / maxSubmissions;
+      const tier: Tier = avgRatio >= 0.7 ? 'active' : avgRatio >= 0.3 ? 'moderate' : 'inactive';
+
+      groups.push({
+        groupId: `group-${nextGroupNumber}`,
+        groupNumber: nextGroupNumber,
+        members,
+        tier,
+        averageAffinity: calculateAverageAffinity(rest, matrix),
+      });
+      return;
+    }
+
+    let bestGroup = eligibleGroups[0];
     let bestScore = -1;
 
-    for (const group of groups) {
-      if (group.members.length >= GROUP_SIZE.MAX) continue;
-
+    for (const group of eligibleGroups) {
       let score = 0;
       for (const member of group.members) {
         score += matrix.get(pid)?.get(member.participantId) || 0;
@@ -642,12 +702,12 @@ function countGenderInGroup(
  * 성비 불균형 여부 체크
  * 한 성별이 그룹의 2/3를 초과하면 불균형
  */
-function isGenderImbalanced(count: GenderCount, totalMembers: number): boolean {
+function isGenderImbalanced(count: GenderCount): boolean {
   // other/unknown은 성비 계산에서 제외
   const knownGenderCount = count.male + count.female;
   if (knownGenderCount < 2) return false; // 알려진 성별이 2명 미만이면 체크 불가
 
-  const maxAllowed = Math.ceil(totalMembers * GENDER_BALANCE.MAX_RATIO);
+  const maxAllowed = Math.floor(knownGenderCount * GENDER_BALANCE.MAX_RATIO);
 
   return count.male > maxAllowed || count.female > maxAllowed;
 }
@@ -693,8 +753,8 @@ function canSwapMaintainBalance(
 
   // 양쪽 모두 균형이 유지되어야 함
   return (
-    !isGenderImbalanced(countA, newMembersA.length) &&
-    !isGenderImbalanced(countB, newMembersB.length)
+    !isGenderImbalanced(countA) &&
+    !isGenderImbalanced(countB)
   );
 }
 
@@ -737,9 +797,15 @@ function trySwapForBalance(
     })
     .map((m) => ({
       member: m,
+      submissionCount: m.submissionCount || 0,
       affinitySum: calculateMemberAffinity(m.participantId, imbalancedGroup.members, matrix),
     }))
-    .sort((a, b) => a.affinitySum - b.affinitySum); // 친밀도 낮은 순
+    .sort((a, b) => {
+      if (a.submissionCount !== b.submissionCount) {
+        return a.submissionCount - b.submissionCount;
+      }
+      return a.affinitySum - b.affinitySum;
+    }); // 인증 적은 순 → 친밀도 낮은 순
 
   // 다른 그룹에서 교환 대상 찾기
   for (const candidate of dominantMembers) {
@@ -754,6 +820,7 @@ function trySwapForBalance(
         })
         .map((m) => ({
           member: m,
+          submissionCount: m.submissionCount || 0,
           // 불균형 그룹 멤버들과의 친밀도 합 (교환 후 친밀도 유지를 위해)
           affinityWithTarget: calculateMemberAffinity(
             m.participantId,
@@ -761,7 +828,12 @@ function trySwapForBalance(
             matrix
           ),
         }))
-        .sort((a, b) => b.affinityWithTarget - a.affinityWithTarget); // 친밀도 높은 순
+        .sort((a, b) => {
+          if (a.submissionCount !== b.submissionCount) {
+            return a.submissionCount - b.submissionCount;
+          }
+          return b.affinityWithTarget - a.affinityWithTarget;
+        }); // 인증 적은 순 → 친밀도 높은 순
 
       for (const { member: swapTarget } of swapCandidates) {
         // 교환 후 양쪽 그룹 모두 균형이 유지되는지 확인
@@ -824,7 +896,7 @@ function balanceGenderAcrossGroups(
     const genderCount = countGenderInGroup(group.members, participantInfoMap);
 
     // 심한 불균형 체크 (한 성별이 2/3 초과)
-    if (!isGenderImbalanced(genderCount, group.members.length)) {
+    if (!isGenderImbalanced(genderCount)) {
       continue;
     }
 

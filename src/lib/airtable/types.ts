@@ -10,7 +10,7 @@ export interface AirtableApplicantFields {
   [AIRTABLE_FIELDS.PHONE_NUMBER]?: string;
   [AIRTABLE_FIELDS.NAME]?: string;
   [AIRTABLE_FIELDS.WELCOME_PAGE_URL]?: string;
-  [AIRTABLE_FIELDS.INTERVIEW_SUMMARY]?: string;
+  [AIRTABLE_FIELDS.CALL_SCRIPT]?: string;
 }
 
 /** 에어테이블 레코드 */
