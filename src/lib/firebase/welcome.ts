@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from './admin';
 import {
@@ -91,8 +92,8 @@ export async function generateWelcomeToken(phoneNumber: string): Promise<{
     const participantDoc = snapshot.docs[0];
     const participantData = participantDoc.data();
 
-    // UUID v4 토큰 생성
-    const token = crypto.randomUUID();
+    // 8자 랜덤 토큰 생성 (16^8 = 약 43억 조합)
+    const token = crypto.randomBytes(4).toString('hex');
 
     // 만료 시간 계산 (30일 후)
     const expiresAt = new Date();
