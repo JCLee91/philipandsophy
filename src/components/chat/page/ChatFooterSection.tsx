@@ -76,8 +76,7 @@ export function ChatFooterSection({
                   {useClusterMatching ? (
                     // V3: 클러스터 매칭 - 개인 여정 회고
                     <span className="flex flex-col items-center">
-                      <span>{participantName || ''}님의</span>
-                      <span>2주간의 여정</span>
+                      <span>독서모임 히스토리</span>
                     </span>
                   ) : cohortName ? (
                     // V2: 멤버의 서재
@@ -105,7 +104,7 @@ export function ChatFooterSection({
                       독서 인증하기
                     </UnifiedButton>
                   )}
-                  
+
                   <UnifiedButton
                     variant="secondary"
                     onClick={onNavigateTodayLibrary}

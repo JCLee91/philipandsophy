@@ -598,6 +598,11 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                       className="shrink-0"
                     />
                   </button>
+                  {participant.occupation && (
+                    <p className="text-[14px] text-[#8B95A1] tracking-tight -mt-1">
+                      {participant.occupation}
+                    </p>
+                  )}
                 </div>
 
                 {/* 최근 본 도서 (독서 인증만 표시) */}
