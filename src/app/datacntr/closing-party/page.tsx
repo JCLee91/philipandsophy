@@ -163,7 +163,7 @@ export default function ClosingPartyPage() {
 
         {/* 통계 탭 */}
         <TabsContent value="stats" className="mt-6">
-          <StatsTab stats={stats} />
+          <StatsTab stats={stats} participantSubmissions={party.data?.participantSubmissions} />
         </TabsContent>
 
         {/* 조 편성 탭 */}

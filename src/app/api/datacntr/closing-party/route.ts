@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
-import type { ClosingPartyStats, Cohort } from '@/types/database';
+import type { ClosingPartyStats, Cohort, Participant } from '@/types/database';
 import { addDays, format, parseISO, isAfter } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+
+export interface ParticipantSubmissionCount {
+  participantId: string;
+  name: string;
+  submissionCount: number;
+}
 
 /**
  * GET /api/datacntr/closing-party
@@ -66,12 +72,16 @@ export async function GET(request: NextRequest) {
       // 통계가 있는 경우
       const stats = statsDoc.data() as ClosingPartyStats;
 
+      // 참가자별 인증 횟수 조회
+      const participantSubmissions = await getParticipantSubmissionCounts(db, cohortId);
+
       return NextResponse.json({
         stats,
         isCalculated: true,
         canCalculate: true,
         programEnded,
         calculationAvailableAt,
+        participantSubmissions,
       });
     } else {
       // 통계가 없는 경우
@@ -92,4 +102,78 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * 참가자별 인증 횟수 조회
+ */
+async function getParticipantSubmissionCounts(
+  db: FirebaseFirestore.Firestore,
+  cohortId: string
+): Promise<ParticipantSubmissionCount[]> {
+  // 1. 참가자 목록 조회 (관리자/고스트 제외)
+  const participantsSnapshot = await db
+    .collection(COLLECTIONS.PARTICIPANTS)
+    .where('cohortId', '==', cohortId)
+    .get();
+
+  const participants = participantsSnapshot.docs
+    .map((doc) => ({ id: doc.id, ...doc.data() } as Participant))
+    .filter((p) => !p.isAdministrator && !p.isSuperAdmin && !p.isGhost);
+
+  const participantMap = new Map(participants.map((p) => [p.id, p]));
+  const participantIds = Array.from(participantMap.keys());
+
+  // 2. 인증 횟수 조회 (unique submissionDate 기준)
+  const submissionCounts = new Map<string, Set<string>>();
+
+  for (const pid of participantIds) {
+    submissionCounts.set(pid, new Set());
+  }
+
+  // Firestore 'in' 쿼리는 30개 제한
+  for (let i = 0; i < participantIds.length; i += 30) {
+    const chunk = participantIds.slice(i, i + 30);
+    const snapshot = await db
+      .collection(COLLECTIONS.READING_SUBMISSIONS)
+      .where('participantId', 'in', chunk)
+      .where('status', '==', 'approved')
+      .get();
+
+    snapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      const pid = data.participantId;
+      const submissionDate = data.submissionDate;
+      if (pid && submissionDate) {
+        const dates = submissionCounts.get(pid);
+        if (dates) {
+          dates.add(submissionDate);
+        }
+      }
+    });
+  }
+
+  // 3. 결과 생성 (인증 횟수 내림차순 정렬)
+  const result: ParticipantSubmissionCount[] = [];
+
+  for (const [participantId, dates] of submissionCounts) {
+    const participant = participantMap.get(participantId);
+    if (participant) {
+      result.push({
+        participantId,
+        name: participant.name,
+        submissionCount: dates.size,
+      });
+    }
+  }
+
+  // 인증 횟수 내림차순, 같으면 이름 오름차순
+  result.sort((a, b) => {
+    if (b.submissionCount !== a.submissionCount) {
+      return b.submissionCount - a.submissionCount;
+    }
+    return a.name.localeCompare(b.name, 'ko');
+  });
+
+  return result;
 }

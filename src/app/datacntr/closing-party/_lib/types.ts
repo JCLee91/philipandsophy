@@ -3,6 +3,15 @@ import { ko } from 'date-fns/locale';
 import type { ClosingPartyStats, ClosingPartyGroup } from '@/types/database';
 
 /**
+ * 참가자별 인증 횟수
+ */
+export interface ParticipantSubmissionCount {
+  participantId: string;
+  name: string;
+  submissionCount: number;
+}
+
+/**
  * 통계 API 응답 타입
  */
 export interface StatsResponse {
@@ -12,6 +21,7 @@ export interface StatsResponse {
   programEnded: boolean;
   calculationAvailableAt: string;
   message?: string;
+  participantSubmissions?: ParticipantSubmissionCount[];
 }
 
 /**
