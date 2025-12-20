@@ -84,7 +84,7 @@ export function NoticeFormFields({
             <div className="flex flex-col items-center justify-center py-6">
               <Upload className="h-10 w-10 text-gray-400 mb-2" />
               <p className="text-sm text-gray-600 font-medium">클릭하여 이미지 업로드</p>
-              <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP (최대 5MB)</p>
+              <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP (최대 4MB)</p>
             </div>
             <input type="file" accept="image/*" onChange={onImageChange} className="hidden" />
           </label>

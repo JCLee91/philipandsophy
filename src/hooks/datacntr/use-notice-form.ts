@@ -24,6 +24,35 @@ interface UseNoticeFormOptions {
   templateId?: string;
 }
 
+const NOTICE_IMAGE_MAX_MB = 4;
+
+async function getNoticeSaveErrorMessage(res: Response): Promise<string> {
+  const fallback = `공지 저장 실패 (status ${res.status})`;
+
+  let bodyText = '';
+  try {
+    bodyText = await res.text();
+  } catch {
+    return fallback;
+  }
+
+  if (!bodyText) return fallback;
+
+  try {
+    const data = JSON.parse(bodyText) as { error?: string; message?: string } | null;
+    if (data?.error) return data.error;
+    if (data?.message) return data.message;
+  } catch {
+    // Non-JSON responses (e.g. gateway/body size errors) fall through.
+  }
+
+  if (res.status === 413 || /Request Entity Too Large/i.test(bodyText)) {
+    return `이미지 용량이 너무 큽니다. ${NOTICE_IMAGE_MAX_MB}MB 이하로 줄여주세요.`;
+  }
+
+  return bodyText;
+}
+
 export function useNoticeForm({ mode, noticeId, templateId }: UseNoticeFormOptions) {
   const router = useRouter();
   const { user } = useAuth();
@@ -96,7 +125,10 @@ export function useNoticeForm({ mode, noticeId, templateId }: UseNoticeFormOptio
   const handleImageChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('이미지 크기는 5MB 이하여야 합니다.'); return; }
+    if (file.size > NOTICE_IMAGE_MAX_MB * 1024 * 1024) {
+      alert(`이미지 크기는 ${NOTICE_IMAGE_MAX_MB}MB 이하여야 합니다.`);
+      return;
+    }
     if (!file.type.startsWith('image/')) { alert('이미지 파일만 업로드 가능합니다.'); return; }
     setImageFile(file);
     setTemplateImageUrl('');
@@ -159,7 +191,7 @@ export function useNoticeForm({ mode, noticeId, templateId }: UseNoticeFormOptio
         mode === 'create' ? '/api/datacntr/notices/create' : `/api/datacntr/notices/${noticeId}`,
         { method: mode === 'create' ? 'POST' : 'PUT', body: formData }
       );
-      if (!res.ok) throw new Error((await res.json()).error || '공지 저장 실패');
+      if (!res.ok) throw new Error(await getNoticeSaveErrorMessage(res));
 
       alert(isDraft ? '공지가 임시저장되었습니다.' : isScheduled ? '공지가 예약되었습니다.' : mode === 'create' ? '공지가 발행되었습니다.' : '공지가 수정되었습니다.');
       router.push('/datacntr/notices');
