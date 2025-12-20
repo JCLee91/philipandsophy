@@ -311,7 +311,7 @@ export default function PostProgramView({
             <div className="app-shell flex flex-col overflow-hidden">
                 {/* Header */}
                 <TopBar
-                    title="우리의 여정"
+                    title="독서모임 히스토리"
                     onBack={() => router.push(appRoutes.chat(cohortId))}
                     align="center"
                     className="bg-white border-b-0"
@@ -486,29 +486,53 @@ export default function PostProgramView({
                                                 모든 프로필북이 개방됐어요. 파티 전에 미리 살펴보세요!
                                             </p>
                                             <div className="flex flex-col gap-2">
-                                                {activityRecap.allCompanions.map((companion, idx) => (
-                                                    <button
-                                                        key={companion.participantId}
-                                                        onClick={() => handleProfileClick(companion.participantId)}
-                                                        className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-[10px] hover:bg-gray-100 transition-colors"
-                                                    >
-                                                        <span className="text-[12px] text-[#8B95A1] w-6 text-center">{idx + 1}</span>
-                                                        <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0">
-                                                            <Image
-                                                                src={getResizedImageUrl(companion.profileImage) || '/image/default-profile.svg'}
-                                                                alt={companion.name}
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                        </div>
-                                                        <span className="flex-1 text-[14px] font-medium text-[#333D4B] text-left">
-                                                            {companion.name}
-                                                        </span>
-                                                        <span className="text-[12px] text-[#8B95A1]">
-                                                            {companion.count > 0 ? `같은 모임 ${companion.count}회` : '아직 만남 없음'}
-                                                        </span>
-                                                    </button>
-                                                ))}
+                                                {activityRecap.allCompanions.map((companion, idx) => {
+                                                    const participant = participantMap.get(companion.participantId);
+                                                    const occupation = participant?.occupation;
+                                                    return (
+                                                        <button
+                                                            key={companion.participantId}
+                                                            onClick={() => handleProfileClick(companion.participantId)}
+                                                            className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-[10px] hover:bg-gray-100 transition-colors"
+                                                        >
+                                                            <span className="text-[12px] text-[#8B95A1] w-6 text-center font-medium">{idx + 1}</span>
+                                                            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0 bg-white">
+                                                                <Image
+                                                                    src={getResizedImageUrl(companion.profileImage) || '/image/default-profile.svg'}
+                                                                    alt={companion.name}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                                <span className="text-[14px] font-bold text-[#333D4B] text-left truncate">
+                                                                    {getFirstName(companion.name)}
+                                                                </span>
+                                                                {occupation && (
+                                                                    <span className="text-[11px] text-[#8B95A1] text-left truncate mt-0.5 tracking-tight">
+                                                                        {occupation}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <svg
+                                                                width="20"
+                                                                height="20"
+                                                                viewBox="0 0 20 20"
+                                                                fill="none"
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                className="shrink-0"
+                                                            >
+                                                                <path
+                                                                    d="M7.5 15L12.5 10L7.5 5"
+                                                                    stroke="#B0B8C1"
+                                                                    strokeWidth="1.5"
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                />
+                                                            </svg>
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     </section>
