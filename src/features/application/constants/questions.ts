@@ -115,9 +115,9 @@ export const QUESTIONS: Record<string, Question> = {
             {
                 id: 'job_detail',
                 type: 'text',
-                title: '어떤 일을 하며 일상을 채우고 계신가요?',
-                description: '준비 중인 일이 있다면 그걸 적어주셔도 괜찮아요!',
-                label: '직업/하는 일',
+                title: '어떤 일을 하고 계신가요?',
+                description: '직무에 대해 구체적으로 써주시면 더 좋아요.',
+                label: '회사명/하는 일',
                 placeholder: '예) 삼성전자 인사팀에서 조직문화 기획하고 있어요.',
             },
             {
