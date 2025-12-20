@@ -75,6 +75,27 @@ function normalizeGroups(groups: ClosingPartyGroup[] | null): ClosingPartyGroup[
   });
 }
 
+function buildAvoidPairs(groups: ClosingPartyGroup[]): Map<string, Set<string>> {
+  const avoidPairs = new Map<string, Set<string>>();
+
+  for (const group of groups) {
+    if (group.groupId === 'absent') continue;
+    const ids = group.members.map((member) => member.participantId);
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const a = ids[i];
+        const b = ids[j];
+        if (!avoidPairs.has(a)) avoidPairs.set(a, new Set());
+        if (!avoidPairs.has(b)) avoidPairs.set(b, new Set());
+        avoidPairs.get(a)!.add(b);
+        avoidPairs.get(b)!.add(a);
+      }
+    }
+  }
+
+  return avoidPairs;
+}
+
 /**
  * GET /api/datacntr/closing-party/groups
  */
@@ -244,6 +265,7 @@ export async function POST(request: NextRequest) {
       hasClusterData,
       'high'
     );
+    const avoidPairs = buildAvoidPairs(groups);
     const groupsRound2 = formGroups(
       activeParticipantIds,
       matrix,
@@ -252,7 +274,8 @@ export async function POST(request: NextRequest) {
       participantInfoMap,
       normalizedTargetGroupSize,
       hasClusterData,
-      'low'
+      'low',
+      avoidPairs
     );
 
     // 8. 불참조 추가 (기존 불참자가 있는 경우)
@@ -431,7 +454,8 @@ function formGroups(
   participantInfoMap: Map<string, ParticipantInfo>,
   targetGroupSize: number,
   hasClusterData: boolean,
-  affinityStrategy: AffinityStrategy
+  affinityStrategy: AffinityStrategy,
+  avoidPairs?: Map<string, Set<string>>
 ): ClosingPartyGroup[] {
   // Tier 기준값 계산 (표시용)
   const maxSubmissions = Math.max(...Array.from(actualSubmissionCounts.values()), 1);
@@ -456,7 +480,8 @@ function formGroups(
       targetGroupSize,
       maxSubmissions,
       groupNumber++,
-      affinityStrategy
+      affinityStrategy,
+      avoidPairs
     );
 
     if (group.members.length > 0) {
@@ -481,7 +506,8 @@ function formGroups(
       maxSubmissions,
       targetGroupSize,
       groupNumber,
-      affinityStrategy
+      affinityStrategy,
+      avoidPairs
     );
   }
 
@@ -507,7 +533,12 @@ function formGroups(
   }
 
   // 성비 균형 후처리
-  balanceGenderAcrossGroups(groups, participantInfoMap, matrix);
+  balanceGenderAcrossGroups(
+    groups,
+    participantInfoMap,
+    matrix,
+    affinityStrategy === 'low' ? avoidPairs : undefined
+  );
 
   return groups;
 }
@@ -520,29 +551,40 @@ function formSingleGroup(
   targetSize: number,
   maxSubmissions: number,
   groupNumber: number,
-  affinityStrategy: AffinityStrategy
+  affinityStrategy: AffinityStrategy,
+  avoidPairs?: Map<string, Set<string>>
 ): ClosingPartyGroup {
   if (candidates.length === 0) {
     return { groupId: '', groupNumber, members: [], tier: 'inactive', averageAffinity: 0 };
   }
 
   const prefersHighAffinity = affinityStrategy === 'high';
+  const considerAvoidPairs = affinityStrategy === 'low' && avoidPairs;
+  const candidateSet = considerAvoidPairs ? new Set(candidates) : null;
 
   // 시드 선택: 총 친밀도 합이 높은(또는 낮은) 사람
   let seed = candidates[0];
   let bestTotalAffinity = prefersHighAffinity ? -1 : Number.POSITIVE_INFINITY;
+  let bestAvoidTotal = considerAvoidPairs ? Number.POSITIVE_INFINITY : 0;
 
   for (const pid of candidates) {
     let total = 0;
     for (const other of candidates) {
       if (other !== pid) total += matrix.get(pid)?.get(other) || 0;
     }
+    const avoidTotal = considerAvoidPairs
+      ? countAvoidPairsWithSet(pid, candidateSet!, avoidPairs)
+      : 0;
     if (
-      (prefersHighAffinity && total > bestTotalAffinity) ||
-      (!prefersHighAffinity && total < bestTotalAffinity) ||
-      (total === bestTotalAffinity && pid < seed)
+      (considerAvoidPairs && avoidTotal < bestAvoidTotal) ||
+      (considerAvoidPairs && avoidTotal === bestAvoidTotal && prefersHighAffinity && total > bestTotalAffinity) ||
+      (considerAvoidPairs && avoidTotal === bestAvoidTotal && !prefersHighAffinity && total < bestTotalAffinity) ||
+      (!considerAvoidPairs && prefersHighAffinity && total > bestTotalAffinity) ||
+      (!considerAvoidPairs && !prefersHighAffinity && total < bestTotalAffinity) ||
+      (avoidTotal === bestAvoidTotal && total === bestTotalAffinity && pid < seed)
     ) {
       bestTotalAffinity = total;
+      bestAvoidTotal = avoidTotal;
       seed = pid;
     }
   }
@@ -555,6 +597,7 @@ function formSingleGroup(
   while (group.length < effectiveTargetSize && remaining.length > 0) {
     let bestCandidate = remaining[0];
     let bestScore = prefersHighAffinity ? -1 : Number.POSITIVE_INFINITY;
+    let bestAvoidCount = considerAvoidPairs ? Number.POSITIVE_INFINITY : 0;
 
     for (const candidate of remaining) {
       // 친밀도 기반 점수 (그룹 내 모든 멤버와의 친밀도 합)
@@ -562,8 +605,23 @@ function formSingleGroup(
       for (const member of group) {
         score += matrix.get(member)?.get(candidate) || 0;
       }
+      const avoidCount = considerAvoidPairs
+        ? countAvoidPairsWithIds(candidate, group, avoidPairs)
+        : 0;
 
-      if (
+      if (considerAvoidPairs) {
+        if (
+          avoidCount < bestAvoidCount ||
+          (avoidCount === bestAvoidCount &&
+            ((prefersHighAffinity && score > bestScore) ||
+              (!prefersHighAffinity && score < bestScore) ||
+              (score === bestScore && candidate < bestCandidate)))
+        ) {
+          bestAvoidCount = avoidCount;
+          bestScore = score;
+          bestCandidate = candidate;
+        }
+      } else if (
         (prefersHighAffinity && score > bestScore) ||
         (!prefersHighAffinity && score < bestScore) ||
         (score === bestScore && candidate < bestCandidate)
@@ -613,36 +671,49 @@ function handleRemainingParticipants(
   maxSubmissions: number,
   targetSize: number,
   nextGroupNumber: number,
-  affinityStrategy: AffinityStrategy
+  affinityStrategy: AffinityStrategy,
+  avoidPairs?: Map<string, Set<string>>
 ): void {
   if (remaining.length === 0) return;
 
   const prefersHighAffinity = affinityStrategy === 'high';
+  const considerAvoidPairs = affinityStrategy === 'low' && avoidPairs;
 
-  // GROUP_SIZE.MIN(4명) 이상이면 새 조 생성
+  // GROUP_SIZE.MIN(4명) 이상이면 새 조 생성 (avoidPairs 고려)
   if (remaining.length >= GROUP_SIZE.MIN) {
-    const members: ClosingPartyGroupMember[] = remaining.map((pid) => {
-      const info = participantInfoMap.get(pid);
-      return {
-        participantId: pid,
-        name: info?.name || 'Unknown',
-        profileImageCircle: info?.profileImageCircle,
-        submissionCount: actualSubmissionCounts.get(pid) || 0,
-      };
-    });
+    // formSingleGroup을 사용하여 avoidPairs 고려
+    const newGroup = formSingleGroup(
+      remaining,
+      matrix,
+      actualSubmissionCounts,
+      participantInfoMap,
+      targetSize,
+      maxSubmissions,
+      nextGroupNumber,
+      affinityStrategy,
+      avoidPairs
+    );
 
-    // 평균 인증률로 Tier 계산
-    const avgSubmissions = members.reduce((sum, m) => sum + m.submissionCount, 0) / members.length;
-    const avgRatio = avgSubmissions / maxSubmissions;
-    const tier: Tier = avgRatio >= 0.7 ? 'active' : avgRatio >= 0.3 ? 'moderate' : 'inactive';
-
-    groups.push({
-      groupId: `group-${nextGroupNumber}`,
-      groupNumber: nextGroupNumber,
-      members,
-      tier,
-      averageAffinity: calculateAverageAffinity(remaining, matrix),
-    });
+    if (newGroup.members.length > 0) {
+      groups.push(newGroup);
+      // 새 조에 포함되지 않은 잔여 인원 처리
+      const usedIds = new Set(newGroup.members.map((m) => m.participantId));
+      const stillRemaining = remaining.filter((id) => !usedIds.has(id));
+      if (stillRemaining.length > 0) {
+        handleRemainingParticipants(
+          groups,
+          stillRemaining,
+          matrix,
+          actualSubmissionCounts,
+          participantInfoMap,
+          maxSubmissions,
+          targetSize,
+          nextGroupNumber + 1,
+          affinityStrategy,
+          avoidPairs
+        );
+      }
+    }
     return;
   }
 
@@ -737,7 +808,8 @@ function handleRemainingParticipants(
           targetSize,
           maxSubmissions,
           nextGroupNumber,
-          affinityStrategy
+          affinityStrategy,
+          avoidPairs
         );
 
         if (poolGroup.members.length > 0) {
@@ -782,14 +854,30 @@ function handleRemainingParticipants(
 
     let bestGroup = eligibleGroups[0];
     let bestScore = prefersHighAffinity ? -1 : Number.POSITIVE_INFINITY;
+    let bestAvoidCount = considerAvoidPairs ? Number.POSITIVE_INFINITY : 0;
 
     for (const group of eligibleGroups) {
       let score = 0;
       for (const member of group.members) {
         score += matrix.get(pid)?.get(member.participantId) || 0;
       }
+      const avoidCount = considerAvoidPairs
+        ? countAvoidPairsWithMembers(pid, group.members, avoidPairs)
+        : 0;
 
-      if (
+      if (considerAvoidPairs) {
+        if (
+          avoidCount < bestAvoidCount ||
+          (avoidCount === bestAvoidCount &&
+            ((prefersHighAffinity && score > bestScore) ||
+              (!prefersHighAffinity && score < bestScore) ||
+              (score === bestScore && group.members.length < bestGroup.members.length)))
+        ) {
+          bestAvoidCount = avoidCount;
+          bestScore = score;
+          bestGroup = group;
+        }
+      } else if (
         (prefersHighAffinity && score > bestScore) ||
         (!prefersHighAffinity && score < bestScore) ||
         (score === bestScore && group.members.length < bestGroup.members.length)
@@ -826,6 +914,64 @@ function calculateAverageAffinity(memberIds: string[], matrix: AffinityMatrix): 
     }
   }
   return pairs > 0 ? Math.round((total / pairs) * 100) / 100 : 0;
+}
+
+function countAvoidPairsWithSet(
+  memberId: string,
+  memberSet: Set<string>,
+  avoidPairs?: Map<string, Set<string>>
+): number {
+  if (!avoidPairs) return 0;
+  const avoidSet = avoidPairs.get(memberId);
+  if (!avoidSet) return 0;
+  let count = 0;
+  for (const other of avoidSet) {
+    if (memberSet.has(other)) count++;
+  }
+  return count;
+}
+
+function countAvoidPairsWithIds(
+  memberId: string,
+  memberIds: string[],
+  avoidPairs?: Map<string, Set<string>>
+): number {
+  if (!avoidPairs) return 0;
+  const avoidSet = avoidPairs.get(memberId);
+  if (!avoidSet) return 0;
+  let count = 0;
+  for (const other of memberIds) {
+    if (other !== memberId && avoidSet.has(other)) count++;
+  }
+  return count;
+}
+
+function countAvoidPairsWithMembers(
+  memberId: string,
+  members: ClosingPartyGroupMember[],
+  avoidPairs?: Map<string, Set<string>>
+): number {
+  if (!avoidPairs) return 0;
+  const avoidSet = avoidPairs.get(memberId);
+  if (!avoidSet) return 0;
+  let count = 0;
+  for (const member of members) {
+    if (member.participantId !== memberId && avoidSet.has(member.participantId)) count++;
+  }
+  return count;
+}
+
+function hasAvoidConflict(
+  memberId: string,
+  members: ClosingPartyGroupMember[],
+  avoidPairs?: Map<string, Set<string>>
+): boolean {
+  if (!avoidPairs) return false;
+  const avoidSet = avoidPairs.get(memberId);
+  if (!avoidSet) return false;
+  return members.some(
+    (member) => member.participantId !== memberId && avoidSet.has(member.participantId)
+  );
 }
 
 function recalculateGroupMetrics(
@@ -1032,7 +1178,8 @@ function canSwapMaintainBalance(
   groupB: ClosingPartyGroup,
   memberFromA: ClosingPartyGroupMember,
   memberFromB: ClosingPartyGroupMember,
-  participantInfoMap: Map<string, ParticipantInfo>
+  participantInfoMap: Map<string, ParticipantInfo>,
+  avoidPairs?: Map<string, Set<string>>
 ): boolean {
   // 가상 교환 후 성비 계산
   const newMembersA = groupA.members
@@ -1047,10 +1194,16 @@ function canSwapMaintainBalance(
   const countB = countGenderInGroup(newMembersB, participantInfoMap);
 
   // 양쪽 모두 균형이 유지되어야 함
-  return (
-    !isGenderImbalanced(countA) &&
-    !isGenderImbalanced(countB)
-  );
+  if (isGenderImbalanced(countA) || isGenderImbalanced(countB)) {
+    return false;
+  }
+
+  if (avoidPairs) {
+    if (hasAvoidConflict(memberFromB.participantId, newMembersA, avoidPairs)) return false;
+    if (hasAvoidConflict(memberFromA.participantId, newMembersB, avoidPairs)) return false;
+  }
+
+  return true;
 }
 
 /**
@@ -1082,7 +1235,8 @@ function trySwapForBalance(
   dominantGender: 'male' | 'female',
   minorityGender: 'male' | 'female',
   participantInfoMap: Map<string, ParticipantInfo>,
-  matrix: AffinityMatrix
+  matrix: AffinityMatrix,
+  avoidPairs?: Map<string, Set<string>>
 ): void {
   // 불균형 그룹에서 과잉 성별 멤버 찾기 (친밀도 낮은 순)
   const dominantMembers = imbalancedGroup.members
@@ -1138,7 +1292,8 @@ function trySwapForBalance(
             otherGroup,
             candidate.member,
             swapTarget,
-            participantInfoMap
+            participantInfoMap,
+            avoidPairs
           )
         ) {
           // 실제 교환 수행
@@ -1182,7 +1337,8 @@ function trySwapForBalance(
 function balanceGenderAcrossGroups(
   groups: ClosingPartyGroup[],
   participantInfoMap: Map<string, ParticipantInfo>,
-  matrix: AffinityMatrix
+  matrix: AffinityMatrix,
+  avoidPairs?: Map<string, Set<string>>
 ): void {
   // 불참조(absent)는 제외
   const activeGroups = groups.filter((g) => g.groupId !== 'absent');
@@ -1210,7 +1366,8 @@ function balanceGenderAcrossGroups(
       dominantGender,
       minorityGender,
       participantInfoMap,
-      matrix
+      matrix,
+      avoidPairs
     );
   }
 }
