@@ -83,7 +83,7 @@ ${input.callScript}
 `;
 
     const result = await generateText({
-      model: google('gemini-3-pro-preview'),
+      model: google('gemini-3-flash-preview'),
       system: SYSTEM_PROMPT,
       prompt: userPrompt,
     });
