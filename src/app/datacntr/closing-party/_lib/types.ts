@@ -29,7 +29,9 @@ export interface StatsResponse {
  */
 export interface GroupsResponse {
   groups: ClosingPartyGroup[] | null;
+  groupsRound2: ClosingPartyGroup[] | null;
   groupFormationAt: any;
+  groupFormationAtRound2: any;
   hasClusterData: boolean;
   totalParticipants: number;
 }

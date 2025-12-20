@@ -31,6 +31,7 @@ export function useClosingParty() {
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [groupsData, setGroupsData] = useState<GroupsResponse | null>(null);
   const [formingGroups, setFormingGroups] = useState(false);
+  const [groupRound, setGroupRound] = useState<'round1' | 'round2'>('round1');
 
   // DnD 상태
   const [activeMember, setActiveMember] = useState<{
@@ -173,7 +174,8 @@ export function useClosingParty() {
     setActiveMember(null);
     setOverGroupId(null);
 
-    if (!over || !user || !selectedCohortId || !groupsData?.groups) return;
+    const activeGroups = groupRound === 'round2' ? groupsData?.groupsRound2 : groupsData?.groups;
+    if (!over || !user || !selectedCohortId || !activeGroups) return;
 
     const activeData = active.data.current as { member: ClosingPartyGroupMember; groupId: string };
     const overId = over.id as string;
@@ -183,7 +185,7 @@ export function useClosingParty() {
     if (overId.startsWith('absent')) {
       toGroupId = 'absent';
     } else {
-      for (const group of groupsData.groups) {
+      for (const group of activeGroups) {
         if (overId.startsWith(group.groupId)) {
           toGroupId = group.groupId;
           break;
@@ -206,12 +208,19 @@ export function useClosingParty() {
           participantId: activeData.member.participantId,
           fromGroupId: activeData.groupId,
           toGroupId,
+          round: groupRound === 'round2' ? 2 : 1,
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        setGroupsData((prev) => (prev ? { ...prev, groups: result.groups } : prev));
+        setGroupsData((prev) => {
+          if (!prev) return prev;
+          if (groupRound === 'round2') {
+            return { ...prev, groupsRound2: result.groups };
+          }
+          return { ...prev, groups: result.groups };
+        });
       } else {
         setError('멤버 이동에 실패했습니다.');
       }
@@ -243,6 +252,8 @@ export function useClosingParty() {
     groupsLoading,
     groupsData,
     formingGroups,
+    groupRound,
+    setGroupRound,
     activeMember,
     overGroupId,
     sensors,

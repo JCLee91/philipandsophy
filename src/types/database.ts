@@ -526,6 +526,8 @@ export interface ClosingPartyStats {
   // 조 편성 결과 (v2)
   groups?: ClosingPartyGroup[];
   groupFormationAt?: Timestamp;
+  groupsRound2?: ClosingPartyGroup[];
+  groupFormationAtRound2?: Timestamp;
 }
 
 /**
@@ -546,4 +548,3 @@ export interface ClosingPartyGroup {
   tier: 'active' | 'moderate' | 'inactive' | 'mixed';
   averageAffinity: number; // 그룹 내 평균 친밀도
 }
-

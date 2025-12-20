@@ -172,6 +172,8 @@ export default function ClosingPartyPage() {
             groupsLoading={party.groupsLoading}
             groupsData={party.groupsData}
             formingGroups={party.formingGroups}
+            groupRound={party.groupRound}
+            onGroupRoundChange={party.setGroupRound}
             activeMember={party.activeMember}
             overGroupId={party.overGroupId}
             sensors={party.sensors}

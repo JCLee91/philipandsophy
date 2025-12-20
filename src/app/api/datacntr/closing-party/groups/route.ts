@@ -21,6 +21,7 @@ interface DailyMatchingEntry {
 
 type Tier = 'active' | 'moderate' | 'inactive' | 'mixed';
 type AffinityMatrix = Map<string, Map<string, number>>;
+type AffinityStrategy = 'high' | 'low';
 
 // 인원 제한 상수
 const GROUP_SIZE = {
@@ -48,6 +49,32 @@ interface ParticipantInfo {
   gender?: 'male' | 'female' | 'other';
 }
 
+interface ReserveMember {
+  member: ClosingPartyGroupMember;
+  fromGroupId: string;
+}
+
+function normalizeGroups(groups: ClosingPartyGroup[] | null): ClosingPartyGroup[] | null {
+  if (!groups) return null;
+
+  return groups.map((group: any) => {
+    if (group.members && Array.isArray(group.members)) {
+      return group;
+    }
+    if (group.memberIds && group.memberNames) {
+      return {
+        ...group,
+        members: group.memberIds.map((id: string, idx: number) => ({
+          participantId: id,
+          name: group.memberNames[idx] || 'Unknown',
+          submissionCount: 0,
+        })),
+      };
+    }
+    return { ...group, members: [] };
+  });
+}
+
 /**
  * GET /api/datacntr/closing-party/groups
  */
@@ -70,7 +97,11 @@ export async function GET(request: NextRequest) {
     if (!statsDoc.exists) {
       return NextResponse.json({
         groups: null,
+        groupsRound2: null,
+        groupFormationAt: null,
+        groupFormationAtRound2: null,
         hasClusterData: false,
+        totalParticipants: 0,
         message: '통계가 아직 계산되지 않았습니다.',
       });
     }
@@ -87,33 +118,14 @@ export async function GET(request: NextRequest) {
       (entry) => entry.matchingVersion === 'cluster' && entry.clusters
     );
 
-    // 이전 데이터 구조 호환성 처리 (memberIds/memberNames → members)
-    let groups = stats.groups || null;
-    if (groups) {
-      groups = groups.map((group: any) => {
-        // 이미 새 구조면 그대로 반환
-        if (group.members && Array.isArray(group.members)) {
-          return group;
-        }
-        // 이전 구조면 변환
-        if (group.memberIds && group.memberNames) {
-          return {
-            ...group,
-            members: group.memberIds.map((id: string, idx: number) => ({
-              participantId: id,
-              name: group.memberNames[idx] || 'Unknown',
-              submissionCount: 0,
-            })),
-          };
-        }
-        // 빈 members 배열로 초기화
-        return { ...group, members: [] };
-      });
-    }
+    const groups = normalizeGroups(stats.groups || null);
+    const groupsRound2 = normalizeGroups(stats.groupsRound2 || null);
 
     return NextResponse.json({
       groups,
+      groupsRound2,
       groupFormationAt: stats.groupFormationAt || null,
+      groupFormationAtRound2: stats.groupFormationAtRound2 || null,
       hasClusterData,
       totalParticipants: stats.totalParticipants,
     });
@@ -229,27 +241,50 @@ export async function POST(request: NextRequest) {
       actualSubmissionCounts,
       participantInfoMap,
       normalizedTargetGroupSize,
-      hasClusterData
+      hasClusterData,
+      'high'
+    );
+    const groupsRound2 = formGroups(
+      activeParticipantIds,
+      matrix,
+      clusterCounts,
+      actualSubmissionCounts,
+      participantInfoMap,
+      normalizedTargetGroupSize,
+      hasClusterData,
+      'low'
     );
 
     // 8. 불참조 추가 (기존 불참자가 있는 경우)
     if (existingAbsentGroup && existingAbsentGroup.members.length > 0) {
-      groups.push(existingAbsentGroup);
+      const absentGroupCopy = {
+        ...existingAbsentGroup,
+        members: [...existingAbsentGroup.members],
+      };
+      groups.push(absentGroupCopy);
+      groupsRound2.push({
+        ...absentGroupCopy,
+        members: [...absentGroupCopy.members],
+      });
     }
 
     // 9. 저장
+    const groupFormationAt = Timestamp.now();
     await db.collection(COLLECTIONS.CLOSING_PARTY_STATS).doc(cohortId).update({
       groups,
-      groupFormationAt: Timestamp.now(),
+      groupFormationAt,
+      groupsRound2,
+      groupFormationAtRound2: groupFormationAt,
     });
 
     return NextResponse.json({
       success: true,
       groups,
+      groupsRound2,
       hasClusterData,
       message: hasClusterData
-        ? '친밀도 기반으로 조가 편성되었습니다.'
-        : '친밀도 데이터가 없어 기본 규칙으로 조가 편성되었습니다.',
+        ? '1부/2부 조가 편성되었습니다.'
+        : '친밀도 데이터가 없어 기본 규칙으로 1부/2부 조가 편성되었습니다.',
     });
   } catch (error) {
     logger.error('조 편성 실패:', error);
@@ -267,7 +302,7 @@ export async function PUT(request: NextRequest) {
     if (auth.error) return auth.error;
 
     const body = await request.json();
-    const { cohortId, participantId, fromGroupId, toGroupId } = body;
+    const { cohortId, participantId, fromGroupId, toGroupId, round = 1 } = body;
 
     if (!cohortId || !participantId || !fromGroupId || !toGroupId) {
       return NextResponse.json({ error: '필수 파라미터가 누락되었습니다' }, { status: 400 });
@@ -281,11 +316,15 @@ export async function PUT(request: NextRequest) {
     }
 
     const stats = statsDoc.data() as ClosingPartyStats;
-    if (!stats.groups) {
-      return NextResponse.json({ error: '조 편성이 아직 되지 않았습니다' }, { status: 400 });
+    const groupsKey = round === 2 ? 'groupsRound2' : 'groups';
+    const formationKey = round === 2 ? 'groupFormationAtRound2' : 'groupFormationAt';
+    const roundLabel = round === 2 ? '2부' : '1부';
+
+    if (!(stats as any)[groupsKey]) {
+      return NextResponse.json({ error: `${roundLabel} 조 편성이 아직 되지 않았습니다` }, { status: 400 });
     }
 
-    const groups = [...stats.groups];
+    const groups = [...(((stats as any)[groupsKey] as ClosingPartyGroup[]) || [])];
     const fromGroup = groups.find((g) => g.groupId === fromGroupId);
     let toGroup = groups.find((g) => g.groupId === toGroupId);
 
@@ -328,15 +367,15 @@ export async function PUT(request: NextRequest) {
     );
 
     await db.collection(COLLECTIONS.CLOSING_PARTY_STATS).doc(cohortId).update({
-      groups: filteredGroups,
-      groupFormationAt: Timestamp.now(),
+      [groupsKey]: filteredGroups,
+      [formationKey]: Timestamp.now(),
     });
 
     const targetName = toGroupId === 'absent' ? '불참조' : `${toGroup.groupNumber}조`;
     return NextResponse.json({
       success: true,
       groups: filteredGroups,
-      message: `${member.name}님을 ${targetName}로 이동했습니다.`,
+      message: `${member.name}님을 ${roundLabel} ${targetName}로 이동했습니다.`,
     });
   } catch (error) {
     logger.error('조원 이동 실패:', error);
@@ -391,7 +430,8 @@ function formGroups(
   actualSubmissionCounts: Map<string, number>,
   participantInfoMap: Map<string, ParticipantInfo>,
   targetGroupSize: number,
-  hasClusterData: boolean
+  hasClusterData: boolean,
+  affinityStrategy: AffinityStrategy
 ): ClosingPartyGroup[] {
   // Tier 기준값 계산 (표시용)
   const maxSubmissions = Math.max(...Array.from(actualSubmissionCounts.values()), 1);
@@ -400,7 +440,11 @@ function formGroups(
   const candidates = [...allParticipantIds];
   let groupNumber = 1;
 
-  logger.info(`Forming groups for ${candidates.length} participants using pure affinity`);
+  logger.info(
+    `Forming groups for ${candidates.length} participants using ${
+      affinityStrategy === 'high' ? 'high' : 'low'
+    } affinity`
+  );
 
   // 순수 친밀도 기반 그룹핑 (Tier 분리 없음)
   while (candidates.length >= GROUP_SIZE.MIN) {
@@ -412,7 +456,7 @@ function formGroups(
       targetGroupSize,
       maxSubmissions,
       groupNumber++,
-      hasClusterData
+      affinityStrategy
     );
 
     if (group.members.length > 0) {
@@ -436,8 +480,30 @@ function formGroups(
       participantInfoMap,
       maxSubmissions,
       targetGroupSize,
-      groupNumber
+      groupNumber,
+      affinityStrategy
     );
+  }
+
+  if (affinityStrategy === 'high') {
+    const { reserveMembers, touchedGroups } = extractReserveMembers(
+      groups,
+      targetGroupSize,
+      matrix
+    );
+    if (reserveMembers.length > 0) {
+      distributeReserveMembers(
+        groups,
+        reserveMembers,
+        participantInfoMap,
+        matrix,
+        touchedGroups
+      );
+
+      for (const group of touchedGroups) {
+        recalculateGroupMetrics(group, matrix, maxSubmissions);
+      }
+    }
   }
 
   // 성비 균형 후처리
@@ -454,23 +520,29 @@ function formSingleGroup(
   targetSize: number,
   maxSubmissions: number,
   groupNumber: number,
-  hasClusterData: boolean
+  affinityStrategy: AffinityStrategy
 ): ClosingPartyGroup {
   if (candidates.length === 0) {
     return { groupId: '', groupNumber, members: [], tier: 'inactive', averageAffinity: 0 };
   }
 
-  // 시드 선택: 총 친밀도 합이 가장 높은 사람
+  const prefersHighAffinity = affinityStrategy === 'high';
+
+  // 시드 선택: 총 친밀도 합이 높은(또는 낮은) 사람
   let seed = candidates[0];
-  let maxTotalAffinity = 0;
+  let bestTotalAffinity = prefersHighAffinity ? -1 : Number.POSITIVE_INFINITY;
 
   for (const pid of candidates) {
     let total = 0;
     for (const other of candidates) {
       if (other !== pid) total += matrix.get(pid)?.get(other) || 0;
     }
-    if (total > maxTotalAffinity) {
-      maxTotalAffinity = total;
+    if (
+      (prefersHighAffinity && total > bestTotalAffinity) ||
+      (!prefersHighAffinity && total < bestTotalAffinity) ||
+      (total === bestTotalAffinity && pid < seed)
+    ) {
+      bestTotalAffinity = total;
       seed = pid;
     }
   }
@@ -482,7 +554,7 @@ function formSingleGroup(
   const effectiveTargetSize = Math.min(targetSize, GROUP_SIZE.MAX);
   while (group.length < effectiveTargetSize && remaining.length > 0) {
     let bestCandidate = remaining[0];
-    let bestScore = -1;
+    let bestScore = prefersHighAffinity ? -1 : Number.POSITIVE_INFINITY;
 
     for (const candidate of remaining) {
       // 친밀도 기반 점수 (그룹 내 모든 멤버와의 친밀도 합)
@@ -491,7 +563,11 @@ function formSingleGroup(
         score += matrix.get(member)?.get(candidate) || 0;
       }
 
-      if (score > bestScore || (score === bestScore && candidate < bestCandidate)) {
+      if (
+        (prefersHighAffinity && score > bestScore) ||
+        (!prefersHighAffinity && score < bestScore) ||
+        (score === bestScore && candidate < bestCandidate)
+      ) {
         bestScore = score;
         bestCandidate = candidate;
       }
@@ -536,9 +612,12 @@ function handleRemainingParticipants(
   participantInfoMap: Map<string, ParticipantInfo>,
   maxSubmissions: number,
   targetSize: number,
-  nextGroupNumber: number
+  nextGroupNumber: number,
+  affinityStrategy: AffinityStrategy
 ): void {
   if (remaining.length === 0) return;
+
+  const prefersHighAffinity = affinityStrategy === 'high';
 
   // GROUP_SIZE.MIN(4명) 이상이면 새 조 생성
   if (remaining.length >= GROUP_SIZE.MIN) {
@@ -593,7 +672,83 @@ function handleRemainingParticipants(
     return;
   }
 
-  // 3명 이하면 기존 조에 분배 (GROUP_SIZE.MAX까지 허용, 친밀도 높은 조 우선)
+  // 남은 인원이 적으면 별도 풀을 만들기 위해 기존 조에서 최소 친밀도 멤버를 빼냄
+  if (remaining.length < GROUP_SIZE.MIN) {
+    const neededForPool = GROUP_SIZE.MIN - remaining.length;
+    const removableCandidates: Array<{
+      group: ClosingPartyGroup;
+      member: ClosingPartyGroupMember;
+      affinitySum: number;
+    }> = [];
+
+    for (const group of groups) {
+      const removableCount = Math.max(group.members.length - GROUP_SIZE.MIN, 0);
+      if (removableCount === 0) continue;
+
+      const sortedMembers = group.members
+        .map((member) => ({
+          member,
+          affinitySum: calculateMemberAffinity(member.participantId, group.members, matrix),
+        }))
+        .sort((a, b) => a.affinitySum - b.affinitySum)
+        .slice(0, removableCount);
+
+      for (const entry of sortedMembers) {
+        removableCandidates.push({ group, ...entry });
+      }
+    }
+
+    if (removableCandidates.length >= neededForPool) {
+      const selected = removableCandidates
+        .sort((a, b) => a.affinitySum - b.affinitySum)
+        .slice(0, neededForPool);
+      const removedIds: string[] = [];
+      const touchedGroups = new Set<ClosingPartyGroup>();
+
+      for (const candidate of selected) {
+        const idx = candidate.group.members.findIndex(
+          (m) => m.participantId === candidate.member.participantId
+        );
+        if (idx === -1) continue;
+        candidate.group.members.splice(idx, 1);
+        removedIds.push(candidate.member.participantId);
+        touchedGroups.add(candidate.group);
+      }
+
+      if (removedIds.length === neededForPool) {
+        for (const group of touchedGroups) {
+          group.averageAffinity = calculateAverageAffinity(
+            group.members.map((m) => m.participantId),
+            matrix
+          );
+
+          const avgSubmissions =
+            group.members.reduce((sum, m) => sum + m.submissionCount, 0) / group.members.length;
+          const avgRatio = avgSubmissions / maxSubmissions;
+          group.tier = avgRatio >= 0.7 ? 'active' : avgRatio >= 0.3 ? 'moderate' : 'inactive';
+        }
+
+        const poolIds = remaining.concat(removedIds);
+        const poolGroup = formSingleGroup(
+          poolIds,
+          matrix,
+          actualSubmissionCounts,
+          participantInfoMap,
+          targetSize,
+          maxSubmissions,
+          nextGroupNumber,
+          affinityStrategy
+        );
+
+        if (poolGroup.members.length > 0) {
+          groups.push(poolGroup);
+          return;
+        }
+      }
+    }
+  }
+
+  // 3명 이하면 기존 조에 분배 (GROUP_SIZE.MAX까지 허용, 전략 기준 분배)
   for (let i = 0; i < remaining.length; i++) {
     const pid = remaining[i];
     const eligibleGroups = groups.filter((group) => group.members.length < GROUP_SIZE.MAX);
@@ -626,7 +781,7 @@ function handleRemainingParticipants(
     }
 
     let bestGroup = eligibleGroups[0];
-    let bestScore = -1;
+    let bestScore = prefersHighAffinity ? -1 : Number.POSITIVE_INFINITY;
 
     for (const group of eligibleGroups) {
       let score = 0;
@@ -635,7 +790,8 @@ function handleRemainingParticipants(
       }
 
       if (
-        score > bestScore ||
+        (prefersHighAffinity && score > bestScore) ||
+        (!prefersHighAffinity && score < bestScore) ||
         (score === bestScore && group.members.length < bestGroup.members.length)
       ) {
         bestScore = score;
@@ -670,6 +826,80 @@ function calculateAverageAffinity(memberIds: string[], matrix: AffinityMatrix): 
     }
   }
   return pairs > 0 ? Math.round((total / pairs) * 100) / 100 : 0;
+}
+
+function recalculateGroupMetrics(
+  group: ClosingPartyGroup,
+  matrix: AffinityMatrix,
+  maxSubmissions: number
+): void {
+  if (group.members.length === 0) {
+    group.averageAffinity = 0;
+    group.tier = 'inactive';
+    return;
+  }
+
+  group.averageAffinity = calculateAverageAffinity(
+    group.members.map((m) => m.participantId),
+    matrix
+  );
+
+  const avgSubmissions =
+    group.members.reduce((sum, m) => sum + m.submissionCount, 0) / group.members.length;
+  const avgRatio = avgSubmissions / maxSubmissions;
+  group.tier = avgRatio >= 0.7 ? 'active' : avgRatio >= 0.3 ? 'moderate' : 'inactive';
+}
+
+function extractReserveMembers(
+  groups: ClosingPartyGroup[],
+  targetGroupSize: number,
+  matrix: AffinityMatrix
+): { reserveMembers: ReserveMember[]; touchedGroups: Set<ClosingPartyGroup> } {
+  const activeGroups = groups.filter((g) => g.groupId !== 'absent');
+  const candidateByGroup = activeGroups
+    .filter((group) => group.members.length > GROUP_SIZE.MIN)
+    .map((group) => {
+      const sortedMembers = group.members
+        .map((member) => ({
+          member,
+          submissionCount: member.submissionCount || 0,
+          affinitySum: calculateMemberAffinity(member.participantId, group.members, matrix),
+        }))
+        .sort((a, b) => {
+          if (a.submissionCount !== b.submissionCount) {
+            return a.submissionCount - b.submissionCount;
+          }
+          return a.affinitySum - b.affinitySum;
+        });
+
+      return { group, ...sortedMembers[0] };
+    });
+
+  const reserveSize = Math.min(targetGroupSize, candidateByGroup.length);
+  const selected = candidateByGroup
+    .sort((a, b) => {
+      if (a.submissionCount !== b.submissionCount) {
+        return a.submissionCount - b.submissionCount;
+      }
+      return a.affinitySum - b.affinitySum;
+    })
+    .slice(0, reserveSize);
+
+  const reserveMembers: ReserveMember[] = [];
+  const touchedGroups = new Set<ClosingPartyGroup>();
+
+  for (const entry of selected) {
+    const idx = entry.group.members.findIndex(
+      (member) => member.participantId === entry.member.participantId
+    );
+    if (idx === -1) continue;
+
+    const [member] = entry.group.members.splice(idx, 1);
+    reserveMembers.push({ member, fromGroupId: entry.group.groupId });
+    touchedGroups.add(entry.group);
+  }
+
+  return { reserveMembers, touchedGroups };
 }
 
 // ============================================================
@@ -727,6 +957,71 @@ function calculateMemberAffinity(
     }
   }
   return sum;
+}
+
+function distributeReserveMembers(
+  groups: ClosingPartyGroup[],
+  reserveMembers: ReserveMember[],
+  participantInfoMap: Map<string, ParticipantInfo>,
+  matrix: AffinityMatrix,
+  touchedGroups: Set<ClosingPartyGroup>
+): void {
+  if (reserveMembers.length === 0) return;
+
+  const activeGroups = groups.filter((g) => g.groupId !== 'absent');
+  const orderedReserve = [...reserveMembers].sort((a, b) => {
+    const diff = (a.member.submissionCount || 0) - (b.member.submissionCount || 0);
+    if (diff !== 0) return diff;
+    return a.member.participantId.localeCompare(b.member.participantId);
+  });
+
+  for (const reserve of orderedReserve) {
+    const eligibleGroups = activeGroups.filter((group) => group.members.length < GROUP_SIZE.MAX);
+    if (eligibleGroups.length === 0) break;
+
+    let candidateGroups = eligibleGroups.filter((group) => group.groupId !== reserve.fromGroupId);
+    if (candidateGroups.length === 0) {
+      candidateGroups = eligibleGroups;
+    }
+
+    let bestGroup = candidateGroups[0];
+    let bestScore = -Infinity;
+
+    for (const group of candidateGroups) {
+      const beforeCount = countGenderInGroup(group.members, participantInfoMap);
+      const afterCount = countGenderInGroup(
+        group.members.concat(reserve.member),
+        participantInfoMap
+      );
+      const beforeImbalanced = isGenderImbalanced(beforeCount);
+      const afterImbalanced = isGenderImbalanced(afterCount);
+
+      let balanceScore = 0;
+      if (beforeImbalanced && !afterImbalanced) {
+        balanceScore = 3;
+      } else if (!beforeImbalanced && !afterImbalanced) {
+        balanceScore = 2;
+      } else if (beforeImbalanced && afterImbalanced) {
+        balanceScore = 1;
+      }
+
+      const affinityScore = calculateMemberAffinity(
+        reserve.member.participantId,
+        group.members,
+        matrix
+      );
+      const sizeScore = GROUP_SIZE.MAX - group.members.length;
+      const score = balanceScore * 10000 + affinityScore * 10 + sizeScore;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestGroup = group;
+      }
+    }
+
+    bestGroup.members.push(reserve.member);
+    touchedGroups.add(bestGroup);
+  }
 }
 
 /**
