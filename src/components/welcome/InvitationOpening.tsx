@@ -39,7 +39,7 @@ export default function InvitationOpening({ name, welcomeMessage }: InvitationOp
                     transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight"
                 >
-                    환영합니다, {firstName}님
+                    환영합니다, {firstName}님!
                 </motion.h1>
 
                 {/* Approval message */}
