@@ -508,11 +508,15 @@ export default function PostProgramView({
                                                                 <span className="text-[14px] font-bold text-[#333D4B] text-left truncate">
                                                                     {getFirstName(companion.name)}
                                                                 </span>
-                                                                <span className="text-[11px] text-[#8B95A1] text-left truncate mt-0.5 tracking-tight">
-                                                                    {occupation ? `${occupation} · ` : ''}
-                                                                    {companion.count > 0 ? `${companion.count}회 만남` : '아직 만남 없음'}
-                                                                </span>
+                                                                {occupation && (
+                                                                    <span className="text-[11px] text-[#8B95A1] text-left truncate mt-0.5 tracking-tight">
+                                                                        {occupation}
+                                                                    </span>
+                                                                )}
                                                             </div>
+                                                            <span className="text-[12px] text-[#8B95A1] shrink-0">
+                                                                {companion.count > 0 ? `${companion.count}회` : '-'}
+                                                            </span>
                                                             <svg
                                                                 width="20"
                                                                 height="20"
