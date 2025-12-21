@@ -13,7 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { findLatestClusterMatching, findClusterById } from '@/lib/matching-utils';
-import { getSubmissionDate, isMatchingInProgress, isAfterProgram } from '@/lib/date-utils';
+import { getSubmissionDate, isMatchingInProgress, isAfterProgram, canViewAllProfilesWithoutAuth } from '@/lib/date-utils';
 import { appRoutes } from '@/lib/navigation';
 import { getFirstName } from '@/lib/utils';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
@@ -30,9 +30,13 @@ export function useTodayLibraryV3() {
 
   const { participant, isLoading: sessionLoading } = useAuth();
   const currentUserId = participant?.id;
-  const { isSuperAdmin, isLocked } = useAccessControl();
+  const { isSuperAdmin, isLocked: isLockedByAuth } = useAccessControl();
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
+
+  // 프로그램 종료 후에는 인증 잠금 해제
+  const isAfterProgramWithoutAuth = cohort ? canViewAllProfilesWithoutAuth(cohort) : false;
+  const isLocked = isLockedByAuth && !isAfterProgramWithoutAuth;
   const { toast } = useToast();
   const { showLockedToast } = useLockedToast();
 
