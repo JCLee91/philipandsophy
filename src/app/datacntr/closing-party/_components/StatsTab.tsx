@@ -29,9 +29,9 @@ interface StatsTabProps {
 export default function StatsTab({ stats, participantSubmissions }: StatsTabProps) {
   const [copied, setCopied] = useState(false);
 
-  // 인증 횟수 텍스트 생성 (이름*횟수, 이름*횟수 형식)
+  // 인증 횟수 텍스트 생성 (이름*횟수, 이름*횟수 형식) - 성 제외
   const submissionText = participantSubmissions
-    ?.map((p) => `${p.name}*${p.submissionCount}`)
+    ?.map((p) => `${p.name.slice(1)}*${p.submissionCount}`)
     .join(', ') || '';
 
   const handleCopy = async () => {
