@@ -39,7 +39,7 @@ function getHeaders(): HeadersInit {
  * 에어테이블에서 설정한 뷰(View)를 사용하여 필터링
  * - 뷰에서 필터 조건 관리 (합격, URL 없음 등)
  */
-export async function fetchPendingRecords(): Promise<AirtableRecord[]> {
+export async function fetchPendingRecords(limit?: number): Promise<AirtableRecord[]> {
   const viewId = process.env.AIRTABLE_VIEW_ID;
 
   if (!viewId) {
@@ -50,11 +50,15 @@ export async function fetchPendingRecords(): Promise<AirtableRecord[]> {
   if (viewId) {
     params.set('view', viewId);
   }
+  if (limit) {
+    params.set('maxRecords', limit.toString());
+  }
 
   const url = `${getApiUrl()}?${params.toString()}`;
 
   logger.info('Fetching pending records from Airtable', {
     viewId: viewId || 'none',
+    limit: limit || 'none',
   });
 
   const response = await fetch(url, {

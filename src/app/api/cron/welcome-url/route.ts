@@ -255,7 +255,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
     });
 
     // 3. 에어테이블에서 처리 대상 레코드 조회
-    const pendingRecords = await fetchPendingRecords();
+    const MAX_RECORDS_PER_RUN = 2; // Vercel Timeout 방지를 위한 배치 사이즈 제한
+
+    const pendingRecords = await fetchPendingRecords(MAX_RECORDS_PER_RUN);
 
     if (pendingRecords.length === 0) {
       logger.info('No pending records found');
