@@ -20,6 +20,7 @@
     "stats:cohort1": "tsx scripts/generate-cohort1-statistics.ts",
     "test:phone": "tsx scripts/test-phone-normalization.ts",
     "test:doc-id": "tsx scripts/test-document-id-format.ts",
+    "eval:welcome": "tsx scripts/eval-welcome-message.ts --input tests/fixtures/welcome-eval.jsonl",
     "check:template": "tsx scripts/check-cohort-template.ts",
     "check:daily-questions": "tsx scripts/check-daily-questions-page.ts",
     "check:participation-code": "tsx scripts/check-participation-code.ts",

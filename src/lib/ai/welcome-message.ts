@@ -1,5 +1,8 @@
+import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
-import { generateText } from 'ai';
+import { generateText, generateObject } from 'ai';
+import { z } from 'zod';
 import { logger } from '@/lib/logger';
 
 export interface WelcomeMessageInput {
@@ -10,6 +13,15 @@ export interface WelcomeMessageInput {
 export interface WelcomeMessageResult {
   success: boolean;
   message?: string;
+  error?: string;
+}
+
+interface WelcomeMessageEvalResult {
+  pass: boolean;
+  length: number;
+  lengthOk: boolean;
+  bannedHits: string[];
+  unsupportedSentences: string[];
   error?: string;
 }
 
@@ -29,7 +41,7 @@ const SYSTEM_PROMPT = `당신은 필립앤소피 소셜클럽의 환영 초대�
 - "나를 위해 쓴 메시지"라고 느끼게 할 것
 
 ## 작성 규칙
-1. **길이**: 3-4문장 (100-150자 내외)
+1. **길이**: **절대 3문장 이하**, 공백 포함 150자 미만 필수. (간결하게 작성)
 2. **어조**: 품격 있으면서 따뜻한 해요체. 초대장다운 격식과 친근함의 균형
 3. **구조**:
    - 첫 문장: **구체적 디테일 훅** - 인터뷰에서 나온 고유한 내용으로 시작
@@ -48,6 +60,8 @@ const SYSTEM_PROMPT = `당신은 필립앤소피 소셜클럽의 환영 초대�
    - ❌ "독서 클럽"이라는 표현
    - ❌ 지나치게 캐주얼한 말투 ("ㅎㅎ", "~죠?")
    - ❌ 인터뷰 내용을 해석하거나 추론하지 말 것 (말한 그대로만 반영)
+   - ❌ **시점/빈도 추측 금지**: "주말마다", "퇴근 후", "항상", "자주" 등 인터뷰에 없는 시점 언급 절대 금지
+   - ❌ **구체적 장소/행동 날조 금지**: 인터뷰에 없는 구체적 행동 묘사 금지
 
 ## 좋은 예시 vs 나쁜 예시
 
@@ -65,14 +79,153 @@ const SYSTEM_PROMPT = `당신은 필립앤소피 소셜클럽의 환영 초대�
 ### 좋은 예시 (직업 + 취미 연결)
 "평일엔 데이터를 다루시고, 주말엔 LP바에서 재즈를 들으신다니 멋진 균형이네요. 필립앤소피에도 일과 취향 사이에서 자신만의 리듬을 찾는 분들이 많습니다. 좋은 대화가 기다리고 있을 거예요."`;
 
+const MAX_GENERATION_ATTEMPTS = 3;
+const WELCOME_MESSAGE_MIN_LENGTH = 100;
+const WELCOME_MESSAGE_MAX_LENGTH = 150;
+const WELCOME_MESSAGE_BANNED_PHRASES = [
+  '독서 클럽',
+  '독서클럽',
+  '좋은 분들 만나실 거예요',
+  '인상 깊었어요',
+  'ㅎㅎ',
+];
+
+const EVAL_SYSTEM_PROMPT = `You are an expert Hallucination Detector.
+Your job is to verify if the "Generated Message" is supported by the "Call Script".
+
+# CORE RESPONSIBILITY
+Identify **fabricated facts** about the user.
+
+# RULES
+1. **Scope**: Focus ONLY on factual claims about the **User** (Member).
+2. **Ignore**:
+   - Greetings ("Welcome to the club")
+   - Future tense / Promises ("You will enjoy this")
+   - General club descriptions ("We have many members")
+   - Subjective compliments ("You have great taste")
+3. **Hallucination Definition**: A statement is a hallucination IF AND ONLY IF:
+   - It claims a specific fact about the user's past, present, job, habits, or preferences.
+   - AND that fact is NOT found in the source script.
+   - AND that fact is NOT a reasonable inference (e.g. "runs in park" -> "likes exercise" is OK; "runs in park" -> "runs every weekend" is HALLUCINATION).
+
+# EXAMPLES
+
+Script: "I like reading novels."
+Message: "You enjoy reading novels."
+Result: SUPPORTED (Direct match)
+
+Script: "I like reading novels."
+Message: "You are a thoughtful person."
+Result: SUPPORTED (Subjective compliment, ignore)
+
+Script: "I work at a bank."
+Message: "You work in finance."
+Result: SUPPORTED (Reasonable inference)
+
+Script: "I run specifically at Han River."
+Message: "You enjoy running at Han River on weekends."
+Result: UNSUPPORTED (Hallucination: "on weekends" is not in script)
+
+Script: "I like jazz."
+Message: "Our other members also like jazz, so you will fit in."
+Result: SUPPORTED (Club description / Future prediction, ignore)
+`;
+
+const SentenceEvalSchema = z.object({
+  sentence: z.string(),
+  category: z.enum(['FACT', 'GREETING', 'CONTEXT', 'OTHER']),
+  supported: z.boolean(),
+  evidence: z.string().optional(),
+  reason: z.string().optional(),
+});
+
+const WelcomeMessageEvalSchema = z.object({
+  sentenceEvals: z.array(SentenceEvalSchema),
+});
+
+
+
+function getEvalModel() {
+  const provider = process.env.EVAL_AI_PROVIDER || process.env.AI_PROVIDER || 'openai';
+  const modelName = process.env.EVAL_AI_MODEL || process.env.AI_MODEL || 'gpt-4o-mini';
+
+  switch (provider) {
+    case 'anthropic':
+      return anthropic(modelName);
+    case 'google':
+      return google(modelName);
+    case 'openai':
+    default:
+      return openai(modelName);
+  }
+}
+
+async function evaluateWelcomeMessage(
+  callScript: string,
+  message: string
+): Promise<WelcomeMessageEvalResult> {
+  const length = message.length;
+  const lengthOk = length >= WELCOME_MESSAGE_MIN_LENGTH && length <= WELCOME_MESSAGE_MAX_LENGTH;
+  const bannedHits = WELCOME_MESSAGE_BANNED_PHRASES.filter((phrase) => message.includes(phrase));
+
+  try {
+    const prompt = `Call script:
+${callScript}
+
+Message:
+${message}
+
+Tasks:
+1) Split the message into sentences.
+2) For each sentence, CLASSIFY its category:
+   - FACT: Claims a specific fact about the User (e.g. "You like X").
+   - GREETING: Welcome messages, salutations.
+   - CONTEXT: Club descriptions, future promises ("You will meet..."), general compliments.
+   - OTHER: Anything else.
+3) IF Category is FACT: Check if it is supported by the script. If yes, supported=true. If no, supported=false.
+4) IF Category is GREETING/CONTEXT/OTHER: ALWAYS mark supported=true.
+Return JSON.`;
+
+    const result = await generateObject({
+      model: getEvalModel(),
+      schema: WelcomeMessageEvalSchema,
+      system: EVAL_SYSTEM_PROMPT,
+      prompt,
+    });
+
+    const unsupportedSentences = result.object.sentenceEvals
+      .filter((item) => !item.supported)
+      .map((item) => item.sentence);
+
+    const pass = lengthOk && bannedHits.length === 0 && unsupportedSentences.length === 0;
+
+    return {
+      pass,
+      length,
+      lengthOk,
+      bannedHits,
+      unsupportedSentences,
+    };
+  } catch (error) {
+    logger.error('Welcome message eval failed', error);
+    return {
+      pass: false,
+      length,
+      lengthOk,
+      bannedHits,
+      unsupportedSentences: [],
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
 /**
  * 통화 녹취록을 기반으로 AI 맞춤 환영 메시지를 생성합니다.
  */
 export async function generateWelcomeMessage(
   input: WelcomeMessageInput
 ): Promise<WelcomeMessageResult> {
-  try {
-    const userPrompt = `
+  const basePrompt = `
 멤버 이름: ${input.memberName}
 
 인터뷰 스크립트:
@@ -82,36 +235,63 @@ ${input.callScript}
 메시지만 출력하세요 (다른 설명 없이).
 `;
 
-    const result = await generateText({
-      model: google('gemini-3-flash-preview'),
-      system: SYSTEM_PROMPT,
-      prompt: userPrompt,
-    });
+  let lastError = 'Unknown error';
 
-    const message = result.text.trim();
+  for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt += 1) {
+    try {
+      const userPrompt =
+        attempt > 1
+          ? `${basePrompt}\n주의: 이전 메시지가 검증에 실패했습니다. 통화 스크립트에 있는 정보만 사용하세요.`
+          : basePrompt;
 
-    if (!message || message.length < 20) {
-      logger.warn('AI generated message too short', { length: message?.length });
+      const result = await generateText({
+        model: google('gemini-3-flash-preview'),
+        system: SYSTEM_PROMPT,
+        prompt: userPrompt,
+      });
+
+      const message = result.text.trim();
+
+      if (!message) {
+        lastError = 'Generated message empty';
+        logger.warn('AI generated empty welcome message', { attempt });
+        continue;
+      }
+
+      const evalResult = await evaluateWelcomeMessage(input.callScript, message);
+
+      if (!evalResult.pass) {
+        lastError = 'Welcome message failed evaluation';
+        logger.warn('Welcome message failed evaluation', {
+          attempt,
+          message, // Log the actual message
+          length: evalResult.length,
+          lengthOk: evalResult.lengthOk,
+          bannedHits: evalResult.bannedHits,
+          unsupportedSentences: evalResult.unsupportedSentences, // Log the array of unsupported sentences
+          evalError: evalResult.error,
+        });
+        continue;
+      }
+
+      logger.info('Welcome message generated successfully', {
+        memberName: input.memberName,
+        messageLength: message.length,
+        attempt,
+      });
+
       return {
-        success: false,
-        error: 'Generated message too short',
+        success: true,
+        message,
       };
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to generate welcome message', error);
     }
-
-    logger.info('Welcome message generated successfully', {
-      memberName: input.memberName,
-      messageLength: message.length,
-    });
-
-    return {
-      success: true,
-      message,
-    };
-  } catch (error) {
-    logger.error('Failed to generate welcome message', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
   }
+
+  return {
+    success: false,
+    error: `${lastError} after ${MAX_GENERATION_ATTEMPTS} attempts`,
+  };
 }

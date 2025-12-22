@@ -167,7 +167,7 @@ npm run stats
 
 ### Firebase Console 확인
 
-1. **Firestore (Seoul DB)**:
+1. **Firestore (Default DB)**:
    - reading_submissions 생성 확인
    - participationCode 일관성
 
@@ -197,7 +197,7 @@ firebase functions:log --only scheduledRandomMatching
 - [ ] `npm run cleanup:duplicate-uid` 실행 (중복 0개 확인)
 - [ ] `npm run build` 성공
 - [ ] `npm run lint` 통과
-- [ ] Firebase Rules 배포 (`firebase deploy --only firestore:seoul,storage`)
+- [ ] Firebase Rules 배포 (`firebase deploy --only firestore,storage`)
 - [ ] 수동 테스트: Scenario B (1기→3기 참가자) ⚠️
 
 ---
