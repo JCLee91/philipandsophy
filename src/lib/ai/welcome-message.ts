@@ -90,45 +90,29 @@ const WELCOME_MESSAGE_BANNED_PHRASES = [
   'ㅎㅎ',
 ];
 
-const EVAL_SYSTEM_PROMPT = `You are an expert Hallucination Detector.
-Your job is to verify if the "Generated Message" is supported by the "Call Script".
+const EVAL_SYSTEM_PROMPT = `당신은 '팩트 체커'입니다.
+생성된 메시지가 인터뷰 내용(스크립트)에 기반하고 있는지 확인하되, **매우 관대한 기준**을 적용하세요.
 
-# CORE RESPONSIBILITY
-Identify **fabricated facts** about the user.
+# 핵심 목표
+사용자에 대해 **없는 사실을 완전히 날조한 경우**만 찾아내세요.
 
-# RULES
-1. **Scope**: Focus ONLY on factual claims about the **User** (Member).
-2. **Ignore**:
-   - Greetings ("Welcome to the club")
-   - Future tense / Promises ("You will enjoy this")
-   - General club descriptions ("We have many members")
-   - Subjective compliments ("You have great taste")
-3. **Hallucination Definition**: A statement is a hallucination IF AND ONLY IF:
-   - It claims a specific fact about the user's past, present, job, habits, or preferences.
-   - AND that fact is NOT found in the source script.
-   - AND that fact is NOT a reasonable inference (e.g. "runs in park" -> "likes exercise" is OK; "runs in park" -> "runs every weekend" is HALLUCINATION).
+# 검증 규칙
+1. **명백한 거짓만 적발**:
+   - 인터뷰에 없는 특정 장소, 직업, 고유명사, 숫자를 언급한 경우.
+   - 인터뷰 내용과 정반대되는 내용을 말한 경우.
+2. **유추 및 추론 허용 (Pass)**:
+   - 인터뷰 내용을 바탕으로 한 자연스러운 추론은 **모두 사실(Fact)**로 인정하세요.
+3. **복합 문장 허용 (Pass)**:
+   - 문장에 팩트와 감상/인사가 섞여 있는 경우, **팩트 부분만 맞으면 통과**시키세요.
+   - (예: "취미가 독서라니 정말 멋지네요" -> 독서가 팩브라면 통과)
+   - 뒷부분의 "멋지네요", "반갑습니다"는 검증 대상이 아닙니다.
+4. **표현의 다양성 허용 (Pass)**:
+   - "자주", "항상", "열심히" 같은 수식어가 붙어도 문맥상 통하면 허용하세요.
+5. **그 외 무조건 통과**:
+   - 인사말, 느낌, 미래에 대한 다짐, 칭찬 등은 검증하지 말고 통과시키세요.
 
-# EXAMPLES
-
-Script: "I like reading novels."
-Message: "You enjoy reading novels."
-Result: SUPPORTED (Direct match)
-
-Script: "I like reading novels."
-Message: "You are a thoughtful person."
-Result: SUPPORTED (Subjective compliment, ignore)
-
-Script: "I work at a bank."
-Message: "You work in finance."
-Result: SUPPORTED (Reasonable inference)
-
-Script: "I run specifically at Han River."
-Message: "You enjoy running at Han River on weekends."
-Result: UNSUPPORTED (Hallucination: "on weekends" is not in script)
-
-Script: "I like jazz."
-Message: "Our other members also like jazz, so you will fit in."
-Result: SUPPORTED (Club description / Future prediction, ignore)
+# 요약
+"이 사람이 이런 말을 한 적이 없는데?" 싶은 **심각한 날조**가 아니라면, 웬만하면 모두 **통과(Supported)**시키세요.
 `;
 
 const SentenceEvalSchema = z.object({
@@ -146,17 +130,17 @@ const WelcomeMessageEvalSchema = z.object({
 
 
 function getEvalModel() {
-  const provider = process.env.EVAL_AI_PROVIDER || process.env.AI_PROVIDER || 'openai';
-  const modelName = process.env.EVAL_AI_MODEL || process.env.AI_MODEL || 'gpt-4o-mini';
+  const provider = process.env.EVAL_AI_PROVIDER || process.env.AI_PROVIDER || 'google';
+  const modelName = process.env.EVAL_AI_MODEL || process.env.AI_MODEL || 'gemini-3-flash-preview';
 
   switch (provider) {
     case 'anthropic':
       return anthropic(modelName);
-    case 'google':
-      return google(modelName);
     case 'openai':
-    default:
       return openai(modelName);
+    case 'google':
+    default:
+      return google(modelName);
   }
 }
 
@@ -169,22 +153,22 @@ async function evaluateWelcomeMessage(
   const bannedHits = WELCOME_MESSAGE_BANNED_PHRASES.filter((phrase) => message.includes(phrase));
 
   try {
-    const prompt = `Call script:
+    const prompt = `통화 녹취록 (Call script):
 ${callScript}
 
-Message:
+생성된 메시지 (Message):
 ${message}
 
-Tasks:
-1) Split the message into sentences.
-2) For each sentence, CLASSIFY its category:
-   - FACT: Claims a specific fact about the User (e.g. "You like X").
-   - GREETING: Welcome messages, salutations.
-   - CONTEXT: Club descriptions, future promises ("You will meet..."), general compliments.
-   - OTHER: Anything else.
-3) IF Category is FACT: Check if it is supported by the script. If yes, supported=true. If no, supported=false.
-4) IF Category is GREETING/CONTEXT/OTHER: ALWAYS mark supported=true.
-Return JSON.`;
+수행 작업:
+1) 메시지를 문장 단위로 분리하세요.
+2) 각 문장의 카테고리를 분류하세요 (CLASSIFY):
+   - FACT: 사용자에 대한 구체적 사실 주장 (예: "회원님은 X를 좋아하시죠").
+   - GREETING: 환영 인사, 안부.
+   - CONTEXT: 클럽 소개, 미래에 대한 약속("~만나게 될 겁니다"), 일반적인 칭찬.
+   - OTHER: 그 외.
+3) 카테고리가 'FACT'인 경우: 스크립트에 근거한 내용인지 확인하세요. (근거가 있으면 supported=true, 없으면 supported=false).
+4) 카테고리가 'GREETING', 'CONTEXT', 'OTHER'인 경우: 항상 supported=true로 설정하세요.
+JSON 형식으로 반환하세요.`;
 
     const result = await generateObject({
       model: getEvalModel(),
