@@ -104,6 +104,18 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
   const [imageViewerUrl, setImageViewerUrl] = useState<string>('');
   const [submissionImageViewerOpen, setSubmissionImageViewerOpen] = useState(false);
 
+  const handleSubmissionClick = (submission: ReadingSubmission) => {
+    setSubmissionImageViewerOpen(false);
+    setSelectedSubmission(submission);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      setSelectedSubmission(null);
+      setSubmissionImageViewerOpen(false);
+    }
+  };
+
   const toggleQuestion = (question: string) => {
     setExpandedQuestions(prev => {
       const newSet = new Set(prev);
@@ -652,14 +664,14 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
                   <div className="flex flex-col gap-4">
                     <HistoryWeekRow
                       days={dailySubmissions.slice(0, 7)}
-                      onSubmissionClick={setSelectedSubmission}
+                      onSubmissionClick={handleSubmissionClick}
                       bookmarkCompleted={colors.bookmarkCompleted}
                       bookmarkEmpty={colors.bookmarkEmpty}
                       cohortNumber={cohortNumber}
                     />
                     <HistoryWeekRow
                       days={dailySubmissions.slice(7, 14)}
-                      onSubmissionClick={setSelectedSubmission}
+                      onSubmissionClick={handleSubmissionClick}
                       bookmarkCompleted={colors.bookmarkCompleted}
                       bookmarkEmpty={colors.bookmarkEmpty}
                       cohortNumber={cohortNumber}
@@ -746,7 +758,7 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
 
         {/* 인증 상세 모달 */}
         {selectedSubmission && (
-          <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
+          <Dialog open={!!selectedSubmission} onOpenChange={handleDialogClose}>
             <DialogContent className="profile-reading-dialog profile-reading-dialog-ios-safe gap-2 sm:max-w-md sm:rounded-2xl">
               <DialogHeader className="text-left gap-1">
                 <DialogTitle className="text-base">
