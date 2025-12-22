@@ -1,20 +1,19 @@
 /**
  * Firestore Database Helper
  *
- * Seoul region DB instance를 반환하는 공용 헬퍼 함수
- * - functions/src/index.ts
- * - functions/src/scheduled-random-matching.ts
- * 에서 공통으로 사용
+ * (default) DB instance를 반환하는 공용 헬퍼 함수
+ * 참고: 함수명은 하위 호환성을 위해 유지 (실제로는 default DB 사용)
  */
 
 import * as admin from 'firebase-admin';
 
 /**
- * Seoul Firestore instance 반환
+ * Firestore instance 반환
+ * 참고: 함수명은 하위 호환성을 위해 getSeoulDB로 유지
  *
- * @returns Seoul region Firestore instance
+ * @returns Firestore instance (default DB, Seoul region)
  */
 export function getSeoulDB() {
   const { getFirestore } = require('firebase-admin/firestore');
-  return getFirestore(admin.app(), 'seoul');
+  return getFirestore(admin.app());
 }

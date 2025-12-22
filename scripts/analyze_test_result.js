@@ -8,7 +8,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-db.settings({ databaseId: 'seoul' });
 
 // 테스트 결과 (방금 받은 데이터)
 const testResult = {

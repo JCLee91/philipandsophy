@@ -107,18 +107,14 @@ export function initializeFirebase() {
       app = getApps()[0];
     }
 
-    // Initialize Firestore with Seoul DB and persistent cache
-    // 1. initializeFirestore로 캐시 설정 + databaseId 지정 (한 번만 호출)
+    // Initialize Firestore with persistent cache
+    // 1. initializeFirestore로 캐시 설정 (한 번만 호출)
     try {
-      initializeFirestore(
-        app,
-        {
-          localCache: persistentLocalCache({
-            tabManager: persistentMultipleTabManager(),
-          }),
-        },
-        'seoul'
-      );
+      initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      });
     } catch (error) {
       // iOS Safari/프라이빗 모드 등에서 IndexedDB 기반 캐시가 실패할 수 있음
       // 이 경우 캐시 없이도 앱이 동작하도록 메모리 캐시로 폴백
@@ -126,7 +122,7 @@ export function initializeFirebase() {
     }
 
     // 2. getFirestore로 인스턴스 획득 (캐시 성공/실패와 무관하게 동작)
-    db = getFirestore(app, 'seoul');
+    db = getFirestore(app);
 
     storage = getStorage(app);
     auth = getAuth(app);
@@ -146,7 +142,7 @@ export function initializeFirebase() {
       if (apps.length > 0) {
         app = apps[0];
         // Fallback에서도 getFirestore 사용 (이미 초기화된 경우)
-        db = getFirestore(app, 'seoul');
+        db = getFirestore(app);
         storage = getStorage(app);
         auth = getAuth(app);
         functions = getFunctions(app, 'asia-northeast3');

@@ -26,9 +26,8 @@ if (!admin.apps.length) {
   });
 }
 
-// Seoul DB 가져오기
 const { getFirestore } = require('firebase-admin/firestore');
-const db = getFirestore(admin.app(), 'seoul');
+const db = getFirestore(admin.app());
 
 async function cleanupDuplicateUid(dryRun = true): Promise<void> {
   console.log(`\n🔍 UID 중복 검사 ${dryRun ? '(DRY RUN - 변경 없음)' : '(실제 정리 수행)'}\n`);

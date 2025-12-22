@@ -9,7 +9,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-db.settings({ databaseId: 'seoul' });
 
 // API 로직 그대로 재현
 async function checkAPILogic() {

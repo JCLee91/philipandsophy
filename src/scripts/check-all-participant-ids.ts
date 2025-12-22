@@ -14,7 +14,7 @@ const app = initializeApp({
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 });
 
-const db = getFirestore(app, 'seoul');
+const db = getFirestore(app);
 
 async function checkAllParticipants() {
   console.log('👥 전체 참가자 ID 형식 확인...\n');

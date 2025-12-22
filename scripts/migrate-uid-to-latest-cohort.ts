@@ -62,8 +62,7 @@ function initializeFirebaseAdmin() {
     });
   }
 
-  // 서울 DB 사용 (프로덕션)
-  return getFirestore('seoul');
+  return getFirestore();
 }
 
 /**

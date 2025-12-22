@@ -18,7 +18,7 @@ if (!admin.apps.length) {
 }
 
 const { getFirestore } = require('firebase-admin/firestore');
-const db = getFirestore(admin.app(), 'seoul');
+const db = getFirestore(admin.app());
 
 // CSV 데이터 (이름,성별,그룹,연락처)
 const csvData = [

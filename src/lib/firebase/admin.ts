@@ -111,21 +111,17 @@ function getAdminApp(): admin.app.App | null {
 /**
  * Firestore 인스턴스 가져오기
  * 초기화 실패 시 에러 발생 (API 라우트에서 적절히 처리 필요)
- * Seoul DB 사용: database() 메서드로 databaseId 지정
  *
  * @see https://firebase.google.com/docs/firestore/manage-databases
  */
 export function getAdminDb() {
-  // 로그 제거 (너무 자주 호출되어 로그 폭주)
   const app = getAdminApp();
   if (!app) {
-
     throw new Error('Firebase Admin is not initialized. Check your credentials.');
   }
 
-  // Admin SDK에서는 getFirestore(app, 'databaseId') 사용
   const { getFirestore } = require('firebase-admin/firestore');
-  return getFirestore(app, 'seoul');
+  return getFirestore(app);
 }
 
 /**

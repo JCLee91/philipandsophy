@@ -14,7 +14,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-db.settings({ databaseId: 'seoul' });
 
 const OCCUPATION_DATA = {
   '김효선': '정부부처 사무관',

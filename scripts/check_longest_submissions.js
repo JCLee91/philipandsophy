@@ -8,8 +8,7 @@ if (!admin.apps.length) {
   });
 }
 
-// 서울 데이터베이스에 연결
-const db = getFirestore(admin.app(), 'seoul');
+const db = getFirestore(admin.app());
 
 async function main() {
   // cohortId 패턴 확인

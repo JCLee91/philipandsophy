@@ -26,7 +26,7 @@ function initializeFirebaseAdmin() {
     app = getApps()[0];
   }
 
-  return getFirestore(app, 'seoul');
+  return getFirestore(app);
 }
 
 // 날짜 포맷 함수

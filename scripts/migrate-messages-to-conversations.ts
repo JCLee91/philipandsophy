@@ -19,8 +19,7 @@ if (!admin.apps.length) {
 }
 
 const { getFirestore } = require('firebase-admin/firestore');
-// 서울 리전 Firestore 사용
-const db = getFirestore(admin.app(), 'seoul');
+const db = getFirestore(admin.app());
 
 interface MessageData {
   id: string;

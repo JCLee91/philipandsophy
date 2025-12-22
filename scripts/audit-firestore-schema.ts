@@ -24,12 +24,7 @@ if (!admin.apps.length) {
   }
 }
 
-// 서울 리전 Firestore 데이터베이스 설정
 const db = admin.firestore();
-db.settings({
-  databaseId: 'seoul',
-  preferRest: false
-});
 
 interface SchemaStats {
   totalDocuments: number;

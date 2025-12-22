@@ -16,7 +16,7 @@ const app = initializeApp({
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 });
 
-const db = getFirestore(app, 'seoul');
+const db = getFirestore(app);
 
 async function analyzeStats() {
   console.log('📊 2기 제출물 통계 분석 시작...\n');

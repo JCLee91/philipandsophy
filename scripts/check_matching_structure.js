@@ -8,7 +8,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-db.settings({ databaseId: 'seoul' });
 
 async function checkStructure() {
   const docId = '4-2-2025-11-25';

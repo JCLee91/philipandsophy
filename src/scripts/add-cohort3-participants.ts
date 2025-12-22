@@ -16,7 +16,7 @@ const app = initializeApp({
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
 });
 
-const db = getFirestore(app, 'seoul');
+const db = getFirestore(app);
 const bucket = getStorage(app).bucket();
 
 const participants = [

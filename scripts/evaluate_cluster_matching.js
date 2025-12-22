@@ -8,7 +8,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-db.settings({ databaseId: 'seoul' });
 
 async function getParticipantsGender(cohortId) {
   const snapshot = await db.collection('participants')

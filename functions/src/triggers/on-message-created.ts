@@ -20,7 +20,6 @@ import {
 export const onMessageCreated = onDocumentCreated(
   {
     document: "messages/{messageId}",
-    database: "seoul",
   },
   async (event) => {
     const messageData = event.data?.data();

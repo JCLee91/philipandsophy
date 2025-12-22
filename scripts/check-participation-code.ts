@@ -24,9 +24,8 @@ if (!admin.apps.length) {
   });
 }
 
-// Seoul DB 가져오기
 const { getFirestore } = require('firebase-admin/firestore');
-const db = getFirestore(admin.app(), 'seoul');
+const db = getFirestore(admin.app());
 
 interface CheckResult {
   cohortId: string;

@@ -8,7 +8,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-db.settings({ databaseId: 'seoul' });
 
 async function checkBooksCohort5() {
   // 5기 참가자 조회

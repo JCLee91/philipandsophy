@@ -11,8 +11,7 @@ const app = initializeApp({
     credential: cert(serviceAccount),
 });
 
-// Use Seoul database instead of default
-const db = getFirestore(app, 'seoul');
+const db = getFirestore(app);
 
 async function checkFaceImages() {
     console.log('Checking participants for faceImage field...');

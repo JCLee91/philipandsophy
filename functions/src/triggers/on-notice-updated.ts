@@ -22,7 +22,6 @@ import {
 export const onNoticeUpdated = onDocumentUpdated(
   {
     document: "notices/{noticeId}",
-    database: "seoul",
   },
   async (event) => {
     const beforeData = event.data?.before.data();

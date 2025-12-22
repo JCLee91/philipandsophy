@@ -83,9 +83,8 @@ export function getFirebaseAdmin() {
   }
 
   // Firestore 및 Storage 인스턴스 생성
-  // Seoul DB 사용: getFirestore(app, 'databaseId')
   const { getFirestore } = require('firebase-admin/firestore');
-  cachedDb = getFirestore(cachedApp, 'seoul');
+  cachedDb = getFirestore(cachedApp);
   cachedBucket = getStorage(cachedApp).bucket(storageBucket);
   cachedAuth = getAuth(cachedApp);
 

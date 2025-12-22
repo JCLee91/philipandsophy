@@ -22,7 +22,6 @@ import {
 export const onNoticeCreated = onDocumentCreated(
   {
     document: "notices/{noticeId}",
-    database: "seoul",
   },
   async (event) => {
     const noticeData = event.data?.data();

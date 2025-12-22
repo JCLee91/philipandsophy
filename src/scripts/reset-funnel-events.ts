@@ -28,7 +28,7 @@ const firebaseConfig = {
 
 // Firebase 초기화
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app, 'seoul');
+const db = getFirestore(app);
 
 /**
  * 배치 단위로 문서 삭제 (Firestore 제한: 500개씩)

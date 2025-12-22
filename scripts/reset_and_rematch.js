@@ -16,7 +16,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-db.settings({ databaseId: 'seoul' });
 
 const FUNCTION_URL = 'https://manualclustermatching-vliq2xsjqa-du.a.run.app';
 const INTERNAL_SECRET = 'vDnfEPFeaqqqn5PhTYTgpSPTsqGlRrss9p0XJ+VPET8=';

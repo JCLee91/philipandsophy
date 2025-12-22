@@ -18,7 +18,7 @@ if (!admin.apps.length) {
 }
 
 const { getFirestore } = require('firebase-admin/firestore');
-const db = getFirestore(admin.app(), 'seoul');
+const db = getFirestore(admin.app());
 
 // 성별 매핑 (실제 데이터 기준)
 const genderMap: Record<string, 'male' | 'female'> = {
