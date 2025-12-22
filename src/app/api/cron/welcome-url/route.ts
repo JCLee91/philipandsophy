@@ -169,6 +169,10 @@ async function processRecord(
     // 5. 웰컴 URL 생성
     const welcomePageUrl = `${baseUrl}/welcome?token=${tokenResult.token}`;
 
+    // [최적화] Firestore 인덱싱 대기 (10초)
+    // 생성 직후 바로 URL을 클릭했을 때 '찾을 수 없음' 에러 방지
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+
     // 6. 에어테이블에 URL 업데이트
     await updateWelcomeUrl(recordId, welcomePageUrl);
 

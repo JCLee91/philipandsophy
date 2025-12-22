@@ -138,7 +138,10 @@ export async function verifyWelcomeToken(token: string): Promise<WelcomeVerifyRe
     const participantsRef = db.collection('participants');
     const snapshot = await participantsRef.where('welcomeToken', '==', token).get();
 
+    logger.info(`Verifying token: ${token} (Length: ${token.length})`);
+
     if (snapshot.empty) {
+      logger.warn(`Token verification failed: No document found for token ${token}`);
       return {
         success: false,
         error: '유효하지 않은 토큰입니다.',
