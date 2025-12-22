@@ -1,7 +1,7 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import { logger } from "./lib/logger";
-import { getSeoulDB } from "./lib/db-helper";
+import { getDefaultDb } from "./lib/db-helper";
 
 /**
  * Scheduled function to publish notices that are scheduled for release.
@@ -16,7 +16,7 @@ export const publishScheduledNotices = onSchedule(
   async (event) => {
     logger.info("Starting scheduled notice publication check");
 
-    const db = getSeoulDB();
+    const db = getDefaultDb();
     const now = admin.firestore.Timestamp.now();
 
     // 디버깅: 현재 시간 로깅

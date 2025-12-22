@@ -4,7 +4,7 @@ import { defineString } from "firebase-functions/params";
 import { format, subDays } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { logger } from "./lib/logger";
-import { getSeoulDB } from "./lib/db-helper";
+import { getDefaultDb } from "./lib/db-helper";
 import { matchParticipantsWithClusters } from './lib/cluster/index';
 import { fetchDailySubmissions, fetchRecentCategories } from './lib/cluster/data';
 
@@ -51,7 +51,7 @@ export const manualClusterMatching = onRequest(
                 return;
             }
 
-            const db = getSeoulDB();
+            const db = getDefaultDb();
 
             // 2. 날짜 결정
             // date 파라미터가 있으면 그 날짜 사용, 없으면 '어제' (스케줄러와 동일)

@@ -3,7 +3,7 @@
  */
 
 import * as admin from "firebase-admin";
-import { getSeoulDB } from "./db-helper";
+import { getDefaultDb } from "./db-helper";
 
 /**
  * Truncate long text for notifications
@@ -27,7 +27,7 @@ export function truncateToken(token: string): string {
 export async function getCohortParticipants(
   cohortId: string
 ): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
-  return getSeoulDB()
+  return getDefaultDb()
     .collection("participants")
     .where("cohortId", "==", cohortId)
     .get();
@@ -70,7 +70,7 @@ export async function getPushTokens(participantId: string): Promise<{
   webPushSubscriptions: WebPushSubscriptionData[];
 }> {
   try {
-    const participantDoc = await getSeoulDB()
+    const participantDoc = await getDefaultDb()
       .collection("participants")
       .doc(participantId)
       .get();

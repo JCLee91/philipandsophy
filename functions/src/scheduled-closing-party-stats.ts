@@ -13,7 +13,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { format, subDays, parseISO, isEqual } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { logger } from './lib/logger';
-import { getSeoulDB } from './lib/db-helper';
+import { getDefaultDb } from './lib/db-helper';
 import { calculateClosingPartyStats } from './lib/closing-party/index';
 
 /**
@@ -36,7 +36,7 @@ export const scheduledClosingPartyStats = onSchedule(
     logger.info('🎉 Scheduled closing party stats calculation started');
 
     try {
-      const db = getSeoulDB();
+      const db = getDefaultDb();
 
       // 1. 날짜 계산 (KST)
       // 실행 시점: 11월 22일 03:00

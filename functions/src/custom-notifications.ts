@@ -12,7 +12,7 @@ import {
   PushTokenEntry,
   WebPushSubscriptionData,
 } from "./lib/helpers";
-import { getSeoulDB } from "./lib/db-helper";
+import { getDefaultDb } from "./lib/db-helper";
 import * as webpush from "web-push";
 import { NOTIFICATION_CONFIG } from "./constants/notifications";
 
@@ -20,7 +20,7 @@ import { NOTIFICATION_CONFIG } from "./constants/notifications";
  * Get all administrators (super admins + general admins)
  */
 async function getAllAdministrators(): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
-  const db = getSeoulDB();
+  const db = getDefaultDb();
 
   // Query 1: Get super admins
   const superAdminsQuery = db

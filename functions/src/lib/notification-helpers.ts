@@ -6,7 +6,7 @@
 import * as admin from "firebase-admin";
 import * as webpush from "web-push";
 import { logger } from "./logger";
-import { getSeoulDB } from "./db-helper";
+import { getDefaultDb } from "./db-helper";
 import { NOTIFICATION_CONFIG } from "../constants/notifications";
 
 // Configure Web Push VAPID
@@ -76,7 +76,7 @@ function truncateToken(token: string): string {
 export async function getCohortParticipants(
   cohortId: string
 ): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
-  return getSeoulDB()
+  return getDefaultDb()
     .collection("participants")
     .where("cohortId", "==", cohortId)
     .get();
@@ -86,7 +86,7 @@ export async function getCohortParticipants(
  * Get all administrators (super admins + general admins)
  */
 export async function getAllAdministrators(): Promise<admin.firestore.QuerySnapshot<admin.firestore.DocumentData>> {
-  const db = getSeoulDB();
+  const db = getDefaultDb();
 
   const superAdminsQuery = db
     .collection("participants")
@@ -127,7 +127,7 @@ export async function getParticipantInfo(participantId: string): Promise<{
   isAdmin: boolean;
 }> {
   try {
-    const db = getSeoulDB();
+    const db = getDefaultDb();
     const participantDoc = await db
       .collection("participants")
       .doc(participantId)
@@ -155,7 +155,7 @@ export async function getParticipantInfo(participantId: string): Promise<{
  */
 export async function getParticipantName(participantId: string): Promise<string> {
   try {
-    const db = getSeoulDB();
+    const db = getDefaultDb();
     const participantDoc = await db
       .collection("participants")
       .doc(participantId)
@@ -181,7 +181,7 @@ export async function getPushTokens(participantId: string): Promise<{
   webPushSubscriptions: WebPushSubscriptionData[];
 }> {
   try {
-    const db = getSeoulDB();
+    const db = getDefaultDb();
     const participantDoc = await db
       .collection("participants")
       .doc(participantId)
@@ -232,7 +232,7 @@ async function updateLastUsedAt(
   }
 
   try {
-    const db = getSeoulDB();
+    const db = getDefaultDb();
     const participantRef = db
       .collection("participants")
       .doc(participantId);
@@ -410,7 +410,7 @@ async function removeExpiredWebPushSubscriptions(
   failedSubscriptions: WebPushSubscriptionData[]
 ): Promise<void> {
   try {
-    const db = getSeoulDB();
+    const db = getDefaultDb();
     const participantRef = db
       .collection("participants")
       .doc(participantId);
@@ -592,7 +592,7 @@ async function removeExpiredTokens(
   failedTokens: string[]
 ): Promise<void> {
   try {
-    const db = getSeoulDB();
+    const db = getDefaultDb();
     const participantRef = db
       .collection("participants")
       .doc(participantId);

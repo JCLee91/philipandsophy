@@ -19,7 +19,7 @@ import { defineString } from "firebase-functions/params";
 import { subDays, format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { logger } from "./lib/logger";
-import { getSeoulDB } from "./lib/db-helper";
+import { getDefaultDb } from "./lib/db-helper";
 import { matchParticipantsWithClusters } from './lib/cluster/index';
 import { fetchDailySubmissions, fetchRecentCategories } from './lib/cluster/data';
 
@@ -65,7 +65,7 @@ export const scheduledClusterMatching = onSchedule(
         return;
       }
 
-      const db = getSeoulDB();
+      const db = getDefaultDb();
 
       // 2. 날짜 계산 (KST)
       // 실행 시점: 11월 24일 02:00
