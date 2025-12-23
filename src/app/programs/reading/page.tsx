@@ -55,7 +55,7 @@ export default function ReadingProgramPage() {
                 {/* 첫 번째 이미지 + 동영상 오버레이 */}
                 <div className="image-with-video-overlay">
                     <Image
-                        src={getImageUrl('/image/landing/PnS_Program_reading_1.webp?v=1765966010156')}
+                        src={getImageUrl('/image/landing/PnS_Program_reading_1.webp?v=1766590000001')}
                         alt="2주 독서 프로그램 소개 1 - 하루 10분 독서로 완성하는 나만의 프로필 북"
                         width={1170}
                         height={2000} // Approximate, will auto-adjust height with layout but good to have high val
@@ -72,12 +72,12 @@ export default function ReadingProgramPage() {
                             muted
                             loop
                             playsInline
-                            poster={getImageUrl('/image/landing/PnS_Program_reading_1.webp?v=1765966010156')}
+                            poster={getImageUrl('/image/landing/PnS_Program_reading_1.webp?v=1766590000001')}
                         />
                     </div>
                 </div>
                 <Image
-                    src={getImageUrl('/image/landing/PnS_Program_reading_2.webp?v=1765966010156')}
+                    src={getImageUrl('/image/landing/PnS_Program_reading_2.webp?v=1766590000001')}
                     alt="2주 독서 프로그램 소개 2 - AI 매칭 및 웰컴 파티"
                     width={1170}
                     height={2000}

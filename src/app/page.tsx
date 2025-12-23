@@ -52,10 +52,10 @@ export default function HomePage() {
         <HeroImageSlider />
 
         <Image
-          src={getImageUrl('/image/landing/PnS_2.webp?v=1765966010155')}
+          src={getImageUrl('/image/landing/PnS_2.webp?v=1766590000001')}
           alt="필립앤소피 소개"
           width={1170}
-          height={5526}
+          height={8721} // Updated height based on new image
           className="main-image"
         />
 

@@ -16,7 +16,7 @@ export default function GlassNavigation() {
       label: '프로그램',
       href: '/programs/reading',
       subItems: [
-        { label: '2주 독서', href: '/programs/reading' },
+        { label: '2주 온라인 독서', href: '/programs/reading' },
         { label: '멤버십', href: '/programs/membership' },
       ],
     },
