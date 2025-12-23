@@ -94,8 +94,29 @@ export default function PaymentCard({ bankAccount }: PaymentCardProps) {
           {/* Payment Section */}
           <div className="bg-zinc-900/30 rounded-2xl p-6 md:p-8 border border-white/5 backdrop-blur-sm">
             {/* Amount */}
-            <div className="flex justify-between items-baseline mb-8 pb-8 border-b border-white/5">
-              <span className="text-gray-400 font-light">멤버십 비용</span>
+            <div className="flex justify-between items-start mb-8 pb-8 border-b border-white/5">
+              <div className="flex flex-col">
+                <span className="text-gray-400 font-light text-lg mb-2">멤버십 비용</span>
+
+                {/* Value Add Description */}
+                <div className="flex flex-col gap-1.5 animation-fade-in">
+                  <span className="text-xs text-blue-400/80 font-medium tracking-tighter">
+                    ALL INCLUSIVE
+                  </span>
+                  <ul className="flex flex-col gap-1">
+                    {[
+                      '2주 온라인 독서 프로그램',
+                      '웰컴 파티 (와인 & 핑거푸드)',
+                      '멤버십 전용 커뮤니티 초대'
+                    ].map((item, i) => (
+                      <li key={i} className="text-[11px] text-gray-300 font-light flex items-center gap-1.5">
+                        <div className="w-0.5 h-0.5 rounded-full bg-gray-400" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
               <div className="text-right flex flex-col items-end">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-medium text-[#62bbff] bg-[#62bbff]/10 px-2 py-0.5 rounded-full tracking-wider uppercase">
