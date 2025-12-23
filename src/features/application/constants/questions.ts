@@ -80,10 +80,10 @@ export const QUESTIONS: Record<string, Question> = {
     'membership_status': {
         id: 'membership_status',
         type: 'single-select',
-        title: '필립앤소피 프로그램을\n진행한 적이 있으신가요?',
+        title: '필립앤소피는 처음이신가요?',
         options: [
-            { label: '예, 재참여하려고 합니다.', value: 'existing', nextQuestionId: 'cohort_check' },
-            { label: '아니요, 신규 멤버입니다.', value: 'new', nextQuestionId: 'personal_info' },
+            { label: '네, 신규 멤버입니다.', value: 'new', nextQuestionId: 'personal_info' },
+            { label: '아니요, 기존 멤버입니다.', value: 'existing', nextQuestionId: 'cohort_check' },
         ],
         required: true,
     },
