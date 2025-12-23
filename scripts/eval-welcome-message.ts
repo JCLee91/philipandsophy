@@ -14,7 +14,7 @@ import { logger } from '../src/lib/logger';
 
 const DEFAULT_INPUT_PATH = 'tests/fixtures/welcome-eval.jsonl';
 const DEFAULT_MIN_LENGTH = 100;
-const DEFAULT_MAX_LENGTH = 300;
+const DEFAULT_MAX_LENGTH = 250;
 const DEFAULT_BANNED_PHRASES = [
   '독서 클럽',
   '독서클럽',
