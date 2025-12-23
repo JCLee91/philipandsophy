@@ -16,13 +16,15 @@ interface MemberShowcaseProps {
   totalCount: number;
   showHeader?: boolean;
   showFooter?: boolean;
+  disclaimer?: string;
 }
 
 export default function MemberShowcase({
   members,
   totalCount,
   showHeader = true,
-  showFooter = true
+  showFooter = true,
+  disclaimer
 }: MemberShowcaseProps) {
   if (!members || members.length === 0) return null;
 
@@ -70,6 +72,20 @@ export default function MemberShowcase({
           <ScrollingRow members={row4} direction="right" duration={22} />
         </motion.div>
 
+        {disclaimer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-center mt-6 px-4"
+          >
+            <p className="text-gray-500 text-xs text-[#999999] opacity-60 font-light tracking-wide">
+              {disclaimer}
+            </p>
+          </motion.div>
+        )}
+
         {showFooter && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -86,7 +102,7 @@ export default function MemberShowcase({
         )}
       </div>
 
-	      <style jsx global>{`
+      <style jsx global>{`
 	        @keyframes pns-marquee-left {
 	          from { transform: translate3d(0, 0, 0); }
 	          to { transform: translate3d(var(--pns-marquee-distance, -50%), 0, 0); }
@@ -131,8 +147,8 @@ export default function MemberShowcase({
 	          }
 	        }
 	      `}</style>
-	    </section>
-	  );
+    </section>
+  );
 }
 
 interface ScrollingRowProps {
