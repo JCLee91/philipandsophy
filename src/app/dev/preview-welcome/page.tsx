@@ -86,8 +86,8 @@ export default function PreviewWelcomePage() {
         {/* 섹션 2: 멤버 캐러셀 */}
         {!loading && members && (
           <MemberShowcase
-            members={members.showcase}
             totalCount={members.total}
+            staticImageSrc="/images/welcome-message.webp"
           />
         )}
 

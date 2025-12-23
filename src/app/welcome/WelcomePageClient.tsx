@@ -122,9 +122,9 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
       {/* Section 2: Member Showcase */}
       {members && members.showcase.length > 0 && (
         <MemberShowcase
-          members={members.showcase}
           totalCount={members.total}
           disclaimer="* 개인정보 보호를 위해 실제 멤버 대신 AI 생성 이미지를 사용했습니다"
+          staticImageSrc="/images/welcome-message.webp"
         />
       )}
 

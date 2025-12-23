@@ -12,11 +12,12 @@ interface Member {
 }
 
 interface MemberShowcaseProps {
-  members: Member[];
+  members?: Member[];
   totalCount: number;
   showHeader?: boolean;
   showFooter?: boolean;
   disclaimer?: string;
+  staticImageSrc?: string;
 }
 
 export default function MemberShowcase({
@@ -24,17 +25,22 @@ export default function MemberShowcase({
   totalCount,
   showHeader = true,
   showFooter = true,
-  disclaimer
+  disclaimer,
+  staticImageSrc
 }: MemberShowcaseProps) {
-  if (!members || members.length === 0) return null;
+  // If no static image and no members, return null
+  if (!staticImageSrc && (!members || members.length === 0)) return null;
 
-  const validMembers = members.filter(m => m.profileImage);
+  const validMembers = members?.filter(m => m.profileImage) || [];
+
+  // Calculate rows only if using carousel mode
   const perRow = Math.ceil(validMembers.length / 4);
-
-  const row1 = validMembers.slice(0, perRow);
-  const row2 = validMembers.slice(perRow, perRow * 2);
-  const row3 = validMembers.slice(perRow * 2, perRow * 3);
-  const row4 = validMembers.slice(perRow * 3);
+  const rows = !staticImageSrc ? [
+    validMembers.slice(0, perRow),
+    validMembers.slice(perRow, perRow * 2),
+    validMembers.slice(perRow * 2, perRow * 3),
+    validMembers.slice(perRow * 3)
+  ] : [];
 
   return (
     <section className={`relative w-full bg-black overflow-hidden ${showHeader ? 'py-16' : 'pb-6'}`}>
@@ -64,12 +70,27 @@ export default function MemberShowcase({
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: showHeader ? 0.2 : 0 }}
-          className="space-y-4 max-w-[500px] mx-auto"
+          className={staticImageSrc ? "relative max-w-[500px] mx-auto px-4" : "space-y-4 max-w-[500px] mx-auto"}
         >
-          <ScrollingRow members={row1} direction="left" duration={20} />
-          <ScrollingRow members={row2} direction="right" duration={25} />
-          <ScrollingRow members={row3} direction="left" duration={30} />
-          <ScrollingRow members={row4} direction="right" duration={22} />
+          {staticImageSrc ? (
+            <div className="relative w-full aspect-[1026/1362] rounded-2xl overflow-hidden bg-gray-900 border border-gray-800">
+              <Image
+                src={staticImageSrc}
+                alt="Welcome Members"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 500px"
+                priority
+              />
+            </div>
+          ) : (
+            <>
+              <ScrollingRow members={rows[0]} direction="left" duration={20} />
+              <ScrollingRow members={rows[1]} direction="right" duration={25} />
+              <ScrollingRow members={rows[2]} direction="left" duration={30} />
+              <ScrollingRow members={rows[3]} direction="right" duration={22} />
+            </>
+          )}
         </motion.div>
 
         {disclaimer && (
@@ -102,51 +123,53 @@ export default function MemberShowcase({
         )}
       </div>
 
-      <style jsx global>{`
-	        @keyframes pns-marquee-left {
-	          from { transform: translate3d(0, 0, 0); }
-	          to { transform: translate3d(var(--pns-marquee-distance, -50%), 0, 0); }
-	        }
+      {!staticImageSrc && (
+        <style jsx global>{`
+          @keyframes pns-marquee-left {
+            from { transform: translate3d(0, 0, 0); }
+            to { transform: translate3d(var(--pns-marquee-distance, -50%), 0, 0); }
+          }
 
-	        @keyframes pns-marquee-right {
-	          from { transform: translate3d(var(--pns-marquee-distance, -50%), 0, 0); }
-	          to { transform: translate3d(0, 0, 0); }
-	        }
+          @keyframes pns-marquee-right {
+            from { transform: translate3d(var(--pns-marquee-distance, -50%), 0, 0); }
+            to { transform: translate3d(0, 0, 0); }
+          }
 
-	        .pns-marquee-row {
-	          isolation: isolate;
-	          contain: layout paint;
-	        }
+          .pns-marquee-row {
+            isolation: isolate;
+            contain: layout paint;
+          }
 
-	        .pns-marquee-track {
-	          will-change: transform;
-	          backface-visibility: hidden;
-	          -webkit-backface-visibility: hidden;
-	          transform: translate3d(0, 0, 0);
-	          -webkit-transform-style: preserve-3d;
-	          transform-style: preserve-3d;
-	        }
+          .pns-marquee-track {
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translate3d(0, 0, 0);
+            -webkit-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+          }
 
-	        .pns-marquee-item {
-	          backface-visibility: hidden;
-	          -webkit-backface-visibility: hidden;
-	          transform: translate3d(0, 0, 0);
-	          -webkit-transform-style: preserve-3d;
-	          transform-style: preserve-3d;
-	        }
+          .pns-marquee-item {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translate3d(0, 0, 0);
+            -webkit-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+          }
 
-	        .pns-marquee-item img {
-	          backface-visibility: hidden;
-	          -webkit-backface-visibility: hidden;
-	        }
+          .pns-marquee-item img {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+          }
 
-	        @media (prefers-reduced-motion: reduce) {
-	          .pns-marquee-track {
-	            animation: none !important;
-	            transform: none !important;
-	          }
-	        }
-	      `}</style>
+          @media (prefers-reduced-motion: reduce) {
+            .pns-marquee-track {
+              animation: none !important;
+              transform: none !important;
+            }
+          }
+        `}</style>
+      )}
     </section>
   );
 }
