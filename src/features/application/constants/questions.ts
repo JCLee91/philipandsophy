@@ -163,7 +163,6 @@ export const QUESTIONS: Record<string, Question> = {
         placeholder: 'ex. 19950101 / 20020202',
         required: true,
         isLastStep: true,
-        submitDescription: '간단한 8분 인터뷰가 끝나면\n멤버들과 함께 문화생활을 즐길 수 있어요!',
         submitButtonText: '인터뷰 예약하기',
         externalLink: 'https://whattime.co.kr/philipandsophy/10minute_interviews',
         // End of New Member flow
