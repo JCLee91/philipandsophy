@@ -70,7 +70,7 @@ export default function MemberShowcase({
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: showHeader ? 0.2 : 0 }}
-          className={staticImageSrc ? "relative max-w-[500px] mx-auto px-4" : "space-y-4 max-w-[500px] mx-auto"}
+          className={staticImageSrc ? "relative max-w-[500px] mx-auto px-12 md:px-16" : "space-y-4 max-w-[500px] mx-auto"}
         >
           {staticImageSrc ? (
             <div className="relative w-full aspect-[1026/1362] rounded-2xl overflow-hidden bg-gray-900 border border-gray-800">
