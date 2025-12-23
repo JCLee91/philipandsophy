@@ -126,6 +126,13 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
           totalCount={members.total}
         />
       )}
+      {members && members.showcase.length > 0 && (
+        <div className="text-center mt-2 mb-8">
+          <p className="text-gray-500 text-xs text-[#999999] opacity-60 font-light tracking-wide">
+            * 개인정보 보호를 위해 실제 멤버 대신 AI 생성 이미지를 사용했습니다
+          </p>
+        </div>
+      )}
 
       {/* Section 3: Program Info */}
       <BrandStory />

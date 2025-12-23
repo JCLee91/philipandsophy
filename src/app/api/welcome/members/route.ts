@@ -28,7 +28,7 @@ const DUMMY_PROFILES = {
 
 // 통계 데이터 (하드코딩 - 개인정보 보호)
 const STATS = {
-  total: 350,
+  total: 330,
   female: 228,
   male: 122,
 };
