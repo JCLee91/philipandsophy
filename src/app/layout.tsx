@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Providers from './providers';
 import AppBodyClass from '@/components/AppBodyClass';
-import GoogleAnalytics from '@/components/GoogleAnalytics';
+import GoogleTagManager from '@/components/GoogleTagManager';
+
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -87,6 +88,7 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning lang="ko">
       <head>
+
         {/* Meta Pixel Code */}
         <script
           dangerouslySetInnerHTML={{
@@ -128,7 +130,7 @@ fbq('track', 'PageView');`,
         <link href="https://fonts.cdnfonts.com/css/karina" rel="stylesheet" />
       </head>
       <body className="font-sans antialiased">
-        <GoogleAnalytics />
+        <GoogleTagManager />
         <AppBodyClass />
         <Providers>{children}</Providers>
       </body>
