@@ -867,13 +867,6 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
             padding-top: calc(1rem + env(safe-area-inset-top));
           }
 
-          /* iOS 11.2 이전 버전 호환성 */
-          @supports (padding-top: constant(safe-area-inset-top)) {
-            .safe-area-header {
-              padding-top: calc(1rem + constant(safe-area-inset-top));
-            }
-          }
-
           .profile-reading-dialog {
             margin: 0 !important;
             inset: auto 0 0 0 !important;
@@ -907,13 +900,6 @@ export function ProfileBookContent({ params }: ProfileBookContentProps) {
           @media (max-width: 640px) and (display-mode: standalone) {
             .profile-reading-dialog-ios-safe {
               padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
-            }
-
-            /* iOS 11.2 이전 버전 호환성 */
-            @supports (padding-top: constant(safe-area-inset-top)) {
-              .profile-reading-dialog-ios-safe {
-                padding-bottom: calc(20px + constant(safe-area-inset-bottom)) !important;
-              }
             }
           }
         `}</style>

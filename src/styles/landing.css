@@ -28,7 +28,8 @@
 }
 
 /* 디자인 토큰: 글래스모피즘 시스템 */
-:root {
+.landing-page,
+.legal-page {
     /* 색상 */
     --color-bg: #000000;
     --color-text: rgba(255, 255, 255, 0.95);
