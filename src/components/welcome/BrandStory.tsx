@@ -6,7 +6,7 @@ import { Video, BookOpen, PartyPopper } from 'lucide-react';
 // 6기 프로그램 일정
 const timeline = [
     {
-        date: '1/3 (금) 오후 2시',
+        date: '1/3 (토) 오후 2시',
         title: '온라인 OT',
         desc: 'Zoom으로 진행하는 간단한 인사와 프로그램 안내',
         icon: Video,
