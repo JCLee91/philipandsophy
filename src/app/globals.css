@@ -92,127 +92,6 @@
   border-width: 0;
 }
 
-@utility cta-button {
-  /* CTA 버튼 - 글래스모피즘 */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  max-width: 352px;
-  height: 64px;
-  padding: 20px 32px;
-  border-radius: 16px;
-  text-decoration: none;
-  color: rgba(255, 255, 255, 0.98);
-  font-size: 18px;
-  font-weight: 600;
-  position: relative;
-  overflow: hidden;
-
-  /* Glassmorphism 효과 */
-  background: var(--glass-bg-strong);
-  -webkit-backdrop-filter: var(--blur-xl);
-  backdrop-filter: var(--blur-xl);
-
-  /* 그림자와 테두리 */
-  box-shadow:
-    var(--glass-shadow-strong),
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--glass-border);
-
-  /* 애니메이션 */
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  cursor: pointer;
-
-  /* 반짝이는 효과 */
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent);
-    transition: left 0.8s ease;
-    z-index: 1;
-  }
-
-  /* 호버 효과 */
-  &:hover {
-    transform: translateY(-3px) scale(1.02);
-    background: var(--glass-bg-hover);
-    box-shadow:
-      var(--glass-shadow-hover),
-      inset 0 1px 0 var(--glass-highlight),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(30, 58, 138, 0.4);
-  }
-
-  &:hover::before {
-    left: 100%;
-  }
-
-  &:hover .cta-arrow {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateX(4px);
-  }
-
-  /* 클릭 효과 */
-  &:active {
-    transform: translateY(-1px) scale(0.98);
-    transition: all 0.1s ease;
-  }
-
-  /* 컴팩트 버전 */
-  &.compact {
-    max-width: 280px;
-    height: 56px;
-    padding: 16px 24px;
-    font-size: 16px;
-  }
-
-  &.compact .cta-arrow {
-    width: 28px;
-    height: 28px;
-  }
-}
-
-@utility cta-text {
-  position: relative;
-  z-index: 2;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-@utility cta-arrow {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  -webkit-backdrop-filter: var(--blur-lg);
-  backdrop-filter: var(--blur-lg);
-  transition: all 0.3s ease;
-
-  .cta-button:hover & {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateX(4px);
-  }
-
-  .cta-button.compact & {
-    width: 28px;
-    height: 28px;
-  }
-}
-
 @utility cta-button-white {
   /* CTA Button White Version (For Dark Backgrounds) - 모바일 퍼스트 */
   display: inline-flex;
@@ -354,22 +233,6 @@
   }
 }
 
-@utility compact {
-
-  /* 컴팩트 버전 */
-  &.cta-button {
-    max-width: 280px;
-    height: 56px;
-    padding: 16px 24px;
-    font-size: 16px;
-  }
-
-  &.cta-button .cta-arrow {
-    width: 28px;
-    height: 28px;
-  }
-}
-
 @utility form-input-dark {
   /* 반응형 - 데스크탑에서 확대 (모바일 퍼스트) */
 
@@ -377,23 +240,6 @@
   @apply w-full bg-zinc-800/80 border border-zinc-700 text-white rounded-lg px-4 py-3 text-base placeholder:text-zinc-500 focus:outline-hidden focus:border-white focus:ring-1 focus:ring-white transition-all text-center md:rounded-xl md:py-4 md:text-lg;
 }
 
-@layer utilities {
-
-  /* Shimmer 키프레임 정의 */
-  @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-
-    100% {
-      background-position: 200% 0;
-    }
-  }
-
-  .animate-shimmer {
-    animation: shimmer 1.5s ease-in-out infinite;
-  }
-}
 
 @layer base {
   :root {
@@ -524,14 +370,6 @@
     overscroll-behavior: none;
   }
 
-  /* iOS 11.2 이전 버전 호환성 */
-  @supports (padding-top: constant(safe-area-inset-top)) {
-    html[data-app="true"] {
-      min-height: calc(100% + constant(safe-area-inset-top));
-      padding: constant(safe-area-inset-top) constant(safe-area-inset-right) constant(safe-area-inset-bottom) constant(safe-area-inset-left);
-    }
-  }
-
   html,
   body {
     @apply bg-background text-foreground;
@@ -615,17 +453,6 @@
     padding-top: env(safe-area-inset-top);
   }
 
-  /* iOS 11.2 이전 버전 호환성 */
-  @supports (padding-top: constant(safe-area-inset-top)) {
-    .app-main-content {
-      padding-top: 56px;
-    }
-
-    .safe-area-header {
-      padding-top: constant(safe-area-inset-top);
-    }
-  }
-
   /* iOS PWA 모달/다이얼로그 높이 수정 */
   @supports (height: 100svh) {
     .app-shell {
@@ -651,12 +478,6 @@
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
-  @supports (padding-bottom: constant(safe-area-inset-bottom)) {
-    html[data-app='true'] .app-footer {
-      padding-bottom: calc(12px + constant(safe-area-inset-bottom));
-    }
-  }
-
   /* 모든 버튼과 인터랙티브 요소에 cursor pointer 적용 - utilities 레이어로 최상위 우선순위 보장 */
 }
 
@@ -673,28 +494,6 @@
   }
 }
 
-/* 글래스모피즘 CTA 버튼 컴포넌트 */
-@layer components {
-
-  /* 글래스모피즘 디자인 토큰 */
-  :root {
-    /* 포인트 컬러 (프리미엄 블루 - 흰색 배경용) */
-    --brand-blue-1: rgba(30, 58, 138, 0.9);
-    --brand-blue-2: rgba(37, 99, 235, 0.85);
-
-    /* 글래스 레이어 */
-    --glass-bg-strong: linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(30, 58, 138, 0.9) 100%);
-    --glass-bg-hover: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(30, 58, 138, 1) 100%);
-    --glass-border: rgba(30, 58, 138, 0.3);
-    --glass-highlight: rgba(255, 255, 255, 0.4);
-    --glass-shadow-strong: 0 12px 32px rgba(30, 58, 138, 0.25), 0 4px 12px rgba(0, 0, 0, 0.15);
-    --glass-shadow-hover: 0 16px 48px rgba(30, 58, 138, 0.35), 0 8px 16px rgba(0, 0, 0, 0.2);
-
-    /* 블러 */
-    --blur-xl: blur(20px);
-    --blur-lg: blur(10px);
-  }
-}
 
 /* reCAPTCHA 배지 숨기기 */
 /* 주의: display: none을 사용하면 reCAPTCHA가 작동하지 않음! */

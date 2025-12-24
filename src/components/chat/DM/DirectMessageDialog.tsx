@@ -8,7 +8,7 @@ import { useMessages } from '@/hooks/use-messages';
 import { getConversationId } from '@/lib/firebase/messages';
 import type { Participant } from '@/types/database';
 import { Send, Paperclip, X, ArrowDown } from 'lucide-react';
-import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo, CSSProperties } from 'react';
+import { useState, useEffect, useRef, KeyboardEvent, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { FOOTER_STYLES } from '@/constants/ui';
@@ -21,7 +21,6 @@ import { groupMessagesByDate } from '@/lib/message-grouping';
 import Image from 'next/image';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
 import { useDirectMessageActions } from '@/hooks/chat/useDirectMessageActions';
-import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import { getResizedImageUrl } from '@/lib/image-utils';
 
 interface DirectMessageDialogProps {
@@ -54,10 +53,15 @@ export default function DirectMessageDialog({
   const prevMessagesLengthRef = useRef(0);
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const keyboardHeight = useKeyboardHeight();
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // 데스크톱 여부 감지 (sm breakpoint: 640px)
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 640);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
   const handleImageReset = useCallback(() => {
@@ -197,19 +201,27 @@ export default function DirectMessageDialog({
     return () => observer.disconnect();
   }, []);
 
-  // 키보드가 올라올 때 자동으로 최신 메시지로 스크롤
+  // 키보드가 올라올 때 자동으로 최신 메시지로 스크롤 (visualViewport 기반)
   useEffect(() => {
-    if (keyboardHeight > 0) {
-      requestAnimationFrame(() => {
-        const container = messageContainerRef.current;
-        if (!container) return;
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: 'smooth',
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const handleViewportResize = () => {
+      // 키보드가 올라왔을 때 (viewport 높이가 window 높이보다 작아짐)
+      if (window.visualViewport!.height < window.innerHeight - 50) {
+        requestAnimationFrame(() => {
+          const container = messageContainerRef.current;
+          if (!container) return;
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth',
+          });
         });
-      });
-    }
-  }, [keyboardHeight]);
+      }
+    };
+
+    window.visualViewport.addEventListener('resize', handleViewportResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleViewportResize);
+  }, []);
 
   // Auto-grow textarea
   useEffect(() => {
@@ -272,23 +284,7 @@ export default function DirectMessageDialog({
   // Early returns AFTER all hooks
   if (!otherUser || !open || !mounted) return null;
 
-  const isKeyboardOpen = keyboardHeight > 0;
-  const bottomSafeSpacing = 'calc(env(safe-area-inset-bottom, 0px) + 0.25rem)';
   const messageListPaddingBottom = `calc(${Math.max(inputAreaHeight, 72)}px + env(safe-area-inset-bottom, 0px) + 1rem)`;
-
-  const dialogDynamicStyle: CSSProperties = isKeyboardOpen
-    ? {
-      top: '1rem',
-      transform: 'none',
-      height: `calc(100vh - 1rem - ${bottomSafeSpacing} - ${keyboardHeight}px)`,
-      maxHeight: `calc(100vh - 1rem - ${bottomSafeSpacing})`,
-      minHeight: '360px',
-    }
-    : {
-      top: '50%',
-      transform: 'translateY(-50%)',
-      height: '600px',
-    };
 
   const content = (
     <>
@@ -303,29 +299,14 @@ export default function DirectMessageDialog({
         aria-hidden="true"
       />
 
-      {/* Dialog */}
+      {/* Dialog - h-dvh로 키보드 높이 자동 대응 */}
       <div
         className={`fixed z-9999 bg-background transition-all duration-300 pointer-events-auto
-          inset-0 w-full h-full 
-          sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 
+          inset-0 w-full h-dvh
+          sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2
           sm:w-full sm:max-w-lg sm:h-[600px] sm:rounded-xl sm:border sm:shadow-lg
           animate-in fade-in zoom-in-95 duration-200`}
         onClick={(e) => e.stopPropagation()}
-        style={
-          !isKeyboardOpen && typeof window !== 'undefined' && window.innerWidth >= 640
-            ? {} // Desktop: Use Tailwind classes
-            : isKeyboardOpen
-              ? {
-                // Mobile Keyboard Open: Adjust height manually if needed, or rely on fixed positioning
-                height: `calc(100vh - ${keyboardHeight}px)`,
-                top: 0,
-              }
-              : {
-                // Mobile Default: Full screen
-                height: '100%',
-                top: 0,
-              }
-        }
       >
         <div className="flex flex-col h-full w-full bg-background sm:rounded-xl overflow-hidden">
           {/* Header */}
@@ -411,11 +392,9 @@ export default function DirectMessageDialog({
             )}
           </div>
 
-          {/* Footer Input */}
+          {/* Footer Input - safe-area 항상 적용 (dvh가 키보드에 따라 자동 조정) */}
           <div
-            className={`${FOOTER_STYLES.INPUT_CONTAINER} ${
-              !isKeyboardOpen ? 'pb-[calc(1rem+env(safe-area-inset-bottom))]' : ''
-            }`}
+            className={`${FOOTER_STYLES.INPUT_CONTAINER} pb-[calc(1rem+env(safe-area-inset-bottom))]`}
             ref={inputContainerRef}
           >
             {imagePreview && (

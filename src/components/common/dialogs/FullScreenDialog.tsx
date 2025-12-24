@@ -1,11 +1,10 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import { useModalCleanup } from '@/hooks/use-modal-cleanup';
-import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import { Z_INDEX } from '@/constants/z-index';
 import { IconButton } from '../buttons/IconButton';
 import type { ReactNode } from 'react';
@@ -115,32 +114,26 @@ export function FullScreenDialog({
   desktopSize = 'lg',
   desktopHeight = '600px',
 }: FullScreenDialogProps) {
-  const keyboardHeight = useKeyboardHeight();
-  const isKeyboardOpen = keyboardHeight > 0;
   const [mounted, setMounted] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // 데스크톱 여부 감지 (sm breakpoint: 640px)
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 640);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  // 스타일 객체 메모이제이션
+  // 데스크톱에서만 고정 높이 적용
   const dialogStyle = useMemo(() => {
     const style: React.CSSProperties = { zIndex: Z_INDEX.MODAL_CONTENT };
-
-    if (typeof window === 'undefined') return style;
-
-    // 모바일 키보드 대응
-    if (isKeyboardOpen && window.innerWidth < 640) {
-      style.height = `calc(100vh - ${keyboardHeight}px)`;
-      style.top = 0;
-    }
-    // 데스크톱 고정 높이
-    else if (window.innerWidth >= 640) {
+    if (isDesktop) {
       style.height = desktopHeight;
     }
-
     return style;
-  }, [isKeyboardOpen, keyboardHeight, desktopHeight]);
+  }, [isDesktop, desktopHeight]);
 
   // Radix UI body 스타일 정리
   useModalCleanup(open);
@@ -164,11 +157,11 @@ export function FullScreenDialog({
       <div
         className={cn(
           'fixed bg-background transition-all duration-300 pointer-events-auto',
-          // 모바일: 전체화면
-          'inset-0 w-full h-full',
+          // 모바일: 전체화면 (dvh로 키보드 자동 대응)
+          'inset-0 w-full h-dvh',
           // 데스크톱: 중앙 모달
           'sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2',
-          'sm:w-full sm:rounded-xl sm:border sm:shadow-lg',
+          'sm:w-full sm:h-auto sm:rounded-xl sm:border sm:shadow-lg',
           sizeClasses[desktopSize]
         )}
         style={dialogStyle}
@@ -218,8 +211,8 @@ export function FullScreenDialog({
             <div
               className={cn(
                 'border-t bg-background shrink-0',
-                // 키보드가 닫혀있을 때만 safe-area 적용
-                !isKeyboardOpen && 'pb-[env(safe-area-inset-bottom)]',
+                // safe-area 항상 적용 (dvh가 키보드 상태에 따라 자동 조정)
+                'pb-[env(safe-area-inset-bottom)]',
                 footerClassName
               )}
             >

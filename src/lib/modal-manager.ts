@@ -119,13 +119,9 @@ class ModalStateManager {
     if (typeof window !== 'undefined') {
       const viewport = window.visualViewport;
       const height = viewport?.height ?? window.innerHeight;
-      const bottomInset = viewport
-        ? Math.max(window.innerHeight - (viewport.height + viewport.offsetTop), 0)
-        : 0;
 
       const root = document.documentElement;
       root.style.setProperty('--app-viewport-height', `${height}px`);
-      root.style.setProperty('--app-safe-area-bottom', `${bottomInset}px`);
     }
   }
 

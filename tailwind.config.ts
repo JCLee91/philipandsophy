@@ -119,10 +119,10 @@ const config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
-        // Modern shimmer effect - optimized range and timing (2025 standard)
+        // Shimmer effect - align with utility range to avoid duplicate keyframes
         shimmer: {
-          '0%': { backgroundPosition: '-100% 0' },
-          '100%': { backgroundPosition: '100% 0' },
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
       },
       animation: {

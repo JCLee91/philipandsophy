@@ -13,25 +13,11 @@ function updateViewportVariables() {
   // 실제 높이 계산 (iOS PWA에서 더 정확)
   const height = window.innerHeight;
 
-  // iOS PWA에서는 safe-area-inset-bottom을 CSS env()로 처리
-  const bottomInset = isIOSPWA
-    ? 0 // CSS env()로 처리하도록 위임
-    : viewport
-      ? Math.max(window.innerHeight - (viewport.height + viewport.offsetTop), 0)
-      : 0;
-
   const root = document.documentElement;
 
   // 실제 높이 저장 (100vh 대신 사용)
   root.style.setProperty('--app-real-height', `${height}px`);
   root.style.setProperty('--app-viewport-height', `${viewport?.height ?? height}px`);
-
-  // iOS PWA에서는 CSS env() 사용, 아니면 계산값 사용
-  if (isIOSPWA) {
-    root.style.setProperty('--app-safe-area-bottom', 'env(safe-area-inset-bottom, 0px)');
-  } else {
-    root.style.setProperty('--app-safe-area-bottom', `${bottomInset}px`);
-  }
 
   // iOS PWA 클래스 추가
   if (isIOSPWA) {

@@ -107,12 +107,6 @@ export default function TopBar({
         .safe-area-header {
           padding-top: env(safe-area-inset-top);
         }
-
-        @supports (padding-top: constant(safe-area-inset-top)) {
-          .safe-area-header {
-            padding-top: constant(safe-area-inset-top);
-          }
-        }
       `}</style>
     </header>
   );
