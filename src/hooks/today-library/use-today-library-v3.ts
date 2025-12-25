@@ -152,7 +152,7 @@ export function useTodayLibraryV3() {
   const toggleAnswer = (participantId: string) => {
     const isMe = participantId === currentUserId;
 
-    if (isLocked && !isSuperAdmin && !isMe) {
+    if (effectiveIsLocked && !isSuperAdmin && !isMe) {
       showLockedToast('answer');
       return;
     }
@@ -194,11 +194,17 @@ export function useTodayLibraryV3() {
     }
   }, []);
 
+  const isPostProgram = cohort ? isAfterProgram(cohort) : false;
+  const showPostProgramView = isPostProgram && !urlMatchingDate;
+
+  // 프로그램 종료 후에는 인증 여부와 관계없이 모든 콘텐츠 잠금 해제
+  const effectiveIsLocked = isLocked && !isPostProgram;
+
   // 핸들러
   const handleProfileClick = (participantId: string) => {
     const isMe = participantId === currentUserId;
 
-    if (isLocked && !isSuperAdmin && !isMe) {
+    if (effectiveIsLocked && !isSuperAdmin && !isMe) {
       showLockedToast('profile');
       return;
     }
@@ -214,7 +220,7 @@ export function useTodayLibraryV3() {
   const handleReviewClick = (participantId: string) => {
     const isMe = participantId === currentUserId;
 
-    if (isLocked && !isSuperAdmin && !isMe) {
+    if (effectiveIsLocked && !isSuperAdmin && !isMe) {
       showLockedToast('review');
       return;
     }
@@ -279,8 +285,6 @@ export function useTodayLibraryV3() {
 
   const isLoading = sessionLoading || cohortLoading || viewerSubmissionLoading || membersLoading || submissionsLoading;
   const isValidSession = !!participant && !!cohort && !!cohortId;
-  const isPostProgram = cohort ? isAfterProgram(cohort) : false;
-  const showPostProgramView = isPostProgram && !urlMatchingDate;
 
   return {
     // 상태
@@ -289,7 +293,7 @@ export function useTodayLibraryV3() {
     currentUserId,
     isLoading,
     isValidSession,
-    
+
     // 조건
     isFirstTimeUser,
     isMatchingInProgress: isMatchingInProgress(),
@@ -298,8 +302,8 @@ export function useTodayLibraryV3() {
     fromRecap,
     isViewingOtherCluster,
     isSuperAdmin,
-    isLocked,
-    
+    isLocked: effectiveIsLocked,
+
     // 클러스터 데이터
     clusterMatching,
     clusterMembersWithSubmissions,
@@ -311,7 +315,7 @@ export function useTodayLibraryV3() {
     // 답변 확장 상태
     expandedAnswers,
     toggleAnswer,
-    
+
     // 핸들러
     handleProfileClick,
     handleReviewClick,
@@ -319,7 +323,7 @@ export function useTodayLibraryV3() {
     handleReturnToMyCluster,
     getTopBarTitle,
     getMeetingDateBadge,
-    
+
     router,
     toast,
   };
