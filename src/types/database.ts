@@ -154,27 +154,6 @@ export interface Cohort {
   type?: 'regular' | 'meetup'; // 🆕 기수 타입 (기본값: 'regular')
   location?: string; // 🆕 모임 장소 (meetup 타입일 경우)
   meetupDate?: string; // 🆕 모임 날짜 (meetup 타입일 경우, YYYY-MM-DD)
-
-  // 🆕 소셜링 시스템 (Phase-based Socializing v2)
-  socializingPhase?: 'idle' | 'option_vote' | 'attendance_check' | 'confirmed';
-  socializingDeadline?: string;  // 투표/참불 마감 시간 (ISO 8601, 예: "2025-11-27T18:00:00+09:00")
-  socializingOpenChatUrl?: string | null; // 오픈카톡방 URL (Phase 3 확정 시 입력)
-  socializingOptions?: {
-    combinations: Array<{
-      id: string;        // 고유 ID (예: "opt-1")
-      date: string;      // YYYY-MM-DD
-      time: string;      // HH:mm
-      location: string;  // 장소명
-    }>;
-  };
-  socializingResult?: {
-    optionId: string;      // 확정된 선택지 ID
-    date: string;          // 확정된 날짜
-    time: string;          // 확정된 시간
-    location: string;      // 확정된 장소
-    attendees: string[];   // 참석자 participant IDs
-    absentees: string[];   // 불참자 participant IDs
-  };
 }
 
 /**
@@ -267,22 +246,6 @@ export interface Participant {
   pushTokens?: PushTokenEntry[]; // 멀티 디바이스 FCM 푸시 토큰 배열 (Android/Desktop)
   webPushSubscriptions?: WebPushSubscriptionData[]; // 표준 Web Push 구독 배열 (iOS Safari + All)
   lastActivityAt?: Timestamp; // 마지막 활동 시간 (데이터센터용)
-
-  // 🆕 소셜링 투표 정보 (v2)
-  socializingVotes?: {
-    optionIds?: string[];  // 1차: 선택한 조합 ID 배열 (복수 선택 가능)
-    cantAttend?: boolean;  // 1차: 불참 여부 (true면 optionIds 무시)
-    attendance?: 'attending' | 'not_attending';  // 2차: 참석 여부
-  };
-
-  // 🆕 소셜링 매칭 결과 (Phase 3)
-  socializingResult?: {
-    cohortId: string;      // 배정된 모임 기수 ID
-    optionId: string;      // 확정된 선택지 ID
-    date: string;          // 확정된 날짜
-    time: string;          // 확정된 시간
-    location: string;      // 확정된 장소
-  };
 
   // 🆕 파티 프로필북 선택 (재참여자용)
   partyPreferredCohortId?: string; // 파티에서 보여줄 프로필북 기수 ID

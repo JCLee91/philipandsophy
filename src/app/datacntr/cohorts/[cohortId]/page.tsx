@@ -11,7 +11,6 @@ import { cohortParticipantSchema, type CohortParticipant } from '@/types/datacnt
 import TopBar from '@/components/TopBar';
 import BulkImageUploadModal from './_components/BulkImageUploadModal';
 import ParticipantEditDialog from '@/components/datacntr/participants/ParticipantEditDialog';
-import SocializingAdminControls from '@/features/socializing/components/SocializingAdminControls';
 import { getAdminHeaders } from '@/lib/auth-utils';
 import { getSubmissionDate } from '@/lib/date-utils';
 import type { MatchingResponse } from '@/types/matching';
@@ -631,13 +630,6 @@ export default function CohortDetailPage({ params }: CohortDetailPageProps) {
             </p>
           </div>
         </div>
-
-        {/* 애프터 다이닝 관리 (Socializing Admin Controls) */}
-        {cohort && (
-          <div className="mb-6">
-            <SocializingAdminControls cohort={cohort} onUpdate={fetchCohortDetail} />
-          </div>
-        )}
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

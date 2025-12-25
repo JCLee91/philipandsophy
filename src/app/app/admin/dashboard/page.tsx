@@ -185,15 +185,6 @@ function DashboardContent() {
     return !!todayEntry && Object.keys(todayEntry.assignments || {}).length > 0;
   }, [cohort, matchingTargetDate]);
 
-  // 소셜링 상태
-  const socializingPhase = cohort?.socializingPhase || 'idle';
-  const phaseLabels: Record<string, string> = {
-    idle: '대기 중',
-    option_vote: '1차 투표 중',
-    attendance_check: '참/불 확인 중',
-    confirmed: '최종 확정'
-  };
-
   // 어제 인증한 유저 매핑
   const verifiedUsers = useMemo(() => {
     if (!yesterdaySubmissions.length || !participants.length) return [];
@@ -414,52 +405,6 @@ function DashboardContent() {
                 clusters={cohort.dailyFeaturedParticipants[matchingTargetDate].clusters}
                 participants={participants}
               />
-            </div>
-          )}
-
-          {/* 3. 소셜링 현황 */}
-          {cohort?.socializingPhase && cohort.socializingPhase !== 'idle' && (
-            <div className="space-y-2">
-              <h2 className="text-sm font-semibold text-muted-foreground ml-1">소셜링 진행 현황</h2>
-              <Card className="bg-white border-none shadow-xs">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-medium text-muted-foreground">현재 단계</span>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-100">
-                      {phaseLabels[socializingPhase]}
-                    </Badge>
-                  </div>
-
-                  {/* 단계별 간단 정보 */}
-                  {socializingPhase === 'option_vote' && (
-                    <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                      멤버들이 모임 날짜와 장소를 투표하고 있습니다.
-                    </div>
-                  )}
-                  {socializingPhase === 'attendance_check' && (
-                    <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                      최종 확정된 일정에 대한 참석 여부를 확인 중입니다.
-                    </div>
-                  )}
-                  {socializingPhase === 'confirmed' && (
-                    <div className="space-y-2">
-                      <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                        모임이 최종 확정되었습니다.
-                      </div>
-                      {cohort.socializingResult && (
-                        <div className="text-sm grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-1">
-                          <span className="text-muted-foreground">날짜</span>
-                          <span className="font-medium">{cohort.socializingResult.date}</span>
-                          <span className="text-muted-foreground">시간</span>
-                          <span className="font-medium">{cohort.socializingResult.time}</span>
-                          <span className="text-muted-foreground">장소</span>
-                          <span className="font-medium truncate">{cohort.socializingResult.location}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
             </div>
           )}
 

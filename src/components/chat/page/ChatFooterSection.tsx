@@ -2,22 +2,19 @@
 
 import UnifiedButton from '@/components/UnifiedButton';
 import FooterActions from '@/components/FooterActions';
-import { LayoutDashboard, PartyPopper } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { LayoutDashboard } from 'lucide-react';
 
 type ChatFooterSectionProps = {
   isAdmin: boolean;
   isDay1: boolean;
   isAfterDay14: boolean;
   hasSubmittedToday: boolean;
-  isSocializingActive?: boolean;
   cohortName?: string; // 기수 이름 (예: "2기")
   participantName?: string; // 참가자 이름
   useClusterMatching?: boolean; // V3 클러스터 매칭 여부
   onRequestSubmission: () => void;
   onNavigateDashboard: () => void;
   onNavigateTodayLibrary: () => void;
-  onOpenSocializing?: () => void;
 };
 
 export function ChatFooterSection({
@@ -25,14 +22,12 @@ export function ChatFooterSection({
   isDay1,
   isAfterDay14,
   hasSubmittedToday,
-  isSocializingActive,
   cohortName,
   participantName,
   useClusterMatching,
   onRequestSubmission,
   onNavigateDashboard,
   onNavigateTodayLibrary,
-  onOpenSocializing,
 }: ChatFooterSectionProps) {
   return (
     <FooterActions>
@@ -54,24 +49,11 @@ export function ChatFooterSection({
             </div>
           ) : (
             <>
-              {isSocializingActive && (
-                <UnifiedButton
-                  variant="primary"
-                  onClick={onOpenSocializing}
-                  className="whitespace-normal h-auto leading-tight"
-                >
-                  애프터 다이닝
-                </UnifiedButton>
-              )}
-
               {isAfterDay14 ? (
                 <UnifiedButton
-                  variant={isSocializingActive ? "secondary" : "primary"}
+                  variant="primary"
                   onClick={onNavigateTodayLibrary}
-                  className={cn(
-                    "whitespace-normal h-auto leading-tight",
-                    !isSocializingActive && "col-span-2"
-                  )}
+                  className="whitespace-normal h-auto leading-tight col-span-2"
                 >
                   {useClusterMatching ? (
                     // V3: 클러스터 매칭 - 개인 여정 회고
@@ -108,10 +90,7 @@ export function ChatFooterSection({
                   <UnifiedButton
                     variant="secondary"
                     onClick={onNavigateTodayLibrary}
-                    className={cn(
-                      "whitespace-normal h-auto leading-tight",
-                      isSocializingActive && "col-span-2"
-                    )}
+                    className="whitespace-normal h-auto leading-tight"
                   >
                     오늘의 서재
                   </UnifiedButton>
