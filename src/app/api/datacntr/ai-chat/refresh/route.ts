@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 
 export async function GET(req: NextRequest) {
 
@@ -42,8 +43,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const filteredParticipants = participantsSnap.docs.filter((doc) =>
+      filterDatacntrParticipant(doc.data())
+    );
+
     // 참가자 ID 목록
-    const participantIds = participantsSnap.docs.map(d => d.id);
+    const participantIds = filteredParticipants.map(d => d.id);
 
     // 해당 기수 참가자의 submissions만 필터링
     const submissionsSnap = {
@@ -54,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     const allData = {
       cohort: { id: cohortDoc.id, ...cohortDoc.data() },
-      participants: participantsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      participants: filteredParticipants.map(d => ({ id: d.id, ...d.data() })),
       submissions: submissionsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
       notices: noticesSnap.docs.map(d => ({ id: d.id, ...d.data() })),
     };

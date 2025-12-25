@@ -5,6 +5,7 @@ import { format, eachDayOfInterval, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 import { getDb } from '@/lib/firebase';
 import { ReadingSubmission, Participant, Cohort, COLLECTIONS } from '@/types/database';
 import { useDatacntrStore } from '@/stores/datacntr-store';
@@ -82,7 +83,7 @@ export default function DataCenterBoardPage() {
             data.id = doc.id;
             return data;
           })
-          .filter((p) => !p.isSuperAdmin && !p.isAdministrator && !p.isGhost);
+          .filter((p) => filterDatacntrParticipant(p));
 
         // 4. Get all submissions
         const participantIds = participants.map((p) => p.id);

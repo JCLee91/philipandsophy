@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 
 /**
  * GET /api/datacntr/export-books
@@ -17,12 +18,12 @@ export async function GET(request: NextRequest) {
 
     const db = getAdminDb();
 
-    // 어드민, 슈퍼어드민, 고스트 ID 목록 수집
+    // 어드민, 슈퍼어드민, 고스트 + status 제외 ID 목록 수집
     const participantsSnapshot = await db.collection(COLLECTIONS.PARTICIPANTS).get();
     const excludedIds = new Set<string>();
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      if (data.isSuperAdmin || data.isAdministrator || data.isGhost) {
+      if (!filterDatacntrParticipant(data)) {
         excludedIds.add(doc.id);
       }
     });

@@ -11,6 +11,7 @@ import type {
 } from '@/types/database';
 import { Timestamp } from 'firebase-admin/firestore';
 import { logger } from '@/lib/logger';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 
 // Types
 interface DailyMatchingEntry {
@@ -192,7 +193,7 @@ export async function POST(request: NextRequest) {
 
     const participants = participantsSnapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() } as Participant))
-      .filter((p) => !p.isAdministrator && !p.isSuperAdmin && !p.isGhost);
+      .filter((p) => filterDatacntrParticipant(p));
 
     const participantInfoMap = new Map<string, ParticipantInfo>(
       participants.map((p) => [

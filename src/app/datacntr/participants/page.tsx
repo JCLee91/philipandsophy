@@ -220,18 +220,20 @@ export default function ParticipantsPage() {
             <Filter className="h-4 w-4" />
             필터
             {filters.pushToken !== 'all' && (
-              <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">1</span>
+              <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
+                1
+              </span>
             )}
           </button>
         </div>
 
         {/* 필터 패널 */}
         {showFilters && (
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
             <FormSelect
               label="푸시 알림"
               value={filters.pushToken}
-              onChange={(value) => setFilters({ pushToken: value as FilterState['pushToken'] })}
+              onChange={(value) => setFilters({ ...filters, pushToken: value as FilterState['pushToken'] })}
               options={[
                 { value: 'all', label: '전체' },
                 { value: 'enabled', label: '허용' },
@@ -239,10 +241,12 @@ export default function ParticipantsPage() {
               ]}
             />
             {filters.pushToken !== 'all' && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="pt-4 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setFilters({ pushToken: 'all' })}
+                  onClick={() => {
+                    setFilters({ ...filters, pushToken: 'all' });
+                  }}
                   className="text-sm text-gray-600 hover:text-gray-900 font-medium"
                 >
                   필터 초기화

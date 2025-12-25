@@ -8,6 +8,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { logger } from '@/lib/logger';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 
 /**
  * POST /api/datacntr/closing-party/calculate
@@ -85,7 +86,7 @@ async function calculateStats(
 
   const participants = participantsSnapshot.docs
     .map((doc) => ({ id: doc.id, ...doc.data() } as Participant))
-    .filter((p) => !p.isAdministrator && !p.isSuperAdmin && !p.isGhost);
+    .filter((p) => filterDatacntrParticipant(p));
 
   const participantMap = new Map(participants.map((p) => [p.id, p]));
 

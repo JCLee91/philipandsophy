@@ -5,12 +5,54 @@ import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { DailyActivity } from '@/types/datacntr';
 
+type DateLike =
+  | string
+  | Date
+  | { toDate?: () => Date; _seconds?: number; seconds?: number }
+  | null
+  | undefined;
+
 interface ActivityChartProps {
   data: DailyActivity[];
   isLoading?: boolean;
   cohortName?: string; // 기수 이름 (예: '1기')
-  cohortStartDate?: string; // 시작일 (ISO 8601)
-  cohortEndDate?: string; // 종료일 (ISO 8601)
+  cohortStartDate?: DateLike; // 시작일 (ISO 8601)
+  cohortEndDate?: DateLike; // 종료일 (ISO 8601)
+}
+
+function coerceDate(value: DateLike): Date | null {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    const parsed = parseISO(value);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value.toDate === 'function') {
+    const parsed = value.toDate();
+    return parsed instanceof Date && !isNaN(parsed.getTime()) ? parsed : null;
+  }
+
+  if (typeof value._seconds === 'number') {
+    const parsed = new Date(value._seconds * 1000);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (typeof value.seconds === 'number') {
+    const parsed = new Date(value.seconds * 1000);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+}
+
+function formatDateLabel(value: DateLike): string {
+  const parsed = coerceDate(value);
+  return parsed ? format(parsed, 'M/d', { locale: ko }) : '-';
 }
 
 export default function ActivityChart({
@@ -32,19 +74,19 @@ export default function ActivityChart({
   // 날짜 포맷팅
   const formattedData = data.map((item) => ({
     ...item,
-    dateLabel: format(parseISO(item.date), 'M/d', { locale: ko }),
+    dateLabel: formatDateLabel(item.date),
   }));
 
   // 차트 제목 생성
   let chartTitle = '일별 활동 추이';
   if (cohortName && cohortStartDate && cohortEndDate) {
-    const startFormatted = format(parseISO(cohortStartDate), 'M/d', { locale: ko });
-    const endFormatted = format(parseISO(cohortEndDate), 'M/d', { locale: ko });
+    const startFormatted = formatDateLabel(cohortStartDate);
+    const endFormatted = formatDateLabel(cohortEndDate);
     chartTitle = `${cohortName} 일별 활동 추이 (${startFormatted} ~ ${endFormatted})`;
   } else if (data.length > 0) {
     // 전체 기수 또는 기수 정보 없을 때
-    const firstDate = format(parseISO(data[0].date), 'M/d', { locale: ko });
-    const lastDate = format(parseISO(data[data.length - 1].date), 'M/d', { locale: ko });
+    const firstDate = formatDateLabel(data[0].date);
+    const lastDate = formatDateLabel(data[data.length - 1].date);
     chartTitle = `전체 기수 일별 활동 추이 (${firstDate} ~ ${lastDate})`;
   }
 

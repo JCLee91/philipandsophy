@@ -5,6 +5,7 @@ import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import type { LikesStats, TopReceiver, MostLikedSubmission } from '@/types/datacntr';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 
 export async function GET(request: NextRequest) {
     try {
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
         // 관리자/고스트 제외 로직
         const validParticipants = participantsSnap.docs.filter(doc => {
             const data = doc.data();
-            return !data.isAdministrator && !data.isSuperAdmin && !data.isGhost;
+            return filterDatacntrParticipant(data);
         });
 
         if (cohortId) {

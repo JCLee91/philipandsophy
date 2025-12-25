@@ -7,6 +7,7 @@ import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { calculateEngagementScore, getEngagementLevel, getWeeksPassed } from '@/lib/datacntr/engagement';
 import { sanitizeParticipantForClient } from '@/lib/datacntr/sanitize';
 import { getParticipantStatus } from '@/lib/datacntr/status';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 import { ACTIVITY_THRESHOLDS } from '@/constants/datacntr';
 import type { DataCenterParticipant } from '@/types/datacntr';
 import { format } from 'date-fns';
@@ -39,10 +40,9 @@ export async function GET(request: NextRequest) {
 
     const db = getAdminDb();
 
-    // URL에서 cohortId 파라미터 추출
+    // URL에서 쿼리 파라미터 추출
     const { searchParams } = new URL(request.url);
     const cohortId = searchParams.get('cohortId');
-
     // 참가자 조회 (cohortId 필터링 옵션)
     const participantsCollection = db.collection(COLLECTIONS.PARTICIPANTS);
     const participantsQuery = cohortId
@@ -53,10 +53,10 @@ export async function GET(request: NextRequest) {
       .orderBy('createdAt', 'asc')
       .get();
 
-    // 어드민, 슈퍼어드민, 고스트 제외 필터링
+    // 어드민, 슈퍼어드민, 고스트 제외 + status 필터링
     const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+      return filterDatacntrParticipant(data);
     });
 
     // 코호트 정보 맵 생성 (이름 + 시작일)

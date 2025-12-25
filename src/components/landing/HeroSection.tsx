@@ -18,7 +18,7 @@ const CONSTANTS = {
 };
 
 export default function HeroSection({
-    bgImage1 = '/image/landing/hero_bg_1.png',
+    bgImage1 = '/image/landing/hero_bg_1.webp?v=20251225',
     bgImage2 = '/image/landing/hero_bg_2.png',
 }: HeroSectionProps) {
     const [displayString, setDisplayString] = useState('');

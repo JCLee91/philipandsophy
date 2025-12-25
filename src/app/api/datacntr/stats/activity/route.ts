@@ -5,6 +5,7 @@ import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import { format, subDays, endOfDay, parseISO, differenceInDays, addDays } from 'date-fns';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 import type { DailyActivity } from '@/types/datacntr';
 
 function hasAnyPushSubscription(data: any): boolean {
@@ -110,12 +111,12 @@ export async function GET(request: NextRequest) {
         : db.collection(COLLECTIONS.PARTICIPANTS).get(),
     ]);
 
-    // 어드민, 슈퍼어드민, 고스트 ID 목록 생성
+    // 어드민, 슈퍼어드민, 고스트 + status 기반 제외 ID 목록 생성
     const excludedIds = new Set(
       allParticipantsSnapshot.docs
         .filter((doc) => {
           const data = doc.data();
-          return data.isSuperAdmin === true || data.isAdministrator === true || data.isGhost === true;
+          return !filterDatacntrParticipant(data);
         })
         .map((doc) => doc.id)
     );
@@ -144,8 +145,8 @@ export async function GET(request: NextRequest) {
       // 그날까지 푸시 허용한 참가자 수 (누적)
       const pushEnabledCount = allParticipantsSnapshot.docs.filter((doc) => {
         const data = doc.data();
-        // 어드민, 슈퍼어드민, 고스트 제외
-        if (data.isSuperAdmin || data.isAdministrator || data.isGhost) return false;
+        // 어드민, 슈퍼어드민, 고스트 + status 필터링
+        if (!filterDatacntrParticipant(data)) return false;
         // 푸시 구독/토큰 확인
         if (!hasAnyPushSubscription(data)) return false;
         // 그날까지 가입한 참가자 (그날 늦게 가입한 사용자도 포함)

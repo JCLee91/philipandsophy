@@ -6,6 +6,7 @@ import type { ClosingPartyStats, Cohort, Participant } from '@/types/database';
 import { addDays, format, parseISO, isAfter } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 
 export interface ParticipantSubmissionCount {
   participantId: string;
@@ -123,7 +124,7 @@ async function getParticipantSubmissionCounts(
 
   const participants = participantsSnapshot.docs
     .map((doc) => ({ id: doc.id, ...doc.data() } as Participant))
-    .filter((p) => !p.isAdministrator && !p.isSuperAdmin && !p.isGhost);
+    .filter((p) => filterDatacntrParticipant(p));
 
   const participantMap = new Map(participants.map((p) => [p.id, p]));
   const participantIds = Array.from(participantMap.keys());

@@ -3,6 +3,7 @@ import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
+import { APP_CONSTANTS, SYSTEM_IDS } from '@/constants/app';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
 
     const participantsMap = new Map();
     const targetParticipantIds: string[] = [];
+    const allowedParticipantIds = new Set<string>();
 
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
@@ -35,55 +37,65 @@ export async function GET(request: NextRequest) {
         cohortId: data.cohortId,
       });
       targetParticipantIds.push(doc.id);
+      allowedParticipantIds.add(doc.id);
     });
+    if (!participantsMap.has(SYSTEM_IDS.ADMIN)) {
+      participantsMap.set(SYSTEM_IDS.ADMIN, {
+        name: APP_CONSTANTS.ADMIN_NAME,
+        cohortId: SYSTEM_IDS.ADMIN,
+      });
+    }
+    allowedParticipantIds.add(SYSTEM_IDS.ADMIN);
 
     // 2. 메시지 조회 (senderId/receiverId IN 쿼리로 필터링)
     let messages: any[] = [];
-    if (cohortId && targetParticipantIds.length > 0) {
-      // Firestore IN 제약: 최대 10개씩 분할 쿼리 (senderId 기준)
-      const chunkSize = 10;
-      const senderMessages = new Set<string>(); // 중복 방지
+    if (cohortId) {
+      if (targetParticipantIds.length > 0) {
+        // Firestore IN 제약: 최대 10개씩 분할 쿼리 (senderId 기준)
+        const chunkSize = 10;
+        const senderMessages = new Set<string>(); // 중복 방지
 
-      for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
-        const chunk = targetParticipantIds.slice(i, i + chunkSize);
+        for (let i = 0; i < targetParticipantIds.length; i += chunkSize) {
+          const chunk = targetParticipantIds.slice(i, i + chunkSize);
 
-        // senderId가 해당 참가자인 메시지
-        const senderChunk = await db
-          .collection(COLLECTIONS.MESSAGES)
-          .where('senderId', 'in', chunk)
-          .orderBy('createdAt', 'desc')
-          .limit(200)
-          .get();
+          // senderId가 해당 참가자인 메시지
+          const senderChunk = await db
+            .collection(COLLECTIONS.MESSAGES)
+            .where('senderId', 'in', chunk)
+            .orderBy('createdAt', 'desc')
+            .limit(200)
+            .get();
 
-        senderChunk.docs.forEach((doc) => {
-          if (!senderMessages.has(doc.id)) {
-            senderMessages.add(doc.id);
-            messages.push(doc);
-          }
-        });
+          senderChunk.docs.forEach((doc) => {
+            if (!senderMessages.has(doc.id)) {
+              senderMessages.add(doc.id);
+              messages.push(doc);
+            }
+          });
 
-        // receiverId가 해당 참가자인 메시지
-        const receiverChunk = await db
-          .collection(COLLECTIONS.MESSAGES)
-          .where('receiverId', 'in', chunk)
-          .orderBy('createdAt', 'desc')
-          .limit(200)
-          .get();
+          // receiverId가 해당 참가자인 메시지
+          const receiverChunk = await db
+            .collection(COLLECTIONS.MESSAGES)
+            .where('receiverId', 'in', chunk)
+            .orderBy('createdAt', 'desc')
+            .limit(200)
+            .get();
 
-        receiverChunk.docs.forEach((doc) => {
-          if (!senderMessages.has(doc.id)) {
-            senderMessages.add(doc.id);
-            messages.push(doc);
-          }
+          receiverChunk.docs.forEach((doc) => {
+            if (!senderMessages.has(doc.id)) {
+              senderMessages.add(doc.id);
+              messages.push(doc);
+            }
+          });
+        }
+
+        // 최신순 정렬
+        messages.sort((a, b) => {
+          const aTime = a.data().createdAt?.toMillis() || 0;
+          const bTime = b.data().createdAt?.toMillis() || 0;
+          return bTime - aTime;
         });
       }
-
-      // 최신순 정렬
-      messages.sort((a, b) => {
-        const aTime = a.data().createdAt?.toMillis() || 0;
-        const bTime = b.data().createdAt?.toMillis() || 0;
-        return bTime - aTime;
-      });
     } else {
       // cohortId 없으면 전체 조회
       const messagesSnapshot = await db
@@ -94,8 +106,16 @@ export async function GET(request: NextRequest) {
       messages = messagesSnapshot.docs;
     }
 
+    const filteredMessages = messages.filter((doc) => {
+      const data = doc.data();
+      return (
+        allowedParticipantIds.has(data.senderId) &&
+        allowedParticipantIds.has(data.receiverId)
+      );
+    });
+
     // 3. 메시지에 발신자/수신자명 추가
-    const messagesWithParticipant = messages.map((doc) => {
+    const messagesWithParticipant = filteredMessages.map((doc) => {
       const messageData = doc.data();
       const sender = participantsMap.get(messageData.senderId);
       const receiver = participantsMap.get(messageData.receiverId);

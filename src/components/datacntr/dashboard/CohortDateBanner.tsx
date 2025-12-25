@@ -4,12 +4,49 @@ import { format, differenceInDays, isWithinInterval, parseISO, isBefore, isAfter
 import { ko } from 'date-fns/locale';
 import { Calendar, Clock, CheckCircle2, Timer } from 'lucide-react';
 
+type DateLike =
+  | string
+  | Date
+  | { toDate?: () => Date; _seconds?: number; seconds?: number }
+  | null
+  | undefined;
+
 interface CohortDateBannerProps {
-  startDate: string;
-  endDate: string;
-  programStartDate?: string;
+  startDate: DateLike;
+  endDate: DateLike;
+  programStartDate?: DateLike;
   cohortName: string;
   isLoading?: boolean;
+}
+
+function coerceDate(value: DateLike): Date | null {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    const parsed = parseISO(value);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value.toDate === 'function') {
+    const parsed = value.toDate();
+    return parsed instanceof Date && !isNaN(parsed.getTime()) ? parsed : null;
+  }
+
+  if (typeof value._seconds === 'number') {
+    const parsed = new Date(value._seconds * 1000);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (typeof value.seconds === 'number') {
+    const parsed = new Date(value.seconds * 1000);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
 }
 
 export default function CohortDateBanner({
@@ -29,8 +66,16 @@ export default function CohortDateBanner({
   }
 
   const today = new Date();
-  const start = parseISO(startDate);
-  const end = parseISO(endDate);
+  const start = coerceDate(startDate);
+  const end = coerceDate(endDate);
+
+  if (!start || !end) {
+    return (
+      <div className="bg-white rounded-xl p-5 shadow-xs border border-gray-200 mb-6">
+        <p className="text-sm text-gray-500">일정 정보를 불러올 수 없습니다.</p>
+      </div>
+    );
+  }
 
   // 진행 상태 계산
   const isUpcoming = isBefore(today, start);

@@ -10,6 +10,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { requireAuthToken } from '@/lib/api-auth';
 import { logger } from '@/lib/logger';
 import { COLLECTIONS } from '@/types/database';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 
 export async function GET(request: NextRequest) {
   // 🔒 관리자 인증 확인
@@ -43,10 +44,10 @@ export async function GET(request: NextRequest) {
       .where('cohortId', '==', cohortId)
       .get();
 
-    // 어드민, 슈퍼어드민, 고스트 제외 필터링
+    // 어드민, 슈퍼어드민, 고스트 제외 + status 필터링
     const filteredParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+      return filterDatacntrParticipant(data);
     });
 
     // Get all participant IDs in the cohort (excluding admins and ghosts)

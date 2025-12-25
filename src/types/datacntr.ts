@@ -92,6 +92,13 @@ export const dataCenterParticipantSchema = sanitizedParticipantSchema.extend({
   engagementLevel: z.enum(['high', 'medium', 'low']).optional(),
   activityStatus: z.enum(['active', 'moderate', 'dormant']).optional(),
   /**
+   * status: 참가자 상태
+   * - applicant: 합격했지만 결제 미완료
+   * - active: 결제 완료, 활동 중 (기본값)
+   * - inactive: 휴면/탈퇴
+   */
+  status: z.enum(['applicant', 'active', 'inactive']).optional(),
+  /**
    * hasPushToken: 푸시 알림 활성화 여부
    * - pushTokens 배열 우선 확인 (활성 토큰 존재 여부)
    * - pushTokens 없으면 레거시 pushToken 필드 폴백

@@ -4,6 +4,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import { sanitizeParticipantForClient } from '@/lib/datacntr/sanitize';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 import type { CohortParticipant } from '@/types/datacntr';
 
 interface RouteParams {
@@ -42,10 +43,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .where('cohortId', '==', cohortId)
       .get();
 
-    // 어드민, 슈퍼어드민, 고스트 제외 필터링
+    // 어드민, 슈퍼어드민, 고스트 제외 + status 필터링
     const nonAdminParticipants = participantsSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !data.isSuperAdmin && !data.isAdministrator && !data.isGhost;
+      return filterDatacntrParticipant(data);
     });
 
     // 각 참가자의 인증 횟수 조회 (관리자 제외)

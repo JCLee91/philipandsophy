@@ -4,6 +4,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
 import { timestampToKST, safeTimestampToDate } from '@/lib/datacntr/timestamp';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 import { format } from 'date-fns';
 
 /**
@@ -30,17 +31,13 @@ export async function GET(request: NextRequest) {
     }
     const participantsSnapshot = await participantsQuery.get();
 
-    const adminIds = new Set<string>();
     const targetParticipantIds: string[] = [];
 
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      // 어드민, 슈퍼어드민, 고스트 제외
-      if (data.isSuperAdmin || data.isAdministrator || data.isGhost) {
-        adminIds.add(doc.id);
-      } else {
-        targetParticipantIds.push(doc.id);
-      }
+      // 어드민, 슈퍼어드민, 고스트 + status 필터링
+      if (!filterDatacntrParticipant(data)) return;
+      targetParticipantIds.push(doc.id);
     });
 
     // 2. 독서 인증 조회 (participantId IN 쿼리로 필터링)
@@ -86,6 +83,7 @@ export async function GET(request: NextRequest) {
     const participantNames = new Map<string, string>();
     participantsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
+      if (!filterDatacntrParticipant(data)) return;
       participantNames.set(doc.id, data.name || '알 수 없음');
     });
 

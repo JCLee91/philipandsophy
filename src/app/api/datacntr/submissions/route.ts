@@ -3,6 +3,7 @@ import { requireWebAppAdmin } from '@/lib/api-auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { COLLECTIONS } from '@/types/database';
 import { logger } from '@/lib/logger';
+import { filterDatacntrParticipant } from '@/lib/datacntr/participant-filter';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +27,6 @@ export async function GET(request: NextRequest) {
     const participantsSnapshot = await participantsQuery.get();
 
     const participantsMap = new Map();
-    const superAdminIds = new Set<string>();
     const targetParticipantIds: string[] = [];
 
     participantsSnapshot.docs.forEach((doc) => {
@@ -36,12 +36,9 @@ export async function GET(request: NextRequest) {
         cohortId: data.cohortId,
       });
 
-      // 어드민, 슈퍼어드민, 고스트 제외
-      if (data.isSuperAdmin || data.isAdministrator || data.isGhost) {
-        superAdminIds.add(doc.id);
-      } else {
-        targetParticipantIds.push(doc.id);
-      }
+      // 어드민, 슈퍼어드민, 고스트 + status 필터링
+      if (!filterDatacntrParticipant(data)) return;
+      targetParticipantIds.push(doc.id);
     });
 
     // 2. 독서 인증 조회 (participantId IN 쿼리로 필터링)
