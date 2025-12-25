@@ -56,8 +56,13 @@ export async function GET(request: NextRequest) {
       }
 
       const cohortData = cohortDoc.data();
-      const cohortStartDate = parseISO(cohortData.startDate); // ISO 8601 문자열 → Date
-      const cohortEndDate = parseISO(cohortData.endDate);
+      // startDate/endDate는 ISO 문자열 또는 Firestore Timestamp일 수 있음
+      const cohortStartDate = typeof cohortData.startDate === 'string'
+        ? parseISO(cohortData.startDate)
+        : safeTimestampToDate(cohortData.startDate) || new Date();
+      const cohortEndDate = typeof cohortData.endDate === 'string'
+        ? parseISO(cohortData.endDate)
+        : safeTimestampToDate(cohortData.endDate) || new Date();
 
       // 코호트 시작일~종료일 기간 사용
       startDate = new Date(cohortStartDate);

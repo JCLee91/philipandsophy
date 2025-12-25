@@ -40,6 +40,18 @@ export default function CohortCreatePage() {
   const [programStartDate, setProgramStartDate] = useState('');
   const [useClusterMatching, setUseClusterMatching] = useState(true); // 기본값: v3 (클러스터)
 
+  // startDate 변경 시 endDate 자동 계산 (2주 프로그램: +13일)
+  const handleStartDateChange = (newStartDate: string) => {
+    setStartDate(newStartDate);
+    if (newStartDate) {
+      const start = new Date(newStartDate);
+      start.setDate(start.getDate() + 13); // 2주 = 14일 (시작일 포함하면 +13)
+      setEndDate(start.toISOString().split('T')[0]);
+      // programStartDate도 같이 설정 (권장사항)
+      setProgramStartDate(newStartDate);
+    }
+  };
+
   // 참가자 목록
   const [participants, setParticipants] = useState<ParticipantRow[]>([
     { name: '', phone: '', gender: '', role: 'participant' },
@@ -316,11 +328,11 @@ export default function CohortCreatePage() {
                 id="startDate"
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => handleStartDateChange(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="endDate">종료일 *</Label>
+              <Label htmlFor="endDate">종료일 * (자동 계산: 시작일 +13일)</Label>
               <Input
                 id="endDate"
                 type="date"

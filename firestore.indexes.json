@@ -271,6 +271,24 @@
       ]
     },
     {
+      "collectionGroup": "participants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "phoneNumber",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cohortId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "reading_submissions",
       "queryScope": "COLLECTION",
       "fields": [

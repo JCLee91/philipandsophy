@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { format, eachDayOfInterval, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 import { getDb } from '@/lib/firebase';
 import { ReadingSubmission, Participant, Cohort, COLLECTIONS } from '@/types/database';
 import { useDatacntrStore } from '@/stores/datacntr-store';
@@ -55,9 +56,13 @@ export default function DataCenterBoardPage() {
 
         setCohort(targetCohort);
 
-        // 2. Generate date range
-        const startDate = parseISO(targetCohort.startDate);
-        const endDate = parseISO(targetCohort.endDate);
+        // 2. Generate date range (날짜는 ISO 문자열 또는 Firestore Timestamp일 수 있음)
+        const startDate = typeof targetCohort.startDate === 'string'
+          ? parseISO(targetCohort.startDate)
+          : safeTimestampToDate(targetCohort.startDate) || new Date();
+        const endDate = typeof targetCohort.endDate === 'string'
+          ? parseISO(targetCohort.endDate)
+          : safeTimestampToDate(targetCohort.endDate) || new Date();
         const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
         const dateStrings = dateRange.map((date) => format(date, 'yyyy-MM-dd'));
         setDates(dateStrings);
@@ -160,7 +165,19 @@ export default function DataCenterBoardPage() {
       title="독서 인증 현황판"
       description={
         cohort
-          ? `${cohort.name} • ${format(parseISO(cohort.startDate), 'M월 d일', { locale: ko })} - ${format(parseISO(cohort.endDate), 'M월 d일', { locale: ko })}`
+          ? `${cohort.name} • ${format(
+              typeof cohort.startDate === 'string'
+                ? parseISO(cohort.startDate)
+                : safeTimestampToDate(cohort.startDate) || new Date(),
+              'M월 d일',
+              { locale: ko }
+            )} - ${format(
+              typeof cohort.endDate === 'string'
+                ? parseISO(cohort.endDate)
+                : safeTimestampToDate(cohort.endDate) || new Date(),
+              'M월 d일',
+              { locale: ko }
+            )}`
           : undefined
       }
       isLoading={authLoading || loading}

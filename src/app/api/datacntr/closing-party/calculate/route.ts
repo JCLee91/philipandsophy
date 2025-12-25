@@ -109,9 +109,17 @@ async function calculateStats(
   }
 
   // 3. 프로그램 기간 계산 (OT 제외 13일)
-  const programStartDate = cohort.programStartDate || cohort.startDate;
-  const firstSubmissionDate = format(addDays(parseISO(programStartDate), 1), 'yyyy-MM-dd');
-  const totalDays = differenceInDays(parseISO(cohort.endDate), parseISO(firstSubmissionDate)) + 1;
+  const programStartDateRaw = cohort.programStartDate || cohort.startDate;
+  // 날짜는 ISO 문자열 또는 Firestore Timestamp일 수 있음
+  const programStartDate = typeof programStartDateRaw === 'string'
+    ? parseISO(programStartDateRaw)
+    : safeTimestampToDate(programStartDateRaw) || new Date();
+  const cohortEndDate = typeof cohort.endDate === 'string'
+    ? parseISO(cohort.endDate)
+    : safeTimestampToDate(cohort.endDate) || new Date();
+
+  const firstSubmissionDate = format(addDays(programStartDate, 1), 'yyyy-MM-dd');
+  const totalDays = differenceInDays(cohortEndDate, parseISO(firstSubmissionDate)) + 1;
 
   // 인증 가능한 날짜 배열 생성
   const allDates: string[] = [];

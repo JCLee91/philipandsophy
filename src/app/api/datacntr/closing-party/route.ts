@@ -5,6 +5,7 @@ import { COLLECTIONS } from '@/types/database';
 import type { ClosingPartyStats, Cohort, Participant } from '@/types/database';
 import { addDays, format, parseISO, isAfter } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { safeTimestampToDate } from '@/lib/datacntr/timestamp';
 
 export interface ParticipantSubmissionCount {
   participantId: string;
@@ -59,7 +60,10 @@ export async function GET(request: NextRequest) {
     // 3. 프로그램 종료 여부 및 계산 가능 시점 확인
     const now = new Date();
     const kstNow = toZonedTime(now, 'Asia/Seoul');
-    const endDate = parseISO(cohort.endDate);
+    // endDate는 ISO 문자열 또는 Firestore Timestamp일 수 있음
+    const endDate = typeof cohort.endDate === 'string'
+      ? parseISO(cohort.endDate)
+      : safeTimestampToDate(cohort.endDate) || new Date();
     const programEnded = isAfter(kstNow, endDate);
 
     // 계산 가능 시점: 종료일 다음날 새벽 3시

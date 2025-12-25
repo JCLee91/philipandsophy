@@ -19,6 +19,37 @@ const CRON_SECRET = process.env.CRON_SECRET;
 const FALLBACK_COHORT_ID = process.env.CURRENT_COHORT_ID || '6';
 
 /**
+ * cohort가 없으면 자동 생성 (기본값으로)
+ */
+async function ensureCohortExists(cohortId: string): Promise<void> {
+  const db = getAdminDb();
+  const cohortRef = db.collection('cohorts').doc(cohortId);
+  const cohortDoc = await cohortRef.get();
+
+  if (cohortDoc.exists) {
+    return; // 이미 존재
+  }
+
+  // 자동 생성: 기본값으로 cohort 문서 생성
+  const now = Timestamp.now();
+  const defaultCohortData = {
+    name: `${cohortId}기`,
+    startDate: now, // 관리자가 나중에 수정
+    endDate: now,   // 관리자가 나중에 수정
+    isActive: false, // 관리자가 활성화
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await cohortRef.set(defaultCohortData);
+
+  logger.info('Auto-created cohort document', {
+    cohortId,
+    name: defaultCohortData.name,
+  });
+}
+
+/**
  * 데이터센터 랜딩 설정에서 현재 모집중인 기수 가져오기
  * config/landing 문서의 cohortNumber 필드 사용
  */
@@ -253,6 +284,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
 
     // 2.5 현재 모집중인 기수 가져오기
     const cohortId = await getRecruitingCohortId();
+
+    // 2.6 cohort 문서가 없으면 자동 생성
+    await ensureCohortExists(cohortId);
 
     logger.info('Welcome URL cron job started', {
       cohortId,

@@ -14,10 +14,17 @@ export const AIRTABLE_FIELDS = {
   WELCOME_PAGE_URL: '월컴 페이지',
   /** 통화 스크립트 (AI 환영 메시지 생성용) */
   CALL_SCRIPT: '대화내용',
+  /** 결제 여부 */
+  PAYMENT_STATUS: '결제 여부',
+  /** 멤버십 기수 (멀티 선택 - 재신청자는 여러 기수 포함) */
+  MEMBERSHIP_COHORT: '멤버십 기수',
 } as const;
 
 /** 합격 상태 값 */
 export const INTERVIEW_RESULT_PASS = '합격';
+
+/** 결제 완료 상태 값 */
+export const PAYMENT_STATUS_PAID = '결제 완료';
 
 /** 에어테이블 API 설정 */
 export const AIRTABLE_CONFIG = {
