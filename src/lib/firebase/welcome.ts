@@ -10,6 +10,7 @@ import {
   WELCOME_CONFIG_COLLECTION,
   WELCOME_CONFIG_DOC_ID,
   TOKEN_EXPIRY_DAYS,
+  DISCOUNT_EXPIRY_DAYS,
 } from '@/constants/welcome';
 import { logger } from '@/lib/logger';
 
@@ -176,12 +177,22 @@ export async function verifyWelcomeToken(token: string): Promise<WelcomeVerifyRe
     // 계좌 정보 가져오기
     const bankAccount = await getWelcomeConfig();
 
+    // 특별 할인 만료일 계산 (토큰 생성일 + 3일)
+    let discountExpiresAt: string | undefined;
+    const tokenCreatedAt = participantData.welcomeTokenCreatedAt?.toDate();
+    if (tokenCreatedAt) {
+      const expiryDate = new Date(tokenCreatedAt);
+      expiryDate.setDate(expiryDate.getDate() + DISCOUNT_EXPIRY_DAYS);
+      discountExpiresAt = expiryDate.toISOString();
+    }
+
     return {
       success: true,
       participant: {
         name: participantData.name,
         cohortName,
         welcomeMessage: participantData.welcomeMessage || undefined,
+        discountExpiresAt,
       },
       bankAccount,
     };

@@ -30,6 +30,7 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
     name: string;
     cohortName: string;
     welcomeMessage?: string;
+    discountExpiresAt?: string;
   } | null>(null);
   const [bankAccount, setBankAccount] = useState<WelcomeConfig | null>(null);
   const [members, setMembers] = useState<MemberShowcaseData | null>(null);
@@ -131,7 +132,12 @@ export default function WelcomePageClient({ token }: WelcomePageClientProps) {
       <BrandStory />
 
       {/* Section 5: Payment */}
-      {bankAccount && <PaymentCard bankAccount={bankAccount} />}
+      {bankAccount && (
+        <PaymentCard
+          bankAccount={bankAccount}
+          discountExpiresAt={participant?.discountExpiresAt}
+        />
+      )}
 
       {/* Footer */}
       <footer className="bg-black py-16 text-center border-t border-white/5">

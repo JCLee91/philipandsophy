@@ -29,6 +29,7 @@ export interface WelcomeVerifyResponse {
     name: string;
     cohortName: string;
     welcomeMessage?: string; // AI 생성 맞춤 환영 메시지
+    discountExpiresAt?: string; // 특별 할인 만료 시간 (ISO string)
   };
   bankAccount?: WelcomeConfig;
   error?: string;
@@ -47,8 +48,8 @@ export interface WelcomeTokenResponse {
   welcomeMessageGenerated?: boolean; // AI 맞춤 메시지 생성 여부
   error?: string;
   code?:
-    | 'INVALID_SECRET'
-    | 'PARTICIPANT_NOT_FOUND'
-    | 'MISSING_PHONE_NUMBER'
-    | 'SERVER_ERROR';
+  | 'INVALID_SECRET'
+  | 'PARTICIPANT_NOT_FOUND'
+  | 'MISSING_PHONE_NUMBER'
+  | 'SERVER_ERROR';
 }

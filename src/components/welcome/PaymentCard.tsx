@@ -1,16 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, Check } from 'lucide-react';
 import { WelcomeConfig } from '@/types/welcome';
 
 interface PaymentCardProps {
   bankAccount: WelcomeConfig;
+  discountExpiresAt?: string; // 특별 할인 만료 시간 (ISO string)
 }
 
-export default function PaymentCard({ bankAccount }: PaymentCardProps) {
+interface TimeRemaining {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  isExpired: boolean;
+}
+
+function calculateTimeRemaining(expiresAt: string): TimeRemaining {
+  const now = new Date().getTime();
+  const expiry = new Date(expiresAt).getTime();
+  const diff = expiry - now;
+
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  return { days, hours, minutes, seconds, isExpired: false };
+}
+
+export default function PaymentCard({ bankAccount, discountExpiresAt }: PaymentCardProps) {
   const [copied, setCopied] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(null);
+
+  // 카운트다운 타이머
+  useEffect(() => {
+    if (!discountExpiresAt) return;
+
+    // 초기 값 설정
+    setTimeRemaining(calculateTimeRemaining(discountExpiresAt));
+
+    // 1초마다 업데이트
+    const interval = setInterval(() => {
+      setTimeRemaining(calculateTimeRemaining(discountExpiresAt));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [discountExpiresAt]);
 
   const handleCopy = async () => {
     const textToCopy = `${bankAccount.bankName} ${bankAccount.accountNumber} ${bankAccount.accountHolder}`;
@@ -93,6 +135,63 @@ export default function PaymentCard({ bankAccount }: PaymentCardProps) {
 
           {/* Payment Section */}
           <div className="bg-zinc-900/30 rounded-2xl p-6 md:p-8 border border-white/5 backdrop-blur-sm">
+            {/* Countdown Timer - Inside Card */}
+            {timeRemaining && !timeRemaining.isExpired && (
+              <div className="mb-6 -mx-6 md:-mx-8 -mt-6 md:-mt-8 px-6 md:px-8 pt-5 pb-5 bg-gradient-to-r from-[#62bbff]/5 via-[#62bbff]/10 to-[#62bbff]/5 border-b border-[#62bbff]/10 rounded-t-2xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-[#62bbff] animate-pulse shadow-[0_0_8px_rgba(98,187,255,0.6)]" />
+                  <span className="text-[#62bbff]/80 text-xs font-medium tracking-wide uppercase">
+                    Limited Time Offer
+                  </span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  {timeRemaining.days > 0 && (
+                    <div className="text-center">
+                      <span className="text-3xl md:text-4xl font-light text-white drop-shadow-[0_0_10px_rgba(98,187,255,0.3)]">
+                        {timeRemaining.days}
+                      </span>
+                      <span className="text-gray-500 text-xs block mt-1">일</span>
+                    </div>
+                  )}
+                  {timeRemaining.days > 0 && (
+                    <span className="text-gray-600 text-2xl font-light mb-4">:</span>
+                  )}
+                  <div className="text-center">
+                    <span className="text-3xl md:text-4xl font-light text-white drop-shadow-[0_0_10px_rgba(98,187,255,0.3)]">
+                      {String(timeRemaining.hours).padStart(2, '0')}
+                    </span>
+                    <span className="text-gray-500 text-xs block mt-1">시간</span>
+                  </div>
+                  <span className="text-gray-600 text-2xl font-light mb-4">:</span>
+                  <div className="text-center">
+                    <span className="text-3xl md:text-4xl font-light text-white drop-shadow-[0_0_10px_rgba(98,187,255,0.3)]">
+                      {String(timeRemaining.minutes).padStart(2, '0')}
+                    </span>
+                    <span className="text-gray-500 text-xs block mt-1">분</span>
+                  </div>
+                  <span className="text-gray-600 text-2xl font-light mb-4">:</span>
+                  <div className="text-center">
+                    <span className="text-3xl md:text-4xl font-light text-white drop-shadow-[0_0_10px_rgba(98,187,255,0.3)]">
+                      {String(timeRemaining.seconds).padStart(2, '0')}
+                    </span>
+                    <span className="text-gray-500 text-xs block mt-1">초</span>
+                  </div>
+                </div>
+                <p className="text-center text-gray-500 text-[11px] mt-3">
+                  이후 정가 150,000원이 적용됩니다
+                </p>
+              </div>
+            )}
+
+            {/* Expired Notice - Inside Card */}
+            {timeRemaining && timeRemaining.isExpired && (
+              <div className="mb-6 pb-6 border-b border-white/5">
+                <p className="text-gray-500 text-sm font-light text-center">
+                  특별 할인 기간이 종료되었습니다
+                </p>
+              </div>
+            )}
+
             {/* Amount */}
             <div className="flex justify-between items-start mb-8 pb-8 border-b border-white/5">
               <div className="flex flex-col">
@@ -118,16 +217,21 @@ export default function PaymentCard({ bankAccount }: PaymentCardProps) {
                 </div>
               </div>
               <div className="text-right flex flex-col items-end">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-medium text-[#62bbff] bg-[#62bbff]/10 px-2 py-0.5 rounded-full tracking-wider uppercase">
-                    Special Price
-                  </span>
-                  <span className="text-gray-600 font-light line-through text-lg">
-                    150,000원
-                  </span>
-                </div>
+                {/* Show discount badge only when discount is active */}
+                {(!timeRemaining || !timeRemaining.isExpired) && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-medium text-[#62bbff] bg-[#62bbff]/10 px-2 py-0.5 rounded-full tracking-wider uppercase">
+                      Special Price
+                    </span>
+                    <span className="text-gray-600 font-light line-through text-lg">
+                      15만원
+                    </span>
+                  </div>
+                )}
                 <span className="text-3xl font-light text-white tracking-tight block">
-                  {bankAccount.amountDescription || '150,000원'}
+                  {timeRemaining?.isExpired
+                    ? '15만원'
+                    : (bankAccount.amountDescription || '15만원')}
                 </span>
               </div>
             </div>
