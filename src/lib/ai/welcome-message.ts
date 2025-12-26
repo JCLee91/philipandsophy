@@ -41,7 +41,7 @@ const SYSTEM_PROMPT = `당신은 필립앤소피 소셜클럽의 환영 초대�
 - "나를 위해 쓴 메시지"라고 느끼게 할 것
 
 ## 작성 규칙
-1. **길이**: **4문장**, 공백 포함 250자 미만 필수. (간결하게 작성)
+1. **길이**: **4문장**, 공백 포함 220자 미만 필수. (간결하게 작성)
 2. **어조**: 품격 있으면서 따뜻한 해요체. 초대장다운 격식과 친근함의 균형
 3. **구조** (총 4문장):
    - 첫 문장: **구체적 디테일 훅** - 인터뷰에서 나온 고유한 내용으로 시작
@@ -82,7 +82,7 @@ const SYSTEM_PROMPT = `당신은 필립앤소피 소셜클럽의 환영 초대�
 
 const MAX_GENERATION_ATTEMPTS = 3;
 const WELCOME_MESSAGE_MIN_LENGTH = 100;
-const WELCOME_MESSAGE_MAX_LENGTH = 250;
+const WELCOME_MESSAGE_MAX_LENGTH = 220;
 const WELCOME_MESSAGE_BANNED_PHRASES = [
   '독서 클럽',
   '독서클럽',

@@ -20,11 +20,14 @@ export default function InvitationOpening({ name, welcomeMessage }: InvitationOp
     };
 
     return (
-        <section className="relative min-h-screen flex flex-col items-center justify-center px-4 bg-black">
+        <section className="relative min-h-screen flex flex-col items-center justify-between px-4 py-16 bg-black">
             {/* Subtle ambient glow */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/[0.02] rounded-full blur-3xl" />
             </div>
+
+            {/* Spacer for top */}
+            <div className="flex-shrink-0" />
 
             <motion.div
                 initial={{ opacity: 0 }}
@@ -97,13 +100,13 @@ export default function InvitationOpening({ name, welcomeMessage }: InvitationOp
                 </motion.div>
             </motion.div>
 
-            {/* Scroll indicator */}
+            {/* Scroll indicator - now part of flex flow, not absolute */}
             <motion.button
                 onClick={scrollToNext}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 1.2 }}
-                className="absolute bottom-12 left-1/2 -translate-x-1/2 text-gray-500"
+                className="flex-shrink-0 mt-12 text-gray-500"
                 aria-label="스크롤하여 계속 보기"
             >
                 <motion.div
