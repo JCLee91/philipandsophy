@@ -18,7 +18,6 @@ export default function WelcomePreviewPage() {
         accountNumber: '110-123-456789',
         accountHolder: '필립앤소피',
         amountDescription: '12만원',
-        note: '입금 후 카카오톡으로 알려주시면 빠르게 확인해드립니다.',
     };
 
     return (
