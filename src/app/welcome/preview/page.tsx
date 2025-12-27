@@ -8,9 +8,9 @@ import '@/styles/landing.css';
  * /welcome/preview 에서 확인 가능
  */
 export default function WelcomePreviewPage() {
-    // 테스트용 데이터: 현재 시간으로부터 3일 후 만료
+    // 테스트용 데이터: 현재 시간으로부터 3일 12시간 후 만료
     const now = new Date();
-    const discountExpiresAt = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const discountExpiresAt = new Date(now.getTime() + 84 * 60 * 60 * 1000).toISOString();
 
     // 테스트용 계좌 정보
     const mockBankAccount = {
@@ -25,7 +25,7 @@ export default function WelcomePreviewPage() {
             {/* Preview Info Banner */}
             <div className="bg-blue-600 text-center py-3 px-4">
                 <p className="text-sm">
-                    🔍 <strong>미리보기 모드</strong> — 카운트다운 타이머가 3일 후 만료로 설정됨
+                    🔍 <strong>미리보기 모드</strong> — 카운트다운 타이머가 3일 12시간 후 만료로 설정됨
                 </p>
             </div>
 
