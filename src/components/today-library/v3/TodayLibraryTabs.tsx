@@ -36,6 +36,7 @@ interface TodayLibraryTabsProps {
   // Navigation
   isViewingOtherCluster: boolean;
   fromRecap: boolean;
+  canBrowseOtherClusters: boolean;
   onReturnToMyCluster: () => void;
 
   // Access Control
@@ -60,6 +61,7 @@ export default function TodayLibraryTabs({
   allParticipants,
   isViewingOtherCluster,
   fromRecap,
+  canBrowseOtherClusters,
   onReturnToMyCluster,
   isLocked,
   isSuperAdmin,
@@ -256,7 +258,7 @@ export default function TodayLibraryTabs({
             >
               <div className="pb-32">
                 {/* 다른 모임 구경하기 버튼 (내 모임일 때만) */}
-                {!fromRecap && (
+                {!fromRecap && canBrowseOtherClusters && (
                   <div className="flex justify-end px-6 pt-4 bg-[#F6F6F6]">
                     <button
                       onClick={() => router.push(appRoutes.todayLibraryOtherClusters(cohortId))}

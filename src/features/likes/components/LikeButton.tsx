@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLikes } from '../hooks/use-likes';
-import { useLockedToast } from '@/hooks/use-locked-toast';
+import { useToast } from '@/hooks/use-toast';
+import { LOCKED_TOAST_MESSAGES } from '@/constants/locked-toast-messages';
 import { cn } from '@/lib/utils';
 
 interface LikeButtonProps {
@@ -30,7 +31,7 @@ export default function LikeButton({
   isLocked = false,
 }: LikeButtonProps) {
   const { isLiked, toggleLikeAsync } = useLikes(currentUserId);
-  const { showLockedToast } = useLockedToast();
+  const { toast } = useToast();
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -57,7 +58,7 @@ export default function LikeButton({
 
     // 인증 안 했으면 토스트 표시하고 리턴
     if (isLocked) {
-      showLockedToast('like');
+      toast(LOCKED_TOAST_MESSAGES.like);
       return;
     }
 

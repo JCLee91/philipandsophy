@@ -16,6 +16,7 @@ import { getResizedImageUrl } from '@/lib/image-utils';
 import { getFirstName } from '@/lib/utils';
 import { appRoutes } from '@/lib/navigation';
 import PageTransition from '@/components/PageTransition';
+import UnifiedButton from '@/components/UnifiedButton';
 import { Cluster, Participant } from '@/types/database';
 import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 
@@ -28,6 +29,7 @@ export default function OtherClustersPage() {
     const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
     const { toast } = useToast();
     const currentUserId = participant?.id;
+    const isLegacyCohort = cohort ? cohort.useClusterMatching !== true : false;
 
     // 오늘의 서재와 동일한 로직: 오늘 인증 여부 확인
     const todayDate = getSubmissionDate();
@@ -139,7 +141,7 @@ export default function OtherClustersPage() {
     if (!participant || !cohort) return null;
 
     // 매칭 진행 중 (새벽 2시 0분 ~ 2시 29분)
-    if (isMatchingInProgress()) {
+    if (!isLegacyCohort && isMatchingInProgress()) {
         return (
             <PageTransition>
                 <div className="app-shell flex flex-col h-screen bg-gray-50">
@@ -167,6 +169,48 @@ export default function OtherClustersPage() {
                                 <p className="text-sm text-gray-600 leading-relaxed">
                                     잠시 후 다시 확인해 주세요
                                 </p>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </PageTransition>
+        );
+    }
+
+    if (!clusterMatching || clusters.length === 0) {
+        return (
+            <PageTransition>
+                <div className="app-shell flex flex-col h-screen bg-gray-50">
+                    <TopBar
+                        title="다른 모임 구경하기"
+                        onBack={() => {
+                            const matchingDate = clusterMatching?.matchingDate;
+                            if (matchingDate) {
+                                router.push(`${appRoutes.todayLibrary(cohortId!)}&matchingDate=${encodeURIComponent(matchingDate)}`);
+                            } else {
+                                router.push(appRoutes.todayLibrary(cohortId!));
+                            }
+                        }}
+                        position="fixed"
+                    />
+                    <main className="flex-1 overflow-y-auto pt-16 pb-20 px-4 flex items-center justify-center">
+                        <div className="mx-auto max-w-md px-6">
+                            <div className="text-center space-y-6">
+                                <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
+                                    📚
+                                </div>
+                                <h3 className="font-bold text-lg text-gray-900">
+                                    다른 모임 구경하기는<br />지금은 지원하지 않아요
+                                </h3>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                    이전 기수 데이터는 오늘의 서재에서 계속 확인할 수 있어요.
+                                </p>
+                                <UnifiedButton
+                                    variant="primary"
+                                    onClick={() => router.push(appRoutes.todayLibrary(cohortId!))}
+                                >
+                                    오늘의 서재로 돌아가기
+                                </UnifiedButton>
                             </div>
                         </div>
                     </main>

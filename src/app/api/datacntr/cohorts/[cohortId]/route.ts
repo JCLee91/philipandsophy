@@ -100,7 +100,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { cohortId } = await params;
     const body = await request.json();
-    const { profileUnlockDate, useClusterMatching } = body;
+    const { profileUnlockDate } = body;
 
     // 입력 검증 (ISO 8601 날짜 형식)
     if (profileUnlockDate !== null && profileUnlockDate !== undefined) {
@@ -130,10 +130,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (profileUnlockDate !== undefined) {
       updateData.profileUnlockDate = profileUnlockDate ?? null;
-    }
-
-    if (useClusterMatching !== undefined) {
-      updateData.useClusterMatching = useClusterMatching;
     }
 
     // Firestore 업데이트

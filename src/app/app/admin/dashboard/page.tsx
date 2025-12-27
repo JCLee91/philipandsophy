@@ -235,7 +235,6 @@ function DashboardContent() {
         },
         body: JSON.stringify({
           cohortId,
-          useClusterMatching: cohort?.useClusterMatching
         }),
       });
 
@@ -264,7 +263,7 @@ function DashboardContent() {
     } finally {
       setIsMatchingProcessing(false);
     }
-  }, [cohortId, cohort?.useClusterMatching, toast, refetchCohort]);
+  }, [cohortId, toast, refetchCohort]);
 
   const handleRefreshToday = useCallback(() => {
     setIsRefreshingToday(true);

@@ -148,7 +148,7 @@ export interface Cohort {
   participantCount?: number; // 🆕 참가자 수 (계산 필드, optional)
   totalDays?: number; // 🆕 프로그램 총 일수 (계산 필드, optional)
   profileUnlockDate?: string | null; // 🆕 어제 인증자 전체 공개 시작 날짜 (null: 기본 2x2만, "2025-10-08": 해당 날짜부터 전체 공개, ISO 8601)
-  useClusterMatching?: boolean; // 🆕 클러스터 매칭 사용 여부 (true: v3.0 클러스터, false/undefined: v2.0 랜덤)
+  useClusterMatching?: boolean; // 레거시 호환용 플래그 (신규는 v3 고정)
   createdAt: Timestamp; // 생성 일시
   updatedAt: Timestamp; // 수정 일시
   type?: 'regular' | 'meetup'; // 🆕 기수 타입 (기본값: 'regular')

@@ -11,7 +11,6 @@ type ChatFooterSectionProps = {
   hasSubmittedToday: boolean;
   cohortName?: string; // 기수 이름 (예: "2기")
   participantName?: string; // 참가자 이름
-  useClusterMatching?: boolean; // V3 클러스터 매칭 여부
   onRequestSubmission: () => void;
   onNavigateDashboard: () => void;
   onNavigateTodayLibrary: () => void;
@@ -24,7 +23,6 @@ export function ChatFooterSection({
   hasSubmittedToday,
   cohortName,
   participantName,
-  useClusterMatching,
   onRequestSubmission,
   onNavigateDashboard,
   onNavigateTodayLibrary,
@@ -55,18 +53,10 @@ export function ChatFooterSection({
                   onClick={onNavigateTodayLibrary}
                   className="whitespace-normal h-auto leading-tight col-span-2"
                 >
-                  {useClusterMatching ? (
-                    // V3: 클러스터 매칭 - 개인 여정 회고
-                    <span className="flex flex-col items-center">
-                      <span>독서모임 히스토리</span>
-                    </span>
-                  ) : cohortName ? (
-                    // V2: 멤버의 서재
-                    <span className="flex flex-col items-center">
-                      <span>{cohortName}</span>
-                      <span>멤버의 서재</span>
-                    </span>
-                  ) : '멤버 프로필 둘러보기'}
+                  <span className="flex flex-col items-center">
+                    {cohortName && <span>{cohortName}</span>}
+                    <span>독서모임 히스토리</span>
+                  </span>
                 </UnifiedButton>
               ) : (
                 <>

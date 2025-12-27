@@ -8,7 +8,7 @@ import { useParticipantSubmissionsRealtime } from '@/hooks/use-submissions';
 import { useCohort } from '@/hooks/use-cohorts';
 import { useClusterSubmissions } from '@/hooks/use-cluster-submissions';
 import { useToast } from '@/hooks/use-toast';
-import { useLockedToast } from '@/hooks/use-locked-toast';
+import { LOCKED_TOAST_MESSAGES } from '@/constants/locked-toast-messages';
 import { useQuery } from '@tanstack/react-query';
 import { getDb } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -17,7 +17,7 @@ import { getSubmissionDate, isMatchingInProgress, isAfterProgram } from '@/lib/d
 import { appRoutes } from '@/lib/navigation';
 import { getFirstName } from '@/lib/utils';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
-import type { Participant, Cohort } from '@/types/database';
+import type { Participant } from '@/types/database';
 import type { ClusterMemberWithSubmission } from '@/types/today-library';
 
 export function useTodayLibraryV3() {
@@ -34,7 +34,6 @@ export function useTodayLibraryV3() {
 
   const { data: cohort, isLoading: cohortLoading } = useCohort(cohortId || undefined);
   const { toast } = useToast();
-  const { showLockedToast } = useLockedToast();
 
   const todayDate = getSubmissionDate();
   const { data: viewerSubmissions = [], isLoading: viewerSubmissionLoading } = useParticipantSubmissionsRealtime(currentUserId);
@@ -153,7 +152,7 @@ export function useTodayLibraryV3() {
     const isMe = participantId === currentUserId;
 
     if (effectiveIsLocked && !isSuperAdmin && !isMe) {
-      showLockedToast('answer');
+      toast(LOCKED_TOAST_MESSAGES.answer);
       return;
     }
 
@@ -205,7 +204,7 @@ export function useTodayLibraryV3() {
     const isMe = participantId === currentUserId;
 
     if (effectiveIsLocked && !isSuperAdmin && !isMe) {
-      showLockedToast('profile');
+      toast(LOCKED_TOAST_MESSAGES.profile);
       return;
     }
 
@@ -221,7 +220,7 @@ export function useTodayLibraryV3() {
     const isMe = participantId === currentUserId;
 
     if (effectiveIsLocked && !isSuperAdmin && !isMe) {
-      showLockedToast('review');
+      toast(LOCKED_TOAST_MESSAGES.review);
       return;
     }
 

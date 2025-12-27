@@ -55,7 +55,6 @@ export async function POST(request: NextRequest) {
       participants,
       questionsOption,
       sourceCohortId,
-      useClusterMatching,
     } = body;
 
     // 유효성 검사
@@ -103,7 +102,7 @@ export async function POST(request: NextRequest) {
       endDate,
       programStartDate,
       isActive: true,
-      useClusterMatching: useClusterMatching ?? true, // 기본값 true
+      useClusterMatching: true,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });

@@ -22,8 +22,8 @@ function TodayLibraryContent() {
     return null;
   }
 
-  // 매칭 시스템 설정에 따라 분기 처리
-  // 기본값은 false (v2.0 레거시)
+  // 클러스터 매칭 사용 여부에 따라 분기
+  // true: V3 (클러스터 매칭), false: V2 (레거시)
   const useClusterMatching = cohort.useClusterMatching === true;
 
   if (useClusterMatching) {

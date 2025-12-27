@@ -20,12 +20,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { cohortId, useClusterMatching } = body ?? {};
+    const { cohortId } = body ?? {};
     requestCohortId = cohortId;
 
     console.log('🔍 [Backend API] Received request:', {
       cohortId,
-      useClusterMatching,
       bodyKeys: Object.keys(body ?? {})
     });
 
@@ -37,26 +36,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Cloud Run 함수 URL (환경변수에서 가져오기)
-    // useClusterMatching 플래그에 따라 v2(랜덤) 또는 v3(클러스터) 함수 선택
     const v3Url = process.env.MANUAL_CLUSTER_MATCHING_URL || 'https://manualclustermatching-vliq2xsjqa-du.a.run.app';
-    const v2Url = process.env.MANUAL_MATCHING_URL;
-    
-    const matchingUrl = useClusterMatching ? v3Url : v2Url;
+    const matchingUrl = v3Url;
 
     // 디버깅 로그 추가
     console.log('🔍 [Backend API] URL Selection:', {
-      useClusterMatching,
       v3Url,
-      v2Url,
-      selectedUrl: matchingUrl,
-      willCallV3: useClusterMatching === true
+      selectedUrl: matchingUrl
     });
     
     logger.info('Matching URL selection', {
       cohortId,
-      useClusterMatching,
       v3Url,
-      v2Url,
       selectedUrl: matchingUrl
     });
 

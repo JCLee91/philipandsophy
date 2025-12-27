@@ -128,6 +128,7 @@ export default function TodayLibraryV3Content() {
             allParticipants={allParticipants}
             isViewingOtherCluster={isViewingOtherCluster}
             fromRecap={fromRecap}
+            canBrowseOtherClusters
             onReturnToMyCluster={handleReturnToMyCluster}
             isLocked={isLocked}
             isSuperAdmin={isSuperAdmin}
