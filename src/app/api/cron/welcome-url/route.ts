@@ -102,7 +102,8 @@ async function findParticipantByPhone(phoneNumber: string) {
 async function createApplicant(
   name: string,
   phoneNumber: string,
-  cohortId: string
+  cohortId: string,
+  gender?: 'male' | 'female'
 ): Promise<string> {
   const db = getAdminDb();
 
@@ -110,7 +111,7 @@ async function createApplicant(
   const participantId = `cohort${cohortId}-${name}`;
 
   const now = Timestamp.now();
-  const participantData = {
+  const participantData: Record<string, any> = {
     id: participantId,
     name,
     phoneNumber,
@@ -121,12 +122,18 @@ async function createApplicant(
     updatedAt: now,
   };
 
+  // 성별 정보 추가
+  if (gender) {
+    participantData.gender = gender;
+  }
+
   await db.collection('participants').doc(participantId).set(participantData);
 
   logger.info('Created new applicant in Firestore', {
     participantId,
     name,
     cohortId,
+    gender: gender || 'not provided',
   });
 
   return participantId;
@@ -140,7 +147,8 @@ async function processRecord(
   name: string,
   phoneNumber: string,
   callScript: string | undefined,
-  cohortId: string
+  cohortId: string,
+  gender?: 'male' | 'female'
 ): Promise<ProcessResult> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://philipandsophy.kr';
 
@@ -149,12 +157,12 @@ async function processRecord(
     let existingParticipant = await findParticipantByPhone(phoneNumber);
     let isNewParticipant = false;
 
-    // 2. 없으면 새로 등록
+    // 2. 없으면 새로 등록 (성별 포함)
     if (!existingParticipant) {
-      const newParticipantId = await createApplicant(name, phoneNumber, cohortId);
+      const newParticipantId = await createApplicant(name, phoneNumber, cohortId, gender);
       existingParticipant = {
         id: newParticipantId,
-        data: { name },
+        data: { name, gender },
       };
       isNewParticipant = true;
     }
@@ -318,6 +326,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
       const name = record.fields[AIRTABLE_FIELDS.NAME];
       const phoneNumber = record.fields[AIRTABLE_FIELDS.PHONE_NUMBER];
       const callScript = record.fields[AIRTABLE_FIELDS.CALL_SCRIPT];
+      const genderRaw = record.fields[AIRTABLE_FIELDS.GENDER];
+      // 성별 변환: '남' -> 'male', '여' -> 'female'
+      const gender = genderRaw === '남' ? 'male' : genderRaw === '여' ? 'female' : undefined;
 
       // 필수 필드 체크
       if (!name || !phoneNumber) {
@@ -334,8 +345,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
       // 전화번호 정규화 (하이픈 제거)
       const normalizedPhone = phoneNumber.replace(/-/g, '');
 
-      // 레코드 처리
-      const result = await processRecord(record.id, name, normalizedPhone, callScript, cohortId);
+      // 레코드 처리 (성별 포함)
+      const result = await processRecord(record.id, name, normalizedPhone, callScript, cohortId, gender);
       results.push(result);
 
       // Rate limit 방지 (에어테이블 5 req/sec)

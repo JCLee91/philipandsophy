@@ -10,6 +10,8 @@ export const AIRTABLE_FIELDS = {
   PHONE_NUMBER: '연락처',
   /** 이름 */
   NAME: '이름',
+  /** 성별 (남/여) */
+  GENDER: '성별',
   /** 웰컴 페이지 URL 저장 필드 */
   WELCOME_PAGE_URL: '월컴 페이지',
   /** 통화 스크립트 (AI 환영 메시지 생성용) */
